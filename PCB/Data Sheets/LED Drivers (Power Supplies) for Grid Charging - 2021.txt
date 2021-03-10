@@ -1,0 +1,5 @@
+Potential LED Drivers (to replace old Linsight PLED driver):
+
+HLG-480H-C2100B (dims to 0A)
+HLG-240H-C1050B ($65.44) - Full output down to 115 VAC
+ELG-240-C1050B ($50.59) - Bad below 220 VAC
