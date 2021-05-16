@@ -1,0 +1,9 @@
+Recommended LED Driver:
+HLG-320H-C1400B ($74.08) - dims to 0A (114:229VDC)
+
+Too expensive:
+HLG-480H-C2100B ($117.36) - dims to 0A ()
+
+Won't work:
+ELG-240-C1050B ($50.59) - Derated below 220 VAC
+HLG-240H-C1050B ($65.44) - 10% minimum output current setput.

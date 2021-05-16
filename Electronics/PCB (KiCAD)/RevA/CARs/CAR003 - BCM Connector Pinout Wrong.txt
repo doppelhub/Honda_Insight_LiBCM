@@ -1,0 +1,5 @@
+The rows are flipped on the BCM connector.  Essentially the upper and lower rows all need to be swapped.  For example, B01 & B12 should be swapped, as should B02 & B13, etc.  All pins are wrong.
+
+
+Workaround:
+Manually repin external IMA wire harness.

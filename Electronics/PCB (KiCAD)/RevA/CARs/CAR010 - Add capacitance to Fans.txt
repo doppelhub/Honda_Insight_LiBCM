@@ -1,0 +1,1 @@
+Add 22 uF between onboard fan+ & fan- (in parallel with fans).  This greatly improves PWM performance.

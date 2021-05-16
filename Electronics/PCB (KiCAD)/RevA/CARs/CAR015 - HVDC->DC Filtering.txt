@@ -1,0 +1,27 @@
+The offline HVDC converter has some really bad periodic noise at 120 kHz (frequency dependent, based on load).  EPM1210SJ datasheet suggests adding an inductor (PJ5H-2R2M) inline with the output.  I can't find this exact part number, but I suspect it's a 2.2 uH inductor.  Example parts:
+LQM2HPZ2R2MJ0L
+MLP2012H2R2MT0S1
+
+Need to add this in between the first and second large coupling capacitors.  Need to prototype
+
+HVDCDC input:
+Add 440 nF as close as possible to HVDCDC input.  This drops input FET switching noise from 8 volts to 1.25 volts.  Add as many pads as possible... can depop when happy with noise.
+
+Experiment with adding inline common mode choke 399-10644-ND close to HVDCDC input.  Need to verify this doesn't destabilize Bulk Cin.  Should also test to see if standard inline 1 uH inductors on HVDC± achieve the same results (cost less $).
+
+HVDCDC output:
+On output, add ~1uH inductors inline with HVDCDC out + & -.  HVDC datasheet calls for 2.2 uH on just the output positive.  Pad both sides of the inductor with additional 22 uF caps.  This lowers ripple quite a bit.  Tested with 720 nH with great results, except that high frequency FET switching noise was still more than I wanted.  
+
+A common mode choke on the output might be able to remove this high frequency FET noise.
+DLW5ATN272SQ2L
+
+Solutions:
+
+Between Input- & output-:
+Add a ~1nF capacitance between HVDC- & 12V-.  Put QTY2 22 nF in series between these negative leads for safety.
+
+Between HVDCDC inputs:
+Add 44 nF
+
+Between HVDCDC output (12V) and LVDCDC:
+Add 587-5925-1-ND inline with both +12V and ENG_GND, with 22 uF cap on both sides.

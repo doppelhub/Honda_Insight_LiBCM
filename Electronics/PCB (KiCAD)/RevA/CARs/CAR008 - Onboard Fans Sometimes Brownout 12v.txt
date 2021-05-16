@@ -1,0 +1,11 @@
+When the onboard fans are turned on, the 12 volts rail (generated from HVDC) sometimes browns out.  Need to add more capacitance to 12 volt rail near fan connector.
+
+This is an intermittent issue... possibly related to MCM status.
+When the issue exists, it's very reproducible.
+When the issue doesn't occur, it's almost impossible to reproduce.
+
+Root Cause:
+This only occurs when Lambda Gen is connected to 12 volt rail, but its output is disabled.  Could not reproduce except under that condition.
+
+Solution:
+No action needed.  Test equipment caused issue.

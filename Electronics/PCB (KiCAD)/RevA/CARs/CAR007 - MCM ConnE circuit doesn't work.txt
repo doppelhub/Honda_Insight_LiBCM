@@ -1,0 +1,30 @@
+Haven't looked too far into this yet, but MCM ConnE voltage changing circuit doesn't appear to work.
+
+With 0% PWM, measured 125 volts.
+
+With pretty much any PWM duty cycle, the voltage immediately drops to 110V, then stays there.
+
+The issue is that the FOD852SD Photodarlington's LED input is taking 700 us to fall off when turned off.  You can see this by probing the LED-side of that IC.  The rated falltime is 20 us, so not clear why this occurs.  maybe placing a resistance across the LED will make it turn off faster?
+
+Therefore, slowing down the PWM train shows the circuit to work, but it also makes the waveform decidedly non-DC, which won't work because the MCM will measure different DC values depending on it's asynchronous ADC conversion rate.  
+
+Running the PWM train at 490 Hz causes a 7 volt ripple on top of the spoofed DC voltage, with the MCM plugged in.
+
+Running the PWM train at 3900 Hz causes the initially observed behavior (i.e. either 125 volts or 110 volts, but nothing in between).
+
+This can be fixed by adding more capacitance, and/or finding a 'faster' photodarlington, or better yet dropping the darlington in favor of a faster phototransistor.  Potential replacements include (rise/fall time):
+  5 us /  5 us - MOC8204M
+  5 us /  5 us - H11D1SR2M or H11D1-X007T or H11D2SR2VM or H11D1SR2VM or H11D1-X009T
+  4 us /  5 us - PC851XNNIP1H
+  3 us / 80 us - TLP188 or TLP388
+100 us / 20 us - FOD852SD (existing part) nominal
+300 us /100 us - FOD852SD (existing part) maximum
+
+Need to order samples of each to see if this fixes the problem
+
+Solution:
+Use H11D1SR2VMCT-ND, with a 10k resistor tied btwn base & emitter.
+Adding this resistor improves turn-off time from 2.3 ms to 18 us... a 128x improvement.
+
+Using 3.9 kHz PWM, Vripple is less than 1.5 Vpp.
+31 kHz works, too, but is much less linear.  Vripple is MUCH smaller, though.

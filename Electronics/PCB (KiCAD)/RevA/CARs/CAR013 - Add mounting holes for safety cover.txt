@@ -1,0 +1,1 @@
+Add holes through PCB for separate safety cover mounting point.

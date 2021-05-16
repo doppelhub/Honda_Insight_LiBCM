@@ -1,0 +1,3481 @@
+'---------------------- Honda Insight MK1 BCM Replacer -------------------------
+'------    Picbasic Pro Compiler version PIC18F66K80 - 120120 - V01  -----------
+'-------------- Note this software requires the MPASM assembler ----------------
+'-------------------------------------------------------------------------------
+
+'This module carries no warranty or guarantee of any kind! It is used at
+'your own risk, and I make no claims as to it's suitability for a particular
+'function. Prospective users must evaluate the system before using it, and no
+'liability will be entertained by myself in any shape or form whatsoever.
+'The modules and software have been produced at low cost for the benefit of
+'the EV & electronic community. Be aware that undisclosed vehicle
+'modifications can lead to invalidated insurance and warranty issues. You the
+'end user remain fully liable for any modifications made to your vehicle.   
+
+'** PIC 18F66K80 FLASH 65535 (bytes) SRAM 3968 (bytes) EEPROM 1024 (bytes) **
+
+'***** ICSP In circuit serial Programming Pinouts 5 Pin Sil 0.1" *****
+
+'1) MCLR
+'2) +5V
+'3) GND
+'4) Data
+'5) Clock 
+
+'******************************* KeyPad Data ***********************************
+
+'   Key 0 = 0
+'   Key 1 = 1
+'   Key 2 = 2 = Up
+'   Key 3 = 3
+'   Key 4 = 4 = Left
+'   Key 5 = 5 = Centre
+'   Key 6 = 6 = Right
+'   Key 7 = 7
+'   Key 8 = 8 = Down
+'   Key 9 = 9
+'   Key 10 = *
+'   Key 11 = #     
+
+'*******************************************************************************
+'********************* Program Size 55966 out of 65535 Bytes *******************
+'*******************************************************************************
+
+'BATTSCI Info  ($AA & $87) 12 byte Packets are sent every 30ms  
+'METSCI Info B3 byte packets are recieved every second (One per second)   
+'METSCI Info B4 byte packets are recieved twice every second (Two per second)
+
+'*******************************************************************************
+'*************************  Pic 18F66K80 Configuration  ************************
+'*******************************************************************************  
+
+#CONFIG
+    CONFIG  RETEN = OFF           ; Ultra low-power regulator is Enabled (Controlled by SRETEN bit)
+    CONFIG  INTOSCSEL = HIGH      ; LF-INTOSC in High-power mode during Sleep
+    CONFIG  SOSCSEL = DIG         ; DIGITAL I/O on port C 0,1
+    CONFIG  XINST = OFF           ; Disabled
+    CONFIG  FOSC = HS2            ; HS oscillator (High power, 16MHz - 25MHz)
+    CONFIG  PLLCFG = OFF          ; Enabled
+    CONFIG  FCMEN = OFF           ; Disabled
+    CONFIG  IESO = OFF            ; Disabled
+    CONFIG  PWRTEN = OFF          ; Disabled
+    CONFIG  BOREN = OFF           ; Enabled in hardware, SBOREN disabled
+    CONFIG  BORV = 3              ; 1.8V
+    CONFIG  BORPWR = ZPBORMV      ; ZPBORMV instead of BORMV is selected
+    CONFIG  WDTEN = SWDTDIS       ; WDT enabled in hardware; SWDTEN bit disabled
+    CONFIG  WDTPS = 256           ; WDTPS 1:256  = 1.024 Second Timeout
+    CONFIG  CANMX = PORTB         ; ECAN TX and RX pins are located on RB2 and RB3, respectively
+    CONFIG  T0CKMX = PORTB        ; Timer0 gets its clock input from the RB5/T0CKI pin on 64-pin packages
+    CONFIG  T3CKMX = PORTG        ; Timer3 gets its clock input from the RG2/T3CKI pin on 64-pin packages
+    CONFIG  MSSPMSK = MSK7        ; 7 Bit address masking mode
+    CONFIG  MCLRE = OFF           ; MCLR Enabled, RE3 Disabled
+    CONFIG  STVREN = ON           ; Enabled
+    CONFIG  BBSIZ = BB2K          ; 2K word Boot Block size
+    CONFIG  CP0 = OFF             ; Disabled
+    CONFIG  CP1 = OFF             ; Disabled
+    CONFIG  CP2 = OFF             ; Disabled
+    CONFIG  CP3 = OFF             ; Disabled
+    CONFIG  CPB = OFF             ; Disabled
+    CONFIG  CPD = OFF             ; Disabled
+    CONFIG  WRT0 = OFF            ; Disabled
+    CONFIG  WRT1 = OFF            ; Disabled
+    CONFIG  WRT2 = OFF            ; Disabled
+    CONFIG  WRT3 = OFF            ; Disabled
+    CONFIG  WRTC = OFF            ; Disabled
+    CONFIG  WRTB = OFF            ; Disabled
+    CONFIG  WRTD = OFF            ; Disabled
+    CONFIG  EBTR0 = OFF           ; Disabled
+    CONFIG  EBTR1 = OFF           ; Disabled
+    CONFIG  EBTR2 = OFF           ; Disabled
+    CONFIG  EBTR3 = OFF           ; Disabled
+    CONFIG  EBTRB = OFF           ; Disabled
+#ENDCONFIG  
+
+'*******************************************************************************
+'**************************  PBP Basic Defines  ********************************
+'*******************************************************************************  
+
+DEFINE OSC 64           '16mhz Crystal x 4PLL = 64mhz
+DEFINE ADC_BITS 12      'Set number of bits in result  (Note adc result downsampled to 10bit due to pic errata)
+DEFINE ADC_SAMPLEUS 50  'Set sampling wait time between channel change in uS     
+
+'Note pic 18F66K80 has some issues with 12bit adc and suggest scaling back to 10bit results
+
+'Eusart 1               'BattSci & MetSci Comms  
+DEFINE HSER_RCSTA 90h   'Enable serial port & continuous receive
+DEFINE HSER_TXSTA 64h   'Enable transmit, 9 bit mode BRGH = 0
+DEFINE HSER_CLROERR 1   'Clear overflow automatically
+DEFINE HSER_SPBRG 130   '9600 Baud @ 64MHz, -.02%  (1666 Decimal =  $0682)
+define HSER_SPBRGH 6
+DEFINE HSER_EVEN 1      'Even Parity
+DEFINE HSER_BITS 9      '9 Bits (8 + parity)
+BAUDCON1.3 = 1          'Disable 16 bit baudrate generator
+
+'Eusart 2              'Video & Voltage Tap Comms
+DEFINE HSER2_RCSTA 90h 'Enable serial port & continuous receive
+DEFINE HSER2_TXSTA 24h 'Enable transmit, BRGH = 1
+DEFINE HSER2_CLROERR 1 'Clear overflow automatically
+DEFINE HSER2_SPBRG 22  '57600 Baud @ 64MHz, -0.44%   (278 Decimal = $0116) 
+define HSER2_SPBRGH 1
+BAUDCON2.3 = 1         'Enable 16 bit baudrate generator
+
+DEFINE WRITE_INT 1     'Disable All Interrupts during Eeprom write initialisation
+
+'***********************   Direct Pic Register Settings ************************
+
+OSCCON = %00000000      'External 16mhz Osc  
+OSCCON2 = %00000000
+OSCTUNE = %01000000     'Enable PLL 16mhz x 4 = 64mhz  
+HLVDCON= %00000000		'HLVCON Disabled     
+
+'***** CAN & ANALOG CONFIG
+
+TRISA = %11101111 		'SET PORTA AS RA0,1,2,3,5,6,7 AS INPUTS & REST OUTPUTS (Note Ext Osc on RA6,RA&)
+TRISB = %00011011 		'SET PORTB AS RB0,1,3,4 AS INPUTS & REST OUTPUTS
+TRISC = %00010000		'SET PORTC AS RC4 AS INPUT & REST OUTPUTS
+TRISD = %00010000 		'SET PORTD AS RD4 AS INPUT & REST OUTPUTS
+TRISE = %01000011 		'SET PORTE AS RE0,1,6 AS INPUTS & REST OUTPUTS
+TRISF = %00001111 		'SET PORTF AS RF0,1,2,3 AS INPUTS & REST OUTPUTS
+TRISG = %00000001 		'SET PORTG AS RG0 AS INPUT & REST OUTPUTS   
+
+ANCON0 = %01111111      'Set AN0-AN6 analog active except AN7 
+ANCON1 = %00000111      'Set AN8,AN9,AN10 analog active 
+
+ADCON0 = %00000001		'SETUP ADC & ENABLE ADC MODULE on AN0
+ADCON1 = %00010000		'SETUP ADC SET REFV to the 2.5V VREF+ & VSS 
+ADCON2 = %10111110		'SETUP ADC FOSC/64 RIGHT JUSTIFY TAD 20 (12 Bit)    
+
+'*******************************************************************************
+'**************************  PBP Basic Includes  *******************************
+'*******************************************************************************  
+
+INCLUDE "DT_INTS-18.bas"
+INCLUDE "ReEnterPBP-18.bas"
+include "ElapTimer_Interrupt.pbp"    
+
+'*******************************************************************************
+'**************************  Define Pic 18F66K80 Ports  ************************
+'*******************************************************************************     
+
+'Port A,B,C Source/Sink 25ma Max
+
+AmpsIn          var PORTA.0 'Current Sensor Adc Input 
+Temp1           var PORTA.1 'OEM NTC Temp Sensor 1 In
+Temp2           var PORTA.2 'OEM NTC Temp Sensor 2 In
+'VREF+          var PORTA.3 '2.5V 0.1% Fixed Voltage reference In
+Temp4	        var PORTA.5 'OEM NTC Temp Sensor 4 In
+'Osc2           var PORTA.6 'Oscillator 16mhz
+'Osc1    	    var PORTA.7 'Oscillator 16mhz
+
+Int5v           var PORTB.0 '5V Supply Adc Sense In   
+Ext12v          var PORTB.1 '12v External Sense In
+'Can TX 	    var PORTB.2 'Can Tx Pin
+'Can RX		    var PORTB.3 'Can Rx Pin
+Int12v          var PORTB.4 '12V Internal Sense In
+SCBI            var PORTB.5 'SCBI Control Out
+Pgc             var PORTB.6 'ICSP Clock
+Pgd             var PORTB.7 'ICSP Data
+
+FanL            var PORTC.0 'OEM Fan Low Relay Out
+FanH            var PORTC.1 'OEM Fan High Relay Out
+ChgPwm          var PORTC.2 'Charger Pwm Control Out
+SclClock        var PORTC.3 'SclClock Out
+SdiData         var PORTC.4 'SdiData In
+SdoData         var PORTC.5 'SdoData Out
+HeatPwm         var PORTC.6 'Heater Pwm Control Out
+CoolPwm         var PORTC.7 'Cooling Pwm Control Out   
+
+'Port D,E Source/Sink 8ma Max
+
+Spare1A         var PORTD.0 'Spare I/O Out
+Spare2B         var PORTD.1 'Spare I/O Out
+Spare3C         var PORTD.2 'Spare I/O Out or External Piezo Alarm
+KeypadTxd       var PORTD.3 'Keypad Tx Enable Signal Out
+KeypadRxd       var PORTD.4 'Keypad Rxd Pulse Signal In
+RedLed          var PORTD.5 'Red Led Out
+GreenLed        var PORTD.6 'Green Led Out  
+Piezo   	    var PORTD.7 'Piezo Out
+
+Temp3           var PORTE.0 'OEM NTC Temp Sensor 3 In
+PtcIn           var PORTE.1 'Ptc Strips Sense In
+TxdEnable       var PORTE.2 'Voltage Tap Module Enable Signal Out
+Mclr            var PORTE.3 'Mclr programmer In
+DChgOnOff       var PORTE.4 'Discharge Control On/Off Out
+ChgOnOff        var PORTE.5 'Charge Control On/Off Out
+VoltsRxd        var PORTE.6 'Voltage Tap Data 57600,N,1 In  
+DisplayTxd	    var PORTE.7 'Tv Display Data 57600,8,N,1 Out
+
+'Port F,G Source/Sink 2ma Max
+
+Dip1            var PORTF.0 'Dip1 In
+Dip2            var PORTF.1 'Dip2 In
+Dip3            var PORTF.2 'Dip3 In
+Dip4            var PORTF.3 'Dip4 In
+S0              var PORTF.4 'Multiplexer S0 Out
+S1              var PORTF.5 'Multiplexer S1 Out
+S2              var PORTF.6 'Multiplexer S2 Out  
+EnablePlex	    var PORTF.7 'Enable Multiplexer Signal Out
+
+MetRxd          var PORTG.0 'MetSci Data 9600,8,E,1 In
+Spare4D         var PORTG.1 'Spare I/O + 10k Pull Up Out
+Spare5E         var PORTG.2 'Spare I/O + 10k Pull Up Out
+BatTxd          var PORTG.3 'BatSci Data 9600,8,E,1 Out  
+Spare6F         var PORTG.4 'Spare I/O + 10k Pull Up Out
+
+'*******************************************************************************
+'*********************  Define Variables & Constants  **************************
+'*******************************************************************************
+
+CDat      var word[101]      'Config data word array and config values 0-99
+Errors    var byte[101]      'Error count data byte array 0-99, uses same constants as CDat array (Accumulates consecutive errors) 
+Taps      var byte[18]       'Battery Tap byte array for voltage storage 1-17 (16 Taps) (0 is not used) 0-25.5V
+Supply    var byte[9]        'Battery Tap Module supply voltage byte array (0-7) (8 Tap modules) 0-25.5V
+CanId     var word[10]       'CAN Bus standard 11bit ID storage word (Array 0-9 used) 
+CanIdNo   var byte           'CAN Bus ID Number 0-9 
+CanTest   var byte           'Can test
+
+WholeBars var byte[17]       'Bargraph Whole Chunks
+PartBars  var byte[17]       'Bargraph Part  Chunks
+
+FlagsArray var byte[25]      '0-23 flag byte array OR (|) with BattSciBuffer
+FlagsTemp var byte           'Temporary Flag Store
+FlagsPointer var byte        'Flags Array Pointer
+
+VideoBuffer var byte[500]    'Video Buffer byte array (500 bytes 0-499)
+VideoPointer var word        'Video Buffer Pointer
+VideoSize var word           'Video Buffer Size Used
+Refresh var byte             'Video Screen Refresh Rate Counter
+
+ChkErrCount var byte         'Counts Number of Voltage Tap Module Data Checksum Errors
+SerErrCount var byte         'Counts Number of Voltage Tap Module Serial Data Errors    
+
+WattIn    var WORD	         'Watts In accumulator used during Wh/Ah Counting
+WattOut   var WORD	         'Watts Out accumulator used during Wh/Ah Counting 
+Charge	  var WORD 	         'Charge accumulator used during Wh/Ah Counting
+Discharge var WORD           'Discharge accumulator used during Wh/Ah Counting 
+
+LowTapV   var byte           'Lowest battery tap voltage  0-25.5V
+HighTapV  var byte           'Highest battery tap voltage 0-25.5V
+AvgTapV   var byte           'Average battery tap voltage 0-25.5V
+LowTapN   var byte           'Lowest Voltage Tap Number 1-12
+HighTapN  var byte           'Highest Voltage Tap Number 1-12
+TapDev    var byte           'Tap Deviation (Highest Tap V - Lowest Tap V = TapDev)  0-25.5V
+TapDevSign var byte          'Tap Deviation Voltage Sign + (D43) or -(D45) or " " (D32) ascii code
+OldTapDev var byte           'Preserves Tap Deviation Level that caused error
+OldTapDevSign var byte       'Preserves Tap Deviation Sign that caused error  + (D43) or -(D45) or " " (D32) ascii code
+
+AssistRecalCounter var byte  'Counts Time in seconds Vehicle is Assisting
+RegenRecalCounter var byte   'Counts Time in seconds Vehicle is Regening
+StaticRecalCounter var byte  'Counts Time in seconds Vehicle Pack Voltage is > Recal threshold
+
+WordTemp    var word         'Temporary Word Data Storage
+WordBackup  var word         'Adjustment Routine Storage
+WordCurrent var word         'Adjustment Routine Storage
+DivDummy    var word         'Div32 Dummy variable
+CodeTimer1  var word         'Test Timer1
+CodeTimer2  var word         'Test Timer2
+
+Temp1Adc var word            'Ntc Temp Sensor 1 Adc Value
+Temp2Adc var word            'Ntc Temp Sensor 2 Adc Value
+Temp3Adc var word            'Ntc Temp Sensor 3 Adc Value
+Temp4Adc var word            'Ntc Temp Sensor 4 Adc Value
+Temp1Disp var byte           'Ntc Temp Sensor 1 Display Value
+Temp2Disp var byte           'Ntc Temp Sensor 2 Display Value
+Temp3Disp var byte           'Ntc Temp Sensor 3 Display Value
+Temp4Disp var byte           'Ntc Temp Sensor 4 Display Value
+Temp1Sign var byte           'Ntc Temp Sensor 1 Display Sign Value
+Temp2Sign var byte           'Ntc Temp Sensor 2 Display Sign Value
+Temp3Sign var byte           'Ntc Temp Sensor 3 Display Sign Value
+Temp4Sign var byte           'Ntc Temp Sensor 4 Display Sign Value
+TempSense var word           'Temperature Sensors Adc Input
+
+TempSign var byte            'Temperature Sign for lookup routine
+TempResult var byte          'Temperature Result for lookup routine
+
+'Oem Current Sensor Offsets
+PositiveOffset var byte      'Oem Current Sensor Positive Adc Offset (Calculated each time software starts) 
+NegativeOffset var byte      'Oem Current Sensor Negative Adc Offset (Calculated each time software starts)  
+
+'MenuStuff
+MenuNumber var byte          'Menu Number 0-8 (9)
+MenuStart var byte           'Menu lines 0-9  (10)
+MenuItem var byte            'Menu Item 0-79  (80) Note items 80-89 are special entries
+TextStart var word           'Reacode data memory menu text entry (no) start = (MenuItem * 30)
+Offset var word              'Readcode data memory menu text entry offset
+DataByte var byte            'Byte Text Data from Flash Memory accesed using 'readcode' instruction
+
+'***************************** Start New Variables *******************************
+
+'Bcm variables (Data from BCM Replacer)
+BcmVolts var word           'Battery Voltage from onboard voltage sensors 0-255V
+BcmMaxVolts var word        'Battery Maximum Voltage
+BcmMinVolts var word        'Battery Minimum Voltage
+BcmAmps var word            'Battery Amps from onboard current sensor 
+BcmAmpsSign var byte        'Battery Amps Sign from onboard current sensor (+,-, or space) 
+BcmSoc var word             'Battery Pack Soc from onboard calculation
+BcmHighTemp var byte        'Battery Pack Highest temp from OEM sensors 
+BcmLowTemp var byte         'Battery Pack Lowest temp from OEM sensors
+BcmHighTempSign var byte    'Temperature Variable Sign  Ascii (+,-, or space)
+BcmLowTempSign var byte     'Temperature Variable Sign  Ascii (+,-, or space)
+BcmPtcAdc var word          'Ptc Temp Sensor Adc Value
+BcmWatts var word           'Calculated Bcm Ima Power
+
+'Can variables (Data from LTO BMS)
+
+CLv var word[101]           'LTO Cell [x] Instant Voltage (12 bit Unit 1mv)
+LtoCell var byte            'LTO Cell number 
+
+'Can variables (Data from Orion2 BMS)
+
+CIv var word[101]           'Orion 2 Cell [x] Instant Voltage (16 bit Unit 0.1mv)
+COv var word[101]           'Orion 2 Cell [x] Open Cell Voltage (16 bit Unit 0.1mv)
+CIr var word[101]           'Orion 2 Cell [x] Internal Resistance (15 bit Unit 0.01mohm)  (Bit8 in highbyte is whether cell is shunting (1= current being shunted, 0= it is not))
+CBf var byte[101]           'Orion 2 Cell [x] Balancing flag (0= Not shunting) (1= shunting)
+CEd var byte[101]           'Stores Individual lithium cell error codes (0-255)
+CanDispLoop var byte        'General Counter
+SubDisp var byte            'Which can cell data screen to display 0-3
+
+CanVolts var word          'Battery Voltage from Orion 2 BMS 
+CanMaxVolts var word       'Battery Maximum Voltage
+CanMinVolts var word       'Battery Minimum Voltage
+CanAmps var word           'Battery Amps from Orion 2 BMS to one decimal place. eg 105 = 10.5A
+CanAmpsSign var byte       'Battery Amps Sign from Orion 2 BMS (+,-, or space) 
+CanSoc     var word        'Battery Pack Soc from Orion 2 BMS
+CanHighTemp var byte       'Battery Pack Highest temp from Orion 2 BMS 
+CanLowTemp var byte        'Battery Pack Lowest temp from Orion 2 BMS 
+CanHighTempSign var byte   'Temperature Variable Sign  Ascii (+,-, or space)
+CanLowTempSign var byte    'Temperature Variable Sign  Ascii (+,-, or space)
+CanWatts var word          'Calculated Can Ima Power
+CanTimeout var byte        'Counts Can data loops (0-255) and timesout if no data recieved
+
+NoCan06B0Data var byte     'Orion 2 Can missed message counter 
+Crc06B0Err var byte        'Orion 2 Can Checkum error counter
+NoCan00CBData var byte     'Orion 2 Can missed cell message counter 
+Crc00CBErr var byte        'Orion 2 Can Checkum error counter
+
+'Values used for Insight BCM BATTSCI Serial Transmission
+BattSciBuffer var byte[25] '0-23 data byte array (Transmit Buffer) 
+BattsciVolts var word      'Battsci Voltage 0-255V
+BattsciAmps var word       'Battsci Amps 
+BattsciAmpsSign var byte   'Battsci (+,-, or space)  
+BattsciSoc     var word    'Battsci Pack Soc 
+BattsciTemporary var word  'Battsci Temporary Variable 
+BattsciHighTemp var byte   'Battsci Pack Highest temp 
+BattsciLowTemp var byte    'Battsci Pack Lowest temp 
+
+'Values used for AhWh calculations 
+PackVolts var word          'Battery Voltage 
+PackAmps var word           'Battery Amps 
+PackAmpsSign var byte       'Amps Current Sign + (D43) or -(D45) or =(D61) ascii code
+PackSoc     var word        'Battery Pack Soc 
+PackWatts var word          'Calculated Ima Power
+
+'Values used for Control & Error Detection 
+ControlVolts var word        'Battery Voltage 
+ControlAmps var word         'Battery Amps 
+ControlAmpsSign var byte     'Amps Current Sign + (D43) or -(D45) or =(D61) ascii code
+ControlSoc     var word      'Battery Pack Soc 
+ControlHighTemp var word     'Battery Pack Highest temp 
+ControlLowTemp var word      'Battery Pack Lowest temp 
+ControlHighTempSign var byte 'Temperature Variable Sign  Ascii (+,-, or space)
+ControlLowTempSign var byte  'Temperature Variable Sign  Ascii (+,-, or space)
+ControlPtcAdc var byte       'Ptc Adc Value
+
+DispAmps var word            'Amps Display Variable calculated from actual amps x current +% multiplication factor
+
+'Values used for Centigrade to Farenheit conversion
+Sign var byte                'Temperature Sign +/-
+Result var byte              'Temperature Conversion Result
+CanHTSign var byte           'CAN High Temp Sign
+CanLTSign var byte           'CAN High Temp Sign
+CanHT var byte               'CAN High Temp Value
+CanLT var byte               'CAN High Temp Value
+BcmHTSign var byte           'BCM High Temp Sign
+BcmLTSign var byte           'BCM High Temp Sign
+BcmHT var byte               'BCM High Temp Value
+BcmLT var byte               'BCM High Temp Value     
+
+'***************************** End New Variables *******************************
+
+'OddStuff
+MetSciData  var byte        'MetSci Current Data byte (Recieve)
+MetSciFlag  var byte        'MetSci Flag Byte 
+CounterMs var byte          'Counter byte resets every XXms (60ms)
+TxdCount var byte           '$87 + $AA Transmission counter byte 
+
+B3Value var byte            'MetSci B3 packet data value (One byte comes immediately after B3 byte)
+B4Value var byte            'MetSci B4 packet data value (One byte comes immediately after B4 byte)
+
+Check_Sum   var byte        'Check Sum Variable
+Check_Count var Byte        'Check Sum Loop Counter  reserved (Do not use elsewhere!)
+Counter_1 var byte          'General Counter
+Counter_2 var byte          'General Counter
+
+'Local General Variables    (Reusable)
+Gen0 var byte               'General Byte
+Gen1 var byte               'General Byte
+Gen2 var byte               'General Byte (Not yet used)
+Gen3 var byte               'General Byte
+Word0 var word              'General Temporary Word
+Word1 var word              'General Temporary Word (Not yet used)
+
+'***********  Error Bytes (OR with relevant BattSci [X] Array bytes ************
+
+Error13 var byte            'BCM BATTSCI Error Byte [13] 
+'%00001000 Dtc66 P1568 Voltage Deviation, %01000000 Dtc65 P1580 Battery Current Circuit Problem, %00100000 Dtc70 P1568 Ptc Signal Circuit Problem
+
+Error14 var byte            'BCM BATTSCI Error Byte [14]
+'Spare
+
+Error15 var byte            'BCM BATTSCI Error Byte [15]
+'%00001000 Dtc67 P1568 Temp Signal Circuit Problem, %00100000 Dtc79 P1635 BCM Module Problem
+
+Error16 var byte            'BCM BATTSCI Error Byte [16]
+'%00100000 Dtc63 P1448 Battery Module Overheating
+
+Error17 var byte            'BCM BATTSCI Error Byte [17]
+'%00000001 Dtc73 P1449 Battery cell Overheating (ptc), %00000100 Dtc72 P1449 Battery Module Overheating, %00001000 Dtc74 P1449 Voltage Deviation      
+
+Key var byte                'Value of Key pressed returned from Keypad routine 0-12  0=No Key Pressed
+KeyCount var byte           'Key Data Pulse duration in 1ms units 
+MenuType var byte           'Menu Types (0 = Flag.  1 = ByteV. 2 = WordV.  3 = Command. 255 = Reserved)
+ImaControlByte var byte     'Ima Control Byte $00 OK, $10=No assist, $20=No regen, $30 = No assist/regen
+
+Value1 var byte             'Volts Input (Serial data) 0-25.5V
+Value2 var byte             'Volts Input (Serial data) 0-25.5V
+Value3 var byte             'Volts Input (Serial data) 0-25.5V
+
+Action    var byte          'Designated Action 
+
+FlagBits0  var BYTE	        '0 Flag Bits Byte (0-7)  
+FlagBits1  var BYTE	        '1 Flag Bits Byte (0-7)  
+'FlagBits2  var BYTE	    '2 Flag Bits Byte (0-7)  
+
+'FlagBits0
+
+InverseVideoFlag var FlagBits0.Bit0   '0 or 1  (0 = Normal Video) (1 = Reverse Video)
+BufferFlag var FlagBits0.bit1         '0 or 1  (0 = OK to update Buffer) (1 = Wait)
+KeyFlag var FlagBits0.bit2            '0 or 1  Key Flag set whenever a timed pulse has been recieved from KeyPad
+MSecFlag var FlagBits0.bit3           '0 or 1  (Set every MilliSecond)
+RegenFlag var FlagBits0.Bit4          '0 or 1  (0 = Regen Enabled) (1 = Regen Disabled)
+AssistFlag var FlagBits0.Bit5         '0 or 1  (0 = Assist Enabled) (1 = Assist Disabled)  
+FanLowFlag var FlagBits0.bit6         '0 or 1  (0 = Fan Low Off) (1 = Fan Low On)
+FanHighFlag var FlagBits0.bit7        '0 or 1  (0 = Fan High Off) (1 = Fan High On)
+
+'FlagBits1
+
+AlarmSetFlag var FlagBits1.Bit0       '0 or 1  (0 = No Alarms  1= Alarm Condition) 
+AlarmMuteFlag var FlagBits1.Bit1      '0 or 1  (0 = Piezo Alarm Un-Muted  1= Piezo Alarm Muted) 
+AutoRecoveryFlag var FlagBits1.Bit2   '0 or 1  (0 = Auto Error Recovery Off) (1 = On) 
+IgnitionFlag var FlagBits1.bit3       '0 or 1  (0 = Ignition Off) (1 = Ignition Turned Off) 
+'WdTestFlag var FlagBits1.bit4         '0 or 1  (0 = WdTest Off) (1 = WdTest On)  
+EnableChecksFlag var FlagBits1.bit5   '0 or 1  (0 = Check Disabled) (1 = Checks Enabled) (Delays errors checks until system stable) 
+VoltageFlag var FlagBits1.bit6        '0 or 1  (0 = Get Voltage Data) (1 = Don't get Voltage Data)  
+CurrentFlag var FlagBits1.bit7        '0 or 1  (0 = Get Current Data) (1 = Don't get Current Data)     
+
+'Amp & Watt hour counting constants
+
+UnitWh con 3600     'Unit constant for Wh calculations (3600 for 1hz readings) When using amps with one decimal place eg 20.6A
+UnitAh con 36       'Unit constant for Ah calculations (36 for 1hz readings) When using amps with one decimal place eg 20.6A
+
+'KeyPad Constants
+
+Key0 con 0          'Key 0
+Key1 con 1          'Key 1
+Key2 con 2          'Key 2
+Key3 con 3          'Key 3
+Key4 con 4          'Key 4
+Key5 con 5          'Key 5 
+Key6 con 6          'Key 6
+Key7 con 7          'Key 7
+Key8 con 8          'Key 8
+Key9 con 9          'Key 9
+KeyStar con 10      'Key *
+KeyHash con 11      'Key #
+
+'Menu Constants
+
+MenuMax con 85      'Maximum number of menu entries
+MenuMin con 66      'Minimum number of menu entries
+
+'*******************************************************************************
+'********************* Eeprom Menu Word Array Details. *************************
+'*******************************************************************************
+
+'Eeprom space bytes from 855-999 is available for other use
+
+'Config Array Index Word Constant Notes *  Each Word occupies two bytes/locations
+'The Eeprom entry at 400+ tells you the type of Menu entry. 
+'0 = Settable Flag.  1 = Adjustable Variable Byte. 2 = Adjustable Variable Word. 
+'3 = Command Function. 255 = Reserved/Spare
+
+'Note table entries 0 - 59 are configuration variables or flags    
+
+BcmMode        con 0    : EEPROM 0, [2]   : EEPROM 200, [2]   : EEPROM 400, [1] 'CDat(0) = Bcm Mode (0=Bcm) (1=Bcm & Can) (2=Can) 0-2
+                        : EEPROM 1, [0]   : EEPROM 201, [0]   : EEPROM 401, [0]
+  
+BattsciMode    con 1    : EEPROM 2, [1] : EEPROM 202, [1]  : EEPROM 402, [0]    'CDat(1) = BattSciMode (0=Use Bcm Data) (1=Use Can Data) 0-1
+                        : EEPROM 3, [0] : EEPROM 203, [0]  : EEPROM 403, [0]    
+
+DisplayMode    con 2    : EEPROM 4, [1] : EEPROM 204, [1]  : EEPROM 404, [1]    'CDat(2) = Primary Display Mode (0=BcmD) (1=CanD) (2=Diagnostics) (3=Errors) (4=Splash) (5=Blank Screen) 0-5   
+                        : EEPROM 5, [0] : EEPROM 205, [0]  : EEPROM 405, [0]
+
+ErrorChecks    con 3    : EEPROM 6, [0]   : EEPROM 206, [0]   : EEPROM 406, [1] 'CDat(3) = Error Checks (0=No Checks) (1=Bcm Checks) (2=Both Checks) (3=Can Checks) 0-3 
+                        : EEPROM 7, [0]   : EEPROM 207, [0]   : EEPROM 407, [0]
+
+AlarmFlag      con 4    : EEPROM 8, [1]   : EEPROM 208, [1]   : EEPROM 408, [0] 'CDat(4) = Alarm Notification Flag (0=Off) (1=On) 
+                        : EEPROM 9, [0]   : EEPROM 209, [0]   : EEPROM 409, [0]
+
+PtcFlag        con 5    : EEPROM 10, [0]   : EEPROM 210, [0]   : EEPROM 410, [0] 'CDat(5) = Ptc Strips Present Flag  (0=Off) (1=On)
+                        : EEPROM 11, [0]   : EEPROM 211, [0]   : EEPROM 411, [0]
+
+PalFlag        Con 6    : EEPROM 12, [1]   : EEPROM 212, [1]   : EEPROM 412, [0] 'CDat(6) = Pal/Ntsc TV Mode (0=Ntsc) (1=Pal)
+                        : EEPROM 13, [0]   : EEPROM 213, [0]   : EEPROM 413, [0]
+
+BeepFlag       con 7    : EEPROM 14, [0]   : EEPROM 214, [0]   : EEPROM 414, [0] 'CDat(7) = BeepFlag Beep Bit (0=Off) (1=On) 
+                        : EEPROM 15, [0]   : EEPROM 215, [0]   : EEPROM 415, [0]
+                   
+BatVMax        con 8    : EEPROM 16, [250] : EEPROM 216, [250] : EEPROM 416, [1] 'CDat(8) = Battery Max Volts 0-255V (Def 190V)
+                        : EEPROM 17, [0]   : EEPROM 217, [0]   : EEPROM 417, [0]
+                   
+BatVMin        con 9    : EEPROM 18, [120] : EEPROM 218, [120] : EEPROM 418, [1] 'CDat(9) = Battery Min Volts 0-255V (Def 120V)
+                        : EEPROM 19, [0]   : EEPROM 219, [0]   : EEPROM 419, [0]
+                   
+BatTMax        con 10   : EEPROM 20, [45] : EEPROM 220, [45]  : EEPROM 420, [1] 'CDat(10) = Bat Temp Max 45C IMA Shuts down
+                        : EEPROM 21, [0]  : EEPROM 221, [0]   : EEPROM 421, [0]
+                   
+BatTMin        con 11   : EEPROM 22, [15] : EEPROM 222, [15]  : EEPROM 422, [1] 'CDat(11) = Bat Temp Min -15C IMA Shuts down
+                        : EEPROM 23, [0]  : EEPROM 223, [0]   : EEPROM 423, [0]            
+                   
+BatFanH        con 12   : EEPROM 24, [35] : EEPROM 224, [35]  : EEPROM 424, [1] 'CDat(12) = Bat Fan High Turn On (Def >35C)
+                        : EEPROM 25, [0]  : EEPROM 225, [0]   : EEPROM 425, [0]
+                   
+BatFanL        con 13   : EEPROM 26, [30] : EEPROM 226, [30]  : EEPROM 426, [1] 'CDat(13) = Bat Fan Low Turn On (Def >30C)
+                        : EEPROM 27, [0]  : EEPROM 227, [0]   : EEPROM 427, [0]
+                   
+VoltageHack    con 14   : EEPROM 28, [0]  : EEPROM 228, [0]   : EEPROM 428, [1] 'CDat(14) = Voltage Hack % (0-100)
+                        : EEPROM 29, [0]  : EEPROM 229, [0]   : EEPROM 429, [0]
+                   
+PackCComp      con 15   : EEPROM 30, [0]  : EEPROM 230, [0]   : EEPROM 430, [1] 'CDat(15) = Pack Current Compensation (0-25.5A)
+                        : EEPROM 31, [0]  : EEPROM 231, [0]   : EEPROM 431, [0]
+                   
+MaxSoc         con 16   : EEPROM 32, [90] : EEPROM 232, [90]  : EEPROM 432, [1] 'CDat(16) = Max Calculated Soc % (Def 90%)
+                        : EEPROM 33, [0]  : EEPROM 233, [0]   : EEPROM 433, [0]
+                   
+MinSoc         con 17   : EEPROM 34, [10] : EEPROM 234, [10]  : EEPROM 434, [1] 'CDat(17) = Min Calculated Soc % (Def 10%)
+                        : EEPROM 35, [0]  : EEPROM 235, [0]   : EEPROM 435, [0]
+                   
+CapMah         con 18   : EEPROM 36, [$88]  : EEPROM 236, [$88]  : EEPROM 436, [2] 'CDat(18) = Adjust Maximum Battery Capacity (0-65535mah)
+                        : EEPROM 37, [$13]  : EEPROM 237, [$13]  : EEPROM 437, [0] '$1964 = 6500 Dec (Mah)  $1388 = 5000 Dec (Mah) $157C = 5500 Dec (Mah)
+                   
+RemMah         con 19   : EEPROM 38, [$A6]  : EEPROM 238, [$A6]  : EEPROM 438, [2] 'CDat(19) = Adjust Live Remaining Battery Capacity (0-65535mah) $0EA6 = 3750D = 75% of 5000
+                        : EEPROM 39, [$0E]  : EEPROM 239, [$0E]  : EEPROM 439, [0] '$130B = 4875Mah = 75% of 6500Mah (1300D = 20%) (1625D = 25%) (1820D = 28%) (3900D = 60%) (4875D = 75%) (6500D = 100%) 
+
+BatTapModules  con 20   : EEPROM 40, [5] : EEPROM 240, [5]  : EEPROM 440, [1]    'CDat(20) = Number of Battery Taps in use (Def 5 Tap Modules) = 10 Taps)
+                        : EEPROM 41, [0] : EEPROM 241, [0]  : EEPROM 441, [0]
+                   
+AhWhMode       con 21   : EEPROM 42, [1] : EEPROM 242, [1]  : EEPROM 442, [1]    'CDat(21) = AhWh Counting Mode. (0=Don't bother) (1=Use Bcm Data) (2=Use Can Data)  
+                        : EEPROM 43, [0] : EEPROM 243, [0]  : EEPROM 443, [0]        
+                   
+PtcLimit       con 22   : EEPROM 44, [34] : EEPROM 244, [34]  : EEPROM 444, [1]  'CDat(22) = Ptc Adc Limit  34 = approx 500R PTC Resistance
+                        : EEPROM 45, [0] : EEPROM 245, [0]  : EEPROM 445, [0]                     
+                                    
+TapDevLimit    con 23   : EEPROM 46, [4] : EEPROM 246, [4]  : EEPROM 446, [1]    'CDat(23) = Voltage Tap Deviaiton Limit 1V = 10  7 = 700mv 5 = 500mv 2 = 200mv
+                        : EEPROM 47, [0] : EEPROM 247, [0]  : EEPROM 447, [0]  
+                   
+TapVpComp      con 24   : EEPROM 48, [0] : EEPROM 248, [0]  : EEPROM 448, [1]    'CDat(24) = Voltage Tap Positive Add Compensation 100mv per unit (1 = 100mv)  (If taps are under reading)
+                        : EEPROM 49, [0] : EEPROM 249, [0]  : EEPROM 449, [0]  
+                   
+TapVnComp      con 25   : EEPROM 50, [0] : EEPROM 250, [0]  : EEPROM 450, [1]    'CDat(25) = Voltage Tap Negative Subtract Compensation 100mv per unit (6 = 600mv) (If taps are over reading)
+                        : EEPROM 51, [0] : EEPROM 251, [0]  : EEPROM 451, [0]      
+                                   
+InVideo        con 26   : EEPROM 52, [1] : EEPROM 252, [1]  : EEPROM 452, [0]    'CDat(26) = Inverse Video Alarm Enable (0 = Disabled) (1 = Enabled)
+                        : EEPROM 53, [0] : EEPROM 253, [0]  : EEPROM 453, [0]    
+                   
+CurrentHack    con 27   : EEPROM 54, [147] : EEPROM 254, [147]  : EEPROM 454, [1] 'CDat(27) = +30% Current Hack Multiplication Factor (100 = No Effect) (125=20% 147=30% 166=40% 200=50%)
+                        : EEPROM 55, [0] : EEPROM 255, [0]  : EEPROM 455, [0]
+                   
+TempSpoof      con 28   : EEPROM 56, [30] : EEPROM 256, [30]  : EEPROM 456, [1]  'CDat(28) = TempSpoof (Disabled =0) (Enabled = 1 to 255 C)   (Fakes Battery Temperature)
+                        : EEPROM 57, [0] : EEPROM 257, [0]  : EEPROM 457, [0]  
+                   
+DelayMs        con 29   : EEPROM 58, [100] : EEPROM 258, [100]  : EEPROM 458, [1]  'CDat(29) = DelayMs (Byte variable 0-255ms) Allows current sensor filter capacitor to charge
+                        : EEPROM 59, [0] : EEPROM 259, [0]  : EEPROM 459, [0]   
+                   
+RoundUp        con 30   : EEPROM 60, [0] : EEPROM 260, [0]  : EEPROM 460, [1]    'CDat(30) = RoundUp (Byte variable 0-255) Round up current sensor amps value to nearest decimal point
+                        : EEPROM 61, [0] : EEPROM 261, [0]  : EEPROM 461, [0]    
+                   
+ChgComp        con 31   : EEPROM 62, [0] : EEPROM 262, [0]  : EEPROM 462, [1]    'CDat(31) = Charge Compensation (Byte variable 0-255) Adds current to soc charge count routine
+                        : EEPROM 63, [0] : EEPROM 263, [0]  : EEPROM 463, [0] 
+                   
+DisComp        con 32   : EEPROM 64, [0] : EEPROM 264, [0]  : EEPROM 464, [1]    'CDat(32) = Discharge Compensation (Byte variable 0-255) Adds current to soc discharge count routine
+                        : EEPROM 65, [0] : EEPROM 265, [0]  : EEPROM 465, [0]    
+                   
+DtcEnable      con 33   : EEPROM 66, [0] : EEPROM 266, [0]  : EEPROM 466, [0]    'CDat(33) = Dtc Code Transmission Flag (0=Disabled) (1=Enabled)
+                        : EEPROM 67, [0] : EEPROM 267, [0]  : EEPROM 467, [0]    
+                   
+ConError       con 34   : EEPROM 68, [2] : EEPROM 268, [2]  : EEPROM 468, [1]    'CDat(34) = Consecutive Error Limit Byte (0 to 255)  (Default 2)
+                        : EEPROM 69, [0] : EEPROM 269, [0]  : EEPROM 469, [0]                       
+                   
+PosRecalVolts  con 35   : EEPROM 70, [170] : EEPROM 270, [170]  : EEPROM 470, [1]  'CDat(35) = Positive Recalibration Voltage Threshold (172V)
+                        : EEPROM 71, [0] : EEPROM 271, [0]  : EEPROM 471, [0]
+                                           
+PosRecalAmps   con 36   : EEPROM 72, [4] : EEPROM 272, [4]  : EEPROM 472, [1]      'CDat(36) = Positive Recalibration Amps Threshold (4 = 4 Amps)
+                        : EEPROM 73, [0] : EEPROM 273, [0]  : EEPROM 473, [0]
+                        
+PosRecalTime   con 37   : EEPROM 74, [90] : EEPROM 274, [90] : EEPROM 474, [1]   'CDat(37) = Positive Recalibration Time Threshold (120 Seconds)  (Max 255)
+                        : EEPROM 75, [0]   : EEPROM 275, [0]   : EEPROM 475, [0]
+                        
+PosRecalLevel  con 38   : EEPROM 76, [80] : EEPROM 276, [80]  : EEPROM 476, [1]    'CDat(38) = Positive Recalibration % Level (75 = 75% of inital capacity)
+                        : EEPROM 77, [0]  : EEPROM 277, [0]   : EEPROM 477, [0]                                                          
+                        
+NegRecalVolts  con 39   : EEPROM 78, [144] : EEPROM 278, [144]  : EEPROM 478, [1]  'CDat(39) = Negative Recalibration Voltage Threshold (144V)
+                        : EEPROM 79, [0] : EEPROM 279, [0]  : EEPROM 479, [0]
+                        
+NegRecalAmps   con 40   : EEPROM 80, [4] : EEPROM 280, [4]  : EEPROM 480, [1]      'CDat(40) = Negative Recalibration Amps Threshold (4 = 4 Amps)
+                        : EEPROM 81, [0] : EEPROM 281, [0]  : EEPROM 482, [0] 
+                                           
+NegRecalTime   con 41   : EEPROM 82, [90] : EEPROM 282, [90]  : EEPROM 482, [1]  'CDat(41) = Negative Recalibration Time Threshold (120 Seconds)  (Max 255)
+                        : EEPROM 83, [0] : EEPROM 283, [0]  : EEPROM 483, [0]
+                   
+NegRecalLevel  con 42   : EEPROM 84, [20] : EEPROM 284, [20]  : EEPROM 484, [1]    'CDat(42) = Negative Recalibration % Level (20 = 20% of inital capacity)
+                        : EEPROM 85, [0] : EEPROM 285, [0]  : EEPROM 485, [0]                           
+                                                
+StatRecalVolts con 43   : EEPROM 86, [166] : EEPROM 286, [166]  : EEPROM 486, [1]  'CDat(43) = Static Voltage Recalibration Threshold > (166V)
+                        : EEPROM 87, [0] : EEPROM 287, [0]  : EEPROM 487, [0]                      
+                                                
+RecalFlag      con 44   : EEPROM 88, [1] : EEPROM 288, [1]  : EEPROM 488, [0]      'CDat(44) = Recalibration Check Flag (0 = skip checks) (1 = perform checks)
+                        : EEPROM 89, [0] : EEPROM 289, [0]  : EEPROM 489, [0] 
+                        
+FanControl     con 45   : EEPROM 90, [0] : EEPROM 290, [0]  : EEPROM 490, [1]      'CDat(45) = Battery Fan Control (0 = Auto) (1 = Low) (2 = High) 
+                        : EEPROM 91, [0] : EEPROM 291, [0]  : EEPROM 491, [0]  
+                                                
+LiCells        con 46   : EEPROM 92, [96] : EEPROM 292, [96]  : EEPROM 492, [1]    'CDat(46) = Number of Cells in Lithium Pack (1-255) 
+                        : EEPROM 93, [0] : EEPROM 293, [0]  : EEPROM 493, [0]                      
+                                                
+LiMaxVolts     con 47   : EEPROM 94, [$8C] : EEPROM 294, [$8C]  : EEPROM 494, [2]  'CDat(47) = Lithium cell maximum voltage to 1mv (0-6.553V)  Default 2.7V = 2700 = $0A8C
+                        : EEPROM 95, [$0A] : EEPROM 295, [$0A]  : EEPROM 495, [0] 
+                        
+LiMinVolts     con 48   : EEPROM 96, [$D0] : EEPROM 296, [$D0]  : EEPROM 496, [2]  'CDat(48) = Lithium cell minimum voltage to 1mv (0-6.553V)  Default 2V = 2000 = $07D0
+                        : EEPROM 97, [$07] : EEPROM 297, [$07]  : EEPROM 497, [0]                         
+                                                                       
+AutoRecover    con 49   : EEPROM 98, [0] : EEPROM 298, [0]  : EEPROM 498, [0]   'CDat(49) = Auto Error Recovery Flag (0=Off 1=On)
+                        : EEPROM 99, [0] : EEPROM 299, [0]  : EEPROM 499, [0]       
+                        
+ExtPiezo       con 50   : EEPROM 100, [0] : EEPROM 300, [0]  : EEPROM 500, [0]  'CDat(50) = Ext Piezo Alarm (0=Off 1=On)
+                        : EEPROM 101, [0] : EEPROM 301, [0]  : EEPROM 501, [0]        
+
+GraphScale     con 51   : EEPROM 102, [0] : EEPROM 302, [0]  : EEPROM 502, [1]  'CDat(51) = Bar Graph Scale Factor (0=Off 1=/2 2=/4 3=/8)
+                        : EEPROM 103, [0] : EEPROM 303, [0]  : EEPROM 503, [0]  
+                        
+BcmAmpsOffset  con 52   : EEPROM 104, [0] : EEPROM 304, [0]  : EEPROM 504, [0]  'CDat(52) = BCM Amps Offset (Sensor +/- deviation value used in calculations) (0=Off 1=On)
+                        : EEPROM 105, [0] : EEPROM 305, [0]  : EEPROM 505, [0] 
+                        
+CentFaren      con 53   : EEPROM 106, [0] : EEPROM 306, [0]  : EEPROM 506, [0]  'CDat(53) = Centigrade / Farenheit Conversion (0=C 1=F)
+                        : EEPROM 107, [0] : EEPROM 307, [0]  : EEPROM 507, [0]      
+                        
+BatTaps        con 54   : EEPROM 108, [10] : EEPROM 308, [10]  : EEPROM 508, [1] 'CDat(54) = Battery Taps 1-16 (16 taps maximum)
+                        : EEPROM 109, [0] : EEPROM 309, [0]  : EEPROM 509, [0]                              
+                        
+CanMode        con 55   : EEPROM 110, [2] : EEPROM 310, [2]  : EEPROM 510, [1]  'CDat(55) = CAN Mode. (0=No CAN) (1=Orion2) (2=LTO) (3=Civic/Crz)
+                        : EEPROM 111, [0] : EEPROM 311, [0]  : EEPROM 511, [0]   
+                        
+CanId0         con 56   : EEPROM 112, [$04] : EEPROM 312, [$04]  : EEPROM 512, [2]  'CDat(56) = CAN ID 0  $204
+                        : EEPROM 113, [$02] : EEPROM 313, [$02]  : EEPROM 513, [0]     
+                        
+CanId1         con 57   : EEPROM 114, [$03] : EEPROM 314, [$03]  : EEPROM 514, [2]  'CDat(57) = CAN ID 1 $203
+                        : EEPROM 115, [$02] : EEPROM 315, [$02]  : EEPROM 515, [0]     
+                        
+CanId2         con 58   : EEPROM 116, [$07] : EEPROM 316, [$07]  : EEPROM 516, [2]  'CDat(58) = CAN ID 2 $207
+                        : EEPROM 117, [$02] : EEPROM 317, [$02]  : EEPROM 517, [0]    
+                        
+CanId3         con 59   : EEPROM 118, [$08] : EEPROM 318, [$08]  : EEPROM 518, [2]  'CDat(59) = CAN ID 3 $208
+                        : EEPROM 119, [$02] : EEPROM 319, [$02]  : EEPROM 519, [0]   
+                        
+CanId4         con 60   : EEPROM 120, [$09] : EEPROM 320, [$09]  : EEPROM 520, [2]  'CDat(60) = CAN ID 4 $209
+                        : EEPROM 121, [$02] : EEPROM 321, [$02]  : EEPROM 521, [0]     
+                        
+CanId5         con 61   : EEPROM 122, [$0A] : EEPROM 322, [$0A]  : EEPROM 522, [2]  'CDat(61) = CAN ID 5 $20A
+                        : EEPROM 123, [$02] : EEPROM 323, [$02]  : EEPROM 523, [0]     
+                        
+CanId6         con 62   : EEPROM 124, [$0B] : EEPROM 324, [$0B]  : EEPROM 524, [2]  'CDat(62) = CAN ID 6 $20B
+                        : EEPROM 125, [$02] : EEPROM 325, [$02]  : EEPROM 525, [0]    
+                        
+CanId7         con 63   : EEPROM 126, [$0C] : EEPROM 326, [$0C]  : EEPROM 526, [2]  'CDat(63) = CAN ID 7 $20C
+                        : EEPROM 127, [$02] : EEPROM 327, [$02]  : EEPROM 527, [0]   
+                        
+CanId8         con 64   : EEPROM 128, [0] : EEPROM 328, [0]  : EEPROM 528, [2]  'CDat(64) = CAN ID 8
+                        : EEPROM 129, [0] : EEPROM 329, [0]  : EEPROM 529, [0]    
+                        
+CanId9         con 65   : EEPROM 130, [0] : EEPROM 330, [0]  : EEPROM 530, [2]  'CDat(65) = CAN ID 9
+                        : EEPROM 131, [0] : EEPROM 331, [0]  : EEPROM 531, [0]           
+                        
+'Note entries 66 - 68 are directly actionable commands                        
+                        
+                        : EEPROM 132, [0] : EEPROM 332, [0]  : EEPROM 532, [0]  'CDat(66) = "0 Spare Entry                "
+                        : EEPROM 133, [0] : EEPROM 333, [0]  : EEPROM 533, [0]     
+                        
+                        : EEPROM 134, [0] : EEPROM 334, [0]  : EEPROM 534, [0]  'CDat(67) = "1 Backup Data To Eeprom      "  
+                        : EEPROM 135, [0] : EEPROM 335, [0]  : EEPROM 535, [0]                  
+                        
+                        : EEPROM 136, [0] : EEPROM 336, [0]  : EEPROM 536, [0]  'CDat(68) = "2 Restore Data From Eeprom   "
+                        : EEPROM 137, [0] : EEPROM 337, [0]  : EEPROM 537, [0]  
+                        
+'Note entries 69 - 85 are direct pic processor port toggle flags                               
+                        
+                        : EEPROM 138, [0] : EEPROM 338, [0]  : EEPROM 538, [0]  'CDat(69) = "3 Toggle Output Bat Fan Low  "
+                        : EEPROM 139, [0] : EEPROM 339, [0]  : EEPROM 539, [0]            
+                        
+                        : EEPROM 140, [0] : EEPROM 340, [0]  : EEPROM 540, [0]  'CDat(70) = "4 Toggle Output Bat Fan High " 
+                        : EEPROM 141, [0] : EEPROM 341, [0]  : EEPROM 541, [0]    
+                        
+                        : EEPROM 142, [0] : EEPROM 342, [0]  : EEPROM 542, [0]  'CDat(71) = "5 Toggle Output Piezo Alarm  "
+                        : EEPROM 143, [0] : EEPROM 343, [0]  : EEPROM 543, [0]   
+                        
+                        : EEPROM 144, [0] : EEPROM 344, [0]  : EEPROM 544, [0]  'CDat(72) = "6 Toggle Output Spare1A      "
+                        : EEPROM 145, [0] : EEPROM 345, [0]  : EEPROM 545, [0] 
+                        
+                        : EEPROM 146, [0] : EEPROM 346, [0]  : EEPROM 546, [0]  'CDat(73) = "7 Toggle Output Spare2B      "
+                        : EEPROM 147, [0] : EEPROM 347, [0]  : EEPROM 547, [0] 
+                        
+                        : EEPROM 148, [0] : EEPROM 348, [0]  : EEPROM 548, [0]  'CDat(74) = "8 Toggle Output Spare3C      "
+                        : EEPROM 149, [0] : EEPROM 349, [0]  : EEPROM 549, [0] 
+                        
+                        : EEPROM 150, [0] : EEPROM 350, [0]  : EEPROM 550, [0]  'CDat(75) = "9 Toggle Output ChgOnOff     "
+                        : EEPROM 151, [0] : EEPROM 351, [0]  : EEPROM 551, [0]   
+                        
+                        : EEPROM 152, [0] : EEPROM 352, [0]  : EEPROM 552, [0]  'CDat(76) = "0 Toggle Output ChargePwm    "
+                        : EEPROM 153, [0] : EEPROM 353, [0]  : EEPROM 553, [0] 
+                        
+                        : EEPROM 154, [0] : EEPROM 354, [0]  : EEPROM 554, [0]  'CDat(77) = "1 Toggle Output SclClock     "
+                        : EEPROM 155, [0] : EEPROM 355, [0]  : EEPROM 555, [0] 
+                        
+                        : EEPROM 156, [0] : EEPROM 356, [0]  : EEPROM 556, [0]  'CDat(78) = "2 Toggle Output SdiData      "
+                        : EEPROM 157, [0] : EEPROM 357, [0]  : EEPROM 557, [0] 
+                        
+                        : EEPROM 158, [0] : EEPROM 358, [0]  : EEPROM 558, [0]  'CDat(79) = "3 Toggle Output SdoData      "
+                        : EEPROM 159, [0] : EEPROM 359, [0]  : EEPROM 559, [0] 
+                        
+                        : EEPROM 160, [0] : EEPROM 360, [0]  : EEPROM 560, [0]  'CDat(80) = "4 Toggle Output CoolPwm      "
+                        : EEPROM 161, [0] : EEPROM 361, [0]  : EEPROM 561, [0]     
+                        
+                        : EEPROM 162, [0] : EEPROM 362, [0]  : EEPROM 562, [0]  'CDat(81) = "5 Toggle Output HeatPwm      "
+                        : EEPROM 163, [0] : EEPROM 363, [0]  : EEPROM 563, [0] 
+                        
+                        : EEPROM 164, [0] : EEPROM 364, [0]  : EEPROM 564, [0]  'CDat(82) = "6 Toggle Output Spare4D      "
+                        : EEPROM 165, [0] : EEPROM 365, [0]  : EEPROM 565, [0] 
+                        
+                        : EEPROM 166, [0] : EEPROM 366, [0]  : EEPROM 566, [0]  'CDat(83) = "7 Toggle Output Spare5E      "
+                        : EEPROM 167, [0] : EEPROM 367, [0]  : EEPROM 567, [0] 
+                        
+                        : EEPROM 168, [0] : EEPROM 368, [0]  : EEPROM 568, [0]  'CDat(84) = "8 Toggle Output Spare6F      "
+                        : EEPROM 169, [0] : EEPROM 369, [0]  : EEPROM 569, [0] 
+                        
+                        : EEPROM 170, [0] : EEPROM 370, [0]  : EEPROM 570, [0]  'CDat(85) = "9 Toggle Output DChgOnOff    "
+                        : EEPROM 171, [0] : EEPROM 371, [0]  : EEPROM 571, [0] 
+                                                                                
+                        : EEPROM 172, [0] : EEPROM 372, [0]  : EEPROM 572, [0]  'CDat(86) = "0 Set Bit0 %00000001         "
+                        : EEPROM 173, [0] : EEPROM 373, [0]  : EEPROM 573, [0]
+                        
+                        : EEPROM 174, [0] : EEPROM 374, [0]  : EEPROM 574, [0]  'CDat(87) = "1 Set Bit1 %00000010         "
+                        : EEPROM 175, [0] : EEPROM 375, [0]  : EEPROM 575, [0]
+                        
+                        : EEPROM 176, [0] : EEPROM 376, [0]  : EEPROM 576, [0]  'CDat(88) = "2 Set Bit2 %00000100         "
+                        : EEPROM 177, [0] : EEPROM 377, [0]  : EEPROM 577, [0]
+                        
+                        : EEPROM 178, [0] : EEPROM 378, [0]  : EEPROM 578, [0]  'CDat(89) = "3 Set Bit3 %00001000         " 
+                        : EEPROM 179, [0] : EEPROM 379, [0]  : EEPROM 579, [0]
+                        
+                        : EEPROM 180, [0] : EEPROM 380, [0]  : EEPROM 580, [0]  'CDat(90) = "4 Set Bit4 %00010000         "
+                        : EEPROM 181, [0] : EEPROM 381, [0]  : EEPROM 581, [0]   
+                        
+                        : EEPROM 182, [0] : EEPROM 382, [0]  : EEPROM 582, [0]  'CDat(91) = "5 Set Bit5 %00100000         "
+                        : EEPROM 183, [0] : EEPROM 383, [0]  : EEPROM 583, [0]
+                        
+                        : EEPROM 184, [0] : EEPROM 384, [0]  : EEPROM 584, [0]  'CDat(92) = "6 Set Bit6 %01000000         "
+                        : EEPROM 185, [0] : EEPROM 385, [0]  : EEPROM 585, [0]
+                        
+                        : EEPROM 186, [0] : EEPROM 386, [0]  : EEPROM 586, [0]  'CDat(93) = "7 Set Bit7 %10000000         "
+                        : EEPROM 187, [0] : EEPROM 387, [0]  : EEPROM 587, [0]
+                        
+                        : EEPROM 188, [0] : EEPROM 388, [0]  : EEPROM 588, [0]  'CDat(94) = "8 Clr All  %00000000         "
+                        : EEPROM 189, [0] : EEPROM 389, [0]  : EEPROM 589, [0]   
+                        
+                        : EEPROM 190, [0] : EEPROM 390, [0]  : EEPROM 590, [0]  'CDat(95) = "9 Inc Flag Pointer + $01     "
+                        : EEPROM 191, [0] : EEPROM 391, [0]  : EEPROM 591, [0]                                                                                                                                                                                                                                                                                                               
+                                                           
+'*******************************************************************************
+'********************* Eeprom Stored Data Array Details ************************
+'*******************************************************************************
+
+DisMah         con 96   : EEPROM 192, [0]  : EEPROM 392, [0] : EEPROM 592, [2]   'CDat(96) = DisMah Word (SV)
+                        : EEPROM 193, [0]  : EEPROM 393, [0] : EEPROM 593, [0]    
+
+ChgMah         con 97   : EEPROM 194, [0]  : EEPROM 394, [0] : EEPROM 594, [2]   'CDat(97) = ChgMah Word (SV)
+                        : EEPROM 195, [0]  : EEPROM 395, [0] : EEPROM 595, [0]  
+
+WhOut          con 98   : EEPROM 196, [0]  : EEPROM 396, [0] : EEPROM 596, [2]   'CDat(98) = WhOut Word (SV)
+                        : EEPROM 197, [0]  : EEPROM 397, [0] : EEPROM 597, [0]   
+
+WhIn           con 99   : EEPROM 198, [0]  : EEPROM 398, [0] : EEPROM 598, [2]   'CDat(99) = WhIn Word (SV)
+                        : EEPROM 199, [0]  : EEPROM 399, [0] : EEPROM 599, [0]  
+                   
+'Limit of Cdat(X) Word Array (100)  Elements (0-99)   
+
+
+'*******************************************************************************
+'******************** Eeprom Temperature Lookup Tables  ************************
+'*******************************************************************************
+ 
+'256 Byte 2.5V Ref Temperature Data Lookup Table
+
+eeprom 600,[301,241,211,192,178,167,159,151,145,139,135,130,126,123,119,116,114,111,108,106,104,102,100,98,96,94,93,91,90,88,87,85,84,83,82,_
+80,79,78,77,76,75,74,73,72,71,70,69,68,67,67,66,65,64,63,63,62,61,60,60,59,58,58,57,56,56,55,54,54,53,52,52,51,51,50,_
+49,49,48,48,47,47,46,46,45,45,44,44,43,43,42,42,41,41,40,40,39,39,38,38,37,37,36,36,35,35,35,34,34,33,33,32,32,31,31,_
+31,30,30,29,29,28,28,28,27,27,26,26,26,25,25,24,24,24,23,23,22,22,22,21,21,20,20,20,19,19,18,18,18,17,17,16,16,16,15,15,14,14,14,13,13,13,12,12,11,11,11,10,10,_
+9,9,9,8,8,7,7,6,6,6,5,5,4,4,4,3,3,2,2,1,1,1,0,0,1,1,2,2,3,3,4,4,5,5,5,6,6,7,7,8,9,9,_
+10,10,11,11,12,12,13,14,14,15,15,16,17,17,18,19,19,20,21,22,22,23,24,25,26,27,27,28,29,30,32,33,34,35,37,38,40,41,43,_
+45,48,50,54,58,63,72]  
+
+
+'256 Byte 5V Ref Temperature Data Lookup Table
+
+'eeprom 600,[241,193,168,152,140,131,124,118,112,108,104,100,97,93,91,88,86,83,81,79,77,75,74,72,70,69,68,66,65,64,62,61,60,59,58,_
+'57,56,55,54,53,52,51,50,49,49,48,47,46,46,45,44,43,43,42,41,41,40,39,39,38,37,37,36,36,35,35,34,33,33,32,32,31,31,30,_
+'30,29,29,28,28,27,27,26,26,25,25,25,24,24,23,23,22,22,21,21,21,20,20,19,19,19,18,18,17,17,17,16,16,15,15,15,14,14,13,_
+'13,13,12,12,12,11,11,10,10,10,9,9,9,8,8,8,7,7,6,6,6,5,5,5,4,4,4,3,3,3,2,2,2,1,1,0,0,0,1,1,1,2,2,2,3,3,3,4,4,4,5,5,6,_
+'6,6,7,7,7,8,8,8,9,9,10,10,10,11,11,11,12,12,13,13,13,14,14,15,15,15,16,16,17,17,17,18,18,19,19,20,20,21,21,21,22,22,_
+'23,23,24,24,25,25,26,26,27,28,28,29,29,30,30,31,32,32,33,34,34,35,36,37,37,38,39,40,41,42,43,44,45,46,47,49,50,52,53,_
+'55,58,60,63,67,72,79]        
+                            
+MenuText cON EXT
+
+goto JumpText                   'Jump over the assembler menu text data table
+
+asm
+
+;*******************************************************************************  
+;****************************  Menu Data Table Text ****************************
+;*******************************************************************************  
+;Table Construction (29 bytes for Menu Data) Entries 0-99 (100 entries)
+	
+MenuText   	
+	
+	DB "0 BcmMode Bcm/Both/Can 0-2   "    ;00
+    DB "1 BattSciMode Bcm/Can 0-1    "    ;01
+    DB "2 Primary Display Mode 0-5   "    ;02
+    DB "3 ErrChks Off/Bcm/All/Can 0-3"    ;03
+    DB "4 Alarm Beeps Off/On 0-1     "    ;04
+    DB "5 Ptc Strips Off/On 0-1      "    ;05
+    DB "6 Pal/Ntsc Video Mode 0-1    "    ;06
+    DB "7 KeyPad Beeps Off/On 0-1    "    ;07
+    DB "8 Maximum Pack Volts 0-255V  "    ;08
+    DB "9 Minimum Pack Volts 0-255V  "    ;09
+    DB "0 Maximum Pack Temp 0-255C   "    ;10
+    DB "1 Minimum Pack Temp 0-255C   "    ;11
+    DB "2 BatFan High On Temp 0-255C "    ;12
+    DB "3 BatFan Low On Temp 0-255C  "    ;13
+    DB "4 Voltage Hack 0-100%        "    ;14
+    DB "5 Current Compensate 0-25.5A "    ;15
+    DB "6 Maximum Battery Soc 0-100% "    ;16
+    DB "7 Minimum Battery Soc 0-100% "    ;17
+    DB "8 Nominal Batt Cap 0-65535mah"    ;18
+    DB "9 Current Batt Cap 0-65535mah"    ;19
+    DB "0 Battery Tap Modules 1-8    "    ;20
+    DB "1 AhWhCount Off/Ana/Can 0-1-2"    ;21
+    DB "2 PTC Adc Limit 0-255        "    ;22
+    DB "3 Tap Deviation Limit 0-2.55V"    ;23
+    DB "4 Tap Positive Comp +0-2.55V "    ;24
+    DB "5 Tap Negative Comp -0-2.55V "    ;25
+    DB "6 Inv Video Alarm Off/On 0-1 "    ;26
+    DB "7 Current Hack Comp (100=0%) "    ;27
+    DB "8 Spoof Battery Temp 0-255C  "    ;28
+    DB "9 Calib Amps Delay 0-255ms   "    ;29 
+    DB "0 Amps RoundUp 0-255         "    ;30
+    DB "1 Charge Compensate 0-255    "    ;31
+    DB "2 Discharge Compensate 0-255 "    ;32
+    DB "3 Dtc Codes Enable Off/On 0-1"    ;33
+    DB "4 Maximum Consec Errors 0-255"    ;34
+    DB "5 Positive Recal Volts 0-255V"    ;35
+    DB "6 Positive Recal Amps 0-255A "    ;36
+    DB "7 Positive Recal Time 0-255S "    ;37
+    DB "8 Positive Recal Level 0-100%"    ;38
+    DB "9 Negative Recal Volts 0-255V"    ;39
+    DB "0 Negative Recal Amps 0-255A "    ;40
+    DB "1 Negative Recal Time 0-255S "    ;41
+    DB "2 Negative Recal Level 0-100%"    ;42
+    DB "3 Static Recal Volts 0-255V  "    ;43
+    DB "4 Recal Checks Off/On 0-1    "    ;44
+    DB "5 Battery Fan Control 0-2    "    ;45
+    DB "6 Number of LiCells 1-255    "    ;46
+    DB "7 LiCell Max Volts 0-6.553V  "    ;47
+    DB "8 LiCell Min Volts 0-6.553V  "    ;48
+    DB "9 AutoErr Recover Off/On 0-1 "    ;49
+    DB "0 Ext Piezo Alarm Off/On 0-1 "    ;50
+    DB "1 Graph Scale Div 0/2/4 0-2  "    ;51
+    DB "2 Bcm Amps Offset Off/On 0-1 "    ;52
+    DB "3 Centi/Faren Conv Off/On 0-1"    ;53    
+    DB "4 Battery Taps In Use 1-16   "    ;54 
+    DB "5 CANMode 0Off 1Ori 2Lto 3Crz"    ;55 
+    DB "6 CAN STD ID 0               "    ;56 
+    DB "7 CAN STD ID 1               "    ;57 
+    DB "8 CAN STD ID 2               "    ;58 
+    DB "9 CAN STD ID 3               "    ;59 
+    DB "0 CAN STD ID 4               "    ;60 
+    DB "1 CAN STD ID 5               "    ;61 
+    DB "2 CAN STD ID 6               "    ;62 
+    DB "3 CAN STD ID 7               "    ;63 
+    DB "4 CAN STD ID 8               "    ;64 
+    DB "5 CAN STD ID 9               "    ;65     
+    DB "6 Spare Entry                "    ;66
+    DB "7 Backup Data To Eeprom      "    ;67                  
+    DB "8 Restore Data From Eeprom   "    ;68
+    DB "9 Toggle Output Bat Fan Low  "    ;69    
+    DB "0 Toggle Output Bat Fan High "    ;70
+    DB "1 Toggle Output Piezo Alarm  "    ;71
+    DB "2 Toggle Output Spare1A      "    ;72
+    DB "3 Toggle Output Spare2B      "    ;73
+    DB "4 Toggle Output Spare3C      "    ;74
+    DB "5 Toggle Output ChgOnOff     "    ;75
+    DB "6 Toggle Output ChargePwm    "    ;76
+    DB "7 Toggle Output SclClock     "    ;77                   
+    DB "8 Toggle Output SdiData      "    ;78
+    DB "9 Toggle Output SdoData      "    ;79
+    DB "0 Toggle Output CoolPwm      "    ;80
+    DB "1 Toggle Output HeatPwm      "    ;81
+    DB "2 Toggle Output Spare4D      "    ;82
+    DB "3 Toggle Output Spare5E      "    ;83
+    DB "4 Toggle Output Spare6F      "    ;84
+    DB "5 Toggle Output DChgOnOff    "    ;85
+    DB "6 Set Bit0 %00000001         "    ;86
+    DB "7 Set Bit1 %00000010         "    ;87
+    DB "8 Set Bit2 %00000100         "    ;88
+    DB "9 Set Bit3 %00001000         "    ;89
+    DB "0 Set Bit4 %00010000         "    ;90
+    DB "1 Set Bit5 %00100000         "    ;91
+    DB "2 Set Bit6 %01000000         "    ;92
+    DB "3 Set Bit7 %10000000         "    ;93
+    DB "4 Clr All  %00000000         "    ;94
+    DB "5 Inc Flag Pointer + $01     "    ;95 
+    DB "6 Discharge Mah Out          "    ;96 
+    DB "7 Charge Mah In              "    ;97 
+    DB "8 Watt Hrs Out               "    ;98 
+    DB "9 Watt Hrs In                "    ;99 
+
+endasm
+
+'*******************************************************************************  
+
+JumpText:            'Jump here over menu text data table
+
+'*******************************************************************************  
+'************** Initialise Assembly High Priority 1ms Interrupt ****************
+'******************************************************************************* 
+
+ASM
+    
+INT_LIST  macro    ; IntSource,        Label,  Type, ResetFlag?
+        INT_Handler   TMR1_INT,  _TICKS_1MS,      PBP,  yes
+        INT_Handler   TX2_INT,   _VIDEO_TX,       PBP,  no  
+    endm
+    INT_CREATE                ; Creates the interrupt processor 
+    
+ENDASM
+
+'*******************************************************************************
+'***************** Main Basic Program Initialisation & Start *******************
+'*******************************************************************************	
+
+Initialise:                    'Main Program Start
+
+    Clear                      'Clear all variables
+    
+'Turn Off Pic outputs
+          
+    low Piezo : Low RedLed : low GreenLed : Low Scbi : low FanL : low FanH
+    low ChgPwm : low CoolPwm : low HeatPwm : low Spare1A : low Spare2B : low Spare3C
+    low KeypadTxd : low DchgOnOff : low ChgOnOff : low S0 : low S1 : low S2 
+    low EnablePlex : low Spare4D : low Spare5E : low Spare6F : low TxdEnable
+    
+'Set some nominal startup values to prevent errors or display glitches
+    
+    LowTapV = 255              'Start Low Voltage Tap variable with high value   25.5V
+    HighTapV = 0               'Start High Voltage Tap variable with low value   0V
+    OldTapDevSign = 32         'Set Variable to display " " ascii 32 
+    TapDevSign = 32            'Set Variable to display " " ascii 32
+    
+    BcmMinVolts = 255          'Set Variable high
+    BcmMaxVolts = 0            'Set Variable low
+    BcmHighTempSign = 32       'Set Variable to display " " ascii 32 
+    BcmLowTempSign = 32        'Set Variable to display " " ascii 32
+    BcmHighTemp = 25           'Set Variable to 25C
+    BcmLowTemp = 25            'Set Variable to 25C
+    BcmAmpsSign = 32           'Set Variable to display " " ascii 32 
+    
+    CanMinVolts = 255          'Set Variable high
+    CanMaxVolts = 0            'Set Variable low
+    CanHighTempSign = 32       'Set Variable to display " " ascii 32 
+    CanLowTempSign = 32        'Set Variable to display " " ascii 32
+    CanHighTemp = 25           'Set Variable to 25C
+    CanLowTemp = 25            'Set Variable to 25C
+    CanAmpsSign = 32           'Set Variable to display " " ascii 32 
+    
+'Read Eeprom Data
+
+    gosub ReadEeprom           'Read Data from Eeprom
+    
+'Move CAN ID's into Can ID Array (10)
+
+    CanId(0) = CDat(CanId0)  'Copy eeprom ID data 
+    CanId(1) = CDat(CanId1)  'Copy eeprom ID data  
+    CanId(2) = CDat(CanId2)  'Copy eeprom ID data 
+    CanId(3) = CDat(CanId3)  'Copy eeprom ID data 
+    CanId(4) = CDat(CanId4)  'Copy eeprom ID data 
+    CanId(5) = CDat(CanId5)  'Copy eeprom ID data  
+    CanId(6) = CDat(CanId6)  'Copy eeprom ID data 
+    CanId(7) = CDat(CanId7)  'Copy eeprom ID data 
+    CanId(8) = CDat(CanId8)  'Copy eeprom ID data 
+    CanId(9) = CDat(CanId9)  'Copy eeprom ID data
+    
+'Do some initialisation routines    
+    
+    gosub CanConfig            'Initialise Pic CAN module
+    Gosub ResetTime            'Reset Time to  0d-00:00:00.000
+    Gosub StartTimer           'Start the Elapsed Timer (Interrupt every ms)       
+    
+'Calculate OEM Analog Current Sensor Offset (Take 16 x 12bit readings and calculate 10bit average)
+
+    pause CDat(DelayMs)        'pause program for 0-255ms
+
+    BcmAmps = 0                'Clear the BcmAmps Word variable
+    for Counter_1 = 0 to 15    'Start 16x oversampling loop
+    ADCIN 0, Word0             'Get Amps from Analog Sensor on AN0
+    BcmAmps = BcmAmps + Word0  'Add incoming current value to accumulator
+    next Counter_1             'Next sample         
+
+    BcmAmps = BcmAmps >> 6  'Shift Right six places to divide voltage by 64 for average & convert to 10 bit result
+        
+    if BcmAmps > 512 then NegativeOffset = BcmAmps - 512     'Calculate Negative Offset
+    if BcmAmps < 512 then PositiveOffset = 512 - BcmAmps     'Calculate Positive Offset   
+    
+@    INT_ENABLE  TMR1_INT     ; Enable Timer1 Interrupts   
+     
+'Start the Video Chip Display and set defaults
+
+VideoStart:                     'Video Chip Start Section          
+     
+    hserout2["U"]               'Autobaud     
+    pause 1                     'Video Delay
+    
+    if CDat(PalFlag) = 1 then   'If PalFlag =1 then set Pal UK Mode
+    hserout2[$1B,"x="]          'Pal Mode
+    else                        'Else Set Ntsc US Mode
+    hserout2[$1B,"y="]          'Ntsc Mode
+    endif
+    
+    pause 1                     'Video Delay
+    
+MainStart:                      'Initialise Main Display
+
+    while VideoPointer > 0      'Wait until Video Buffer ready for data
+    gosub ServiceRoutine        'Service Background Routines   
+    wend  
+
+    hserout2 [$1B,"f"]          'Cursor Off  
+'    pause 1                     'Video Delay 
+    hserout2 [$1B,"x8"]         'Auto LF on CR
+'    pause 1                     'Video Delay
+    hserout2 [$1B,"E"]          'Clear screen & Cursor home  
+    
+'*******************************************************************************
+'*************************    Main Program Loop   ******************************
+'*******************************************************************************
+
+MainLoop:                       'Program Loops Here  
+
+    while VideoPointer > 0        'Wait until Video Buffer ready for data
+    gosub ServiceRoutine          'Service Background Routines   
+    wend
+
+'All Display modes are (Double width and height) except diagnostic/development ones
+
+'*******************************************************************************
+    
+    if CDat(DisplayMode) = 0 then         'Normal Bcm Data Display Mode
+    
+    if SubDisp = 0 then           'If SubDisp = 0 then Bcm Data Display Mode    
+    
+    DivDummy = BcmAmps * CDat(CurrentHack)
+    DispAmps = div32 100 
+    
+    If CDat(CentFaren) = 1 then            'If conversion requested gosub convert to farenheit
+    
+    Sign = BcmHighTempSign                 'Load Sign Variable
+    Result = BcmHighTemp                   'Load Result Variable
+    gosub TempConvert                      'Gosub C to F temperature conversion
+    BcmHTSign = Sign                       'Load display variable with result of conversion
+    BcmHT = Result                         'Load display variable with result of conversion
+    
+    Sign = BcmLowTempSign                  'Load Sign Variable
+    Result = BcmLowTemp                    'Load Result Variable
+    gosub TempConvert                      'Gosub C to F temperature conversion
+    BcmLTSign = Sign                       'Load display variable with result of conversion
+    BcmLT = Result                         'Load display variable with result of conversion
+    else
+    BcmHTSign = BcmHighTempSign            'Load display variable with non-converted C value
+    BcmHT = BcmHighTemp                    'Load display variable with non-converted C value
+    BcmLTSign = BcmLowTempSign             'Load display variable with non-converted C value
+    BcmLT = BcmLowTemp                     'Load display variable with non-converted C value
+    endif 
+    
+    ArrayWrite VideoBuffer,[$1B,"H",_      
+    $1B,"_4","* BCMD * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," *",$0D,_
+    $1B,"_5","* BCMD * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," *",$0D,$0D,_    
+    $1B,"_4","I",#IgnitionFlag,32,"F",#CDat(FanControl),32,"L",#FanLowFlag,32,"H",#FanHighFlag,32,"M",#AlarmMuteFlag,32,"AR",#AssistFlag,#RegenFlag,$0D,_
+    $1B,"_5","I",#IgnitionFlag,32,"F",#CDat(FanControl),32,"L",#FanLowFlag,32,"H",#FanHighFlag,32,"M",#AlarmMuteFlag,32,"AR",#AssistFlag,#RegenFlag,$0D,$0D,_     
+    $1B,"_4","BatV  ",dec3 BcmVolts,32,"BatA ",BcmAmpsSign,dec3 DispAmps/10,$0D,_ 
+    $1B,"_5","BatV  ",dec3 BcmVolts,32,"BatA ",BcmAmpsSign,dec3 DispAmps/10,$0D,$0D,_    
+    $1B,"_4","MaxV  ",dec3 BcmMaxVolts,32,"MinV  ",dec3 BcmMinVolts,$0D,_
+    $1B,"_5","MaxV  ",dec3 BcmMaxVolts,32,"MinV  ",dec3 BcmMinVolts,$0D,$0D,_     
+    $1B,"_4","Soc% ",dec2 BcmSoc/10,".",dec1 BcmSoc,32,"Mah ",dec5 CDat(RemMah),$0D,_
+    $1B,"_5","Soc% ",dec2 BcmSoc/10,".",dec1 BcmSoc,32,"Mah ",dec5 CDat(RemMah),$0D,$0D,_     
+    $1B,"_4","HigV ",dec2 HighTapV/10,".",dec1 HighTapV,32,"LowV ",dec2 LowTapV/10,".",dec1 LowTapV,$0D,_ 
+    $1B,"_5","HigV ",dec2 HighTapV/10,".",dec1 HighTapV,32,"LowV ",dec2 LowTapV/10,".",dec1 LowTapV,$0D,$0D,_    
+    $1B,"_4","AvgV ",dec2 AvgTapV/10,".",dec1 AvgTapV,32,"DevV ",dec2 TapDev/10,".",dec1 TapDev,$0D,_ 
+    $1B,"_5","AvgV ",dec2 AvgTapV/10,".",dec1 AvgTapV,32,"DevV ",dec2 TapDev/10,".",dec1 TapDev,$0D,$0D,_     
+    $1B,"_4","TemH  ",BcmHTSign,dec2 BcmHT,32,"TemL  ",BcmLTSign,dec2 BcmLT,$0D,_
+    $1B,"_5","TemH  ",BcmHTSign,dec2 BcmHT,32,"TemL  ",BcmLTSign,dec2 BcmLT,_
+    $0D,$0D,dec3 Refresh,32,dec3 VideoSize,0]  
+    
+'*******************************************************************************          
+    
+    elseif SubDisp = 1 then      'If SubDisp = 1 then Bcm Temp Sensors x 4 Display 
+    
+    ArrayWrite VideoBuffer,[$1B,"H",_      
+    $1B,"_4","* BCMT * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," *",$0D,_
+    $1B,"_5","* BCMT * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," *",$0D,$0D,_          
+    $1B,"_4","Temp1 ",Temp1Sign,dec2 Temp1Disp,$0D,_
+    $1B,"_5","Temp1 ",Temp1Sign,dec2 Temp1Disp,$0D,$0D,_
+    $1B,"_4","Temp2 ",Temp2Sign,dec2 Temp2Disp,$0D,_
+    $1B,"_5","Temp2 ",Temp2Sign,dec2 Temp2Disp,$0D,$0D,_
+    $1B,"_4","Temp3 ",Temp3Sign,dec2 Temp3Disp,$0D,_
+    $1B,"_5","Temp3 ",Temp3Sign,dec2 Temp3Disp,$0D,$0D,_
+    $1B,"_4","Temp4 ",Temp4Sign,dec2 Temp4Disp,$0D,_
+    $1B,"_5","Temp4 ",Temp4Sign,dec2 Temp4Disp,$0D,$0D,_
+    $1B,"_4","PTCValue ",dec3 BcmPtcAdc,$0D,_
+    $1B,"_5","PTCValue ",dec3 BcmPtcAdc,$0D,$0D,_
+    $0D,$0D,dec3 Refresh,32,dec3 VideoSize,0]   
+    
+'*******************************************************************************            
+    
+    elseif SubDisp = 2 then           'If SubDisp = 2 then Tap Voltages Display    
+    
+    ArrayWrite VideoBuffer,[$1B,"H",_     
+    $1B,"_4","* BCMV * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," *",$0D,_
+    $1B,"_5","* BCMV * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," *",$0D,$0D,_           
+    $1B,"_4","T01 ",dec2 Taps(1)/10,".",dec1 Taps(1),32,dec2 Taps(2)/10,".",dec1 Taps(2),32,dec2 Taps(3)/10,".",dec1 Taps(3),$0D,_   
+    $1B,"_5","T01 ",dec2 Taps(1)/10,".",dec1 Taps(1),32,dec2 Taps(2)/10,".",dec1 Taps(2),32,dec2 Taps(3)/10,".",dec1 Taps(3),$0D,$0D,_     
+    $1B,"_4","T04 ",dec2 Taps(4)/10,".",dec1 Taps(4),32,dec2 Taps(5)/10,".",dec1 Taps(5),32,dec2 Taps(6)/10,".",dec1 Taps(6),$0D,_   
+    $1B,"_5","T04 ",dec2 Taps(4)/10,".",dec1 Taps(4),32,dec2 Taps(5)/10,".",dec1 Taps(5),32,dec2 Taps(6)/10,".",dec1 Taps(6),$0D,$0D,_      
+    $1B,"_4","T07 ",dec2 Taps(7)/10,".",dec1 Taps(7),32,dec2 Taps(8)/10,".",dec1 Taps(8),32,dec2 Taps(9)/10,".",dec1 Taps(9),$0D,_   
+    $1B,"_5","T07 ",dec2 Taps(7)/10,".",dec1 Taps(7),32,dec2 Taps(8)/10,".",dec1 Taps(8),32,dec2 Taps(9)/10,".",dec1 Taps(9),$0D,$0D,_    
+    $1B,"_4","T10 ",dec2 Taps(10)/10,".",dec1 Taps(10),32,dec2 Taps(11)/10,".",dec1 Taps(11),32,dec2 Taps(12)/10,".",dec1 Taps(12),$0D,_    
+    $1B,"_5","T10 ",dec2 Taps(10)/10,".",dec1 Taps(10),32,dec2 Taps(11)/10,".",dec1 Taps(11),32,dec2 Taps(12)/10,".",dec1 Taps(12),$0D,$0D,_    
+    $1B,"_4","T13 ",dec2 Taps(13)/10,".",dec1 Taps(13),32,dec2 Taps(14)/10,".",dec1 Taps(14),32,dec2 Taps(15)/10,".",dec1 Taps(15),$0D,_    
+    $1B,"_5","T13 ",dec2 Taps(13)/10,".",dec1 Taps(13),32,dec2 Taps(14)/10,".",dec1 Taps(14),32,dec2 Taps(15)/10,".",dec1 Taps(15),$0D,$0D,_    
+    $1B,"_4","T16 ",dec2 Taps(16)/10,".",dec1 Taps(16),$0D,_    
+    $1B,"_5","T16 ",dec2 Taps(16)/10,".",dec1 Taps(16),$0D,$0D,_     
+    $1B,"_4","DeV",TapDevSign,dec2 TapDev/10,".",dec1 TapDev,32,"OlD",OldTapDevSign,dec2 OldTapDev/10,".",dec1 OldTapDev,$0D,_
+    $1B,"_5","DeV",TapDevSign,dec2 TapDev/10,".",dec1 TapDev,32,"OlD",OldTapDevSign,dec2 OldTapDev/10,".",dec1 OldTapDev,_
+    $0D,$0D,dec3 Refresh,32,dec3 VideoSize,0]   
+    
+'*******************************************************************************              
+    
+    elseif SubDisp = 3 then           'If SubDisp = 3 then Horizontal Bar Graph Display  
+    
+'Horizontal Bar Graphs made up of 8 Slice Horizontal units 
+
+    for Gen1 = 1 to 16                        'Start 16 count loop
+    WholeBars(Gen1) = (Taps(Gen1) >> CDat(GraphScale)) / 8         'Number of whole 8 unit bars
+    Gen0 = (Taps(Gen1) >> CDat(GraphScale)) // 8                  'Number of part 8 unit bars
+    if Gen0 = 0 then                          'Check if any part bars
+    PartBars(Gen1) = 32                       'If no part bars clear PartBars
+    else
+    PartBars(Gen1) = 138 + Gen0               'Select Character for PartBars 8 unit bars
+    endif
+    Next Gen1                                 'Repeat Loop until done
+
+    ArrayWrite VideoBuffer,[$1B,"H",_     
+    $1B,"_4","* BCMH * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," *",$0D,_
+    $1B,"_5","* BCMH * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," *",$0D,$0D,_     
+    "T01 ",rep 146\WholeBars(1),PartBars(1),$1B,"K",$0D,_
+    "T02 ",rep 146\WholeBars(2),PartBars(2),$1B,"K",$0D,_
+    "T03 ",rep 146\WholeBars(3),PartBars(3),$1B,"K",$0D,_
+    "T04 ",rep 146\WholeBars(4),PartBars(4),$1B,"K",$0D,_    
+    "T05 ",rep 146\WholeBars(5),PartBars(5),$1B,"K",$0D,_
+    "T06 ",rep 146\WholeBars(6),PartBars(6),$1B,"K",$0D,_
+    "T07 ",rep 146\WholeBars(7),PartBars(7),$1B,"K",$0D,_
+    "T08 ",rep 146\WholeBars(8),PartBars(8),$1B,"K",$0D,_ 
+    "T09 ",rep 146\WholeBars(9),PartBars(9),$1B,"K",$0D,_
+    "T10 ",rep 146\WholeBars(10),PartBars(10),$1B,"K",$0D,_
+    "T11 ",rep 146\WholeBars(11),PartBars(11),$1B,"K",$0D,_
+    "T12 ",rep 146\WholeBars(12),PartBars(12),$1B,"K",$0D,_ 
+    "T13 ",rep 146\WholeBars(13),PartBars(13),$1B,"K",$0D,_
+    "T14 ",rep 146\WholeBars(14),PartBars(14),$1B,"K",$0D,_
+    "T15 ",rep 146\WholeBars(15),PartBars(15),$1B,"K",$0D,_
+    "T16 ",rep 146\WholeBars(16),PartBars(16),$1B,"K",$0D,_
+    "Vol 0     5    10    15     20",$1B,"Y",54,32,_
+    "HiV ",dec2 HighTapV/10,".",dec1 HighTapV,32,"LoV ",dec2 LowTapV/10,".",dec1 LowTapV,32,"AvV ",dec2 AvgTapV/10,".",dec1 AvgTapV,32,_ 
+    "DeV ",dec2 TapDev/10,".",dec1 TapDev,$0D,$0D,dec3 Refresh,32,dec3 VideoSize,0] 
+    
+'*******************************************************************************            
+           
+    elseif SubDisp = 4 then          'If SubDisp = 4 then Vertical Bar Graph Display       
+
+'Vertical Bar Graphs are made up of 9 Slice Vertical units     
+
+    for Gen1 = 1 to 16                        'Start 16 count loop
+    WholeBars(Gen1) = (Taps(Gen1) >> CDat(GraphScale)) / 9     'Number of whole 9 slice bars
+    Gen0 = (Taps(Gen1) >> CDat(GraphScale)) // 9              'Number of part 9 slice bars
+    if Gen0 = 0 then                          'Check if any part bars
+    PartBars(Gen1) = 32                       'If no part bars clear PartBars
+    else
+    PartBars(Gen1) = 175 + Gen0                'Select Character for PartBars 9 unit bars
+    endif
+    Next Gen1                                 'Repeat Loop until done
+    
+    ArrayWrite VideoBuffer,[$1B,"H",_     
+    $1B,"_4","* BCMV * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," *",$0D,_
+    $1B,"_5","* BCMV * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," *",$0D,$0D,_
+    "Tap 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6",$1B,"x","<",_     
+    $1B,"Y",36,36,rep 183\WholeBars(1),PartBars(1),32,32,_
+    $1B,"Y",36,38,rep 183\WholeBars(2),PartBars(2),32,32,_
+    $1B,"Y",36,40,rep 183\WholeBars(3),PartBars(3),32,32,_
+    $1B,"Y",36,42,rep 183\WholeBars(4),PartBars(4),32,32,_ 
+    $1B,"Y",36,44,rep 183\WholeBars(5),PartBars(5),32,32,_
+    $1B,"Y",36,46,rep 183\WholeBars(6),PartBars(6),32,32,_
+    $1B,"Y",36,48,rep 183\WholeBars(7),PartBars(7),32,32,_
+    $1B,"Y",36,50,rep 183\WholeBars(8),PartBars(8),32,32,_ 
+    $1B,"Y",36,52,rep 183\WholeBars(9),PartBars(9),32,32,_
+    $1B,"Y",36,54,rep 183\WholeBars(10),PartBars(10),32,32,_
+    $1B,"Y",36,56,rep 183\WholeBars(11),PartBars(11),32,32,_
+    $1B,"Y",36,58,rep 183\WholeBars(12),PartBars(12),32,32,_ 
+    $1B,"Y",36,60,rep 183\WholeBars(13),PartBars(13),32,32,_
+    $1B,"Y",36,62,rep 183\WholeBars(14),PartBars(14),32,32,_
+    $1B,"Y",36,64,rep 183\WholeBars(15),PartBars(15),32,32,_
+    $1B,"Y",36,66,rep 183\WholeBars(16),PartBars(16),32,32,_ 
+    $1B,"y","<",$1B,"Y",54,32,_
+    "HiV ",dec2 HighTapV/10,".",dec1 HighTapV,32,"LoV ",dec2 LowTapV/10,".",dec1 LowTapV,32,"AvV ",dec2 AvgTapV/10,".",dec1 AvgTapV,32,_ 
+    "DeV ",dec2 TapDev/10,".",dec1 TapDev,$0D,$0D,dec3 Refresh,32,dec3 VideoSize,0] 
+    
+'*******************************************************************************              
+    
+    else
+    SubDisp = 0      
+    endif  
+    
+'$1B,"Y",r,c Moves the cursor to the specified row and column.
+
+'r is the ascii character of 32 + the desired row.
+'c is the ascii character of 32 + the desired column.       
+
+'    $1B,"Y",35,37,rep 23\WholeBars(2),PartBars(2),32,32,_
+'    $1B,"Y",35,38,rep 23\WholeBars(3),PartBars(3),32,32,_
+'    $1B,"Y",35,39,rep 23\WholeBars(4),PartBars(4),32,32,_         
+    
+'*******************************************************************************    
+    
+    elseif CDat(DisplayMode) = 1 then    'CanOrion Data Display Mode 
+    
+    if SubDisp = 0 then                  'Display Can Data   
+    
+    DispAmps = CanAmps                   'Load Can Amps Data for display use
+    
+    If CDat(CentFaren) = 1 then            'If conversion requested gosub convert to farenheit
+    
+    Sign = CanHighTempSign                 'Load Sign Variable
+    Result = CanHighTemp                   'Load Result Variable
+    gosub TempConvert                      'Gosub C to F temperature conversion
+    CanHTSign = Sign                       'Load display variable with result of conversion
+    CanHT = Result                         'Load display variable with result of conversion
+    
+    Sign = CanLowTempSign                  'Load Sign Variable
+    Result = CanLowTemp                    'Load Result Variable
+    gosub TempConvert                      'Gosub C to F temperature conversion
+    CanLTSign = Sign                       'Load display variable with result of conversion
+    CanLT = Result                         'Load display variable with result of conversion
+    else
+    CanHTSign = CanHighTempSign            'Load display variable with non-converted C value
+    CanHT = CanHighTemp                    'Load display variable with non-converted C value
+    CanLTSign = CanLowTempSign             'Load display variable with non-converted C value
+    CanLT = CanLowTemp                     'Load display variable with non-converted C value
+    endif   
+    
+    ArrayWrite VideoBuffer,[$1B,"H",_      
+    $1B,"_4","* CAND * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," *",$0D,_
+    $1B,"_5","* CAND * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," *",$0D,$0D,_    
+    $1B,"_4","Ig",#IgnitionFlag,32,"Fc",#CDat(FanControl),32,"Fl",#FanLowFlag,32,"Fh",#FanHighFlag,32,"Am",#AlarmMuteFlag,$0D,_
+    $1B,"_5","Ig",#IgnitionFlag,32,"Fc",#CDat(FanControl),32,"Fl",#FanLowFlag,32,"Fh",#FanHighFlag,32,"Am",#AlarmMuteFlag,$0D,$0D,_     
+    $1B,"_4","BatV  ",dec3 CanVolts,32,"BatA ",CanAmpsSign,dec3 DispAmps/10,$0D,_ 
+    $1B,"_5","BatV  ",dec3 CanVolts,32,"BatA ",CanAmpsSign,dec3 DispAmps/10,$0D,$0D,_ 
+    $1B,"_4","MaxV  ",dec3 CanMaxVolts,32,"MinV  ",dec3 CanMinVolts,$0D,_
+    $1B,"_5","MaxV  ",dec3 CanMaxVolts,32,"MinV  ",dec3 CanMinVolts,$0D,$0D,_  
+    $1B,"_4","Soc% ",dec2 CanSoc / 10,".",dec1 CanSoc,32,"Wat ",dec5 CanWatts,$0D,_ 
+    $1B,"_5","Soc% ",dec2 CanSoc / 10,".",dec1 CanSoc,32,"Wat ",dec5 CanWatts,$0D,$0D,_    
+    $1B,"_4","TemH  ",CanHTSign,dec2 CanHT,32,"TemL  ",CanLTSign,dec2 CanLT,$0D,_
+    $1B,"_5","TemH  ",CanHTSign,dec2 CanHT,32,"TemL  ",CanLTSign,dec2 CanLT,_
+    $0D,$0D,dec3 Refresh,32,dec3 VideoSize,0] 
+    
+'*******************************************************************************       
+    
+    elseif SubDisp = 1 then                  'Display Can Individual Cell Data Display 
+    
+''Byte 1&2: Instant Voltage (16 bit, unit: 0.1mv)
+''Byte 3&4: Internal Resistance (15 bit, unit: 0.01mOhm)   Bit 8 in byte #3 is whether or not the cell is shunting (1 indicates current is being shunted, 0 means it is not).
+''Byte 5&6: Open Voltage (16 bit, unit: 0.1mv)    
+    
+    ArrayWrite VideoBuffer,[$1B,"H","* ORION2 CANIV * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," * ",dec3 Refresh," *",$0D,$0D,0]
+
+@   INT_ENABLE   TX2_INT                ;Enable USART Video TX interrupt  
+
+    For CanDispLoop = 1 to CDat(LiCells) step 5      'Start Cell display loop
+    
+    while VideoPointer > 0        'Wait until Video Buffer ready for data
+    gosub ServiceRoutine          'Service Background Routines   
+    wend
+
+    ArrayWrite VideoBuffer,[dec2 CanDispLoop," ",_
+    " ",dec1 CIv(CanDispLoop)/1000,".",dec3 CIv(CanDispLoop),_
+    " ",dec1 CIv(CanDispLoop+1)/1000,".",dec3 CIv(CanDispLoop+1),_
+    " ",dec1 CIv(CanDispLoop+2)/1000,".",dec3 CIv(CanDispLoop+2),_
+    " ",dec1 CIv(CanDispLoop+3)/1000,".",dec3 CIv(CanDispLoop+3),_
+    " ",dec1 CIv(CanDispLoop+4)/1000,".",dec3 CIv(CanDispLoop+4),$0D,0]
+    
+@   INT_ENABLE   TX2_INT                ;Enable USART Video TX interrupt   
+    
+    next CanDispLoop   
+    
+'*******************************************************************************       
+    
+    elseif SubDisp = 2 then           'If SubDisp = 2 then display Cell Open Voltages
+    
+    ArrayWrite VideoBuffer,[$1B,"H","* ORION2 CANOV * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," * ",dec3 Refresh," *",$0D,$0D,0]
+
+@   INT_ENABLE   TX2_INT                ;Enable USART Video TX interrupt  
+
+    For CanDispLoop = 1 to CDat(LiCells) step 5      'Start Cell display loop
+    
+    while VideoPointer > 0        'Wait until Video Buffer ready for data
+    gosub ServiceRoutine          'Service Background Routines   
+    wend
+    
+    ArrayWrite VideoBuffer,[dec2 CanDispLoop," ",_
+    " ",dec1 COv(CanDispLoop)/1000,".",dec3 COv(CanDispLoop),_
+    " ",dec1 COv(CanDispLoop+1)/1000,".",dec3 COv(CanDispLoop+1),_
+    " ",dec1 COv(CanDispLoop+2)/1000,".",dec3 COv(CanDispLoop+2),_
+    " ",dec1 COv(CanDispLoop+3)/1000,".",dec3 COv(CanDispLoop+3),_
+    " ",dec1 COv(CanDispLoop+4)/1000,".",dec3 COv(CanDispLoop+4),$0D,0]
+    
+@   INT_ENABLE   TX2_INT                ;Enable USART Video TX interrupt   
+    
+    next CanDispLoop   
+    
+'*******************************************************************************       
+    
+    elseif SubDisp = 3 then           'If SubDisp = 3 then display Cell Internal Resistance
+
+    ArrayWrite VideoBuffer,[$1B,"H","* ORION2 CANIR * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," * ",dec3 Refresh," *",$0D,$0D,0]
+
+@   INT_ENABLE   TX2_INT                ;Enable USART Video TX interrupt  
+
+    For CanDispLoop = 1 to CDat(LiCells) step 5      'Start Cell display loop
+    
+    while VideoPointer > 0        'Wait until Video Buffer ready for data
+    gosub ServiceRoutine          'Service Background Routines   
+    wend
+    
+    ArrayWrite VideoBuffer,[dec2 CanDispLoop," ",_
+    " ",dec1 CIr(CanDispLoop)/1000,".",dec3 CIr(CanDispLoop),_
+    " ",dec1 CIr(CanDispLoop+1)/1000,".",dec3 CIr(CanDispLoop+1),_
+    " ",dec1 CIr(CanDispLoop+2)/1000,".",dec3 CIr(CanDispLoop+2),_
+    " ",dec1 CIr(CanDispLoop+3)/1000,".",dec3 CIr(CanDispLoop+3),_
+    " ",dec1 CIr(CanDispLoop+4)/1000,".",dec3 CIr(CanDispLoop+4),$0D,0]
+    
+@   INT_ENABLE   TX2_INT                ;Enable USART Video TX interrupt   
+    
+    next CanDispLoop       
+    
+'*******************************************************************************          
+    
+    elseif SubDisp = 4 then           'If SubDisp = 4 then display Cell Balance Flag     
+    
+    ArrayWrite VideoBuffer,[$1B,"H","* ORION2 CANBF * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," * ",dec3 Refresh," *",$0D,$0D,0]
+
+@   INT_ENABLE   TX2_INT                ;Enable USART Video TX interrupt  
+
+    For CanDispLoop = 1 to CDat(LiCells) step 5      'Start Cell display loop
+    
+    while VideoPointer > 0        'Wait until Video Buffer ready for data
+    gosub ServiceRoutine          'Service Background Routines   
+    wend
+
+    ArrayWrite VideoBuffer,[dec2 CanDispLoop," Bf ",#CBf(CanDispLoop)," ",#CBf(CanDispLoop+1)," ",_
+    #CBf(CanDispLoop+2)," ",#CBf(CanDispLoop+3)," ",#CBf(CanDispLoop+4),$0D,0]
+    
+@   INT_ENABLE   TX2_INT                ;Enable USART Video TX interrupt   
+    
+    next CanDispLoop     
+    
+'*******************************************************************************         
+    
+    elseif SubDisp = 5 then           'If SubDisp = 5 then display Cell Error Data
+    
+    ArrayWrite VideoBuffer,[$1B,"H","* ORION2 CANED * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," * ",dec3 Refresh," *",$0D,$0D,0]
+
+@   INT_ENABLE   TX2_INT                ;Enable USART Video TX interrupt  
+
+    For CanDispLoop = 1 to CDat(LiCells) step 5      'Start Cell display loop
+    
+    while VideoPointer > 0        'Wait until Video Buffer ready for data
+    gosub ServiceRoutine          'Service Background Routines   
+    wend
+    
+'    ArrayWrite VideoBuffer,[dec2 CanDispLoop," ",bin8 CEd(CanDispLoop)," ",bin8 CEd(CanDispLoop+1)," ",_
+'    bin8 CEd(CanDispLoop+2)," ",bin8 CEd(CanDispLoop+3)," ",bin8 CEd(CanDispLoop+4),$0D,0]
+    
+    ArrayWrite VideoBuffer,[dec2 CanDispLoop," ",#CEd(CanDispLoop)," ",#CEd(CanDispLoop+1)," ",_
+    #CEd(CanDispLoop+2)," ",#CEd(CanDispLoop+3)," ",#CEd(CanDispLoop+4),$0D,0]
+
+@   INT_ENABLE   TX2_INT                ;Enable USART Video TX interrupt   
+    
+    next CanDispLoop  
+    
+'*******************************************************************************        
+    
+  elseif SubDisp = 6 then                  'Display LTO Can Individual Cell Data Display 
+  
+    ArrayWrite VideoBuffer,[$1B,"H","* LTO CANIV * ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," * ",dec3 Refresh," *",$0D,$0D,0]
+    
+'    ArrayWrite VideoBuffer,[$1B,"H","*LTO CANLV*",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds,"*",dec3 Refresh,"* ",#CanTest," ",#CanId(0),$0D,$0D,0]
+
+@   INT_ENABLE   TX2_INT                ;Enable USART Video TX interrupt  
+
+    For CanDispLoop = 1 to CDat(LiCells) step 5      'Start Cell display loop
+    
+    while VideoPointer > 0        'Wait until Video Buffer ready for data
+    gosub ServiceRoutine          'Service Background Routines   
+    wend
+
+    ArrayWrite VideoBuffer,[dec2 CanDispLoop," ",_
+    " ",dec1 CLv(CanDispLoop)/1000,".",dec3 CLv(CanDispLoop),_
+    " ",dec1 CLv(CanDispLoop+1)/1000,".",dec3 CLv(CanDispLoop+1),_
+    " ",dec1 CLv(CanDispLoop+2)/1000,".",dec3 CLv(CanDispLoop+2),_
+    " ",dec1 CLv(CanDispLoop+3)/1000,".",dec3 CLv(CanDispLoop+3),_
+    " ",dec1 CLv(CanDispLoop+4)/1000,".",dec3 CLv(CanDispLoop+4),$0D,0]
+    
+@   INT_ENABLE   TX2_INT                ;Enable USART Video TX interrupt   
+    
+    next CanDispLoop               
+    
+'*******************************************************************************         
+       
+    else
+    SubDisp = 0
+    endif       
+    
+'*******************************************************************************    
+    
+    elseif CDat(DisplayMode) = 2 then    'Diagnostic Data Display       
+    
+    ArrayWrite VideoBuffer,[$1B,"H","**** Diagnostic Data *** ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," ****",_
+    $0D,$0D,"Ign",#IgnitionFlag,32,"FanC",#CDat(FanControl),32,"FanL",#FanLowFlag,32,"FanH",#FanHighFlag,32,"TemS",dec3 Cdat(TempSpoof),_
+    $0D,$0D,"AssistC ",dec3 AssistRecalCounter,32,"RegenC ",dec3 RegenRecalCounter,32,"StaticC ",dec3 StaticRecalCounter,_
+    $0D,$0D,"AlarmMute ",#AlarmMuteFlag,32,"AssistFlag ",#AssistFlag,32,"RegenFlag ",#RegenFlag,_
+    $0D,$0D,"Ptc ",dec3 BcmPtcAdc,32,"B3 $",hex2 B3Value,32,"B4 $",hex2 B4Value,_
+    $0D,$0D,"Tap ",#Supply(0)/10,".",dec1 Supply(0),32,#Supply(1)/10,".",dec1 Supply(1),32,#Supply(2)/10,".",dec1 Supply(2),32,#Supply(3)/10,".",dec1 Supply(3),32,_  
+    #Supply(4)/10,".",dec1 Supply(4),32,#Supply(5)/10,".",dec1 Supply(5),32,#Supply(6)/10,".",dec1 Supply(6),32,#Supply(7)/10,".",dec1 Supply(7),32,_   
+    $0D,$0D,"Watts  ",dec5 BcmWatts,32,"PosOffset ",#PositiveOffset,32,"NegOffset ",#NegativeOffset,_ 
+    $0D,$0D,"WHrIn  ",dec5 CDat(WhIn),32,"WHrOut ",dec5 CDat(WhOut),_   
+    $0D,$0D,"ChgMah ",dec5 CDat(ChgMah),32,"DisMah ",dec5 CDat(DisMah),_
+    $0D,$0D,"CapMah ",dec5 CDat(CapMah),32,"RemMah ",dec5 CDat(RemMah),_
+    $0D,$0D,"KeyPad ",dec2 Key,32,"CodeTimer ",dec3 CodeTimer2,_
+    $0D,$0D,dec3 Refresh,32,dec3 VideoSize,0]
+    
+'*******************************************************************************    
+    
+    elseif CDat(DisplayMode) = 3 then    'Error Data Display
+    
+    ArrayWrite VideoBuffer,[$1B,"H","*** Errors! (0=Clear) *** ",dec2 Hours, ":", dec2 Minutes, ":", dec2 Seconds," ***",_
+    $0D,$0D,"BatV> VMax  ",dec3 Errors(BatVMax),32,"BatV< VMin  ",dec3 Errors(BatVMin),_
+    $0D,$0D,"BatT> TMax  ",dec3 Errors(BatTMax),32,"Ptc> PMax   ",dec3 Errors(PtcLimit),_
+    $0D,$0D,"TapD> DMax  ",Dec3 Errors(TapDevLimit),_
+    $0D,$0D,"Soc> MaxSoc ",dec3 Errors(MaxSoc),32,"Soc< MinSoc ",dec3 Errors(MinSoc),_
+    $0D,$0D,"TapCommsErr ",dec3 SerErrCount,32,  "Crc Error   ",dec3 ChkErrCount,_  
+    $0D,$0D,"CanID $06B0 ",dec3 NoCan06B0Data,32,"Crc Error   ",dec3 Crc06B0Err,_
+    $0D,$0D,"CanID $00CB ",dec3 NoCan00CBData,32,"Crc Error   ",dec3 Crc00CBErr,_
+    $0D,$0D,"CanCommsErr ",dec3 CanTimeout,_
+    $0D,$0D,dec3 Refresh,32,dec3 VideoSize,0]
+    
+'*******************************************************************************      
+    
+    elseif CDat(DisplayMode) = 4 then    'Splash Screen Display
+    
+    ArrayWrite VideoBuffer,[$1B,"H","*** Honda Insight MK1 BCM Replacer ***",_
+    $0D,$0D,"* 18F66K80 64mhz MULTICAN V1 120120 *",$0D,_
+    $0D,$0D,"Concept, Designs, Schematics & Code by",_
+    $0D,$0D," Peter Perkins aka (RetepSnikrep) UK",$0D,_
+    $0D,$0D,"Circuit Layout, Build & Consultancy by",_ 
+    $0D,$0D,"    Isaac Reedy aka (BullDog) USA",_        
+    $0D,$0D,$0D,"Information at www.insightcentral.net",_ 
+    $0D,$0D,dec3 Refresh,32,dec3 VideoSize,0]    
+
+'*******************************************************************************
+    
+    else                                'Blank Display
+    
+    ArrayWrite VideoBuffer,[$1B,"E",0]  'Clear Screen & Home
+    
+    endif
+    
+'*******************************************************************************    
+      
+@   INT_ENABLE   TX2_INT                ;Enable USART Video TX interrupt  
+
+    Refresh = Refresh + 1               'Increment Screen refresh counter
+
+    gosub ServiceRoutine                'Service Background Routines            
+    if KeyFlag = 0 then MainLoop        'If No Key data then Loop   
+    KeyFlag = 0   
+    
+    if Key = KeyStar then Menu          'Goto Menu       
+    
+    if Key = KeyHash then               'If KeyHash then change display mode
+    CDat(DisplayMode) = CDat(DisplayMode) + 1
+    if CDat(DisplayMode) > 5 then CDat(DisplayMode) = 0    '6 Main Display Modes
+    SubDisp = 0                         'Reset Sub Display if Main Display changed
+    goto MainStart                      'Goto MainStart
+    endif      
+      
+    if Key = Key0 then gosub ClearErrors  'Clear Errors, reset video and time   
+     
+    if Key = Key1 then CDat(RemMah) = (CDat(CapMah) / 100) * 20   'Set Soc to 20% of original capacity 
+    if Key = Key2 then CDat(RemMah) = (CDat(CapMah) / 100) * 60   'Set Soc to 60% of original capacity  
+    if Key = Key3 then CDat(RemMah) = (CDat(CapMah) / 100) * 80   'Set Soc to 80% of original capacity
+    
+    if Key = Key4 then                 'Change Sub Cell data Display Screen
+    SubDisp = SubDisp + 1              'Five possible Cell Data Display Screens 0-4
+    if SubDisp > 6 then SubDisp = 0    'Limit 7 screens (0-6)
+    goto MainStart                     'Goto MainStart (Enables screen to be cleared before redrawing)
+    endif                
+    
+    if Key = Key5 then                  'Toggle Assist Enable/Disable Flag
+    if AssistFlag = 0 then 
+    AssistFlag = 1
+    else
+    AssistFlag = 0
+    endif    
+    endif
+    
+    if Key = Key6 then                  'Toggle Regen Enable/Disable Flag
+    if RegenFlag = 0 then 
+    RegenFlag = 1
+    else
+    RegenFlag = 0
+    endif    
+    endif
+
+    if Key = Key7 then                  'Toggle Mute Piezo Alarm On/Off
+    if AlarmMuteFlag = 0 then 
+    AlarmMuteFlag = 1
+    else
+    AlarmMuteFlag = 0
+    endif    
+    endif  
+        
+    if Key = Key8 then gosub ToggleVideo    'Toggle Normal/Inverse
+
+    
+    if Key = Key9 then                      'Battery Fan Control
+    CDat(FanControl) = CDat(FanControl) + 1
+    if CDat(FanControl) > 2 then CDat(FanControl) = 0      
+        if CDat(FanControl) = 0 then
+        low FanL                           'Fan Low Relay Off
+        low FanH                           'Fan High Relay Off
+        FanLowFlag = 0                     'Flag Off
+        FanHighFlag = 0                    'Flag Off 
+        endif  
+    endif 
+  
+goto MainLoop        
+
+'*******************************************************************************     
+'********************************  Menu  ***************************************  
+'*******************************************************************************   
+    
+Menu: 				 'Menu Label Display Routine  
+
+    MenuNumber = 0              'Load MenuNumber with zero (No of menus is 0-8 (9 menus)
+    MenuStart = 0               'Load MenuStart with zero  (No of entries per menu = 10)
+    MenuItem = 0                'Load MenuItem with zero   (Total no of menu entries = 54) 0-53 
+    
+DispMenu: 
+
+    while VideoPointer > 0      'Wait until Video Buffer ready for data
+    gosub ServiceRoutine        'Service Background Routines   
+    wend      
+
+    Hserout2 [$1B,"E","** Menu (",#MenuNumber,") *=Next #=Exit **",$0D,$0D]  
+    
+DispText:   
+  
+    TextStart = MenuItem * 30		    'Calculate Menu Table Entry
+	For Offset = 0 to 28				'Start Loop to collect text data
+	ReadCODE  (MenuText + TextStart + Offset), DataByte    'Read data byte from flash memory
+    hserout2 [DataByte]                 'Send databyte to screen
+	next Offset                         'Next byte
+	
+	if MenuItem < MenuMin then               'If MenuItem < MenuMin then 
+    hserout2 [" (",#CDat(MenuItem),")",$0D,$0D]       'Display Item value and move to next line +1
+    else
+    hserout2 [$0D,$0D]                                'Move to next line +1
+    endif
+	
+	MenuItem = MenuItem + 1                           'Increment MenuItem 
+	if MenuItem > MenuMax then MenuLoop               'If MenuItem > MenuMax then don't display any more lines 
+	MenuStart = MenuStart + 1                         'Increment MenuStart (0-9 items per menu)
+    if MenuStart < 10 then DispText            
+   
+MenuLoop:               'Menu Loop Label
+
+    gosub ServiceRoutine                'Gather KeyPad Press Data and Service Background Routines    
+    if KeyFlag = 0 then MenuLoop        'If No Key data then Loop
+	KeyFlag = 0                         'Clear Key Flag
+	
+	if Key = KeyStar then              'Next Menu
+	MenuNumber = MenuNumber + 1        'Increment MenuNumber (0-8) 
+	MenuStart = 0                      'Load MenuStart with zero  (No of entries per menu = 10)
+    if MenuNumber > 8 then BitMenu     'Goto BitMenu
+	goto DispMenu
+	endif
+	
+	if Key = KeyHash then VideoStart   'Restart Display 	
+	
+    Action = (MenuNumber * 10) + Key   'Load and calculate Action from Key and MenuNumber  
+    
+    If Action >= MenuMin then         'Select from instant actions lists if beyond range of configurable options lists
+    hserout2 [$1B,"Y",54,32,"Ok! (",#Key,") Actioned"]    
+    
+    if Action = 67 then gosub BackupEeprom  
+	if Action = 68 then gosub RestoreEeprom
+    if Action = 69 then toggle FanL  
+    if Action = 70 then toggle FanH  
+    if Action = 71 then toggle Piezo  
+    if Action = 72 then Toggle Spare1A   	
+	if Action = 73 then toggle Spare2B  
+    if Action = 74 then toggle Spare3C  
+	if Action = 75 then toggle ChgOnOff   
+    if Action = 76 then toggle ChgPwm 
+	if Action = 77 then toggle SclClock  
+    if Action = 78 then toggle SdiData  
+    if Action = 79 then toggle SdoData  
+    if Action = 80 then toggle CoolPwm  
+	if Action = 81 then toggle HeatPwm 
+	if Action = 82 then toggle Spare4D  
+    if Action = 83 then toggle Spare5E  
+    if Action = 84 then toggle Spare6F  
+    if Action = 85 then toggle DchgOnOff    
+    goto MenuLoop  
+    endif
+
+    gosub AdjVal                       'Adjust selected Menu Item value 
+    MenuStart = 0                      'Load MenuStart with zero  (No of entries per menu = 10)
+    MenuItem = MenuNumber * 10         'Calculate MenuItem                 
+    goto DispMenu                      'Goto DispMenu
+    
+'*******************************************************************************  
+
+BitMenu:                     'BitMenu Label Display Menu Routine 
+
+    while VideoPointer > 0        'Wait until Video Buffer ready for data
+    gosub ServiceRoutine        'Service Background Routines   
+    wend
+
+    ArrayWrite VideoBuffer,[$1B,"E","** BitMenu  *=Next #=Exit **",$0D,$0D,_
+    "Flags Pointer $",hex2 FlagsPointer," D",dec3 FlagsPointer,$0D,_ 
+    "Flags Value   $",hex2 FlagsArray[FlagsPointer]," D",dec3 FlagsArray[FlagsPointer]," %",BIN8 FlagsArray[FlagsPointer],$0D,$0D,_      
+    "0 Set Bit0 %00000001",$0D,_ 
+    "1 Set Bit1 %00000010",$0D,_ 
+    "2 Set Bit2 %00000100",$0D,_ 
+    "3 Set Bit3 %00001000",$0D,_ 
+    "4 Set Bit4 %00010000",$0D,_ 
+    "5 Set Bit5 %00100000",$0D,_ 
+    "6 Set Bit6 %01000000",$0D,_ 
+    "7 Set Bit7 %10000000",$0D,_ 
+    "8 Clr All  %00000000",$0D,$0D,_    
+    "9 Inc Flag Pointer + $01",0]       
+    
+@   INT_ENABLE   TX2_INT                ;Enable USART Video TX interrupt     
+
+BitMenuLoop:                            'BitMenu Loop Label
+    
+    gosub ServiceRoutine                'Gather KeyPad Press Data and Service Background Routines    
+    if KeyFlag = 0 then BitMenuLoop     'If No Key data then Loop.
+    KeyFlag = 0                         'Clear Key Flag
+    
+    if Key = KeyStar then Menu         'Next Menu
+    if Key = KeyHash then MainStart     'Goto Main Menu  
+    
+    FlagsTemp = FlagsArray[FlagsPointer] 'Move Current value into temporary store for bit manipulation
+     
+    if Key = Key0 then FlagsTemp.0 = ~ FlagsTemp.0 
+    if Key = Key1 then FlagsTemp.1 = ~ FlagsTemp.1 
+    if Key = Key2 then FlagsTemp.2 = ~ FlagsTemp.2 
+    if Key = Key3 then FlagsTemp.3 = ~ FlagsTemp.3 
+    if Key = Key4 then FlagsTemp.4 = ~ FlagsTemp.4 
+    if Key = Key5 then FlagsTemp.5 = ~ FlagsTemp.5 
+    if Key = Key6 then FlagsTemp.6 = ~ FlagsTemp.6  
+    if Key = Key7 then FlagsTemp.7 = ~ FlagsTemp.7 
+    if Key = Key8 then FlagsTemp = %00000000     
+    
+    FlagsArray[FlagsPointer] = FlagsTemp      'Move value back into array after bit manipulation   
+    
+    if Key = Key9 then                        'Increment FlagsPointer (But keep within array bounds) 
+    if FlagsPointer < 23 then       
+    FlagsPointer = FlagsPointer + 1  
+    else
+    FlagsPointer = 0
+    endif
+    endif   
+  
+goto BitMenu                           'Goto BitMenu 
+
+'*******************************************************************************
+'**************************** Clear Errors Routine *****************************
+'******************************************************************************* 
+
+ClearErrors:                            'Clear Errors Routine
+
+    SerErrCount = 0                     'Clear Serial data error counter
+    ChkErrCount = 0                     'Clear Checksum data error counter
+    for Gen0 = 0 to 100                 'Start 0-100 (101) Loop
+    Errors(Gen0) = 0                    'Clear General Error Storage Array
+    CEd(Gen0) = 0                       'Clear Lithium Error Storage Array
+    next Gen0                           'Repeat Loop
+    Error13 = 0 : Error14 = 0 : Error15 = 0 : Error16 = 0 : Error17 = 0   'Clear Dtc Error Storage Bytes 
+    ImaControlByte = 0                  'Clear control byte to allow normal IMA operation
+    AlarmMuteFlag = 0                   'Clear Audible Alarm Mute Flag  
+    InverseVideoFlag = 1                'Sets video flag to inverted (This is immediately changed back to normal below in the toggle section)
+    gosub ResetTime                     'Reset Time
+    
+ToggleVideo:                            'Inverts Video
+
+    if InverseVideoFlag = 1 then        'Return Video to normal if inverted
+    InverseVideoFlag = 0                'Set Inverse Video Flag to 0
+@   INT_DISABLE  TX2_INT                ;Disable further USART TX Video interrupts.
+    VideoPointer = 0                    'Reset Video Buffer
+    hserout2[$1B,"y>"]                  'Normal Video White on Black   
+    else         
+    InverseVideoFlag = 1                'Set Inverse Video Flag to 1
+@   INT_DISABLE  TX2_INT                ;Disable further USART TX Video interrupts.
+    VideoPointer = 0                    'Reset Video Buffer
+    hserout2[$1B,"x>"]                  'Inverse Video Black on white
+    endif 
+   
+    return
+    
+'*******************************************************************************
+'**************************** Read data From Eeprom ****************************
+'*******************************************************************************     
+    
+ReadEeprom:                    'Read Eeprom Data and move into working variables
+    
+    For Gen0 = 0 to 99         'Start loop to read Eeprom data into CDat Word array
+	read (Gen0 *2) , word CDat(Gen0)     'Read Data into Array location (Gen0)
+	next Gen0                  'Loop next item.
+    return
+
+'*******************************************************************************
+'************************** Restore data From Eeprom ***************************
+'******************************************************************************* 
+
+RestoreEeprom:                 'Move Backup data in Eeprom into Live data Eeprom
+    
+    For Gen0 = 0 to 99         'Start loop to read Eeprom data into CDat array
+	read ((Gen0 *2) + 200), word WordTemp   'Read Data into Temporary Store 
+	write (Gen0 *2), word WordTemp          'Write Temp Store into Live data store 
+	next Gen0                  'Loop next item.
+    return   
+    
+'*******************************************************************************
+'**************************** Write data to Eeprom ****************************
+'*******************************************************************************     
+
+WriteEeprom:                    'Write Eeprom Data from working variables
+
+    For Gen0 = 0 to 99          'Start loop to write Eeprom data from CDat array
+	write (Gen0 *2), word CDat(Gen0)     'Write Data into Eeprom location (Gen0*2)
+	next Gen0                   'Loop next item.    
+    return
+    
+'*******************************************************************************
+'**************************** Backup data to Eeprom ****************************
+'******************************************************************************* 
+
+BackupEeprom:                  'Move Live data in Eeprom into Backup data Eeprom
+    
+    For Gen0 = 0 to 99         'Start loop to read Eeprom data into CDat array
+	read  (Gen0 *2), word WordTemp       'Read Data into Temporary Store 
+	write ((Gen0 *2) + 200), word WordTemp 'Write Temp Store into Live data store 
+	next Gen0                  'Loop next item.
+    return     
+    
+'*******************************************************************************    
+'******************* Generic Temp C to F Conversion Routine ********************
+'*******************************************************************************
+
+TempConvert:						'C to F Conversion             
+
+	if Sign = 45 then				'If Temp is below 32F then
+	Result = 32 - ((Result * 18) / 10)		'Convert Centigrade to Farenheit for temp < 32F
+	Sign = 43                  			'Farenheit does not go negative until less then 0
+	else
+	Result = ((Result * 18) / 10) + 32		'Convert Centigrade to Farenheit for temp >= 32F
+	endif	
+	return						'Return to main program
+	    
+
+'*******************************************************************************      
+'******************  Adjust Flag or Variable Values Routine *********************
+'*******************************************************************************  
+
+AdjVal:                 'Enter Routine here for Byte Variables
+       
+    while VideoPointer > 0      'Wait until Video Buffer ready for data
+    gosub ServiceRoutine        'Service Background Routines   
+    wend  
+
+    hserout2 [$1B,"E","** Adjust Parameter Value **",$0D,$0D]          'Clear screen & Cursor home   
+    
+    TextStart = Action * 30		    'Calculate Menu Table Entry
+	For Offset = 0 to 28		    'Start Loop to collect text data
+	ReadCODE  (MenuText + TextStart + Offset), DataByte   'Read dayabyte from memory
+    hserout2 [DataByte]             'Display data byte
+	next Offset                     'Next byte
+	
+	hserout2 [" (",#CDat(Action),")"]     'Display selected current value          
+    
+    read ((Action *2) + 400), MenuType   'Get Menu Entry Type from eeprom 
+    Read ((Action *2) + 200),word WordBackup 'Read backup Value from Eeprom
+    WordTemp = CDat(Action)  'Place current value in a Temp word variable
+    WordCurrent = WordTemp   'Preserve current value           
+    
+AdjustValue:             
+
+    while VideoPointer > 0      'Wait until Video Buffer ready for data
+    gosub ServiceRoutine        'Service Background Routines   
+    wend
+    
+    ArrayWrite VideoBuffer,[$1B,"Y",37,32,_
+    "Type (0) Flag Bit Dec (0 or 1)",_
+    $0D,"Type (1) Byte Var Dec (0 to 255)",_
+    $0D,"Type (2) Word Var Dec (0 to 65535)",_
+    $0D,$0D,"Key 2=(+1) 8=(-1) 6=(+10) 4=(-10) #=Ok",_
+    $0D,$0D,"Value Type    = ",#MenuType,_
+    $0D,$0D,"Backup Value  = ",#WordBackup,_
+    $0D,$0D,"Current Value = ",#WordCurrent,_
+    $0D,$0D,"New Value     = ",#WordTemp,32,32,32,32,0] 
+    
+@   INT_ENABLE   TX2_INT               ;Enable USART Video TX interrupt       
+                             
+    gosub ServiceRoutine               'Gather Key Press Data and Service Background Routines    
+    if KeyFlag = 0 then AdjustValue    'If No Key data then Loop.
+    KeyFlag = 0                        'Clear Key Flag   
+
+    if Key = Key2 then                 'Increment value  + 1
+    if MenuType = 0 then
+    if WordTemp = 0 then WordTemp = 1 
+    else
+    WordTemp = WordTemp + 1
+    endif   
+    endif     
+    
+    if Key = Key8 then                 'Decrement Value  - 1
+    if WordTemp > 0 then  WordTemp = WordTemp - 1
+    endif
+    
+    If Key = Key6 then                 'Increment value by 10
+    if MenuType = 1 then  
+    if WordTemp < 246 then  WordTemp = WordTemp + 10     
+    endif   
+    if MenuType = 2 then  
+    if WordTemp < 65436 then  WordTemp = WordTemp + 100     
+    endif                     
+    endif
+    
+    If Key = Key4 then                 'Decrement value by 10
+    if MenuType = 1 then  
+    if WordTemp > 9 then  WordTemp = WordTemp - 10
+    endif
+    if MenuType = 2 then  
+    if WordTemp > 99 then  WordTemp = WordTemp - 100
+    endif
+    endif
+    
+    if Key = KeyHash then              'Finished adjusting
+    if MenuType < 3 then 
+    CDat(Action) = WordTemp            'Load new Value into working Variables
+    write (Action *2), word WordTemp   'Write new Value into Eeprom Current Value Location
+    endif
+    return    
+    endif    
+     
+    goto AdjustValue                   'Loop         
+
+'******************************************************************************* 
+'******************** Usart2 Video Txd Interrupt Handler ***********************
+'*******************************************************************************          
+    
+VIDEO_TX:
+  TXREG2 = VideoBuffer(VideoPointer)     'Load character from array into USART TX register
+  If VideoBuffer(VideoPointer) = 0 then  'If that character was a EOF we're done so we.....
+@   INT_DISABLE  TX2_INT                 ;Disable the any further USART TX interrupts.
+    VideoSize = VideoPointer             'Save Video Pointer to display size of main video array
+    VideoPointer = 0                     'Reset Buffer Pointer
+  ELSE                                   'If the character was not an EOF we.....   
+    VideoPointer = VideoPointer + 1      'Increase & prepare to send the next character.
+@   INT_ENABLE  TX2_INT                  ;Enable next USART TX interrupts.    
+  ENDIF
+@ INT_RETURN                             ;Exits the interrupt.       
+ 
+'******************************************************************************* 
+'**************************** 1ms Interrupt Handler ****************************
+'******************************************************************************* 
+
+TICKS_1MS:                         'Interrupt Program every millisecond
+
+    toggle Spare1A                 'Toggle pin to allow external timing check  
+
+    if KeypadRxd = 0 then KeyCount = KeyCount + 1      'Increments in 1ms units when key pressed
+      
+'*** Get MetSciData if ready and waiting
+
+    if PIR1.5 = 1 then             'Hserin MetSci Data Waiting in buffer to be recieved?
+    HSERIN [MetSciData]            'Recieve METSCI data byte 
+    
+    if MetSciFlag = 1 then         'If Flag is 1 then Store B3 Value
+    B3Value = MetSciData
+    elseif MetSciFlag = 2 then     'If Flag is 2 then Store B4 Value
+    B4Value = MetSciData
+    endif
+    
+    if MetSciData = $B3 then       'If Data is $B3 then set Flag to 1
+    MetSciFlag = 1
+    elseif MetSciData = $B4 then   'If Data is $B4 then set Flag to 2
+    MetSciFlag = 2
+    else
+    MetSciFlag = 0                 'If Data is not any of above then set Flag to 0
+    endif            
+         
+    toggle RedLed                  'Flash Red Led to indicate METSCI Data recieved.   
+    endif   
+    
+'*** Send BattSci Data if ready and waiting ***   
+  
+    if PIR1.4 = 1 then                'Eusart Module ready for BattSci data? 
+    
+    If CounterMs >= 0 and CounterMs <12 then         'If CounterMs is 0-11 send bytes to MCM from buffer
+    hserout[BattSciBuffer(TxdCount)]  'Send data
+    TxdCount = TxdCount + 1           'Increment counter    
+    endif     
+    
+    If CounterMs >= 30 and CounterMs <42 then        'If CounterMs is 30-41 send bytes to MCM from buffer
+    hserout[BattSciBuffer(TxdCount)]  'Send data
+    TxdCount = TxdCount + 1           'Increment counter       
+    endif 
+    
+    CounterMs = CounterMs + 1         'Increment counter        
+    endif
+    
+    if CounterMs > 60 then            'Reset Counters for next packets
+    CounterMs = 0
+    TxdCount = 0
+    VoltageFlag = 0
+    CurrentFlag = 0
+    BufferFlag = 0
+    endif 
+              
+'*** Reload the timer ready for next interrupt and update clock ***
+    
+@ RELOAD_TIMER                    ;Reload TIMER1
+    Ticks = Ticks + 1             'Increment Ticks
+    MSecFlag = 1                  'Set every Millisecond
+    
+    if Ticks = 1000 then          'Modified 04/03/2015 from 100 to 1000   
+       Ticks = 0                  
+       T1Post = T1Post + 1        'Added 04/03/2015. Idea from DT_INTS-18
+       IF T1Post = T1PS THEN      'Added 04/03/2015. Idea from DT_INTS-18
+           T1Post = 0             'Added 04/03/2015. Idea from DT_INTS-18
+           Seconds = Seconds + 1  'Increment Seconds 
+           SecondsChanged = 1     'Set Seconds Changed Flag 
+                                         
+           if Seconds = 60 then
+              Minutes = Minutes + 1
+              Seconds = 0
+           endif
+           if Minutes = 60 then
+              Hours = Hours + 1
+              Minutes = 0
+           endif
+       endif
+    endif
+    
+@ INT_RETURN                      ; Restore context and return from interrupt    
+
+'******************************************************************************* 
+'************ Gather & Process Bcm Battery Current Sensor Data *****************
+'******************************************************************************* 
+
+CurrentSensorData:          'Process Analog Current Sensor Data 
+
+    ADCON0 = %00000001		'SETUP ADC & ENABLE ADC MODULE on AN0
+    ADCON1 = %00010000		'SETUP ADC SET REFV to the 2.5V VREF+ & VSS 
+    ADCON2 = %10111110		'SETUP ADC FOSC/64 RIGHT JUSTIFY TAD 20 (12 Bit)
+    
+    BcmAmps = 0            'Clear the BcmAmps Word variable 
+
+'    for Counter_1 = 0 to 63           'Start 64 x 12bit oversampling loop
+'    ADCIN 0, Word0                    'Get 64 x 12bit samples from Analog Amps Sensor on AN0  
+'    BcmAmps = BcmAmps + (Word0 >> 2)  'Shift left 2 & Accumulate 10bit data 
+'    next Counter_1                    'Next sample      
+    
+    for Counter_1 = 0 to 15           'Start 16 x 12bit oversampling loop
+    ADCIN 0, Word0                    'Get 16 x 12bit samples from Analog Amps Sensor on AN0  
+    BcmAmps = BcmAmps + Word0         'Accumulate 12bit data 
+    next Counter_1                    'Next sample            
+    
+    BcmAmps = BcmAmps >> 6  'Shift Right six bits to divide voltage by 64  for average  (0-1023)  (512 = 0A)
+   
+    IF CDat(BcmAmpsOffset) = 1 then
+    BcmAmps = BcmAmps + PositiveOffset    'Add Positive zero current sensor offset
+    BcmAmps = BcmAmps - NegativeOffset    'Subtract Negative zero current sensor offset
+    endif                   
+    
+'*******************************************************************************
+
+    If BcmAmps < 512 then 
+    BcmAmps = 512 - BcmAmps 
+    BcmAmpsSign = 43              '+
+    elseif BcmAmps > 512 then  
+    BcmAmps = BcmAmps - 512 
+    BcmAmpsSign = 45              '-
+    else
+    BcmAmps = 0                   'Amps is equal to zero
+    BcmAmpsSign = 32              '" " Space
+    endif   
+
+'Note you can divide by 1000 instead of 10000 to preserve one significant decimal point i.e. 122.5A
+'Note you can divide by 100 instead of 1000 to preserve two significant decimal points i.e. 122.55A
+
+    DivDummy = BcmAmps * 1960 'Convert OEM BCM Current Sensor 10 bit, +/- 512     adc -100A = 0   0A = 512    +100A = 1023   ?10.25mv per amp  after 1/2 op amp
+    BcmAmps = Div32 100       '(Calculate to two decimal places)       100.35A
+    
+    BcmAmps = BcmAmps + CDat(RoundUp)    'Round Up Byte Value   (Default 5)
+    BcmAmps = BcmAmps / 10   'Round Up Value and convert Pack Current to amps + one decimal place   
+    
+    CurrentFlag = 1                 'Current data obtained
+    
+    return
+
+'******************************************************************************* 
+'************* Gather Analog Voltage Tap Sensor Data once every 74ms ***********
+'******************************************************************************* 
+
+'Gather Voltage tap data from multiple taps (1-10 taps)   (Stored as 0-9 in variable)
+'Insight G1 10 Voltage Taps are Labelled (VHB11) Pack negative to (VHB0) Pack Positive
+'The Pack main switch break is 6 stick pairs from the negative end of the battery
+'(VHB11) and 4 stick pairs from the positive end (VHB0)
+'So the negative 6/10ths of the battery is Taps (VHB11-) to (VHB5+) in ascending voltage order
+'so then positive 4/10ths of the battery is Taps (VHB4-) to (VHB0+) continuing in ascending voltage order. 
+'The Break in pack must come between taps VHB4 & VHB5 to match the Insight .....    
+
+
+'Gather Voltage Tap Data from all taps via Multiplexer (10 Taps = 5 Voltage Modules)
+
+VoltageTapData:                'Gathers Data from Voltage Taps
+
+    BcmVolts = 0               'Clear the Bcm Voltage Word variable
+    LowTapV = 255              'Setup Low Voltage Tap Byte variable     25.5V
+    HighTapV = 0               'Setup High Voltage Tap Byte variable
+    Gen0 = 0                   'Load Start Multiplexer Tap Module with 0   (Ten Taps 1-10) = Five Tap Modules (0-4)
+    Gen1 = 1                   'Load Tap Counter with First Tap (1)
+
+GetVolts:                      'Get Voltage Tap Data  
+
+'Insert Tap Address Selector here.   Note Gen0 (Tap 0) is HTC4067 Input 0 (zero) S0=0 S1=0 S2=0
+
+    PORTF.4 = Gen0.bit0                'S0 = Bit4
+    PORTF.5 = Gen0.bit1                'S1 = Bit5
+    PORTF.6 = Gen0.bit2                'S2 = Bit6  
+    
+    pauseus 5                          'Pause for 5us   
+    
+    Value1 = 0                         'Clear Variables
+    Value2 = 0                         'Clear Variables
+    Value3 = 0                         'Clear Variables
+
+RepeatData:                            'Get data again if checksum missmatch
+
+    high TxdEnable                     'Request data from voltage Tap       
+    
+    hserin2 10, NoTapData, [wait($AA), Value1, Value2, Value3, Check_Sum] 'Get Tap Data Packet
+    
+    low TxdEnable                      'Stops data from voltage Tap
+    
+    Gen3 = $AA + Value1 + Value2 + Value3  
+    
+    if Gen3 <> Check_Sum then          'Is CheckSum Correct?
+    AlarmSetFlag = 1                   'Set Alarm Flag
+    ChkErrCount = ChkErrCount + 1      'Increment Error Counter
+    endif
+    
+    goto TapData                       'Jump over next section
+    
+NoTapData:                             'Jumps here if no Hserin2 serial data
+    
+    AlarmSetFlag = 1                   'Set Alarm Flag
+    SerErrCount = SerErrCount + 1      'Increment Serial Data Error Counter    
+
+TapData:   
+
+    Value1 = Value1 + CDat(TapVpComp)   'Add Positive Compensation 
+    Value2 = Value2 + CDat(TapVpComp)   'Add Positive Compensation 
+
+    Value1 = Value1 - CDat(TapVnComp)   'Deduct Negative Compensation 
+    Value2 = Value2 - CDat(TapVnComp)   'Deduct Negative Compensation
+    
+    BcmVolts = BcmVolts + Value1 + Value2  'Add incoming data to total accumulator
+    
+    Taps(Gen1) = Value1            'Stores Tap Voltage in Byte Array
+        
+    If Value1 > HighTapV then      'Is this Tap Voltage higher than the last?
+    HighTapV = Value1              'Yes store Voltage and Tap Number
+    HighTapN = Gen1                'Yes store Tap Number 
+    endif 
+    
+    If Value1 < LowTapV then       'Is this Tap Voltage lower than the last?
+    LowTapV = Value1               'Yes store Voltage and Tap Number
+    LowTapN = Gen1                 'Yes store Tap Number 
+    endif  
+    
+    Gen1 = Gen1 + 1                'Increment Tap Counter
+    
+    Taps(Gen1) = Value2            'Stores Tap Voltage in Byte Array
+       
+    If Value2 > HighTapV then      'Is this Tap Voltage higher than the last?
+    HighTapV = Value2              'Yes store Voltage and Tap Number
+    HighTapN = Gen1                'Yes store Tap Number 
+    endif 
+    
+    If Value2 < LowTapV then       'Is this Tap Voltage lower than the last?
+    LowTapV = Value2               'Yes store Voltage and Tap Number
+    LowTapN = Gen1                 'Yes store Tap Number 
+    endif   
+    
+    Supply(Gen0) = Value3          'Stores 5 x Tap Module supply voltages in Byte Array
+    
+    Gen0 = Gen0 + 1                'Increment Tap Module Counter
+    Gen1 = Gen1 + 1                'Increment Tap Counter
+    
+    if Gen0 < CDat(BatTapModules) then GetVolts  'Start loop to measure taps (Each Voltage Sensing Module measures two taps) Taps = 16 = Loop Gen0 (0-7)       
+        
+    if HighTapV > LowTapV then            'Check in case calcluation might go negative
+    TapDev = HighTapV - LowTapV           'Calculates + Tap Deviation Voltage
+    TapDevSign = 43                       'Set Sign to +
+    else
+    TapDev = 0                            'Set TapDev to 0
+    TapDevSign = 32                       'Set Sign to " "
+    endif  
+    
+    AvgTapV = BcmVolts / CDat(BatTaps)   'Calculate Average Tap voltage to 0.1 volts (Number of taps)  i.e. 25.5V  
+    
+    BcmVolts = BcmVolts / 10   'Remove decimal place to give pack Voltage in whole volts
+        
+    If BcmVolts > BcmMaxVolts then BcmMaxVolts = BcmVolts    'Stores Bcm max pack voltage
+    If BcmVolts < BcmMinVolts then BcmMinVolts = BcmVolts    'Stores Bcm Min pack Voltage   
+    
+    BcmWatts = (BcmAmps / 10) * BcmVolts  'Calculate Bcm Ima Watts 
+    
+    VoltageFlag = 1             'Voltage data obtained
+    
+    return
+
+'******************************************************************************* 
+'****       Gather Analog NTC & PTC Temperature etc Once every second     ******
+'******************************************************************************* 
+'***  Kelvin = Celsius + 273 
+'***  Celsius = Kelvin - 273
+'***  Farenheit = (K - 273) × 9/5 + 32 
+'******************************************************************************* 
+
+TemperatureData:            'Analog Temperature data gathered once per second
+
+'     ADCON1 = %00000000		'SETUP ADC REFV to the 5V VDD & VSS     
+     
+     Temp1Adc = 0           'Clear Variable
+     Temp2Adc = 0           'Clear Variable
+     Temp3Adc = 0           'Clear Variable
+     Temp4Adc = 0           'Clear Variable
+     BcmPtcAdc = 0          'Clear Variable                
+     
+     ADCIN 1, Temp1Adc      'Get Temp from Ntc Sensor on AN1
+     ADCIN 2, Temp2Adc      'Get Temp from Ntc Sensor on AN2
+     ADCIN 5, Temp3Adc      'Get Temp from Ntc Sensor on AN5
+     ADCIN 4, Temp4Adc      'Get Temp from Ntc Sensor on AN4
+     ADCIN 6, BcmPtcAdc     'Get Temp from Ptc Sensor on AN6
+     
+'     ADCON1 = %00010000		'SETUP ADC SET REFV to the 2.5V VREF+ & VSS 
+      
+     Temp1Adc = Temp1Adc >> 4    'Shift Right 4 to divide by 16 to give 8 bit result       
+     Temp2Adc = Temp2Adc >> 4           
+     Temp3Adc = Temp3Adc >> 4   
+     Temp4Adc = Temp4Adc >> 4          
+     BcmPtcAdc = BcmPtcAdc >> 4           
+
+' Calculate Highest Sensor Temperature  (Note higher value in lookup = lower Temp)
+     
+     If Temp1Adc < Temp2Adc then 
+     BcmHighTemp = Temp1Adc
+     else
+     BcmHighTemp = Temp2Adc
+     endif 
+          
+     If Temp3Adc < BcmHighTemp then  BcmHighTemp = Temp3Adc
+     If Temp4Adc < BcmHighTemp then  BcmHighTemp = Temp4Adc
+     
+     TempResult = BcmHighTemp
+     gosub GetTempLookup
+     BcmHighTemp = TempResult       
+     BcmHighTempSign = TempSign
+     
+' Calculate Lowest Sensor Temperature  (Note higher value in lookup = lower Temp)
+     
+     If Temp1Adc > Temp2Adc then 
+     BcmLowTemp = Temp1Adc
+     else
+     BcmLowTemp = Temp2Adc
+     endif 
+          
+     If Temp3Adc > BcmLowTemp then  BcmLowTemp = Temp3Adc
+     If Temp4Adc > BcmLowTemp then  BcmLowTemp = Temp4Adc
+     
+     TempResult = BcmLowTemp
+     gosub GetTempLookup
+     BcmLowTemp = TempResult        
+     BcmLowTempSign = TempSign
+     
+' Calculate 4 x temp sensor readings and store in display variables
+     
+     TempResult = Temp1Adc        'Load variable with temp sensor adc reading
+     gosub GetTempLookup          'Lookup temp in C
+     Temp1Disp = TempResult       'Store result in display variable
+     Temp1Sign = TempSign         'Store result Sign
+     TempResult = Temp2Adc        'Load variable with temp sensor adc reading
+     gosub GetTempLookup          'Lookup temp in C
+     Temp2Disp = TempResult       'Store result in display variable
+     Temp2Sign = TempSign         'Store result Sign
+     TempResult = Temp3Adc        'Load variable with temp sensor adc reading
+     gosub GetTempLookup          'Lookup temp in C
+     Temp3Disp = TempResult       'Store result in display variable
+     Temp3Sign = TempSign         'Store result Sign
+     TempResult = Temp4Adc        'Load variable with temp sensor adc reading
+     gosub GetTempLookup          'Lookup temp in C
+     Temp4Disp = TempResult       'Store result in display variable
+     Temp4Sign = TempSign         'Store result Sign
+     
+' Convert 4 x temp sensor readings to farenheit if selected
+     
+     If CDat(CentFaren) = 1 then            'If conversion requested gosub convert to farenheit
+    
+     Sign = Temp1Sign                       'Load Sign Variable
+     Result = Temp1Disp                     'Load Result Variable
+     gosub TempConvert                      'Gosub C to F temperature conversion
+     Temp1Sign = Sign                       'Load display variable with result of conversion
+     Temp1Disp = Result                     'Load display variable with result of conversion
+     
+     Sign = Temp2Sign                       'Load Sign Variable
+     Result = Temp2Disp                     'Load Result Variable
+     gosub TempConvert                      'Gosub C to F temperature conversion
+     Temp2Sign = Sign                       'Load display variable with result of conversion
+     Temp2Disp = Result                     'Load display variable with result of conversion
+     
+     Sign = Temp3Sign                       'Load Sign Variable
+     Result = Temp3Disp                     'Load Result Variable
+     gosub TempConvert                      'Gosub C to F temperature conversion
+     Temp3Sign = Sign                       'Load display variable with result of conversion
+     Temp3Disp = Result                     'Load display variable with result of conversion
+     
+     Sign = Temp4Sign                       'Load Sign Variable
+     Result = Temp4Disp                     'Load Result Variable
+     gosub TempConvert                      'Gosub C to F temperature conversion
+     Temp4Sign = Sign                       'Load display variable with result of conversion
+     Temp4Disp = Result                     'Load display variable with result of conversion           
+ 
+     endif          
+          
+Return
+
+'*******************************************************************************
+'******************  Temperature Lookup & Conversion Subroutine ****************
+'******************************************************************************* 
+
+GetTempLookup:                      'Temp Lookup & Conversion
+     
+	if TempResult < 189 then
+	TempSign = 43					'Set Sign to 43 (+)
+	elseif TempResult > 190 then 
+	TempSign = 45 					'Set Sign to 45 (-)
+	else
+	TempSign = 32					'Set Sign to 32 " "				
+	endif			
+	
+	Read (600 + TempResult), Gen0		'Lookup Temperature in data table 1
+	TempResult = Gen0                               'Move entry into TempResult
+
+return
+
+'******************************************************************************* 
+'**** Keeps running total of Ah and Wh in/out of pack, updated each second *****
+'*******************************************************************************       
+
+AhWhCounting:                              'Total of Ah and Wh in/out of pack, updated each second
+
+'UnitWh con 3600        'Unit constant for Wh calculations (3600 for 1hz readings with amps to one decimal place)
+'UnitAh con 36          'Unit constant for Ah calculations (36 for 1hz readings with amps to one decimal place)
+
+    If CDat(AhWhMode) = 1 then            'If 1 Use Bcm data for internal Ah/Wh Couting
+    PackVolts = BcmVolts
+    PackAmps = BcmAmps 
+    PackAmpsSign = BcmAmpsSign  
+    PackWatts = BcmWatts   
+    DivDummy = PackAmps * CDat(CurrentHack)  'Add compensation for counting if required
+    PackAmps = div32 100     
+    else                                  'If 2 Use Can data for internal Ah/Wh Couting
+    PackVolts = CanVolts
+    PackAmps = CanAmps 
+    PackAmpsSign = CanAmpsSign  
+    PackWatts = CanWatts 
+    endif      
+
+'Charging
+	
+    if PackAmpsSign = 43 then			  'If Sign = "+" then Ah & Wh calculations
+	     
+   	WattIn = WattIn + PackWatts			  'Add latest Watts data to the running Watts total
+	while WattIn >= UnitWh				  'If WattIn > (UnitWh) then execute code in loop
+	CDat(WhIn) = CDat(WhIn) + 1			  'Inc WhIn by one unit (1 wh) 
+	WattIn = WattIn - UnitWh			  'Subtract (UnitWh) from WattIn
+	WEND
+    						              
+	Charge = Charge + PackAmps + CDat(ChgComp)		  'Add latest Current and compensation value data to running Charge total 
+	while Charge >= UnitAh  			  'If Charge > UnitAh then execute code in loop
+	CDat(ChgMah) = CDat(ChgMah) + 1 	  'Inc ChgMah by one unit 1mah 
+	CDat(RemMah) = CDat(RemMah) + 1       'Inc RemMah Remaining by 1mah 
+	Charge = Charge - UnitAh			  'Subtract (UnitAh) from Charge
+	WEND						          'Repeat loop until Charge < UnitAh
+	
+ 	endif
+ 	
+'Discharging 	
+	
+	if PackAmpsSign = 45 then		      'If Sign = "-" then Ah & Wh calculations
+   	
+	WattOut = WattOut + PackWatts    	  'Add latest Watts data to the running Watts total
+	while WattOut >= UnitWh				  'If WattOut > (UnitWh) then execute code in loop
+	CDat(WhOut) = CDat(WhOut) + 1		  'Inc WhOut by one unit (1 wh) 
+	WattOut = WattOut - UnitWh			  'Subtract (UnitWh) from WattOut
+	WEND
+    						             
+	Discharge = Discharge + PackAmps + CDat(DisComp)   'Add latest Current data and compensation value to running Discharge total 
+	while Discharge >= UnitAh			  'If Discharge > (UnitAh) then execute code in loop
+	CDat(DisMah) = CDat(DisMah) + 1   	  'Inc DisMah by one unit 1mah 
+	CDat(RemMah) = CDat(RemMah) - 1       'Dec RemMah Remaining by 1mah 
+	Discharge = Discharge - UnitAh	      'Subtract (UnitAh) from Discharge 
+	WEND						          'Repeat loop until Discharge < UnitAh 
+
+    endif     
+
+'Calculate Soc % from remaining Mah capacity    
+   
+    DivDummy = 10000
+    PackSoc = DivDummy * 1000             'Get 32 bit Multiplication result into registers
+    PackSoc = Div32 CDat(CapMah)          'Divide by Capacity
+    DivDummy = PackSoc * CDat(RemMah)     'Get 32 bit Multiplication result into registers
+    PackSoc = div32 10000                 'Divide to get result to 0.1%    
+    
+    BcmSoc = PackSoc                      'Transfers Value into BcmSoc
+               
+Return
+
+'******************************************************************************* 
+'****************** Positive & Negative Recalibration Checks *******************
+'******************************************************************************* 
+
+RecalibrationChecks:                     'Do Oem Nimh Chemistry Recal Checks
+
+    PackVolts = BcmVolts                 'Load variables
+    PackAmps = BcmAmps / 10              'Load variables and get whole amps
+    PackAmpsSign = BcmAmpsSign           'Load variables
+    PackSoc = BcmSoc                     'Load variables       
+    
+'Check Static Pack Voltage Positive Recal
+
+    if PackVolts > CDat(StatRecalVolts) then  'If PackVolts > Static Recal Voltage Threshold
+        if PackAmps < CDat(PosRecalAmps) then   'If PackAmps < Positive Recal Current Threshold
+            if PackSoc < 750 then               'If PackSoc < 750 (75.0%) then carry on   
+                if StaticRecalCounter > CDat(PosRecalTime) then  'If Time Counter > Positive Recal Time Threshold
+                CDat(RemMah) = (CDat(CapMah) / 100) * CDat(PosRecalLevel)  'Recalibrate to specified level
+                StaticRecalCounter = 0                      'Reset Counter if system has recalibrated
+                else
+                StaticRecalCounter = StaticRecalCounter + 1       'Increment Static Positive Recal 1S Time Counter 
+                endif
+            else
+            StaticRecalCounter = 0                      'Reset Counter if Soc >= 75%  (Don't positively recal downwards!)
+            endif    
+        else
+        StaticRecalCounter = 0                      'Reset Counter if Current too high
+        endif
+    else
+    StaticRecalCounter = 0                      'Reset Counter if Voltage too low
+    endif
+
+'Check Regen Positive Recal
+
+    if PackAmpsSign = 43 then		       'If Sign = "+" then Regen Active
+    AssistRecalCounter = 0                 'Reset Assist Counter as now Regening
+        
+        if PackVolts > CDat(PosRecalVolts) then  'If PackVolts > Regen Recal Threshold
+            if PackAmps > CDat(PosRecalAmps) then   'If PackAmps > Regen Recal Current Threshold
+                if PackSoc < 750 then               'If PackSoc < 750 (75.0%) then carry on   
+                    if RegenRecalCounter > CDat(PosRecalTime) then  'If Time Counter > Regen Recal Time Threshold
+                    CDat(RemMah) = (CDat(CapMah) / 100) * CDat(PosRecalLevel)  'Recalibrate to specified level
+                    RegenRecalCounter = 0                      'Reset Counter if system has recalibrated
+                    else
+                    RegenRecalCounter = RegenRecalCounter + 1       'Increment Regen Positive Recal 1S Time Counter 
+                    endif
+                 else
+                RegenRecalCounter = 0                      'Reset Counter if Soc >= 75%  (Don't positively recal downwards!)
+                endif 
+            else
+            RegenRecalCounter = 0                      'Reset Counter if Current too low
+            endif
+        else
+        RegenRecalCounter = 0                      'Reset Counter if Voltage too low
+        endif
+    endif    
+
+'Check Assist Negative Recal
+
+ 	if PackAmpsSign = 45 then		     'If Sign = "-" then Assist Active
+    RegenRecalCounter = 0                'Reset Regen Counter as now Assisting
+
+        if PackVolts < CDat(NegRecalVolts) then  'If PackVolts < Assist Recal Threshold
+            if PackAmps > CDat(NegRecalAmps) then   'If PackAmps > Assist Recal Current Threshold
+                if AssistRecalCounter > CDat(NegRecalTime) then  'If Time Counter > Assist Recal Time Threshold
+                CDat(RemMah) = (CDat(CapMah) / 100) * CDat(NegRecalLevel)  'Recalibrate to specified level
+                AssistRecalCounter = 0                     'Reset Counter if system has recalibrated
+                else
+                AssistRecalCounter = AssistRecalCounter + 1      'Increment Assist Negative Recal 1S Time Counter 
+                endif
+            else
+            AssistRecalCounter = 0                      'Reset Counter if Current too low
+            endif
+        else
+        AssistRecalCounter = 0                      'Reset Counter if Voltage too high
+        endif 
+    endif
+    
+'Check if nothing happening         
+      
+    if PackAmpsSign = 32 then            'If zero current flowing reset counters
+    RegenRecalCounter = 0                'Reset Regen Time Counter
+    AssistRecalCounter = 0               'Reset Assist Time Counter
+    endif
+    
+return
+
+'******************************************************************************* 
+'****************** Generate BATTSCI $AA & $87 Compatible Data *****************
+'******************************************************************************* 
+
+ParseBattSciData:    'Build $AA & $87 Packets from Voltage,Current,Soc,TempH,TempL data
+
+    if Cdat(BattsciMode) = 1 then        'Use Can data if Can mode selected             
+    
+    BattsciVolts = CanVolts
+    BattsciAmps = CanAmps  
+    BattsciAmpsSign = CanAmpsSign
+    BattsciSoc = CanSoc
+    BattsciHighTemp = CanHighTemp
+    BattsciLowTemp = CanLowTemp     
+       
+    else                                'Use Analog data if Analog mode selected  
+    
+    BattsciVolts = BcmVolts
+    BattsciAmps = BcmAmps  
+    BattsciAmpsSign = BcmAmpsSign
+    BattsciSoc = BcmSoc
+    BattsciHighTemp = BcmHighTemp
+    BattsciLowTemp = BcmLowTemp  
+        
+    endif
+
+'Adjust % Voltage Hacking level for data sent to MCM
+
+    BattsciVolts = (BattsciVolts * (100 - CDat(VoltageHack))) / 100   'Voltage Hacking % 0-100
+    
+'Adjust Current Level for Analog Operations + Compensation
+
+    BattsciAmps = BattsciAmps + CDat(PackCComp)       'Add Compensation value Default 0A 0-25.5A
+
+'Generate Insight MCM Compatible Pack AMPS Word from amps i.e. 10.0A = 100    20.1A = 201
+
+    DivDummy = BattsciAmps * 512
+    BattsciAmps = Div32 250
+    
+    if BattsciAmpsSign = 43 then      'Charging +
+    BattsciAmps = BattsciAmps + 2048
+    elseif BattsciAmpsSign = 45 then  'Discharging -
+    BattsciAmps = 2048 - BattsciAmps
+    else
+    BattsciAmps = 2048    
+    endif 
+    
+    BattsciTemporary.highbyte = BattsciAmps / 128     'Normal Division How many 128's in value
+    BattsciTemporary.lowbyte = BattsciAmps // 128     'Modulo Division = LowByte = Remainder
+    
+    BattsciAmps.lowbyte = BattsciTemporary.lowbyte    'Move result back into Amps WORD for clarity 
+    BattsciAmps.highbyte = BattsciTemporary.highbyte  'Move result back into Amps WORD for clarity 
+     
+'Generate Insight MCM Compatible SOC Word
+
+    BattsciTemporary.highbyte = BattsciSoc / 128      'Normal Division How many 128's in Soc
+    BattsciTemporary.lowbyte = BattsciSoc // 128      'Modulo Division = Remainder
+    
+    BattsciSoc.lowbyte = BattsciTemporary.lowbyte     'Move result back into Soc WORD for clarity    
+    BattsciSoc.highbyte = BattsciTemporary.highbyte | %00010000   'Set Soc Flag Bit whilst Preserving Soc  (OR)
+    
+'Generate Inisght MCM Compatible VOLTS Byte from whole volts
+
+    BattsciVolts = BattsciVolts >> 1   'Shift Right to divide / 2     
+
+'If Temperature spoofing active then replace results in BattSci data stream    
+
+    if CDat(TempSpoof) > 0 then        'If spoof active set temperature
+    BattsciHighTemp = CDat(TempSpoof)  'Set Spoof temperature
+    BattsciLowTemp = CDat(TempSpoof)   'Set Spoof temperature
+    endif  
+     
+'Generate Inisght MCM Compatible Centigrade Temperature Byte   
+    
+    BattsciHighTemp = BattsciHighTemp + 30   '$43 = Temp High Value (BCM Offset +D30)  $39 = D57 - 30 = 25C
+    BattsciLowTemp = BattsciLowTemp + 30     '$41 = Temp Low Value (BCM Offset +D30)   $39 = D57 - 30 = 25C
+    
+    If AssistFlag = 1 then 
+    ImaControlByte = ImaControlByte | %00010000    'OR $10
+    else
+    ImaControlByte = ImaControlByte & %11101111    'AND $10
+    endif
+    
+    
+    if RegenFlag = 1 then 
+    ImaControlByte = ImaControlByte | %00100000    'OR $20 
+    else
+    ImaControlByte = ImaControlByte & %11011111    'AND $20 
+    endif
+    
+'******************************************************************************* 
+'************************** Load BattSci Buffer Routine ************************
+'******************************************************************************* 
+
+'$87  = BATTSCI Serial Packet ID 
+  
+    BattSciBuffer(0)= $87                       'Set Packet ID $87
+    BattSciBuffer(1)= $40                       '$40 = Fixed value
+    BattSciBuffer(2)= BattsciVolts              'Pack Voltage Byte (Note this is actual whole volts / 2)
+    BattSciBuffer(3)= BattsciSoc.highbyte       'Pack Soc  Word highbyte
+    BattSciBuffer(4)= BattsciSoc.lowbyte        'Pack Soc  Word lowbyte
+    BattSciBuffer(5)= BattsciAmps.highbyte      'Pack Current Word highbyte
+    BattSciBuffer(6)= BattsciAmps.lowbyte       'Pack Current Word lowbyte
+    BattSciBuffer(7)= $32                       '$32 or $23 (Unknown Purpose)
+    BattSciBuffer(8)= BattsciHighTemp           '$43 = Temp High Value (Offset D30)  $39 = D57 - 30 = 25C
+    BattSciBuffer(9)= BattsciLowTemp            '$41 = Temp Low Value (Offset D30)   $39 = D57 - 30 = 25C
+    BattSciBuffer(10)= B3Value                  '$04,$06,$26 = MettSci B3 Packet data byte (Transfer directly to output)
+    
+'$AA  = BATTSCI Serial Packet ID 
+
+    BattSciBuffer(12)= $AA                       'Set Packet ID $AA
+    BattSciBuffer(13)= $10 | Error13             '$10 = Fixed value  OR Error13
+    BattSciBuffer(14)= $00 | Error14             '$00 = Fixed value  OR Error14
+    BattSciBuffer(15)= $00 | Error15             '$00,$01 = Possible Fan Byte OR Error15
+    BattSciBuffer(16)= $00 | Error16             '$00 = Possible Error Code Byte OR Error16
+    BattSciBuffer(17)= ImaControlByte | Error17  '$00,$10,$20,$30 = ImaControl Byte  $00 OK, $10=No assist, $20=No regen, $30 = No assist/regen  OR Error17
+    BattSciBuffer(18)= $00                       '$00,$40,$20,$41,$42 = Unknown Byte   (Maybe assist/regen limits?)
+    BattSciBuffer(19)= $61                       '$61 = Fixed Value
+    BattSciBuffer(20)= BattsciAmps.highbyte      'Pack Current Word highbyte
+    BattSciBuffer(21)= BattsciAmps.lowbyte       'Pack Current Word lowbyte
+    BattSciBuffer(22)= B4Value                   '$18,$00 = MettSci B4 Packet data byte (Transfer directly to output)
+
+'OR Data Buffer with Flags Buffer to build final bytes for transmission
+    
+    For Check_Count = 1 to 10 
+    BattSciBuffer(Check_Count) = BattSciBuffer(Check_Count) | FlagsArray(Check_Count) 
+    Next Check_Count
+    
+    For Check_Count = 13 to 22 
+    BattSciBuffer(Check_Count) = BattSciBuffer(Check_Count) | FlagsArray(Check_Count) 
+    Next Check_Count
+    
+'$87  = BATTSCI Serial Packet ID (Calculate Checksum) 
+    
+    Check_Sum = 0                               'Clear Check_Sum
+	FOR Check_Count = 0 TO 10		      	    'For Check_Count = 0 to 10 (start 11 x loop)    
+	Check_Sum = Check_Sum + BattSciBuffer(Check_Count)	'Add Bytes   
+	NEXT Check_Count			                'Repeat until 10 bytes added                               
+	Check_Sum = ~Check_Sum			            'NOT check_sum
+	Check_Sum = Check_Sum + 1		            'Add 1 to check_sum 
+	BattSciBuffer(11) = Check_Sum & $7F 		'AND $7F        
+
+'$AA  = BATTSCI Serial Packet ID (Calculate Checksum) 
+
+    Check_Sum = 0                                'Clear Check_Sum
+	FOR Check_Count = 12 TO 22		      	     'For Check_Count = 12 to 22 (start 11 x loop)    
+	Check_Sum = Check_Sum + BattSciBuffer(Check_Count)	'Add Bytes   
+	NEXT Check_Count			                 'Repeat until 10 bytes added                               
+	Check_Sum = ~Check_Sum			             'NOT check_sum
+	Check_Sum = Check_Sum + 1		             'Add 1 to check_sum 
+	BattSciBuffer(23) = Check_Sum & $7F 		 'AND $7F
+	
+    TOGGLE GreenLed                              'Flash Green Led to indicate BATTSCI Data packet sent      	
+	BufferFlag = 1                               'Buffer has been filled
+
+RETURN						                     'Return         
+
+'******************************************************************************* 
+'************ Pic Can Module Recieve Orion2 BMS Data Subroutine ****************
+'******************************************************************************* 
+
+'Orion2 Can Checksum Calculation:
+'1) Take the broadcast ID and add 8 (the length).
+'2) Add bytes 0-6 to the value from step 1.
+'3) Chop off the (Leftmost byte) and that will be the checksum value.
+'4) If the computed checksum does not equal the provided checksum, the values should be discarded.
+
+CanData:      'PIC CAN Module Recieve Data Routine
+
+    CanTimeout = CanTimeout + 1     'Increments each time this routine is called
+
+    if RXB0CON.7 = 0 then return    'Check RXB0CON bit RXFUL to see if CAN RX Buffer Flag = message ready      
+    
+    if CDat(CanMode) = 1 then gosub Orion2Can
+    if CDat(CanMode) = 2 then gosub LtoCan
+    if CDat(CanMode) = 3 then gosub CrzCan
+    
+    CanIdNo = CanIdNo + 1       'Increment CAN ID Counter
+
+    If CanId(CanIdNo) = 0 then CanIdNo = 0 'Go back to first ID if all done  
+    if CanIdNo > 9 then CanIdNo = 0        'Go back to first ID if CanIdNo > 9        
+    
+    gosub CanConfig         'Set CAN module for next ID
+  
+    return                    
+    
+'***************************** Orion2 CAN Routine ******************************    
+
+Orion2Can:    
+
+    if CanId(CanIdNo) = $06B0 then 
+        
+'Calculate BCM Replacer Data from  Orion2 Data         
+
+    CanVolts.highbyte = RXB0D0   'ORION2 BMS Pack Inst Voltage Word  0-65535 * Scaling 0.1 (Resolution 0.1V)
+    CanVolts.lowbyte = RXB0D1    'As Above  
+    CanVolts = CanVolts / 10     'Remove 0.1 Scaling factor (Result is whole volts stored in a word variable) 
+       
+    If CanVolts > CanMaxVolts then CanMaxVolts = CanVolts    'Stores Can max pack voltage
+    If CanVolts < CanMinVolts then CanMinVolts = CanVolts    'Stores Can Min pack Voltage    
+
+    CanAmps.highbyte = RXB0D2    'ORION2 BMS Pack Inst Current Word  Signed 32767 to -32767 * Scaling 0.1 (Resolution 0.1A)
+    CanAmps.lowbyte = RXB0D3     'As Above      
+
+    if CanAmps.15 = 1 then	     'Test Bit 15 of Signed Pack Current  1= + Current or 0 = - Current
+	CanAmpsSign = 43		     'Set AmpSign to 43 (+)
+	else
+	CanAmpsSign = 45			 'Set AmpSign to 45 (-)
+    endif
+    
+    CanAmps = ABS CanAmps        'Returns ABS value of OrionAmps. if > 32767 then = 65536 - Amps
+    CanAmps = CanAmps / 10       'Remove Scaling factor
+      
+    CanSoc = RXB0D4              'ORION2 BMS SOC byte 0-100% * Scaling 0.5     200 = 100%
+    CanSoc = CanSoc * 5          'Multiply by 5 to Remove Scaling factor Result and retain decimal point = 0-100.0% Decimal  
+
+    CanHighTemp = RXB0D5         'ORION2 BMS High Temperature byte Range 80 to -40C  (Signed)
+    
+    if CanHighTemp.7 = 1 then    'Temperature is negative
+    CanHighTempSign = 45         'Set "-"
+    else
+    CanHighTempSign = 43         'Set "+"
+    endif
+        
+    CanLowTemp = RXB0D6          'ORION2 BMS Low Temperature byte Range 80 to -40C   (Signed)
+    
+    if CanLowTemp.7 = 1 then     'Temperature is negative
+    CanLowTempSign = 45          'Set "-"
+    else
+    CanLowTempSign = 43          'Set "+"
+    endif  
+    
+    CanWatts = (CanAmps / 10) * CanVolts  'Calculate Can Ima Watts 
+    
+'*******************************************************************************    
+
+    elseif CanId(CanIdNo) = $00CB then     'Cell Broadcast
+    
+'Orion2 Cell Broadcast Data Reception
+
+'Check Can Data Checksum  (Broadcast ID $0CB)
+
+'The Orion2 Cell Broadcast Message is as follows;  Can ID 0xCB
+'Byte 0: Cell ID (8 bit, starting with 0)
+'Byte 1&2: Instant Voltage (16 bit, unit: 0.1mv)
+'Byte 3&4: Internal Resistance (15 bit, unit: 0.01mOhm)   Bit 8 in byte #3 is whether or not the cell is shunting (1 indicates current is being shunted, 0 means it is not).
+'Byte 5&6: Open Voltage (16 bit, unit: 0.1mv)
+'Byte 7: Checksum (8 bit) 
+
+'CIv var word[100]    'Orion 2 Cell [x] Instant Voltage (16 bit Unit 0.1mv)
+'COv var word[100]    'Orion 2 Cell [x] Open Cell Voltage (16 bit Unit 0.1mv)
+'CIr var word[100]    'Orion 2 Cell [x] Internal Resistance (15 bit Unit 0.01mohm)  (Bit8 in highbyte is whether cell is shunting (1= current being shunted, 0= it is not))
+'CBf var byte[100]    'Orion 2 Cell [x] Balancing flag (0= Not shunting) (1= shunting)  
+
+ 
+    if RXB0D0 > 99 then return  'Cell ID out of array bounds
+    
+    Gen0 = RXB0D0 + 1      'Cell ID 'Byte 0: Cell ID (8 bit, starting with 0)  (Orion cells are numbered starting from 0) (Replacer cells are numbered starting from 1)
+    
+    Word0.highbyte = RXB0D1    'Byte 1&2: Instant Voltage (16 bit, unit: 0.1mv)
+    Word0.lowbyte = RXB0D2 
+    CIv(Gen0) = Word0 / 10    'Divide by 10 to get 1mv resolution and move data into array      
+
+    Word0.highbyte = RXB0D3 & $7F   'Byte 3&4: Internal Resistance (15 bit, unit: 0.01mOhm)   (AND $7f to mask bit 8)
+    Word0.lowbyte = RXB0D4          'Bit 8 in byte #3 is whether or not the cell is shunting (1 indicates current is being shunted, 0 means it is not).
+    CIr(Gen0) = Word0 / 10     'Divide by 10 to get 0.1mOhm resolution and move data into array                                 
+
+    Word0.highbyte = RXB0D5    'Byte 5&6: Open Voltage (16 bit, unit: 0.1mv)
+    Word0.lowbyte = RXB0D6 
+    COv(Gen0) = Word0 / 10    'Divide by 10 to get 1mv resolution and move data into array                    
+
+    CBf(Gen0) = RXB0D3 & $80      'Orion 2 Cell [x] Balancing flag (0=Not shunting) (1=Shunting)   And $80 to isolate flag bit  
+    
+    endif    
+
+Return       
+   
+    
+'******************************************************************************* 
+'*************** Pic Can Module Recieve LTO BMS Data Subroutine ****************
+'******************************************************************************* 
+
+'LTO Can Checksum Calculation:
+'1) Take the broadcast ID and add 8 (the length).
+'2) Add bytes 0-6 to the value from step 1.
+'3) Chop off the (Leftmost byte) and that will be the checksum value.
+'4) If the computed checksum does not equal the provided checksum, the values should be discarded.
+
+'LTO (01010101 0110) (1100 11111110) (11001111 1110) (1100 11111110)
+
+LtoCan: 
+  
+'Check Can Crc
+   
+'    Check_Sum = $04 + $08 + RXB0D0 + RXB0D1 + RXB0D2 + RXB0D3 + RXB0D4 + RXB0D5 + RXB0D6   
+
+'    if Check_Sum <> RXB0D7 then 'Crc does not match so reset ECAN and ignore this message       
+'    RXB0CON = %00100000          'Accept valid standard ID messages
+'    RXB0CON.7 = 0                'Clear RXB0CON.7 to allow reception of next message  
+'    Crc00CBErr = Crc00CBErr + 1  'Increment CanCrc Error Counter    
+'    Return
+'    endif         
+       
+    Gen0 = RXB0D7 & %11000000  'Cell Group %00000000 = 1-4  %01000000 = 5-8   %10000000 = 9-12 
+    
+    LtoCell = CanIdNo * 12
+    
+    if Gen0 = %00000000 then 'Cell Group 1-4        
+        
+    Word0.highbyte = RXB0D0    'Byte 1&2: Instant Voltage (12 bit, unit: 1mv)
+    Word0.lowbyte  = RXB0D1 & %11110000     
+    Word0 = Word0 >> 4      
+    CLv(LtoCell +1) = (Word0 * 15) / 10    'Multiply * 1.5 to get 1mv resolution     
+    
+    Word0.lowbyte = RXB0D2    'Byte 1&2: Instant Voltage (12 bit, unit: 1mv)
+    Word0.highbyte  = RXB0D1 & %00001111    
+    CLv(LtoCell +2) = (Word0 * 15) / 10    'Multiply * 1.5 to get 1mv resolution  
+    
+    Word0.highbyte = RXB0D3    'Byte 1&2: Instant Voltage (12 bit, unit: 1mv)
+    Word0.lowbyte  = RXB0D4 & %11110000
+    Word0 = Word0 >> 4              
+    CLv(LtoCell +3) = (Word0 * 15) / 10    'Multiply * 1.5 to get 1mv resolution     
+    
+    Word0.lowbyte = RXB0D5    'Byte 1&2: Instant Voltage (12 bit, unit: 1mv)
+    Word0.highbyte  = RXB0D4 & %00001111         
+    CLv(LtoCell +4) = (Word0 * 15) / 10    'Multiply * 1.5 to get 1mv resolution            
+
+    elseif Gen0 = %01000000 then 'Cell Group 5-8         
+
+    Word0.highbyte = RXB0D0    'Byte 1&2: Instant Voltage (12 bit, unit: 1mv)
+    Word0.lowbyte  = RXB0D1 & %11110000     
+    Word0 = Word0 >> 4      
+    CLv(LtoCell +5) = (Word0 * 15) / 10    'Multiply * 1.5 to get 1mv resolution     
+    
+    Word0.lowbyte = RXB0D2    'Byte 1&2: Instant Voltage (12 bit, unit: 1mv)
+    Word0.highbyte  = RXB0D1 & %00001111    
+    CLv(LtoCell +6) = (Word0 * 15) / 10    'Multiply * 1.5 to get 1mv resolution  
+    
+    Word0.highbyte = RXB0D3    'Byte 1&2: Instant Voltage (12 bit, unit: 1mv)
+    Word0.lowbyte  = RXB0D4 & %11110000
+    Word0 = Word0 >> 4              
+    CLv(LtoCell +7) = (Word0 * 15) / 10    'Multiply * 1.5 to get 1mv resolution     
+    
+    Word0.lowbyte = RXB0D5    'Byte 1&2: Instant Voltage (12 bit, unit: 1mv)
+    Word0.highbyte  = RXB0D4 & %00001111         
+    CLv(LtoCell +8) = (Word0 * 15) / 10    'Multiply * 1.5 to get 1mv resolution        
+
+    elseif Gen0 = %10000000 then  'Cell Group 9-12
+    
+    
+    Word0.highbyte = RXB0D0    'Byte 1&2: Instant Voltage (12 bit, unit: 1mv)
+    Word0.lowbyte  = RXB0D1 & %11110000     
+    Word0 = Word0 >> 4      
+    CLv(LtoCell +9) = (Word0 * 15) / 10    'Multiply * 1.5 to get 1mv resolution     
+    
+    Word0.lowbyte = RXB0D2    'Byte 1&2: Instant Voltage (12 bit, unit: 1mv)
+    Word0.highbyte  = RXB0D1 & %00001111    
+    CLv(LtoCell +10) = (Word0 * 15) / 10    'Multiply * 1.5 to get 1mv resolution  
+    
+    Word0.highbyte = RXB0D3    'Byte 1&2: Instant Voltage (12 bit, unit: 1mv)
+    Word0.lowbyte  = RXB0D4 & %11110000
+    Word0 = Word0 >> 4              
+    CLv(LtoCell +11) = (Word0 * 15) / 10    'Multiply * 1.5 to get 1mv resolution     
+    
+    Word0.lowbyte = RXB0D5    'Byte 1&2: Instant Voltage (12 bit, unit: 1mv)
+    Word0.highbyte  = RXB0D4 & %00001111         
+    CLv(LtoCell +12) = (Word0 * 15) / 10    'Multiply * 1.5 to get 1mv resolution  
+    
+    endif
+        
+Return         
+
+'*******************************************************************************     
+'************************* CRZ/CIVIC3 CAN Routine ******************************   
+'*******************************************************************************  
+
+CrzCan:       
+
+'CanDataPointer = 0 'Set pointer to array location
+
+'CanDataRx[CanDataPointer]   = RXB0D0   'Load CanDataRx array with bytes from CAN RX Buffer 0
+'CanDataRx[CanDataPointer+1] = RXB0D1
+'CanDataRx[CanDataPointer+2] = RXB0D2
+'CanDataRx[CanDataPointer+3] = RXB0D3
+'CanDataRx[CanDataPointer+4] = RXB0D4
+'CanDataRx[CanDataPointer+5] = RXB0D5
+
+'CanDataPointer = 6 'Set pointer to array location
+
+'CanDataRx[CanDataPointer] = RXB0D0   'Load CanDataRx array with bytes from CAN RX Buffer 0
+'CanDataRx[CanDataPointer+1] = RXB0D1
+'CanDataRx[CanDataPointer+2] = RXB0D2
+'CanDataRx[CanDataPointer+3] = RXB0D3
+'CanDataRx[CanDataPointer+4] = RXB0D4
+'CanDataRx[CanDataPointer+5] = RXB0D5
+
+'CanDataPointer = 12 'Set pointer to array location
+
+'CanDataRx[CanDataPointer] = RXB0D0   'Load CanDataRx array with bytes from CAN RX Buffer 0
+'CanDataRx[CanDataPointer+1] = RXB0D1
+'CanDataRx[CanDataPointer+2] = RXB0D2
+'CanDataRx[CanDataPointer+3] = RXB0D3
+'CanDataRx[CanDataPointer+4] = RXB0D4
+'CanDataRx[CanDataPointer+5] = RXB0D5
+
+''Calculate voltages.
+
+''$ED,$1E,$D2,$EF,$2E,$D3,$ED,$2E,$D2,$EF,$2E,$D3,$ED,$1E,$D2
+
+'for Count1 = 0 to 4  
+'    CellRaw[Count1*2]=CanDataRx[Count1*3]*16+CanDataRx[Count1*3+1]>>4
+'    CellRaw[Count1*2+1]=CanDataRx[Count1*3+2]+(CanDataRx[Count1*3+1]&$f)*256
+'next  
+
+''mV = (1.54 * decVIN) + 100 
+
+'for Count1 = 0 to 9    
+'    CellVolts[Count1] = (CellRaw[Count1] * 15) / 100 ' + 1000  
+'next       
+
+return              'Return to main OBDIIC&C program
+  
+'******************************************************************************* 
+'******************* Pic Can Module Configuration Subroutine *******************
+'******************************************************************************* 
+
+'In Mode 0, acceptance filters, RXF0 and RXF1, and
+'filter mask, RXM0, are associated with RXB0. Filters,
+'RXF2, RXF3, RXF4 and RXF5, and mask, RXM1, are
+'associated with RXB1.
+
+CanConfig:      'PIC CAN Module Configuration Routine
+
+    if CanId(0) = 0 then return     'No CAN ID's set so no need to configure CAN
+
+    CANCON.7 = 1 'Request configuration mode (looped on CANSTAT)
+
+ConfigModeCheck:    'Loops here if CAN module not ready
+
+    if CANSTAT.7 = 0 then ConfigModeCheck   'CAN Module not ready yet
+
+'Set Data Rate based on 64Mhz OSC = 500 kbs:   (Result from Microchip timing calculator) 
+
+    BRGCON1 = $07 
+    BRGCON2 = $90 
+    BRGCON3 = $02 
+    
+    CIOCON  = $30           'bit 5 set, CANtx drives vdd when recessive, bit 4 set,enable CAN capture
+    ECANCON = $00           'Clear ENHANCED CAN CONTROL REGISTER. No requirement for advanced modes
+    
+    RXB0DLC = $08           'Set number of Rxd data bytes to 8 
+    TXB0DLC = $08           'Set number of Txd data bytes to 8   
+    
+    RXB0CON = %00100000     'Accept valid standard ID messages       
+
+'  Mask Setup  (Mask only standard ID's)
+
+    RXM0EIDH = $00  ;    // Extended ID FILTER (Disabled)
+    RXM0EIDL = $00  ;
+    RXM0SIDH = $FF  ;    // Standard ID FILTER (Enabled)
+    RXM0SIDL = $E0  ;
+    
+'   Use stored CAN ID's to set filter 0
+
+    Word0 = CanId(CanIdNo)  'Copy data from array storage into word to allow high/low byte split
+    
+    Word0 = Word0 << 5      'Shift data left five to load Filter Register
+  
+    RXF0SIDH = Word0.highbyte    'Filter Identifier High Byte (Bits 0-7) are bits 3-10 of Standard Identifier  
+    RXF0SIDL = Word0.lowbyte     'Filter Identifier Low Byte (Bits 5-7) are bits 0-2 of Standard Identifier   
+    
+''  $0204  Filter Message setup                  
+    
+'    RXF0SIDH = %01000000    'Filter Identifier High Byte (Bits 0-7) are bits 3-10 of Standard Identifier   $204 1000000100
+'    RXF0SIDL = %10000000    'Filter Identifier Low Byte (Bits 5-7) are bits 0-2 of Standard Identifier     $204 1000000100     
+    
+'   filter 1 is not used    
+    
+    RXF1SIDH = %00000000    'Filter Identifier High Byte (Bits 0-7) are bits 3-10 of Standard Identifier   $000 00000000
+    RXF1SIDL = %00000000    'Filter Identifier Low Byte (Bits 5-7) are bits 0-2 of Standard Identifier    $000 00000000    
+     
+    CANCON = %00000000 'Return to Normal Mode and RX 
+    
+    CanTest = CanTest + 1
+    
+    CanTimeout = 0      'Resets Can Timeout counter
+
+return 
+
+'*******************************************************************************
+'****************************** Service Routine ********************************
+'*******************************************************************************  
+
+ServiceRoutine:                      'Checks if key delay required. 
+
+'***********************  Do stuff here every 60ms *****************************   
+
+        CodeTimer1 = Ticks                                  'Start Code Timer (Measures Analog and CAN data gathering time)     
+
+        if CDat(BcmMode) > 0 then gosub CanData             'Gather Orion2 CAN Data  
+           
+        if CDat(BcmMode) < 2 then                           'Gather & Process Bcm Analog Data
+        if VoltageFlag = 0 then gosub VoltageTapData        'Gather Bcm Voltage Tap Data
+        if CurrentFlag = 0 then gosub CurrentSensorData     'Gather Bcm Battery Current Sensor Data
+        endif    
+                         
+        if BufferFlag = 0 then                              'Has the data been sent to the buffer?  (0=No 1=Yes)
+        if CounterMs > 31 then gosub ParseBattSciData       'Parse Analog/Can data into BATTSCI Format and move valid data into BattSciBuffer for transmission 
+        endif     
+        
+        if Ticks > CodeTimer1 then CodeTimer2 = Ticks - CodeTimer1   'Times program execution in 1ms chunks    
+                   
+'****************** Do stuff once per second once enabled **********************
+
+        if EnableChecksFlag = 0 then          'Delays checks until system has been running for at least one second
+        if Seconds < 1 then return            'If Seconds still < 2 then return
+        EnableChecksFlag = 1                  'Set EnableChecksFlag to 1
+        endif    
+    
+    if SecondsChanged = 1 then       'Do this stuff once per second   
+    
+        if CDat(BcmMode) < 2 then Gosub TemperatureData   'Gather Bcm Temperature Sensor Data                  
+     
+        if CDat(AhWhMode) > 0 then gosub AhWhCounting  'If AhWh counting enabled go and do it (Calculate Ah/Wh once per second)
+          
+        if CDat(RecalFlag) = 1 then gosub RecalibrationChecks 'If Recal Checks enabled go and do it (Negative & Positive Recalibration Checks)
+               
+        if CDat(ErrorChecks) = 1 or CDat(ErrorChecks) = 2 then gosub BcmErrorRoutine   'Bcm Error Data Routine checks data/parameters & enables/disables IMA   
+        
+        if CDat(ErrorChecks) = 2 or CDat(ErrorChecks) = 3 then gosub CanErrorRoutine   'Can Error Data Routine checks data/parameters & enables/disables IMA 
+        
+        gosub AlarmControl      'Updates Alarm Status   
+        
+        if CDat(FanControl) = 1 then       'If FanControl = 1 set battery fan low
+        Low FanH                           'Fan High Relay Off
+        high FanL                          'Fan Low Relay On
+        FanLowFlag = 1                     'Flag On
+        FanHighFlag = 0                    'Flag Off
+        endif
+        
+        if CDat(FanControl) = 2 then   'If FanControl = 1 set battery fan high
+        low FanL                           'Fan Low Relay Off
+        high FanH                          'Fan High Relay On
+        FanLowFlag = 0                     'Flag Off
+        FanHighFlag = 1                    'Flag On
+        endif          
+       
+'*** Vehicle Shutdown Section 
+   
+        if B3Value = $00 Then                'Engine Stopped & B3 byte says Ignition has been turned off so shutdown
+            if B4Value = $20 then            'Double check with B4 byte 
+                if IgnitionFlag = 1 then     'If IgnitionFlag set then do closedown stuff        
+                gosub WriteEeprom            'Save the current BCM Replacer data to Eeprom       
+                IgnitionFlag = 0             'Clear IgnitionFlag  (Ignition is off)
+                endif   
+            endif
+        else           
+            IgnitionFlag = 1                 'Set IgnitionFlag (Ignition is on)             
+        endif     
+       
+     SecondsChanged = 0                      'Reset Seconds Changed Flag 
+     endif
+
+'************************ End once per second section **************************     
+     
+     if KeypadRxd = 1 then               'If no incomming key data 
+        if KeyCount > 0 then             'If KeyCount > 0 then key was pressed     
+        Key = (KeyCount / 5) - 1         'Make Key = KeyCount - 1 (Keys are 0-11)
+        KeyCount = 0                     'Reset KeyCount to zero
+        KeyFlag = 1                      'Set Key pressed Flag
+'       If CDat(BeepFlag) = 1 then high Piezo
+        endif
+     endif    
+     
+'*** Loop until at least 1ms has elapsed ***             
+      
+     do                                'Loop until MsecFlag = 1 
+     loop until MsecFlag = 1             
+     MsecFlag = 0                      'Clear MsecFlag       
+   
+     return                            'Return
+     
+'*******************************************************************************
+'********** BCM IMA Error Checks Routine Executes Once per Second **************
+'*******************************************************************************  
+'ImaControl Byte  $00 OK, $10=No assist, $20=No regen, $30 = No assist/regen
+
+BcmErrorRoutine:      'Bcm Data IMA Error Routine checks data/parameters & enables/disables IMA features    
+
+    ControlVolts = BcmVolts               'Battery Voltage 
+    ControlAmps = BcmAmps                 'Battery Amps 
+    ControlAmpsSign = BcmAmpsSign         'Amps Current Sign + (D43) or -(D45) or =(D61) ascii code
+    ControlSoc = BcmSoc                   'Battery Pack Soc 
+    ControlHighTemp = BcmHighTemp         'Battery Pack Highest temp 
+    ControlLowTemp = BcmLowTemp           'Battery Pack Lowest temp 
+    ControlHighTempSign = BcmHighTempSign 'Temperature Variable Sign  Ascii (+,-, or space)
+    ControlLowTempSign = BcmLowTempSign   'Temperature Variable Sign  Ascii (+,-, or space)
+    ControlPtcAdc = BcmPtcAdc             'Ptc Adc Value
+       
+'Detect Tap Voltage Issues
+    
+    if TapDev > CDat(TapDevLimit) then       'Tap Voltage Deviation beyond permitted limit
+'    Errors(TapDevLimit) = Errors(TapDevLimit) + 1     'Increment Error Counter
+'        if Errors(TapDevLimit) > CDat(ConError) then  'More than permitted consecutive deviation errors
+        ImaControlByte = $10                     'Disable Assist
+        CDat(RemMah) = (CDat(CapMah) / 100) * CDat(NegRecalLevel)  'Set Soc to XX% of original capacity (20)                 
+        AlarmSetFlag = 1                         'Set Alarm Condition Flag
+        OldTapDev = TapDev                       'Preserve Tap Deviation   
+        OldTapDevSign = TapDevSign               'Preserve Tap Deviation Sign  
+            If CDat(DtcEnable) = 1 then Error17 = Error17 | %00001000           'P1449 (74) Voltage Tap Deviation
+'        endif
+'    else
+'    Errors(TapDevLimit) = 0                       'Clear errors if not consecutive
+    endif                                  
+  
+'Detect Ptc Strip Issues
+
+      if CDat(PtcFlag) = 1 then                     'If Ptc Strips in use do stuff below
+
+'        if ControlPtcAdc = 255 then                   'Ptc Circuit Problem Detection
+'        Errors(PtcLimit) = Errors(PtcLimit) + 1       'Increment Ptc Cell Overheating Error Counter
+'            if Errors(PtcLimit) > CDat(ConError) then     'If more than permitted consecutive errors   
+'            Low FanL            'Off Fan Low Relay 
+'            FanLowFlag = 0      'Clear Fan Low Flag      
+'            High FanH                                     'Turn battery fan on high 
+'            FanHighFlag = 1                               'Set Fan High Flag
+'            ImaControlByte = $30                          'Disable Assist & Regen
+'            AlarmSetFlag = 1                              'Set Alarm Condition Flag
+'            Errors(PtcLimit) = Errors(PtcLimit) + 1       'Increment Ptc Cell Overheating Error Counter
+'                If CDat(DtcEnable) = 1 then Error13 = Error13 | %00100000                 'P1568 (70) Ptc Pircuit problem
+'            endif
+'        else
+'        Errors(PtcLimit) = 0                          'Clear errors if not consecutive      
+'        endif   
+
+        if ControlPtcAdc > CDat(PtcLimit) then        'Ptc Adc Limit 34 = approx 500R ptc resistance
+        Errors(PtcLimit) = Errors(PtcLimit) + 1       'Increment Ptc Cell Overheating Error Counter
+            if Errors(PtcLimit) > CDat(ConError) then       'If more than permitted consecutive errors
+            Low FanL            'Off Fan Low Relay 
+            FanLowFlag = 0      'Clear Fan Low Flag   
+            High FanH                                     'Turn battery fan on high 
+            FanHighFlag = 1                               'Set Fan High Flag
+            ImaControlByte = $30                          'Disable Assist & Regen
+            AlarmSetFlag = 1                              'Set Alarm Condition Flag
+            Errors(PtcLimit) = Errors(PtcLimit) + 1       'Increment Ptc Cell Overheating Error Counter
+                If CDat(DtcEnable) = 1 then Error17 = Error17 | %00000001                 'P1449 (73) Battery Cell Overheating
+            endif  
+        else
+        Errors(PtcLimit) = 0                          'Clear errors if not consecutive           
+        endif  
+       
+      endif 
+      
+      gosub SharedErrorRoutine                 'Do the shared error checks 
+      
+      return        
+      
+'*******************************************************************************
+'************ CAN IMA Error Checks Routine Executes Once per Second ************
+'*******************************************************************************  
+'ImaControl Byte  $00 OK, $10=No assist, $20=No regen, $30 = No assist/regen
+
+CanErrorRoutine:      'Can Data IMA Error Routine checks data/parameters & enables/disables IMA features    
+
+    ControlVolts = CanVolts               'Battery Volts 
+    ControlAmps = CanAmps                 'Battery Amps 
+    ControlAmpsSign = CanAmpsSign         'Amps Current Sign + (D43) or -(D45) or =(D61) ascii code
+    ControlSoc = CanSoc                   'Battery Pack Soc 
+    ControlHighTemp = CanHighTemp         'Battery Pack Highest temp 
+    ControlLowTemp = CanLowTemp           'Battery Pack Lowest temp 
+    ControlHighTempSign = CanHighTempSign 'Temperature Variable Sign  Ascii (+,-, or space)
+    ControlLowTempSign = CanLowTempSign   'Temperature Variable Sign  Ascii (+,-, or space)
+    ControlPtcAdc = 0                     'Ptc Adc Value (Forced to zero for Can)  
+
+'Can Specific Checks
+    
+    for Gen0 = 1 to CDat(LiCells) 
+    
+    if CIv(Gen0) > CDat(LiMaxVolts) or CLv(Gen0) > CDat(LiMaxVolts) then
+    ImaControlByte = $20                     'Disable Regen
+    AlarmSetFlag = 1                         'Set Alarm Condition Flag
+    CEd(Gen0) = CEd(Gen0) | %00000001        'Set Above Maximum Cell Voltage Error Flag (Bit 0)  (OR value)
+    endif 
+    
+    if CIv(Gen0) < CDat(LiMinVolts) or CLv(Gen0) < CDat(LiMinVolts) then
+    ImaControlByte = $10                     'Disable Assist
+    AlarmSetFlag = 1                         'Set Alarm Condition Flag
+    CEd(Gen0) = CEd(Gen0) | %00000010        'Set Below Minimum Cell Voltage Error Flag (Bit 1)  (OR value)
+    endif
+    
+    next Gen0
+    
+    If CanTimeout > 100 then                 'No CAN data recieved within timeout period
+    AlarmSetFlag = 1                         'Set Alarm Condition Flag
+    endif
+   
+    gosub SharedErrorRoutine                 'Do the shared error checks
+    
+    return
+    
+'*******************************************************************************
+'*********** Shared IMA Error Checks Routine Executes Once per Second **********
+'*******************************************************************************  
+'ImaControl Byte  $00 OK, $10=No assist, $20=No regen, $30 = No assist/regen           
+
+'Shared Can & Bcm Checks  
+
+SharedErrorRoutine:                          'Shared BCM & CAN Error Checks
+
+'Detect Pack Voltage Issues
+    
+    if ControlVolts < CDat(BatVMin) then     'Volts below minimum  
+    ImaControlByte = $10                     'Disable Assist
+    AlarmSetFlag = 1                         'Set Alarm Condition Flag
+    Errors(BatVMin) = Errors(BatVMin) + 1    'Increment Error Counter
+    endif
+    
+    if ControlVolts > CDat(BatVMax) then     'Volts above maximum
+    ImaControlByte = $20                     'Disable Regen
+    AlarmSetFlag = 1                         'Set Alarm Condition Flag
+    Errors(BatVMax) = Errors(BatVMax) + 1    'Increment Error Counter
+    endif
+    
+'Detect Pack Soc Issues
+    
+    if ControlSoc / 10 > CDat(MaxSoc) then   'If Soc > MaxSoc then do stuff
+    ImaControlByte = $20                     'Disable Regen
+    AlarmSetFlag = 1                         'Set Alarm Condition Flag
+    Errors(MaxSoc) = Errors(MaxSoc) + 1      'Increment Error Counter  
+    endif       
+     
+    if ControlSoc / 10 < CDat(MinSoc) then   'If Soc < MinSoc then do stuff
+    ImaControlByte = $10                     'Disable Assist
+    AlarmSetFlag = 1                         'Set Alarm Condition Flag     
+    Errors(MinSoc) = Errors(MinSoc) + 1      'Increment Error Counter
+    endif  
+           
+'Detect Battery Pack High Temperature Issues
+    
+    if ControlHighTempSign = 43 then             'If Pack High Temp is + then 
+    
+        if ControlHighTemp > CDat(BatTMax) then  'Disable Assist & Regen if Bat Temp > 45C  
+        Errors(BatTMax) = Errors(BatTMax) + 1    'Increment Battery over maxmimum temperature Error Counter
+        if Errors(BatTMax) > CDat(ConError) then   'If more than permitted consecutive errors
+        ImaControlByte = $30                     'Disable Assist & Regen         
+        AlarmSetFlag = 1                         'Set Alarm Condition Flag       
+        If CDat(DtcEnable) = 1 then Error17 = Error17 | %00000100         'P1449 (72) Battery Module Overheating
+        endif
+        else
+        Errors(BatTMax) = 0                      'Clear error counter if not consecutive errors
+        endif             
+        
+        if CDat(FanControl) = 0 then                       'If automatic fan control active
+        If ControlHighTemp > CDat(BatFanH) then            'Temperature above Fan High turn on threshold
+        low FanL            'Fan Low Relay Off
+        FanLowFlag = 0      'Clear Fan Low Flag
+        High FanH           'Turn battery fan on high if > 35C
+        FanHighFlag = 1     'Set Fan High Flag
+                  
+        elseif ControlHighTemp > CDat(BatFanL) and ControlHighTemp < CDat(BatFanH) then      'Temperature within Fan Low on threshold
+        Low FanH            'Off Fan High Relay
+        FanHighFlag = 0     'Clear Fan High Flag
+        High FanL           'Turn battery fan on low  if > 30C & < 36C 
+        FanLowFlag = 1      'Set Fan Low Flag        
+                 
+        elseif ControlHighTemp < CDat(BatFanL) then                                          'Temperature under Fan Low on threshold
+        Low FanL            'Off Fan Low Relay 
+        FanLowFlag = 0      'Clear Fan Low Flag 
+        Low FanH            'Off Fan High Relay
+        FanHighFlag = 0     'Clear Fan High Flag
+        endif
+        endif         
+        
+    endif
+    
+'Detect Battery Pack Low Temperature Issues    
+    
+     if ControlLowTempSign = 45 then ' If Pack Low Temp is - then it's below freezing (0C)!!
+        
+        if ControlLowTemp > CDat(BatTMin) then  'Disable Assist & Regen if Bat Temp < -15C  
+        Errors(BatTMin) = Errors(BatTMin) + 1 'Increment Battery below minimum temperature Error Counter
+        if Errors(BatTMin) > CDat(ConError) then   'If more than permitted consecutive errors          
+        ImaControlByte = $30                  'Disable Assist & Regen
+        AlarmSetFlag = 1                      'Set Alarm Condition Flag 
+        endif          
+        else
+        Errors(BatTMin) = 0 'Clear if not consecutive errors                 
+        endif      
+                     
+        if CDat(FanControl) = 0 then    'If automatic fan control active
+        Low FanH            'Off Fan High Relay
+        FanHighFlag = 0     'Clear Fan High Flag
+        High FanL           'Turn battery fan on low  if <= 0C  (Try to warm battery) 
+        FanLowFlag = 1      'Set Fan Low Flag
+        endif  
+      
+     endif 
+ 
+     return  
+      
+'*******************************************************************************
+'*************************** Alarm Status Section ******************************
+'*******************************************************************************  
+
+AlarmControl:                       'Updates Alarm Status Activates/Cancels etc
+
+    if AlarmSetFlag = 1 then AutoRecoveryFlag = 1    'Set Auto RecoveryFlag
+
+    if AlarmSetFlag = 0 then        'Return if no errors   
+    
+        if AutoRecoveryFlag = 1 then    'If Flag was set previously then error had occured
+        AutoRecoveryFlag = 0            'Clear the AutoRecoveryFlag
+            if CDat(AutoRecover) = 1 then gosub ClearErrors   'If AutoRecover set then clear errors
+        endif
+          
+    low Piezo                       'Silence Alarm
+    return                          'Return
+    endif
+           
+' Do error stuff here    
+
+    if CDat(AlarmFlag) = 1 then     'Sound Alarm if Global Piezo Enabled 
+    if AlarmMuteFlag = 0 then       'Is Alarm Muted? (0=No 1=Yes)
+    high Piezo                      'Sound Alarm
+    else
+    low Piezo                       'Mute Alarm
+    endif
+    endif  
+    
+'Do error stuff like display error type/actions blah blah
+
+    AlarmSetFlag = 0                'Clear Alarm Condition Flag  for next time
+    
+    if CDat(InVideo) = 1 then       'Allow Inverse Video if option enabled 
+    if InverseVideoFlag = 0 then    'Invert Video if not already inverted
+    InverseVideoFlag = 1            'Set Inverse Video Flag to 1
+@   INT_DISABLE  TX2_INT            ;Disable further USART TX Video interrupts.
+    VideoPointer = 0                'Reset Video Buffer
+    hserout2[$1B,"x>"]              'Inverse Video Black on white
+    endif
+    endif
+
+    return 
+    
+'*******************************************************************************
+'***************************** Odd Notes & Stuff *******************************
+'*******************************************************************************  
+
+
+'    if AmpsMode = 1 then                    'If AmpsMode = 1 add compensation
+'	 Amps = Amps * 147                       'Add +30% compensation for current hack
+'    Amps = DIV32 100                        'Add +30% compensation for current hack
+'    endif
+
+'Result = (Result * CDat(AmpHackValue)) / 100	'Comp (100=0% 125=20%   147=32%   166=40%   200=50%)
+
+
+
+'********************* Generic Temp C to F Conversion Routine ******************
+
+'TempConvert:						'C to F Conversion 
+
+'	if Sign = 45 then				'If Temp is below 32F then
+'	Result = 32 - ((Result * 18) / 10)		'Convert Centigrade to Farenheit for temp < 32F
+'	Sign = 43                  			'Farenheit does not go negative until less then 0
+'	else
+'	Result = ((Result * 18) / 10) + 32		'Convert Centigrade to Farenheit for temp >= 32F
+'	endif	
+'	return						'Return to main program       
+
+
+'*******************************************************************************
+'****************************** Odd Notes  *************************************
+'*******************************************************************************  
+
+'Also now you can use R6 system variable to determine array length: 
+
+'ArrayMaxLen con 1000
+'TxBuffer var byte[ArrayMaxLen]
+'ArrayLen var word
+'Arraywrite TxBuffer, ArrayMaxLen, ArrayOverMax,[".........","etc"]
+'ArrayLen = ArrayMaxLen - R6
+
+'*******************************************************************************  
+
+' $1B,"Y",r,c Moves the cursor to the specified row and column.
+
+'r is the ascii character of 32 + the desired row.
+'c is the ascii character of 32 + the desired column.    
+	
+'************************************************
+    	
+'Bargraph:                                       'Vertical Bar Graph Routine Calculates and Draws Current Column Graph
+
+'	Column = Gen8 - 1                       'Calculate Lcd Column 0 - 10 (11) Max
+
+'	if ScaleBit = 1 then			'Scale Graph to 8V    
+'    	if Result > 12000 then
+'    	ColVol = Result - 12000                 'Subtract 12 Volts to give 12-20V Bargraph Scale (8V Range)
+'  	ColBars = ColVol / 250                  'Calculate Number of bars reqd 0-32   (0 = 12V, 16 = 16V, 32 = 20V)
+'  	else 
+'  	Bar3 = 32				'Blank Bar
+'	Bar2 = 32				'Blank Bar
+'	Bar1 = 32				'Blank Bar
+'	Bar0 = 32				'Blank Bar  
+'    	goto DisplayBars	 
+'    	endif
+'    	endif
+    
+'	if ScaleBit = 0 then
+'    	if Result > 14000 then			'Scale Graph to 4V
+'	ColVol = Result - 14000                 'Subtract 14 Volts to give 14-18V Bargraph Scale (4V Range)
+'	ColBars = ColVol / 125                  'Calculate Number of bars reqd 0-32   (0 = 14V, 16 = 16V, 32 = 18V)
+'	else 
+'  	Bar3 = 32				'Blank Bar
+'	Bar2 = 32				'Blank Bar
+'	Bar1 = 32				'Blank Bar
+'	Bar0 = 32				'Blank Bar  
+'    	goto DisplayBars	
+'	endif
+'	endif
+	
+'	If ColBars > 32 then ColBars = 32      	'Prevent over reading
+	   
+'	FullBars = ColBars / 8                  'Number of full Chr Reqd (16 Bars = 2 full Chr 8 Bars per character)
+'	PartBars = ColBars // 8                 'Number of part Chr Reqd (16 Bars = 2 full Chr and 0 part Bars)
+        
+'	If  FullBars = 0 Then 			'If Number of Full Bars is 0 then fill rows 1,2,3 with blank bars
+'	Bar3 = 32				'Blank Bar
+'	Bar2 = 32				'Blank Bar
+'	Bar1 = 32				'Blank Bar
+'	Bar0 = PartBars				'Partial Bar
+
+'	elseif FullBars = 1 Then 		'If Number of Full Bars is 1 then fill rows 2,3 with blank bars		
+'	Bar3 = 32				'Blank Bar
+'	Bar2 = 32				'Blank Bar
+'	Bar1 = PartBars				'Partial Bar
+'	Bar0 = 7				'Full Bar
+	
+'	elseif FullBars = 2 Then 		'If Number of Full Bars is 2 then fill row 3 with blank bar
+'	Bar3 = 32				'Blank Bar
+'	Bar2 = PartBars				'Partial Bar
+'	Bar1 = 7				'Full Bar
+'	Bar0 = 7				'Full Bar
+	
+'	elseif FullBars = 3 Then 		'If Number of Full Bars is 3 then no blank bars
+'	Bar3 = PartBars				'Partial Bar
+'	Bar2 = 7				'Full Bar
+'	Bar1 = 7				'Full Bar
+'	Bar0 = 7				'Full Bar
+	
+'    	elseif FullBars = 4 Then 		'If Number of Full Bars is 4 then no blank bars
+'	Bar3 = 7       				'Full Bar
+'	Bar2 = 7				'Full Bar
+'	Bar1 = 7				'Full Bar
+'	Bar0 = 7				'Full Bar
+'	endif    
+
+'DisplayBars:
+          
+'	Hserout [LCM,L42 + Column,Bar0]		'Draw Row 0 Bottom of Lcd
+'	Hserout [LCM,L32 + Column,Bar1]		'Draw Row 1
+'	Hserout [LCM,L22 + Column,Bar2]		'Draw Row 2
+'	Hserout [LCM,L12 + Column,Bar3] 	'Draw Row 3 Top of Lcd
+    
+'	return					'Return
+
+
+'DispText:     
+'    TextStart = MenuStart * 16				'Calculate Menu Table Entry
+'	For Offset = 0 to 14				'Start Loop to collect paramater text description data
+'	ReadCODE  (MenuText + TextStart + Offset), DataByte
+'	LCDOUT  DataByte				'Display Text on screen
+'	next Offset
+
+
+

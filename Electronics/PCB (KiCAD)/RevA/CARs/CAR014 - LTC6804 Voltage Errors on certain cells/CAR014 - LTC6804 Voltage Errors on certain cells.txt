@@ -1,0 +1,43 @@
+The voltage measured between certain cells is incorrect.
+
+Cell 24 is by far the worst, with a digital reading 33 mV less than the actual cell voltage.
+Cell 24 is a mid-pack connection between two LTC6804s... but there's no voltage measured across the long trace from one IC to the other (R144 to R188 = 0.001 mV max).
+
+Cell 36 has a digital reading 5 mV less than actual cell voltage.
+Cell 36 is the top-most cell on an LTC6804 IC and is also the top-most cell on an 18S pack.
+
+Cell 48 has a digital reading 4 mV less than actual cell voltage.
+Cell 48 is the top-most cell on an LTC6804 IC and is also the top-most cell on a 12S pack.
+
+Also, the first cells on 3 of the 4 LTC6804s all read between 1 & 2 mV low:
+Cell 01 is -1.4 mV
+Cell 13 is -1.0 mV
+Cell 37 is -2.0 mV
+
+	Cell 25 - the 4th LTC6804's first cell - is dead on.  Cell 25 is mid-way between an 18S pack.
+
+...
+
+Update: This is due to trace resistance.  Need to route separate traces from each battery connector to the sensed lead, versus the identical net name that's powering the LTC6804.
+
+Update: There is virtually no voltage drop on the external sense leads all the up through into LiBCMs soldered connection joints... the voltage drop is entirely on the LiBCM PCB itself.
+
+Cells affected:
+C1- (-1.4 mV error)
+C12+@42S (did not test)
+C13+ (-1.0 mV error)
+C24+ (-32.9 mV error)
+C36+ (5.0 mV error)
+C37+ (-2.0 mV error)
+C48+ (-4.0 mV error)
+
+Cells not affected:
+C12+@48S (-0.5 mV error)
+C25+ (-0.1 mV error)
+These traces are (accidentally) routed well.  Should still look at optimizing them further, to minimize error... but don't bend over backwards if difficult.
+
+...
+
+Update: I removed R144 and connected a lead - with series 50 Ohm resistor - directly from the BMS connector's 24+ to R144 (net C12_B).  This is a direct sense to the LTC6804 for C24... but unfortunately it only reduced the measurement error 10 mV (from 33 mV to 23 mV.  Something else is wrong here.
+
+Going to play around with ADC update rate, etc.

@@ -1,0 +1,1 @@
+Disable grid charging above user-configurable temperature

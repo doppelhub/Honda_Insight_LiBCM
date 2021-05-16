@@ -1,0 +1,11 @@
+Not sure what's wrong with current sensor op-amp circuit.  It's linear, but isn't full scale like it should be.  Empirical data I gathered tonight:
+
+125A Assist: 3.0 volts
+125A Regen: 0.4 volts (although this was probably clipping, since only designed for 80 A or so.
+
+Solution:
+Wrong Rsense value used.  RevA has two 82 Ohm resistors in parallel (so 41 Ohms), whereas Rsense should be 82 Ohms total (so 82 Ohms).
+
+With 82 Ohms the ADC can sense from 70 A regen to 140 A assist.
+
+To prevent accuracy issues due to Rsense heating, should place QTY4 82 Ohm resistors (2S2P).

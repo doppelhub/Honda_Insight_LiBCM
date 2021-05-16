@@ -1,0 +1,13 @@
+The wire hole for Bay 1 fan cuts through ground plane.
+
+C27 silkscreen covered by other silkscreen
+
+isoSPI too close to off-line HVDC- (pre-filtered).
+
+isoSPI should have ground plane underneath it to prevent EMI
+
+If possible, rotate bay 3 fan's wire hole for better wire routing on back of PCB.
+
+Reroute HVDC so that pack voltage goes through fuse, then cap, then HVDCDC.
+
+HVDC 8pin screw terminal probably blocked by aluminum shaft that bolts from PDU to IMA battery.

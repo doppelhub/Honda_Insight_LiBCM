@@ -1,0 +1,7 @@
+Figure out how to disable reset upon enumeration.  
+Possible methods:
+1: Add strong pullup resistor to reset
+2: Add strong pullup capacitor to reset
+3: Remove C7 from Mega.  This disconnects DTR (16U2->MEGA reset pin).
+
+Probably need to add a reset button to the LiBCM PCB, so user can manually reset the controller when necessary

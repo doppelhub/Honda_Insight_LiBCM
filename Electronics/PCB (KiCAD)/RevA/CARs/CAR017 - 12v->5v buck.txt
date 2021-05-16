@@ -1,0 +1,17 @@
+Add a series resistor (1-10 Ohms) with the boost to slow down switch transition
+
+Consider changing inductor to 44 uH, which will allow buck to operate in CCM mode at ~30 mA (at Fswitch=1.1 MHz).
+
+Existing supply only recommends up to 10 uH, due to internal comp components.
+
+If we switch to the AP63200, Fswitch changes to 500 kHz, and so L changes to 88 uH.  
+This is much better.
+
+New supply needs to handle 290 mA continuous load with external screen.  Without Nextion, power is 190 mA.
+
+Tested existing supply with 68 uH supply... it was really unstable, and noisier under load.  Due to unadjustable compensation network.
+
+Probably just leave existing power supply as-is, unless there's still too much noise after fixing the HVDCDC supply.
+
+Solution:
+Leave as-is

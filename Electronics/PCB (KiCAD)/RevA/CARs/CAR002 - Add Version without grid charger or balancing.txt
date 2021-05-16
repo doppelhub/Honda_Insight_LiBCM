@@ -1,0 +1,1 @@
+For lower cost version, add ability to power LiBCM using car's 12 volt battery.  Note that this will prevent cell balancing... only monitoring.

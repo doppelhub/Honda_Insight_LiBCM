@@ -1,0 +1,79 @@
+Honda Models
+STEP WGN SPADA
+SPORT HYBRID i-MMD
+FREED i-DCD
+NSX
+i-MMD
+
+CR-Z (EH5)(2011-2014):
+	IMA PN: 1D010-RBJ-C00 or 1D010-RBJ-A00
+
+Accord Hybrid (EH5)(2014-2015):
+	IMA PN: 1D070-5K1-406RM & 1D070-5K1-405RM & 5 more
+	Found eBay picture with blue cells shown.
+
+Accord Hybrid (EHW5)(2018-2020):
+	IMA PN: 1D070-6C2-305
+	Found eBay picture showing assembled battery at 259 V
+	It's probably this car... maybe new insight.
+
+Clarity Fuel Cell (EHW5)(2017-2020):
+	IMA PN: 1D100-5WM-A01RM
+
+NSX (EHW5)(2016)
+
+Honda Insight (2019):
+	IMA PN: 1D070-6L2-A00
+	Found eBay picture showing assembled battery
+
+Battery info:
+Make: Blue Energy (Panasonic?)
+Model: EHW5
+Ah: 5 (charged to 4.2 volts)
+Vnom: 3.6
+Operating range: -30 degC to 55 degC (131 degF)
+Cycle life: 50,000 (@10-85% SoC), continuous 40A charge/discharge!
+Time Life: 10 years
+Recommended charge/assist current: 200 A
+Maximum charge/assist current: 300 A (60C)
+Power density: 4.9 kW/kg
+Used in Honda's i-MMD hybrid cars
+
+Label that comes with batteries contains: "UF121285H"
+Searching online finds just one result (blue energy EHW5 battery):
+https://zhuanlan.zhihu.com/p/349899001
+Key findings here: 
+	Says from Honda immd hybrid
+	Chemistry: LiNiCoMnO2 (ternary lithium battery)
+	"Panasonic used after localization, model UF121285H"
+	"At present, the detailed specifications of this battery of Panasonic are not available online, but because Honda directly replaces it, we have reason to believe that the specifications of the two batteries are compatible.
+	"UF 12 12 85" is based on cell dimensions (120 x12 x 85 mm)
+
+Blue Energy is 49% owned by Honda (and 51% by GS Yuasa Int Ltd)
+https://www.blue-energy.co.jp/en/
+
+...
+
+Post to ic.net:
+From Honda immd hybrid system, which is used in both 2018-2020 Accord Hybrid & 2019+ Insight
+Chemistry: LiNiCoMnO2 (ternary lithium battery)
+"Panasonic used after localization, model UF121285H". I think he means that the battery was originally designed by Blue Energy (which itself is 49% owned by Honda)... and now Panasonic is making the pack instead. Remember: the box that these modules shipped in has Panasonic written all over it, as do the various labels.
+"At present, the detailed specifications of this battery of Panasonic are not available online, but because Honda directly replaces it, we have reason to believe that the specifications of the two batteries (Panasonic vs Blue Energy) are compatible."
+"UF 12 12 85" is based on cell dimensions (120 x12 x 85 mm).
+
+Cell information:
+Model: EHW5
+Ah: 5 (when charged to 4.2 volts)
+Vnom: 3.6
+Operating range: -30 degC to 55 degC (131 degF)
+Cycle life: 50,000 (@10-85% SoC), continuous 40A charge/discharge!
+Time Life: 10 years
+Recommended charge/assist current: 200 A
+Maximum charge/assist current: 300 A (60C)
+Power density: 4.9 kW/kg
+
+The reason the part number on the box doesn't pull up on Honda's website is that the pack itself is a non-user-purchasable subcomponent of the following parts:
+1D070-6C2-305 (2018-2020) Accord Hybrid). OEM cost: $2762 
+1D070-6L2-A00 (2019 Insight Hybrid). OEM cost: $3126
+
+So yeah, this $440 battery is ~$2800 from Honda.
