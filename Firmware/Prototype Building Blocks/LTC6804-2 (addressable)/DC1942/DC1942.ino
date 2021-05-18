@@ -258,6 +258,53 @@ void run_command(uint8_t cmd)
   int8_t error = 0;
 
   char input = 0;
+
+  switch (cmd)
+  {
+
+    case 1:
+      Serial.println(F("Case 1"));
+      break;
+
+    case 2:
+      Serial.println(F("Case 2"));
+      break;
+
+    case 3:
+      Serial.println(F("Case 3"));
+      break;
+
+    case 4:
+      Serial.println(F("Case 4"));
+      break;
+
+    case 5:
+      Serial.println(F("Case 5"));
+      break;
+
+    case 6:
+      Serial.println(F("Case 6"));
+      break;
+
+    case 7:
+      Serial.println(F("Case 7"));
+      break;
+
+    case 8: //JTS toggle grid charger 
+      Serial.println(F("Case 8"));
+      break;
+
+    case 9: //JTS Toggle Fans
+      Serial.println(F("Case 9"));
+      break;
+
+    default:
+      Serial.println(F("Default Case"));
+      break;
+  }
+}
+
+  /*
   switch (cmd)
   {
 
@@ -391,6 +438,7 @@ void run_command(uint8_t cmd)
       break;
   }
 }
+*/
 
 /*!***********************************
  \brief Initializes the configuration array
