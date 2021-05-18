@@ -1,0 +1,68 @@
+Things to do when KEY+10 (KEY_ON_PIN) first turns on:
+
+	-One-time state changes
+		-Turn on LED1 (LED1_Pin)
+		-Turn on METSCI (METSCI_DIR_PIN)
+		-Turn on BATTSCI (BATTSCIdir_Pin)
+		-Enable temp sensors (TEMP_EN_PIN)
+		-Set spoofed voltage percentage (ConnE_PWM_Pin)
+		-Turn on 5v constant mA load (Load5v_Pin)
+
+	-If grid charger plugged in (GridSense_Pin) 
+		-Set power to minimum (GridPWM_Pin)
+		-Turn grid charger off (GridEn_Pin)
+		-while(GridSense_Pin) //wait here until unplugged.  This causes P codes.
+
+	-Sample VPIN_IN rapidly  (ideally same as main loop)
+	-Update VPIN_OUT rapidly (ideally same as main loop)
+
+Things to do in main while loop:
+	-Turn on LED2
+	-Toggle LED3 every 500 ms
+	-Sample VPIN_IN
+	-Update VPIN_OUT
+	-Monitor Temperature
+		-Read QTY4 temp pins (Temp_YEL/GRN/WHT/BLU_Pin)
+		-Read QTY4 LTC6804 temps
+		-If temp warm (35 degC?) && ( tempCabin < max(tempBattery) )
+			-Onboard fans low (FanOnPWM_Pin)
+			-OEM Fan on low (FanOEMlow_Pin)
+		-If temp hot (45 degC?)
+			-OEM Fan on high (FanOEMhigh_Pin)
+			-Onboard fans full speed (FanOnPWM_Pin)
+		-If temp overheating (50 degC?)
+			-OEM Fans on high (FanOEMhigh_Pin)
+			-Onboard fans full speed (FanOnPWM_Pin)
+			-Send overtemp flag (METSCI@Serial2)
+	-Accumulate battery charge (BattCurrent_Pin)
+	-Parse METSCI for frames. Store latest frame:
+		-'B3'
+		-'B4'
+		-'E1'
+		-etc
+	-Form BATTSCI frame, using latest data.
+	-Send BATTSCI frame.
+
+Things to do when KEY+10 (KEY_ON_PIN) turns off:
+	-One-time state changes
+		-Turn off LED1 (LED1_Pin)
+		-Turn off 5v constant mA load (Load5v_Pin)
+		-Turn off spoofed voltage (ConnE_PWM_Pin) to minimize power.
+		-Turn off METSCI (METSCI_DIR_PIN)
+		-Turn off BATTSCI (BATTSCIdir_Pin)
+
+	-Start a five hour timer (user configurable).
+		-If timer expires, turn off 5 volt rail (TurnOffLiBCM_Pin)
+
+	//Need to consider hysteresis to prevent rapid grid charger enable/disable
+	-if AC plugged in (GridSense_Pin) && SoC <= maxGridSoC && highestCellVoltage < 4.1v
+		-Turn grid charger on (GridEn_Pin)
+		-Set charger to full power (GridPWM_Pin)
+	-Else //AC unplugged (GridSense_Pin) || SoC above maxGridSoC || any cell exceeds 4.1v
+		-Set charger to 0 mA (GridPWM_Pin)
+		-Turn charger off (GridEn_Pin)
+
+	-Balance cells 			
+
+	-Monitor Temperature (see above)
+	-Accumulate battery charge (BattCurrent_Pin)

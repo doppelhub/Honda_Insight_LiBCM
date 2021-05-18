@@ -145,6 +145,53 @@ uint8_t rx_cfg[TOTAL_IC][8];
 |IC1 CFGR0      |IC1 CFGR1      |IC1 CFGR2      |IC1 CFGR3      |IC1 CFGR4      |IC1 CFGR5      |IC1 PEC High     |IC1 PEC Low     |IC2 CFGR0      |IC2 CFGR1      |  .....    |
 */
 
+//JTS Move to hardware IO file
+#define BATT_CURRENT_PIN  A0
+#define FANOEM_LO_PIN     A1
+#define FANOEM_HI_PIN     A2
+#define TEMP_YEL_PIN      A3
+#define TEMP_GRN_PIN      A4
+#define TEMP_WHT_PIN      A5
+#define TEMP_BLU_PIN      A6
+#define VPIN_IN_PIN       A7
+#define TURNOFF_LIBCM_PIN A8
+#define DEBUG_FET_PIN     A9
+#define DEBUG_IO1_PIN    A10
+#define DEBUG_IO2_PIN    A11
+#define LED1_PIN         A12
+#define LED2_PIN         A13
+#define LED3_PIN         A14
+#define LED4_PIN         A15
+
+#define BATTSCI_DIR_PIN 2
+#define METSCI_DIR_PIN  3
+#define VPIN_OUT_PIN    4
+#define SPI_EXT_CS_PIN  5 
+#define TEMP_EN_PIN     6
+#define CONNE_PWM_PIN   7
+#define GRIDPWM_PIN     8
+#define GRIDSENSE_PIN   9
+#define GRIDEN_PIN     10
+#define FAN_PWM_PIN    11
+#define LOAD5V_PIN     12
+#define KEY_ON_PIN     13
+
+//Serial3
+#define HLINE_TX_PIN 14
+#define HLINE_RX_PIN 15
+
+//Serial2
+#define METSCI_TX_PIN 16
+#define METSCI_RX_PIN 17
+
+//Serial1
+#define BATTSCI_TX_PIN 18
+#define BATTSCI_RX_PIN 19
+
+#define DEBUG_SDA_PIN 20
+#define DEBUG_CLK_PIN 21
+
+
 /*!**********************************************************************
  \brief  Inititializes hardware and variables
  ***********************************************************************/
@@ -154,6 +201,11 @@ void setup()
   LTC6804_initialize();  //Initialize LTC6804 hardware
   init_cfg();        //initialize the 6804 configuration array to be written
   print_menu();
+
+  pinMode(GRIDPWM_PIN,  OUTPUT); //JTS Move this to init code
+  pinMode(GRIDSENSE_PIN, INPUT);
+  pinMode(GRIDEN_PIN,   OUTPUT);
+  pinMode(FAN_PWM_PIN,  OUTPUT);
 }
 
 /*!*********************************************************************
@@ -165,7 +217,7 @@ void loop()
 
   if (Serial.available())           // Check for user input
   {
-    uint32_t user_command;
+    uint8_t user_command;
     user_command = read_int();      // Read the user command
     Serial.println(user_command);
     run_command(user_command);
@@ -201,7 +253,7 @@ void loop()
     The loop can be exited by sending the MCU a 'm' character over the serial link.
 
 *******************************************/
-void run_command(uint16_t cmd)
+void run_command(uint8_t cmd)
 {
   int8_t error = 0;
 
@@ -220,7 +272,7 @@ void run_command(uint16_t cmd)
       error = LTC6804_rdcfg(TOTAL_IC,rx_cfg,FIRST_IC_ADDR);
       if (error == -1)
       {
-        Serial.println("A PEC error was detected in the received data");
+        Serial.println(F("A PEC error was detected in the received data"));
       }
       print_rxconfig();
       break;
@@ -229,7 +281,7 @@ void run_command(uint16_t cmd)
       wakeup_sleep();
       LTC6804_adcv();
       delay(3);
-      Serial.println("cell conversion completed");
+      Serial.println(F("cell conversion completed"));
       Serial.println();
       break;
 
@@ -238,7 +290,7 @@ void run_command(uint16_t cmd)
       error = LTC6804_rdcv(0, TOTAL_IC,cell_codes,FIRST_IC_ADDR); // Set to read back all cell voltage registers
       if (error == -1)
       {
-        Serial.println("A PEC error was detected in the received data");
+        Serial.println(F("A PEC error was detected in the received data"));
       }
       print_cells();
       break;
@@ -247,7 +299,7 @@ void run_command(uint16_t cmd)
       wakeup_sleep();
       LTC6804_adax();
       delay(3);
-      Serial.println("aux conversion completed");
+      Serial.println(F("aux conversion completed"));
       Serial.println();
       break;
 
@@ -256,13 +308,13 @@ void run_command(uint16_t cmd)
       error = LTC6804_rdaux(0,TOTAL_IC,aux_codes,FIRST_IC_ADDR); // Set to read back all aux registers
       if (error == -1)
       {
-        Serial.println("A PEC error was detected in the received data");
+        Serial.println(F("A PEC error was detected in the received data"));
       }
       print_aux();
       break;
 
     case 7:
-      Serial.println("transmit 'm' to quit");
+      Serial.println(F("transmit 'm' to quit"));
       wakeup_sleep();
       LTC6804_wrcfg(TOTAL_IC,tx_cfg,FIRST_IC_ADDR);
       while (input != 'm')
@@ -278,7 +330,7 @@ void run_command(uint16_t cmd)
         error = LTC6804_rdcv(0, TOTAL_IC,cell_codes,FIRST_IC_ADDR);
         if (error == -1)
         {
-          Serial.println("A PEC error was detected in the received data");
+          Serial.println(F("A PEC error was detected in the received data"));
         }
         print_cells();
         delay(500);
@@ -286,8 +338,56 @@ void run_command(uint16_t cmd)
       print_menu();
       break;
 
+    case 8: //JTS toggle grid charger 
+      uint8_t gridEnabled      =   digitalRead(GRIDEN_PIN    );
+      uint8_t gridPowerPresent = !(digitalRead(GRIDSENSE_PIN));
+
+      Serial.println("GRIDEN   : " + String(gridEnabled     ) );
+      Serial.println("GRIDSENSE: " + String(gridPowerPresent) );
+  
+      if( gridEnabled || !(gridPowerPresent) ) //charger is enabled, or unplugged
+      {
+        analogWrite(GRIDPWM_PIN,255); //Set power to zero
+        delay(100);
+        digitalWrite(GRIDEN_PIN,LOW); //Turn charger off
+        Serial.println(F("Charger turned off"));
+      }
+      if( !(gridEnabled) && gridPowerPresent ) //charger off & plugged in 
+      {
+        digitalWrite(GRIDEN_PIN,HIGH); //Turn charger on
+        delay(100);
+        for(int ii=255; ii>0; ii--)
+        {
+          analogWrite(GRIDPWM_PIN,ii);
+          delay(2);
+        }
+        Serial.println(F("Charger turned on"));
+      }
+      break;
+
+    case 9: //JTS Toggle Fans
+      Serial.println(F("Toggling Fans")); 
+      if( digitalRead(FAN_PWM_PIN) ) //fans are on
+      {
+        for(int ii=255; ii>=50; ii--)
+        {
+          analogWrite(FAN_PWM_PIN,ii);
+          delay(10);
+        }
+        analogWrite(FAN_PWM_PIN,0);
+        Serial.println(F("Fans turned off"));
+      } else { //fans are off
+        for(int ii=75; ii<=255; ii++)
+        {
+          analogWrite(FAN_PWM_PIN,ii);
+          delay(10);
+        }
+        Serial.println(F("Fans turned on"));
+      }
+      break;
+
     default:
-      Serial.println("Incorrect Option");
+      Serial.println(F("Incorrect Option"));
       break;
   }
 }
@@ -313,15 +413,17 @@ void init_cfg()
 ***********************************/
 void print_menu()
 {
-  Serial.println("Please enter LTC6804 Command");
-  Serial.println("Write Configuration: 1");
-  Serial.println("Read Configuration: 2");
-  Serial.println("Start Cell Voltage Conversion: 3");
-  Serial.println("Read Cell Voltages: 4");
-  Serial.println("Start Aux Voltage Conversion: 5");
-  Serial.println("Read Aux Voltages: 6");
-  Serial.println("loop cell voltages: 7");
-  Serial.println("Please enter command: ");
+  Serial.println(F("Please enter LTC6804 Command"));
+  Serial.println(F("Write Configuration:           1"));
+  Serial.println(F("Read Configuration:            2"));
+  Serial.println(F("Start Cell Voltage Conversion: 3"));
+  Serial.println(F("Read Cell Voltages:            4"));
+  Serial.println(F("Start Aux Voltage Conversion:  5"));
+  Serial.println(F("Read Aux Voltages:             6"));
+  Serial.println(F("loop cell voltages:            7"));
+  Serial.println(F("Toggle Grid Charger:           8"));
+  Serial.println(F("Toggle Fans:                   9"));
+  Serial.println(F("Please enter command: "));
   Serial.println();
 }
 
@@ -336,13 +438,13 @@ void print_cells()
 
   for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
   {
-    Serial.print(" IC ");
+    Serial.print(F(" IC "));
     Serial.print( (current_ic + FIRST_IC_ADDR) ,DEC);
     for (int i=0; i<12; i++)
     {
-      Serial.print(" C");
+      Serial.print(F(" C"));
       Serial.print(i+1,DEC);
-      Serial.print(":");
+      Serial.print(F(":"));
       Serial.print(cell_codes[current_ic][i]*0.0001,4);
       Serial.print(",");
     }
@@ -359,18 +461,18 @@ void print_aux()
 
   for (int current_ic =0 ; current_ic < TOTAL_IC; current_ic++)
   {
-    Serial.print(" IC ");
+    Serial.print(F(" IC "));
     Serial.print( (current_ic + FIRST_IC_ADDR) ,DEC);
     for (int i=0; i < 5; i++)
     {
-      Serial.print(" GPIO-");
+      Serial.print(F(" GPIO-"));
       Serial.print(i+1,DEC);
-      Serial.print(":");
+      Serial.print(F(":"));
       Serial.print(aux_codes[current_ic][i]*0.0001,4);
       Serial.print(",");
     }
-    Serial.print(" Vref2");
-    Serial.print(":");
+    Serial.print(F(" Vref2"));
+    Serial.print(F(":"));
     Serial.print(aux_codes[current_ic][5]*0.0001,4);
     Serial.println();
   }
@@ -384,28 +486,28 @@ void print_config()
 {
   int cfg_pec;
 
-  Serial.println("Written Configuration: ");
+  Serial.println(F("Written Configuration: "));
   for (int current_ic = 0; current_ic<TOTAL_IC; current_ic++)
   {
-    Serial.print(" IC ");
+    Serial.print(F(" IC "));
     Serial.print( (current_ic + FIRST_IC_ADDR) ,DEC);
     Serial.print(": ");
-    Serial.print("0x");
+    Serial.print(F("0x"));
     serial_print_hex(tx_cfg[current_ic][0]);
-    Serial.print(", 0x");
+    Serial.print(F(", 0x"));
     serial_print_hex(tx_cfg[current_ic][1]);
-    Serial.print(", 0x");
+    Serial.print(F(", 0x"));
     serial_print_hex(tx_cfg[current_ic][2]);
-    Serial.print(", 0x");
+    Serial.print(F(", 0x"));
     serial_print_hex(tx_cfg[current_ic][3]);
-    Serial.print(", 0x");
+    Serial.print(F(", 0x"));
     serial_print_hex(tx_cfg[current_ic][4]);
-    Serial.print(", 0x");
+    Serial.print(F(", 0x"));
     serial_print_hex(tx_cfg[current_ic][5]);
-    Serial.print(", Calculated PEC: 0x");
+    Serial.print(F(", Calculated PEC: 0x"));
     cfg_pec = pec15_calc(6,&tx_cfg[current_ic][0]);
     serial_print_hex((uint8_t)(cfg_pec>>8));
-    Serial.print(", 0x");
+    Serial.print(F(", 0x"));
     serial_print_hex((uint8_t)(cfg_pec));
     Serial.println();
   }
@@ -418,26 +520,26 @@ void print_config()
  *******************************************************************/
 void print_rxconfig()
 {
-  Serial.println("Received Configuration ");
+  Serial.println(F("Received Configuration "));
   for (int current_ic=0; current_ic<TOTAL_IC; current_ic++)
   {
-    Serial.print(" IC ");
+    Serial.print(F(" IC "));
     Serial.print( (current_ic + FIRST_IC_ADDR) ,DEC);
-    Serial.print(": 0x");
+    Serial.print(F(": 0x"));
     serial_print_hex(rx_cfg[current_ic][0]);
-    Serial.print(", 0x");
+    Serial.print(F(", 0x"));
     serial_print_hex(rx_cfg[current_ic][1]);
-    Serial.print(", 0x");
+    Serial.print(F(", 0x"));
     serial_print_hex(rx_cfg[current_ic][2]);
-    Serial.print(", 0x");
+    Serial.print(F(", 0x"));
     serial_print_hex(rx_cfg[current_ic][3]);
-    Serial.print(", 0x");
+    Serial.print(F(", 0x"));
     serial_print_hex(rx_cfg[current_ic][4]);
-    Serial.print(", 0x");
+    Serial.print(F(", 0x"));
     serial_print_hex(rx_cfg[current_ic][5]);
-    Serial.print(", Received PEC: 0x");
+    Serial.print(F(", Received PEC: 0x"));
     serial_print_hex(rx_cfg[current_ic][6]);
-    Serial.print(", 0x");
+    Serial.print(F(", 0x"));
     serial_print_hex(rx_cfg[current_ic][7]);
     Serial.println();
   }
@@ -448,7 +550,7 @@ void serial_print_hex(uint8_t data)
 {
   if (data< 16)
   {
-    Serial.print("0");
+    Serial.print(F("0"));
     Serial.print((byte)data,HEX);
   }
   else
