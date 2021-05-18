@@ -90,9 +90,9 @@ float read_float()
 // Decimal: 17
 // Octal:   021 (leading zero prefix)
 // Binary:  B10001 (leading B prefix)
-int32_t read_int()
+uint8_t read_int()
 {
-  int32_t data;
+  uint8_t data;
   read_data();
   if (ui_buffer[0] == 'm')
     return('m');
@@ -102,6 +102,7 @@ int32_t read_int()
   }
   else
     data = strtol(ui_buffer, NULL, 0);
+  Serial.println("Entry: " + String(data) );
   return(data);
 }
 

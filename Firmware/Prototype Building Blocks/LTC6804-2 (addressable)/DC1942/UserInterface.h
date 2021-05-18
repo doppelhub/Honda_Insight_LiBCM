@@ -63,7 +63,7 @@ float read_float();
 // Decimal: 17
 // Octal:   O21 (leading letter O prefix)
 // Binary:  B10001 (leading letter B prefix)
-int32_t read_int();
+uint8_t read_int();
 
 // Read a string from the serial interface.  Returns a pointer to the ui_buffer.
 char *read_string();
