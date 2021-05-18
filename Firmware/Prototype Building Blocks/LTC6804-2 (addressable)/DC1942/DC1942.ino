@@ -261,53 +261,6 @@ void run_command(uint8_t cmd)
 
   switch (cmd)
   {
-
-    case 1:
-      Serial.println(F("Case 1"));
-      break;
-
-    case 2:
-      Serial.println(F("Case 2"));
-      break;
-
-    case 3:
-      Serial.println(F("Case 3"));
-      break;
-
-    case 4:
-      Serial.println(F("Case 4"));
-      break;
-
-    case 5:
-      Serial.println(F("Case 5"));
-      break;
-
-    case 6:
-      Serial.println(F("Case 6"));
-      break;
-
-    case 7:
-      Serial.println(F("Case 7"));
-      break;
-
-    case 8: //JTS toggle grid charger 
-      Serial.println(F("Case 8"));
-      break;
-
-    case 9: //JTS Toggle Fans
-      Serial.println(F("Case 9"));
-      break;
-
-    default:
-      Serial.println(F("Default Case"));
-      break;
-  }
-}
-
-  /*
-  switch (cmd)
-  {
-
     case 1:
       wakeup_sleep();
       LTC6804_wrcfg(TOTAL_IC,tx_cfg,FIRST_IC_ADDR);
@@ -385,7 +338,8 @@ void run_command(uint8_t cmd)
       print_menu();
       break;
 
-    case 8: //JTS toggle grid charger 
+    case 8: //JTS toggle grid charger
+    {
       uint8_t gridEnabled      =   digitalRead(GRIDEN_PIN    );
       uint8_t gridPowerPresent = !(digitalRead(GRIDSENSE_PIN));
 
@@ -411,8 +365,10 @@ void run_command(uint8_t cmd)
         Serial.println(F("Charger turned on"));
       }
       break;
+    }
 
     case 9: //JTS Toggle Fans
+    {
       Serial.println(F("Toggling Fans")); 
       if( digitalRead(FAN_PWM_PIN) ) //fans are on
       {
@@ -432,13 +388,13 @@ void run_command(uint8_t cmd)
         Serial.println(F("Fans turned on"));
       }
       break;
+    }
 
     default:
       Serial.println(F("Incorrect Option"));
       break;
   }
 }
-*/
 
 /*!***********************************
  \brief Initializes the configuration array
