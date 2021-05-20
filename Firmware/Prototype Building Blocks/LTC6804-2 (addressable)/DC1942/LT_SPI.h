@@ -98,14 +98,6 @@ void spi_transfer_block(uint8_t cs_pin,     //!< Chip select pin
                         uint8_t length      //!< Length of array
                        );
 
-//! Connect SPI pins to QuikEval connector through the Linduino MUX. This will disconnect I2C.
-void quikeval_SPI_connect();
-
-//! Configure the SPI port for 4Mhz SCK.
-//! This function or spi_enable() must be called
-//! before using the other SPI routines.
-void quikeval_SPI_init();
-
 //! Setup the processor for hardware SPI communication.
 //! Must be called before using the other SPI routines.
 //! Alternatively, call quikeval_SPI_connect(), which automatically

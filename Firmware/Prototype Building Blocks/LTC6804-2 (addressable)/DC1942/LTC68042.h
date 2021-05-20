@@ -52,7 +52,7 @@ Copyright 2013 Linear Technology Corp. (LTC)
 
 
 #ifndef LTC6804_CS
-#define LTC6804_CS QUIKEVAL_CS
+#define LTC6804_CS SS //Arduino Mega SPI Slave Select line
 #endif
 
 

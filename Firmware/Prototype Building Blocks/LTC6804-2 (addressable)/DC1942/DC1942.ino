@@ -125,24 +125,22 @@ uint16_t aux_codes[TOTAL_IC][6];
 
 uint8_t tx_cfg[TOTAL_IC][6];
 /*!<
-  The tx_cfg[][6] stores the LTC6804 configuration data that is going to be written
-  to the LTC6804 ICs on the daisy chain. The LTC6804 configuration data that will be
-  written should be stored in blocks of 6 bytes. The array should have the following format:
+  tx_cfg[][6] stores the LTC6804 configuration data to be written
+  to the LTC6804 ICs. The 6 byte array should have the following format:
 
- |  tx_cfg[0][0]| tx_cfg[0][1] |  tx_cfg[0][2]|  tx_cfg[0][3]|  tx_cfg[0][4]|  tx_cfg[0][5]| tx_cfg[1][0] |  tx_cfg[1][1]|  tx_cfg[1][2]|  .....    |
- |--------------|--------------|--------------|--------------|--------------|--------------|--------------|--------------|--------------|-----------|
- |IC1 CFGR0     |IC1 CFGR1     |IC1 CFGR2     |IC1 CFGR3     |IC1 CFGR4     |IC1 CFGR5     |IC2 CFGR0     |IC2 CFGR1     | IC2 CFGR2    |  .....    |
+ |  tx_cfg[0][0]| tx_cfg[0][1] |  tx_cfg[0][2]|  tx_cfg[0][3]|  tx_cfg[0][4]|  tx_cfg[0][5]|
+ |--------------|--------------|--------------|--------------|--------------|--------------|
+ |IC1 CFGR0     |IC1 CFGR1     |IC1 CFGR2     |IC1 CFGR3     |IC1 CFGR4     |IC1 CFGR5     |
 
 */
 
 uint8_t rx_cfg[TOTAL_IC][8];
 /*!<
-  the rx_cfg[][8] array stores the data that is read back from a LTC6804-1 daisy chain.
-  The configuration data for each IC  is stored in blocks of 8 bytes. Below is an table illustrating the array organization:
+  the rx_cfg[][8] array stores the 8 byte configuration data read back from the LTC6804:
 
-|rx_config[0][0]|rx_config[0][1]|rx_config[0][2]|rx_config[0][3]|rx_config[0][4]|rx_config[0][5]|rx_config[0][6]  |rx_config[0][7] |rx_config[1][0]|rx_config[1][1]|  .....    |
-|---------------|---------------|---------------|---------------|---------------|---------------|-----------------|----------------|---------------|---------------|-----------|
-|IC1 CFGR0      |IC1 CFGR1      |IC1 CFGR2      |IC1 CFGR3      |IC1 CFGR4      |IC1 CFGR5      |IC1 PEC High     |IC1 PEC Low     |IC2 CFGR0      |IC2 CFGR1      |  .....    |
+|rx_config[0][0]|rx_config[0][1]|rx_config[0][2]|rx_config[0][3]|rx_config[0][4]|rx_config[0][5]|rx_config[0][6]  |rx_config[0][7] |
+|---------------|---------------|---------------|---------------|---------------|---------------|-----------------|----------------|
+|IC1 CFGR0      |IC1 CFGR1      |IC1 CFGR2      |IC1 CFGR3      |IC1 CFGR4      |IC1 CFGR5      |IC1 PEC High     |IC1 PEC Low     |
 */
 
 //JTS Move to hardware IO file
@@ -333,6 +331,26 @@ void run_command(uint8_t cmd)
           Serial.println(F("A PEC error was detected in the received data"));
         }
         print_cells();
+        
+        //check for full cell(s)   
+        uint16_t cellVoltage_highest = 0;   
+        for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
+          {
+            for (int i=0; i<12; i++)
+            {
+              if( cell_codes[current_ic][i] > cellVoltage_highest )
+              {
+                cellVoltage_highest = cell_codes[current_ic][i];
+              }
+              if( cell_codes[current_ic][i] > 36750 ) //3.7 volts
+              {
+                Serial.println("Cell " + String(current_ic * 12 + i + 1) + " is full." );
+                turnGridCharger_Off();
+                //tx_cfg[current_ic][i]
+              }
+            }
+          }
+        Serial.println("Highest cell voltage is: " + String(cellVoltage_highest , DEC) );
         delay(500);
       }
       print_menu();
@@ -348,16 +366,13 @@ void run_command(uint8_t cmd)
   
       if( gridEnabled || !(gridPowerPresent) ) //charger is enabled, or unplugged
       {
-        analogWrite(GRIDPWM_PIN,255); //Set power to zero
-        delay(100);
-        digitalWrite(GRIDEN_PIN,LOW); //Turn charger off
-        Serial.println(F("Charger turned off"));
+        turnGridCharger_Off();
       }
       if( !(gridEnabled) && gridPowerPresent ) //charger off & plugged in 
       {
         digitalWrite(GRIDEN_PIN,HIGH); //Turn charger on
         delay(100);
-        for(int ii=255; ii>0; ii--)
+        for(int ii=255; ii>=0; ii--)
         {
           analogWrite(GRIDPWM_PIN,ii);
           delay(2);
@@ -399,16 +414,17 @@ void run_command(uint8_t cmd)
 /*!***********************************
  \brief Initializes the configuration array
  **************************************/
+//JTS2do: This doesn't need to be a 2D array.  Data identical on all LTC, except DCC12:1.
 void init_cfg()
 {
   for (int i = 0; i<TOTAL_IC; i++)
-  {
-    tx_cfg[i][0] = 0xFE;
-    tx_cfg[i][1] = 0x00 ;
-    tx_cfg[i][2] = 0x00 ;
-    tx_cfg[i][3] = 0x00 ;
-    tx_cfg[i][4] = 0x00 ;
-    tx_cfg[i][5] = 0x00 ;
+  {                        // BIT7    BIT6    BIT5    BIT4    BIT3    BIT2    BIT1   BIT0 
+    tx_cfg[i][0] = 0xF6 ;  //GPIO5   GPIO4   GPIO3   GPIO2   GPIO1   REFON   SWTRD  ADCOPT //Enable GPIO pulldown, etc
+    tx_cfg[i][1] = 0x00 ;  //VUV[7]  VUV[6]  VUV[5]  VUV[4]  VUV[3]  VUV[2]  VUV[1] VUV[0] //Undervoltage comparison voltage
+    tx_cfg[i][2] = 0x00 ;  //VOV[3]  VOV[2]  VOV[1]  VOV[0]  VUV[11] VUV[10] VUV[9] VUV[8] 
+    tx_cfg[i][3] = 0x00 ;  //VOV[11] VOV[10] VOV[9]  VOV[8]  VOV[7]  VOV[6]  VOV[5] VOV[4] //Overvoltage comparison voltage 
+    tx_cfg[i][4] = 0x00 ;  //DCC8    DCC7    DCC6    DCC5    DCC4    DCC3    DCC2   DCC1   //Enables discharge on cells 8:1
+    tx_cfg[i][5] = 0x00 ;  //DCTO[3] DCTO[2] DCTO[1] DCTO[0] DCC12   DCC11   DCC10  DCC9   //Discharge timer and cells 12:9
   }
 }
 
@@ -559,4 +575,12 @@ void serial_print_hex(uint8_t data)
   }
   else
     Serial.print((byte)data,HEX);
+}
+
+void turnGridCharger_Off(void)
+{
+  analogWrite(GRIDPWM_PIN,255); //Set power to zero
+  delay(100);
+  digitalWrite(GRIDEN_PIN,LOW); //Turn charger off
+  Serial.println(F("Charger turned off"));
 }

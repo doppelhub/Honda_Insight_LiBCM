@@ -18,7 +18,7 @@ DLW5ATN272SQ2L
 Solutions:
 
 Between Input- & output-:
-Add a ~1nF capacitance between HVDC- & 12V-.  Put QTY2 22 nF in series between these negative leads for safety.
+Add capacitance between HVDC- & 12V-.  Put QTY2 22 nF in series between these negative leads for safety.
 
 Between HVDCDC inputs:
 Add 44 nF

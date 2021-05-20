@@ -134,25 +134,6 @@ void spi_transfer_block(uint8_t cs_pin, uint8_t *tx, uint8_t *rx, uint8_t length
   output_high(cs_pin);                //! 3) Pull CS high
 }
 
-// Connect SPI pins to QuikEval connector through the Linduino MUX. This will disconnect I2C.
-void quikeval_SPI_connect()
-{
-  pinMode(QUIKEVAL_CS, OUTPUT);
-  output_high(QUIKEVAL_CS); //! 1) Pull Chip Select High
-
-  //! 2) Enable Main SPI
-  pinMode(QUIKEVAL_MUX_MODE_PIN, OUTPUT);
-  digitalWrite(QUIKEVAL_MUX_MODE_PIN, LOW);
-}
-
-// Configure the SPI port for 4MHz SCK.
-// This function or spi_enable() must be called
-// before using the other SPI routines.
-void quikeval_SPI_init(void)  // Initializes SPI
-{
-  spi_enable(SPI_CLOCK_DIV16);  //! 1) Configure the spi port for 4MHz SCK
-}
-
 // Setup the processor for hardware SPI communication.
 // Must be called before using the other SPI routines.
 // Alternatively, call quikeval_SPI_connect(), which automatically

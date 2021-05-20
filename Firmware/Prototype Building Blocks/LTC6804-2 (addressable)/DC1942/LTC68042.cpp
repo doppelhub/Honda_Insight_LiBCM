@@ -95,7 +95,6 @@ uint8_t ADAX[2]; //!< GPIO conversion command.
 */
 void LTC6804_initialize()
 {
-  quikeval_SPI_connect();
   spi_enable(SPI_CLOCK_DIV64);
   set_adc(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL,AUX_CH_GPIO1);
 }
@@ -109,7 +108,7 @@ void LTC6804_initialize()
 @param[in] uint8_t CHG Determines which GPIO channels are measured during Auxiliary conversion command
 
  Command Code: \n
-      |command  |  10   |   9   |   8   |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   |
+      |command    |  10   |   9   |   8   |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   |
       |-----------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
       |ADCV:      |   0   |   1   | MD[1] | MD[2] |   1   |   1   |  DCP  |   0   | CH[2] | CH[1] | CH[0] |
       |ADAX:      |   1   |   0   | MD[1] | MD[2] |   1   |   1   |  DCP  |   0   | CHG[2]| CHG[1]| CHG[0]|
@@ -122,8 +121,8 @@ void set_adc(uint8_t MD, //ADC Mode
 {
   uint8_t md_bits;
 
-  md_bits = (MD & 0x02) >> 1;
-  ADCV[0] = md_bits + 0x02;
+  md_bits = (MD & 0x02) >> 1; //set bit 8 (MD[1]) in ADCV[0]... MD[0] is in ADCV[1] 
+  ADCV[0] = md_bits + 0x02;  //set bit 9 true
   md_bits = (MD & 0x01) << 7;
   ADCV[1] =  md_bits + 0x60 + (DCP<<4) + CH;
 

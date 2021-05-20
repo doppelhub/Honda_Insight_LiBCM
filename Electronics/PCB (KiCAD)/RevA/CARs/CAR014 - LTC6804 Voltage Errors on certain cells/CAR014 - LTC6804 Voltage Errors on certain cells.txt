@@ -41,3 +41,7 @@ These traces are (accidentally) routed well.  Should still look at optimizing th
 Update: I removed R144 and connected a lead - with series 50 Ohm resistor - directly from the BMS connector's 24+ to R144 (net C12_B).  This is a direct sense to the LTC6804 for C24... but unfortunately it only reduced the measurement error 10 mV (from 33 mV to 23 mV.  Something else is wrong here.
 
 Going to play around with ADC update rate, etc.
+
+...
+
+Solution: There was a short from highest cell on IC to Vin.

@@ -11,3 +11,7 @@ If possible, rotate bay 3 fan's wire hole for better wire routing on back of PCB
 Reroute HVDC so that pack voltage goes through fuse, then cap, then HVDCDC.
 
 HVDC 8pin screw terminal probably blocked by aluminum shaft that bolts from PDU to IMA battery.
+
+Remove Redundant Neutral & GND Vias
+
+Move HVDCDC inward 0.1" to prevent interference with enclosure.  Same with cap and fuse.

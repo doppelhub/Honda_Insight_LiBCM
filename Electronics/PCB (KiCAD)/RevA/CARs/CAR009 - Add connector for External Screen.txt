@@ -1,3 +1,8 @@
 Add a connector for external Nextion screen.  Also need to add a FET (or use debug one) to turn Nextion off when car is off.
 
 Combine METSCI & BATTSCI to free up a serial port.  Still requires QTY2 LTC RS-488 chips.  Need to add another pin to control each chip output input impedance when key is off.
+
+VCC
+TX (Nextion)
+RX (Nextion)
+GND
