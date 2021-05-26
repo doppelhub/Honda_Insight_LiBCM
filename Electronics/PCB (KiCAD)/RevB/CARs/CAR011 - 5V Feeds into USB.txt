@@ -1,0 +1,3 @@
+Simplest method to prevent backfeeding 5V into USB is to remove FET "T1" between  USBVCC & +5V (on Arduino).
+
+Still need to verify this still allows USB to work... it should, but should test it.

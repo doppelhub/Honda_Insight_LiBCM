@@ -1,31 +1,33 @@
 Need to revisit isoSPI biasing.
 
 Existing (1 mA):
-R267 (and related): 1 kOhm
 R265 (and related): 1 kOhm
+R267 (and related): 1 kOhm
 
-Therefore, existing design makes pulse threshhold 500 mV, whereas theoretical pulse amplitude isn't much higher than this.  Need to lower R265 (and related) values to lower amplitude threshhold.
+Therefore, existing design makes pulse threshhold 500 mV, whereas theoretical pulse amplitude isn't much higher than this.  Need to lower R267 (and related) values to lower amplitude threshhold.
 
 Manual says they can be 500 uA, which is achieved with:
-R267 (and related): 1.2 kOhm
-R265 (and related): 2.8 kOhm
+R265 (and related): 1.2 kOhm
+R267 (and related): 2.8 kOhm
 
 However, later in the manual manual:
 Automotive applications have a much higher BCI requirement so the LTC6804 IB is set to 1mA, the maximum power level. The isoSPI system is capable of passing a 200mA BCI test with no transmitted bit errors. The 200mA test level is typical for automotive requirements.
 
 So we should do 1 mA (max current):
-R267 (and related): 0.6 kOhm
-R265 (and related): 1.4 kOhm
+R265 (and related): 0.6 kOhm
+R267 (and related): 1.4 kOhm
 
-Requirement to achieve 1.0 mA: R267+R265 = 2 kOhm
-Requirement to achieve 0.5 mA: R267+R265 = 4 kOhm
+Requirement to achieve 1.0 mA: R265+R267 = 2 kOhm
+Requirement to achieve 0.5 mA: R265+R267 = 4 kOhm
 
 Current should lie between these two values.  Ideally close to - but not more than - 1 mA.
 
 Solution:
 0.75 mA:
-R267 (and related): 1.00 kOhm
-R265 (and related): 1.65 kOhm (3k3 || 3k3)
+R265 (and related): 1.00 kOhm
+R267 (and related): 1.65 kOhm (3k3 || 3k3)
 
 Add ground plane under isoSPI to reduce noise
 Change R130 to (22 nF || 100 kOhm), to reduce common mode noise.  Note that R130 is larger than 0805.
+
+isoSPI too close to off-line HVDC- (pre-filtered).

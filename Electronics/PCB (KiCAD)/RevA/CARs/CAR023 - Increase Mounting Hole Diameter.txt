@@ -1,0 +1,4 @@
+OEM battery uses mounting screws... we can reuse them by making the holes the following:
+
+Head OD (max): 10.1 mm
+Shaft OD (max): 5.6 mm

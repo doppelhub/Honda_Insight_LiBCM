@@ -3,3 +3,7 @@ The rows are flipped on the BCM connector.  Essentially the upper and lower rows
 
 Workaround:
 Manually repin external IMA wire harness.
+
+Final Implementation:
+Flipped pins around.
+Note that KiCAD wouldn't update the footprint until I deleted the old one and re-placed it.

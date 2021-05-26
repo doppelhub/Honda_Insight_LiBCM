@@ -1,1 +1,14 @@
 For lower cost version, add ability to power LiBCM using car's 12 volt battery.  Note that this will prevent cell balancing... only monitoring.
+
+Final Implementation:
+Added DNP resistor from IGA1 (12V+10s) to 12 volt rail.
+This allows us to remove:
+-fans
+-HVDCDC
+-Entire HVDC circuit (connector/isolation/fuse/capacitors)
+-entire HVAC circuit (IGBT/isolation/IEC cable, fuse)
+-CC LED grid charger
+-discharge resistors
+-QTY2 (of QTY3) 220 uF electrolytic capacitors
+
+People can still add a resistor divider to R48 (VPIN), and MCM 'E' (using R69/R70/R71/R72/DNP).

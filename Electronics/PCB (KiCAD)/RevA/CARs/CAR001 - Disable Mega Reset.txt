@@ -5,3 +5,18 @@ Possible methods:
 3: Remove C7 from Mega.  This disconnects DTR (16U2->MEGA reset pin).
 
 Probably need to add a reset button to the LiBCM PCB, so user can manually reset the controller when necessary
+
+...
+
+Looks like we can control this by changing 16U2 firmware.
+The DTR pin resets the Arduino whenever it pulses low.
+Search 16U2 firmware* for "AVR_RESET_LINE_PORT"
+
+*Applications/Arduino.app/Contents/Java/hardware/arduino/avr/firmwares/atmegaxxu2
+https://github.com/jj1bdx/arduino-atmega16u2 
+
+Another option is to just convey that the USB port is a debug feature, and the reset is part of that process.  We could add a "save SoC" button to the HMI... users push that button prior to plugging in the computer.
+
+Final Implementation:
+Added a 120 Ohm pullup with a mechanical switch and capacitor to ground.
+Allows user to put device into "programming mode".

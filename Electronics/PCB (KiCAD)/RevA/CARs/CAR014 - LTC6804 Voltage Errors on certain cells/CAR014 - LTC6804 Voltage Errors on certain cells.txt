@@ -26,10 +26,10 @@ Cells affected:
 C1- (-1.4 mV error)
 C12+@42S (did not test)
 C13+ (-1.0 mV error)
-C24+ (-32.9 mV error)
-C36+ (5.0 mV error)
-C37+ (-2.0 mV error)
-C48+ (-4.0 mV error)
+C24+ (-32.9 mV error) Fixed
+C36+ (5.0 mV error) Fixed
+C37+ (-2.0 mV error) Fixed
+C48+ (-4.0 mV error) Fixed
 
 Cells not affected:
 C12+@48S (-0.5 mV error)

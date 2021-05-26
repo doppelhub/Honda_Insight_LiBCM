@@ -21,7 +21,7 @@ Between Input- & output-:
 Add capacitance between HVDC- & 12V-.  Put QTY2 22 nF in series between these negative leads for safety.
 
 Between HVDCDC inputs:
-Add 44 nF
+Add 44 nF 
 
 Between HVDCDC output (12V) and LVDCDC:
 Add 587-5925-1-ND inline with both +12V and ENG_GND, with 22 uF cap on both sides.

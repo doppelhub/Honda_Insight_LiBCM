@@ -1,0 +1,141 @@
+OEM Current sensor's idle current is about 10 mA.
+
+Oddly, if you use an open drain to ground (OEM -12 volt), it pulls about 100 mA when said open drain is off (from 12V_LiBCM to 5V_LiBCM).  So we need to switch the positive lead off.
+
+However, if you power current sensor from 12V_Ignition, then when key is off - and 5V_LiBCM is on - the sensor still pulls 4 mA (from 5V_LiBCM to GND_ENG).  Therefore, we can't just cut the ignition and call it a day.
+
+Note that if we power sensor from 12V_Ignition, then we can't measure current when the car is off (e.g. when grid charging).  However, I don't think this matters much, as we'll base SoC solely on cell voltage... we could just assume the grid charger's output current, and then count those joules.  I practice this will likely be more accurate than actually using the current sensor, since the MEGA ADC's resolution is only about 200 mA.
+
+We could do both an open drain AND power from 12V_Ignition to drop the power to zero.  
+
+
+...
+
+I did a long writeup on this issue:
+https://www.insightcentral.net/threads/g1-honda-insight-lithium-bms-discussion.127502/post-1481486
+
+Reproduced below:
+
+...
+
+Here's an odd issue I should have discovered much earlier in the process:
+
+Summary:
+The OEM battery current sensor (BCS) power consumption increases drastically when either the positive OR the negative lead is disconnected (but not both). This is counterintuitive, but ultimately makes sense once you study the circuit.
+
+Thus, "turning the BCS off" by disconnecting either the positive XOR negative lead actually causes the BCS to consume several times more power.
+
+The only way to prevent the BCS from consuming power is to make both power rails high impedance... You can neither float just one rail, nor set both to 0V (low impedance)... in both cases idle power consumption actually increases.
+
+...
+
+Background:
+The OEM battery current sensor (BCS) is re-used in LiBCM. However, the sensor is used differently on LiBCM.
+
+The OEM BCM:
+-Powers the BCS from +12V to -12V.
+-Requires a -12V rail (which is only used by the BCS).
+-Uses an ADC that can digitize negative values.
+
+The OEM BCM solution is great because if the ADC reads 0V, then that's 0 A thru the sensor. Then, as the current increases, so does the ISOC current (@250 uA/A).
+
+For LiBCM, I decided to:
+-Power the BCM from +12V to 0 V.
+-No -12V rail required.
+-Can use MEGA2560's onboard ADC.
+
+Since there's no longer a negative rail, that means I can't shunt the BCS to ground... if I did, then I couldn't read negative values, because the sensor would rail into ground... thus running out of headroom to generate negative voltages. Put another way, all Regen current values would measure '0A'.
+
+To solve this problem, instead of tying Rsense to ground, I tied it to +5V. Thus, values less than 5V indicate regen, and values above 5V indicate assist. I then level-shift these values thru a 0.5x voltage divider and finally into an opamp that feeds the MEGA's ADC:
+ 90712
+
+This works because the BCS behaves as a |current-controlled| |current source|. In other words, it doesn't matter how you power the BCS' +/- leads... just as long as the output current - after being converted into a voltage by shunting across Rsense - generates a voltage that lies somewhere in between both power rails.
+
+One key improvement to my design is that the unipolar circuit offset is VERY accurate, since the ADC's reference is the 5 volt rail itself. Thus, we know with great certainty that a digitized value of 511 (on a 1023 count ADC) is '0A'. Even if the 5V rail is off by 25% (e.g. 3.75 volts or 6.25 volts), '0A' thru the sensor will still return 511 counts. In more technical terms, the digitized voltage value is ratiometric to the digitizer's voltage reference. I could geek out about this paragraph for pages, but I'll spare you that tangent.
+
+Background (continued):
+When powered from 0 to 12 V, the BCS consumes 120 mW at idle. Then, as the sensed current increases, the BCS consumes an additional 2.5 mW per 10 A thru the high current cables.
+
+When I gathered power consumption data from the BCS, I was using the OEM (bipolar) configuration (i.e. +12V to -12V). In that configuration, when you turn off the +12V rail, the BCS consumes 0.000 mW power. This makes sense because both remaining leads are at 0V... 0-0 = 0, no matter what the units are.
+
+This is such a trivial concept, I didn't even bother to verify it held true in my new unipolar design. Spoilers: it didn't remain true.
+
+Prior to today, I knew everything up to here.
+
+Issue:
+Imagine my surprise today when I turned the BCS off to "save power," and suddenly the power consumption doubled (to 230 mW).
+
+<time passes... I figure out what's going on>
+
+"No problem" I thought. "I'll just add an open drain to the negative lead... piece of cake."
+
+NOPE. It turns out that disconnecting the negative lead increases power consumption more than 4x (500 mW). Yikes!
+
+Root cause:
+As I mentioned above, the BCS acts like a |current-controlled| |current source|. Glossing over the internal architecture, I'll summarize as such: If you disconnect either power lead - but not both - then the current source behaves like a current source would if its input was railed (i.e. either V+ = ISOC or V- = ISOC... which means the BCS will do whatever it has to do to source current on the ISOC pin. This means drawing lots of power.
+
+In the OEM configuration, the ISOC pin is shunted to ground, and therefore when you turn the key off the 12 volt rail eventually drops to 0 volts, and thus the BCS pulls zero current (0-0 = 0, as previously mentioned). No problems here.
+
+However, on LiBCM the 5 volt rail is generated from the IMA battery itself, and remains present even after the key is off. As mentioned previously, on LiBCM ISOC no longer shunts to ground, but instead shunts to +5V. Thus, when either BCS power rail is disconnected - but not both rails - there's now a 5 volt delta to ISOC (+5V thru Rsense), which is low impedance to whichever rail remains connected.
+
+Therefore, when one rail is disconnected, the BCS acts like a current source until it runs out of headroom... consuming as much power as it can in the process (which appears to be ~500 mW). The reason one configuration pulled more power than the other is that 12 volts - 5 volts = 7 volts, whereas 5 volts - 0 volts = 5 volts. Given that the BCS requires ~3 volts headroom, that's the difference between 4 volts and 2 volts... which is about twice the power (500 mW, versus 230 mW, as described previously).
+
+Solution:
+Now that I know the above, the solution is simple: Both power rails MUST be high impedance to ensure the BCS doesn't consume power. The "high impedance" wording here is important: it's not enough to simply set both rails to 0 volts (low impedance).
+
+There are many ways to fix this issue.
+
+1:
+ 90713
+The simplest is to add an open drain on the negative rail, and then add a forward-biased diode to the +12V_IGNITION rail. Thus, when the key is OFF, both the negative and positive rails are high impedance (because the OD FET is open, and the diode is reverse biased).
+Note: This ONLY WORKS if the 12 volt rail turns off when the key is off, hence the reason the BCS would need to be powered by +12V_IGNITION.
+
+This solution isn't ideal for several reasons:
+-LiBCM can't measure battery current when the car is turned off (e.g. when grid charging). It turns out this isn't actually a big deal, since we know the grid charger's output current (PWM-controlled, in 5 mA increments) much more accurately than the BCS can measure it (resolution: 200 mA per count).
+
+-It introduces an additional low impedance noise source: At present, +12V_IGNITION isn't used anywhere else on LiBCM, except to determine whether the key is on or off... that signal is buffered thru 200 kOhm series resistance, which is then low-pass filtered, hence there's no way for noise to enter LiBCM at present.
+
+-It adds another variable uncertainty to LiBCM.
+
+-The diode drop to +12V slightly reduces the theoretical maximum measurable assist value (from ~180 A max to ~145 A max). I don't think this actually matters for now, as Peter's maximum assist boost is +40% (i.e. 140 A). However, it would prevent us from measuring higher currents, assuming the IMA motor can handle them.
+
+...
+
+2:
+ 90716
+A more sophisticated method is to power the BCS' positive rail from LiBCM's always-on +12V rail, thru a high-side switch (Q74/Q75), AND also keep the open drain low-side switch (Q76) on the negative rail. In this configuration, we can turn the BCS on even when the car is off. More importantly, when we enter "low power" mode, the BCS will truly pull 0.000 mW.
+Note: This ONLY WORKS because the 5V rail is derived from the 12V rail... hence, if the 12 volt rail turns off, then the 5 volt rail will also turn off.
+
+Fortunately, LiBCM already uses both the NMOS & PMOS FETs, so no new parts.
+
+The only drawback to this second method is that it requires a separate control pin ('5VLOGIC_EN')... or wait, does it?
+
+It turns out LiBCM already has an "enable load on 5V rail" circuit:
+ 90715
+
+Can we re-use the 'LOAD5V' signal on our circuit?
+Indeed, we can! All three FETs are 'ON' when LOAD5V is high, and 'OFF' when LOAD5V is low. So that's cool... don't need to add another control pin.
+
+...
+
+3: Use a dedicated high-side driver IC. These are expensive, but have a lower Rds(on), since they use N-channel FETs in combination with an isolated charge pump that generates the correct N-channel gate drive voltage (e.g. 10 volts above +12V).
+
+I don't see a compelling reason to add a new, expensive part. The BCS doesn't actually pull that much current (e.g. 35 mA), so the higher Rds(on) isn't that important. Also, given the following:
+-option '1' has a worst-case 20000 mOhm ESR(ish)**
+-option '2' has an effective 100 mOhm ESR (math)
+-option '3' has an effective 10 mOhm (datasheet).
+
+**Full disclosure: This isn't actually an 'ESR', but is actually the diode's ~700 mV constant drop. At 35 mA load, 700 mV / 35 ma = 20 Ohms.
+
+Final Implementation:
+Given that I was comfortable with option 1's ESR, it logically follows that option 2 is "good enough"... option 2 is 200x better than option 1.
+
+Therefore, I'm going with option 2... just as soon as I actually test it in the car.
+
+...
+
+I'm annoyed at myself for not catching this issue until now. I absolutely should have tested the entire system under real-world scenarios. Instead, I was testing each sub-system separately, and made some incorrect assumptions about how the entire system would behave when put together. The biggest "whoops" was that I assumed the 12 volt rail was either low impedance 12 volts, or high impedance.
+
+If I hadn't caught this error, then a parked G1 would fully deplete the lithium battery in about two months... and there'd be no way to prevent this in firmware. I'm certainly glad to have figured it out prior to ordering the final production PCB. Obviously I would have caught this eventually... when I measured the the 'KEYOFF' power consumption. I'm just bothered that I didn't discover it during my extensive initial hardware testing.
+
+Never trust your assumptions. Trust, but verify.

@@ -1,5 +1,5 @@
-#include "METSCI.h"
-#include "BATTSCI.h"
+//#include "METSCI.h"
+//#include "BATTSCI.h"
 
 #define BattCurrent_Pin A0
 #define FanOEMlow_Pin A1
@@ -75,28 +75,29 @@ digitalWrite(FanOnPWM_Pin,LOW);
 digitalWrite(Load5v_Pin,HIGH);
 digitalWrite(FanOEMlow_Pin,LOW);
 digitalWrite(FanOEMhigh_Pin,LOW);
-digitalWrite(METSCI_DIR_PIN,LOW); //Must be low when key OFF (to prevent backdriving MCM)
-digitalWrite(BATTSCIdir_Pin,LOW); //METSCI Set to receive Data.  Must be low when key OFF (to prevent backdriving MCM)
+digitalWrite(METSCI_DIR_PIN,LOW); // METSCI Set LO to receive Data. Must be low when key OFF (to prevent backdriving MCM)
+digitalWrite(BATTSCIdir_Pin,HIGH); //BATTSCI Set HI to send    Data. Must be low when key OFF (to prevent backdriving MCM)
 digitalWrite(GridEn_Pin,LOW);
 digitalWrite(VPIN_OUT_PIN,LOW);
 
 //Note: Changing this value messes with delay timing!
-//TCCR0B = TCCR0B & B11111000 | B00000001; // for PWM frequency of 62500 Hz D04 & D13
-//TCCR0B = TCCR0B & B11111000 | B00000010; // for PWM frequency of  7813 Hz D04 & D13
-//TCCR0B = TCCR0B & B11111000 | B00000011; // for PWM frequency of   977 Hz D04 & D13 (DEFAULT)
+//TCCR0B = (TCCR0B & B11111000) | B00000001; // for PWM frequency of 62500 Hz D04 & D13
+//TCCR0B = (TCCR0B & B11111000) | B00000010; // for PWM frequency of  7813 Hz D04 & D13
+//TCCR0B = (TCCR0B & B11111000) | B00000011; // for PWM frequency of   977 Hz D04 & D13 (DEFAULT)
 
-TCCR1B = TCCR1B & B11111000 | B00000001; // for PWM frequency of 31372 Hz D11 & D12
-//TCCR2B = TCCR2B & B11111000 | B00000001; // for PWM frequency of 31372 Hz D09 & D10
-//TCCR3B = TCCR3B & B11111000 | B00000001; // for PWM frequency of 31372 Hz D02 & D03 & D05
+TCCR1B = (TCCR1B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D11 & D12
+//TCCR2B = (TCCR2B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D09 & D10
+//TCCR3B = (TCCR3B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D02 & D03 & D05
 
-//TCCR4B = TCCR4B & B11111000 | B00000001; // for PWM frequency of 31372 Hz D06 & D07 & D08
-TCCR4B = TCCR4B & B11111000 | B00000010; // for PWM frequency of  3921 Hz D06 & D07 & D08
-//TCCR4B = TCCR4B & B11111000 | B00000011; // for PWM frequency of   490 Hz D06 & D07 & D08
-//TCCR4B = TCCR4B & B11111000 | B00000101; // for PWM frequency of    31 Hz D06 & D07 & D08
+//TCCR4B = (TCCR4B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D06 & D07 & D08
+TCCR4B = (TCCR4B & B11111000) | B00000010; // for PWM frequency of  3921 Hz D06 & D07 & D08
+//TCCR4B = (TCCR4B & B11111000) | B00000011; // for PWM frequency of   490 Hz D06 & D07 & D08
+//TCCR4B = (TCCR4B & B11111000) | B00000101; // for PWM frequency of    31 Hz D06 & D07 & D08
 
 analogReference(EXTERNAL); //use 5V AREF pin
 
 Serial.begin(115200);
+Serial1.begin(9600,SERIAL_8E1); //BATTSCI
 Serial2.begin(9600,SERIAL_8E1); //METSCI
 
 }
@@ -114,6 +115,7 @@ if (digitalRead(GridSense_Pin) == 0)
 {
   digitalWrite(GridEn_Pin,HIGH);
 }
+Serial1.print("BEEFCA5E");  //Send data on BATTSCI
 
 for(int ii=0; ii<=255; ii++)
   {
