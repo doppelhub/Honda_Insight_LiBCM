@@ -1,0 +1,157 @@
+Welcome to LiBCM
+version:1.21 2021APR17
+
+'H' to Return to this Home screen
+'P' to Return to Previous Screen
+
+Enter command:
+1: System Status
+	Power-On Time: 1234 seconds
+	Pack Configuration: 42S
+		
+	A: Display values since last reset
+		Data Since Last Reset ('R' to reset):
+		Vcell(min):	2456 mV @ C34
+		Vcell(max):	3958 mV @ C34
+		Vdelta:		0123 mV (C24-C32)
+		Vpack:		123 Vmin, 145 Vmax
+		SoC:		010% min, 078% max	
+		Tpack:		10 C min, 45 C max
+		Iregen(max):	078 A (actual) 
+		Iassist(max):	134 A (actual)
+		Total Assist:	1234 Ah (actual)
+		Total Regen:	1456 Ah (actual)
+		Time:		345232 s
+	B: Display values since last full charge	
+		Same as above, except 'Data Since Last Full Charge'
+	C: Display realtime data
+		U: Update Once
+		C: Update Continuously ('Q' to stop)
+		Vcell(min):	2456 mV @ C34
+		Vcell(max):	3958 mV @ C34
+		Vdelta:		0123 mV (C24-C32)
+		Vpack:		123 V
+		SoC:		010%	
+		Tpack (min):	10 C
+		Tpack (max):	12 C
+		Ibatt:		078 A
+		Key is: ON
+		Grid Charger AC Present?: YES
+		Grid Charger Powered: NO
+		Grid Charger Power Output: 100%
+
+	D: Read Raw Cell Voltages (mV)
+		C: Update Continuously ('Q' to stop)
+		C01-C12: 3245 3245 3245 3245 -  3245 3245 3245 3245 -  3245 3245 3245 3245
+		C13-C24: 3245 3245 3245 3245 -  3245 3245 3245 3245 -  3245 3245 3245 3245
+		C25-C36: 3245 3245 3245 3245 -  3245 3245 3245 3245 -  3245 3245 3245 3245
+		C37-C48: 3245 3245 3245 3245 -  3245 3245 3245 3245 -  3245 3245 3245 3245
+		C49-C60: 3245 3245 3245 3245 -  3245 3245 3245 3245 -  3245 3245 3245 3245
+		C61-C72: 3245 3245 3245 3245 -  3245 3245 3245 3245 -  3245 3245 3245 3245
+		C72-C84: 3245 3245 3245 3245 -  3245 3245 3245 3245 -  3245 3245 3245 3245
+	
+	E: Read Raw temperature data (degC)
+		C: Update Continuously ('Q' to stop)
+		GRN(Bay1): 34 C
+		WHT(Inlet): 23 C
+		YEL(Outlet): 35 C
+		RED(Bay3): 29 C
+		BMS_C01-C12: 30 C
+		BMS_C13-C24: 30 C
+		BMS_C25-C36: 30 C
+		BMS_C37-C48: 30 C
+		BMS_C49-C60: N/A
+		BMS_C61-C72: N/A
+		BMS_C72-C84: N/A
+
+	F: Read Raw BATTSCI Data (from MCM)
+		U: Update Once
+		C: Update Continuously ('Q' to stop)
+
+	G: Read Cell Balance Status
+		Note: '1' if cell is balancing 
+		C: Update Continuously ('Q' to stop)
+		C01-C12: .... ..1. 1...
+		C13-C24: .... .... ....
+		C25-C36: .1.. .... ....
+		C37-C48: .... .... ....
+		C49-C60: .... 1... ....
+		C61-C72: .... .... ....
+		C72-C84: .... .... 1...
+
+2: Configure Parameters
+	A: BMS Settings
+		A: Minimum cell discharge voltage: 2750 mV
+			Enter new cell Vmin ('P' to abort): 
+			Example: '2750' sets Vmin to 2750 mV
+			Set Vmin to 2750 mV? (Y/N)
+		B: Maximum cell charge voltage: 4100 mV
+			Enter new cell Vmax ('P' to abort): 
+			Example: '4100' sets Vmax to 4100 mV
+			Set Vmax to 4100 mV? (Y/N)
+		C: Pack Ampacity: 4657 mAh
+			Enter new pack size in mAh ('P' to abort):
+			Example: '8000' sets pack size to 8000 mAh
+			Set pack size to 8000 mAh? (Y/N)
+		D: Pack SoC: 45.5%
+			Enter new SoC percent as Integer ('P' to abort):
+			Example: '76' sets SoC to 76%
+			Note: This is the usable pack SoC, based on min/max cell voltage settings
+			Set SoC to 76%? (Y/N)
+
+	B: Temperature Settings
+		A: Fans turn on at:	23 C 
+		B: Fans full speed at:	35 C
+		C: Fans disabled below:	25% SoC
+
+		N: OEM Sensor Names
+			A: GRN: "Bay1"
+				Enter new name for GRN temp sensor:
+			B: WHT: "Inlet"
+				Enter new name for WHT temp sensor:
+			C: YEL: "Outlet"
+				Enter new name for YEL temp sensor:
+			D: RED: "Bay3"
+				Enter new name for RED temp sensor:
+		
+	C: Grid charger settings
+		E: Grid Charger installed?: Y
+			Is grid charger installed? (Y/N): Y
+		M: Disable Grid Charge Above SoC: 75%
+			Enter new maximum grid charge SoC as Integer:
+			Example: '70' disables grid charger above 70% SoC 
+
+	D: MCM Voltage/Current Spoofing
+		P: Presets
+			Configure Voltage/Current Hacks (existing: B)
+			A: 42S with no Current Hack
+			B: 48S with no Current Hack
+			C: 42S with +40% Current Hack
+			D: 48S with +40% Current Hack
+			
+		A: Scale Current sent to MCM by: 100%
+			Enter new scaled current percentage as Integer ('P' to abort):
+			Note: This is the actual multiplier applied to the raw current sensor reading.
+			Note: Any value besides '100%' requires external hardware modifications to MCM.
+			Example: '+40% current hack' is 72% (1/1.4), because 140A*0.71=100A 
+
+		B: Scale Voltage sent to MCM @ 0% SoC by: 100%
+			Note: This value must be between 80-100%
+		C: Scale Voltage sent to MCM @ 100% SoC by: 80% 
+			Note: This value must be between 80-100%
+			Note: Useful for high voltage packs
+		Note: VPIN must be connected to LiBCM for this to work.
+
+	F: Restore Defaults
+		Restore LiBCM to default values.  This cannot be undone.
+		RESET ALL STORED DATA? (y/n):
+
+	G: Debug
+		A: Configure METSCI FRAME 'A'
+		B: Configure METSCI FRAME 'B'
+		C: Configure METSCI FRAME 'C'
+		D: Configure METSCI FRAME 'D'
+		E: Toggle Fans
+		F: Toggle Grid Charger
+		G: Set Grid Charger PWM
+		J: Restart
