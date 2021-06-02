@@ -1233,8 +1233,8 @@ Text Label 1900 11650 3    60   ~ 0
 S2b_A
 Text Label 2600 13300 0    60   ~ 0
 C0_A
-Text Notes 6250 6350 2    63   ~ 0
-Cell18+\nCell17+\nCell16+\nCell15+\nCell14+\nCell13+\nCell12+\nCell11+\nCell10+\nCell09+\nCell08+\nCell07+\nCell06+\nCell05+\nCell04+\nCell03+\nCell02+\nCell01+\nCell01-
+Text Notes 6000 6350 2    63   ~ 0
+C18+\nC17+\nC16+\nC15+\nC14+\nC13+\nC12+\nC11+\nC10+\nC09+\nC08+\nC07+\nC06+\nC05+\nC04+\nC03+\nC02+\nC01+\nC01-
 Text Label 8100 12950 0    60   ~ 0
 S1_B
 Text Label 7850 12350 0    60   ~ 0
@@ -3401,7 +3401,7 @@ F 3 "" H 22150 10750 50  0000 C CNN
 	1    22150 10750
 	1    0    0    -1  
 $EndComp
-Text Notes 16300 3150 2    63   ~ 0
+Text Notes 16400 3150 2    63   ~ 0
 Cell48+\nCell47+\nCell46+\nCell45+\nCell44+\nCell43+\nCell42+\nCell41+\nCell40+\nCell39+\nCell38+\nCell37+\nCell37-\n
 Text Label 19200 12950 0    60   ~ 0
 S1_D
@@ -5052,7 +5052,7 @@ Text Label 13400 12350 0    60   ~ 0
 C1_C
 Text Label 13650 12950 0    60   ~ 0
 S1_C
-Text Notes 10450 3750 2    63   ~ 0
+Text Notes 10550 3750 2    63   ~ 0
 Cell36+\nCell35+\nCell34+\nCell33+\nCell32+\nCell31+\nCell30+\nCell29+\nCell28+\nCell27+\nCell26+\nCell25+\nCell25-(24+)\nCell23+\nCell22+\nCell21+\nCell20+\nCell19+\nCell19-(18+)
 $Comp
 L LiBCM-rescue:GND_ISO_C #PWR0103
@@ -7946,30 +7946,8 @@ Wire Wire Line
 	850  1300 850  7600
 Wire Wire Line
 	4150 9200 3850 9200
-$Comp
-L JTS_Parts:BATT_CONN_12S P6
-U 1 1 6E989E63
-P 16600 2100
-F 0 "P6" H 16750 950 118 0000 C CNN
-F 1 "BATT_CONN_12S" H 16692 3285 118 0000 C CNN
-F 2 "Linsight:CONN_HONDA-12S" H 16400 1050 118 0001 C CNN
-F 3 "" H 16400 1050 118 0001 C CNN
-	1    16600 2100
-	-1   0    0    -1  
-$EndComp
 Text Notes 12200 1150 0    118  ~ 0
 BATTERY BAY 2: 18S MODULE\n(MIDDLE BAY)\nHIGHEST 12 CELLS
-$Comp
-L JTS_Parts:BATT_CONN_18S P5
-U 1 1 60BC1114
-P 10750 2700
-F 0 "P5" H 10900 1550 118 0000 C CNN
-F 1 "BATT_CONN_18S" H 10842 4685 118 0000 C CNN
-F 2 "Linsight:CONN_HONDA-18S" H 10550 1650 118 0001 C CNN
-F 3 "" H 10550 1650 118 0001 C CNN
-	1    10750 2700
-	-1   0    0    -1  
-$EndComp
 Wire Wire Line
 	9350 1750 9350 9200
 Wire Wire Line
@@ -8067,28 +8045,6 @@ Wire Wire Line
 	6250 9500 6250 6850
 Wire Wire Line
 	6150 11400 6150 6950
-$Comp
-L JTS_Parts:BATT_CONN_18S P4
-U 1 1 631124E8
-P 5550 5300
-F 0 "P4" H 5700 4150 118 0000 C CNN
-F 1 "BATT_CONN_18S" V 5700 7900 118 0000 C CNN
-F 2 "Linsight:CONN_HONDA-18S" H 5350 4250 118 0001 C CNN
-F 3 "" H 5350 4250 118 0001 C CNN
-	1    5550 5300
-	1    0    0    -1  
-$EndComp
-$Comp
-L JTS_Parts:BATT_CONN_12S P3
-U 1 1 63114474
-P 4250 5300
-F 0 "P3" H 4400 4150 118 0000 C CNN
-F 1 "BATT_CONN_12S" V 4400 7100 118 0000 C CNN
-F 2 "Linsight:CONN_HONDA-12S" H 4050 4250 118 0001 C CNN
-F 3 "" H 4050 4250 118 0001 C CNN
-	1    4250 5300
-	-1   0    0    -1  
-$EndComp
 Wire Wire Line
 	4400 1600 4400 5100
 Wire Wire Line
@@ -8251,8 +8207,8 @@ Wire Wire Line
 	5450 4500 5400 4500
 Wire Wire Line
 	6350 1350 6350 6750
-Text Notes 3950 8300 0    110  ~ 0
-CONNECT EITHER\nP3 (42S) OR P4 (48S)\nBUT NOT BOTH!!!!!!\n\nIN 42S CONFIGURATION\nCELLS 13 TO 18\nWILL RETURN 0 VOLTS\n
+Text Notes 4050 7600 0    79   ~ 0
+FOR 42S CONFIGURATION:\n -LEAVE PINS C13+ TO C18+ \n  DISCONNECTED
 Text Notes 9450 5200 0    110  ~ 0
 U11/U12/U13 ARE NOT\nGALVANICALLY ISOLATED\nFROM EACH OTHER\n(BUT U14 IS)
 Text Notes 14950 4550 0    110  ~ 0
@@ -10158,17 +10114,6 @@ F 3 "" H 26450 14600 50  0001 C CNN
 	1    26450 14600
 	1    0    0    -1  
 $EndComp
-$Comp
-L Connector:Screw_Terminal_01x13 J13
-U 1 1 672F40D1
-P 22200 2500
-F 0 "J13" H 22118 1675 50  0000 C CNN
-F 1 "Screw_Terminal_01x13" H 22118 1766 50  0000 C CNN
-F 2 "Linsight:Conn_277-1232-ND" H 22200 2500 50  0001 C CNN
-F 3 "~" H 22200 2500 50  0001 C CNN
-	1    22200 2500
-	-1   0    0    1   
-$EndComp
 Wire Wire Line
 	21600 10550 21600 10750
 Wire Wire Line
@@ -10655,4 +10600,72 @@ Wire Wire Line
 Wire Wire Line
 	6150 15300 5750 15300
 Connection ~ 5750 15300
+$Comp
+L Connector_Generic:Conn_01x20 J13
+U 1 1 60FD5054
+P 5650 5400
+F 0 "J13" H 5568 4175 50  0000 C CNN
+F 1 "Conn_01x20" H 5568 4266 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_2x10_P2.54mm_Vertical" H 5650 5400 50  0001 C CNN
+F 3 "~" H 5650 5400 50  0001 C CNN
+	1    5650 5400
+	1    0    0    1   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x20 J16
+U 1 1 60FDCF82
+P 10650 2800
+F 0 "J16" H 10568 1575 50  0000 C CNN
+F 1 "Conn_01x20" H 10568 1666 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_2x10_P2.54mm_Vertical" H 10650 2800 50  0001 C CNN
+F 3 "~" H 10650 2800 50  0001 C CNN
+	1    10650 2800
+	-1   0    0    1   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x14 J17
+U 1 1 60FECDD3
+P 16500 2500
+F 0 "J17" H 16418 1575 50  0000 C CNN
+F 1 "Conn_01x14" H 16418 1666 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_2x07_P2.54mm_Vertical" H 16500 2500 50  0001 C CNN
+F 3 "~" H 16500 2500 50  0001 C CNN
+	1    16500 2500
+	-1   0    0    1   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x14 J18
+U 1 1 60FF4D07
+P 22200 2500
+F 0 "J18" H 22118 1575 50  0000 C CNN
+F 1 "Conn_01x14" H 22118 1666 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_2x07_P2.54mm_Vertical" H 22200 2500 50  0001 C CNN
+F 3 "~" H 22200 2500 50  0001 C CNN
+	1    22200 2500
+	-1   0    0    1   
+$EndComp
+NoConn ~ 22400 1800
+NoConn ~ 16700 1800
+NoConn ~ 10850 1800
+NoConn ~ 5450 4400
+NoConn ~ 5700 3300
+Text Notes 4300 6350 2    63   ~ 0
+C12+\nC11+\nC10+\nC09+\nC08+\nC07+\nC06+\nC05+\nC04+\nC03+\nC02+\nC01+\nC01-
+Text Notes 4250 4950 2    110  ~ 0
+42S
+Text Notes 6050 4150 2    110  ~ 0
+48S
+NoConn ~ 4350 6300
+NoConn ~ 4350 6200
+NoConn ~ 4350 6100
+NoConn ~ 4350 6000
+NoConn ~ 4350 5900
+NoConn ~ 4350 5700
+NoConn ~ 4350 5800
+NoConn ~ 4350 5600
+NoConn ~ 4350 5500
+NoConn ~ 4350 5400
+NoConn ~ 4350 5300
+NoConn ~ 4350 5200
+NoConn ~ 4350 5100
 $EndSCHEMATC
