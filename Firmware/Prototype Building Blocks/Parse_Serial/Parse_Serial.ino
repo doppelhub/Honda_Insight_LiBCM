@@ -2,21 +2,20 @@
 //Search and remove "DEBUG"
 
 #define METSCI_DIR_PIN 3
+#define BATTSCI_DIR_PIN 2
 
 uint16_t idleTimeDEBUG = 0;
 
 void setup()
 {  
   METSCI_begin();
+  BATTSCI_begin();
   Serial.begin(115200); //USB
-  pinMode(METSCI_DIR_PIN, OUTPUT);
-  digitalWrite(METSCI_DIR_PIN,LOW);
 }
   
 
 void loop()
 {
-  
   if( Serial2.available() > 6)
   {
     idleTimeDEBUG = 0;
@@ -110,7 +109,16 @@ uint8_t METSCI_verifyChecksum( uint8_t type, uint8_t data, uint8_t checksum )
 
 void METSCI_begin()
 {
+  pinMode(METSCI_DIR_PIN, OUTPUT);
+  digitalWrite(METSCI_DIR_PIN,LOW);
   Serial2.begin(9600,SERIAL_8E1);
+}
+
+void BATTSCI_begin()
+{
+  pinMode(BATTSCI_DIR_PIN,OUTPUT);
+  digitalWrite(BATTSCI_DIR_PIN,HIGH);
+  Serial1.begin(9600,SERIAL_8E1);
 }
 
 //Production

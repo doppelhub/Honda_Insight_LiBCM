@@ -48,7 +48,7 @@
 #define DEBUG_CLK_PIN 21
 
 
-uint16_t ADCresult;
+uint16_t ADCresult=0;
 
 void setup() {
   // put your setup code here, to run once:
@@ -79,6 +79,7 @@ digitalWrite(METSCI_DIR_PIN,LOW); // METSCI Set LO to receive Data. Must be low 
 digitalWrite(BATTSCIdir_Pin,HIGH); //BATTSCI Set HI to send    Data. Must be low when key OFF (to prevent backdriving MCM)
 digitalWrite(GridEn_Pin,LOW);
 digitalWrite(VPIN_OUT_PIN,LOW);
+digitalWrite(TurnOffLiBCM_Pin,LOW);
 
 //Note: Changing this value messes with delay timing!
 //TCCR0B = (TCCR0B & B11111000) | B00000001; // for PWM frequency of 62500 Hz D04 & D13
@@ -102,78 +103,14 @@ Serial2.begin(9600,SERIAL_8E1); //METSCI
 
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-//delay(1000);
-digitalWrite(LED2_Pin,HIGH);
-//delay(500);
-digitalWrite(LED2_Pin,LOW);
-//delay(500);
-digitalWrite(LED2_Pin,HIGH);
-//digitalWrite(TurnOffLiBCM_Pin,HIGH);
-if (digitalRead(GridSense_Pin) == 0)
+void loop()
 {
-  digitalWrite(GridEn_Pin,HIGH);
-}
-Serial1.print("BEEFCA5E");  //Send data on BATTSCI
-
-for(int ii=0; ii<=255; ii++)
-  {
-   digitalWrite(LED2_Pin,LOW);
-   //delay(50);
-   digitalWrite(LED2_Pin,HIGH);
-   //delay(50); 
-   
-   analogWrite(VPIN_OUT_PIN,ii);
-   analogWrite(ConnE_PWM_Pin,ii);
-   delay (200);
-   analogWrite(GridPWM_Pin,ii); //190 ~=350 mA (1400 mA supply)
-   //analogWrite(FanOnPWM_Pin,ii);
-   //analogWrite(FanOnPWM_Pin,ii);
-   ADCresult += analogRead(BattCurrent_Pin);
-   analogWrite(VPIN_OUT_PIN,ii);
-   if( Serial2.available() )
-   {
-    do
-    {
-      uint8_t readByte = Serial2.read();
-      Serial.print( String(readByte,HEX) );
-    } while( Serial2.available() );
-    
-   }
-   
-   if(ii % 8 == 0)  //OEM Fan tester
-    {
-      if(ii<50)
-      {
-        digitalWrite(FanOEMlow_Pin,LOW);
-        digitalWrite(FanOEMhigh_Pin,LOW);
-        digitalWrite(LED3_Pin,LOW);
-        digitalWrite(LED4_Pin,LOW);
-      }
-      
-      else if(ii<100)
-      {
-        digitalWrite(FanOEMlow_Pin,HIGH);
-        digitalWrite(FanOEMhigh_Pin,LOW);
-        digitalWrite(LED3_Pin,HIGH);
-        digitalWrite(LED4_Pin,LOW);
-      }
-
-      else
-      {
-        digitalWrite(FanOEMlow_Pin,LOW);
-        digitalWrite(FanOEMhigh_Pin,HIGH);
-        digitalWrite(LED3_Pin,LOW);
-        digitalWrite(LED4_Pin,HIGH);
-      }
-      
-    //Serial.println( ADCresult>>3 );
-    ADCresult = 0;        
-    }
-    
+  ADCresult = analogRead(BattCurrent_Pin);
+  Serial.print("\nFirst RAW 10b ADC Value is: " + String(ADCresult) );
+  
+  for(int ii=0; ii<63; ii++)
+  { 
+    ADCresult += analogRead(BattCurrent_Pin);
   }
-  digitalWrite(GridEn_Pin,LOW);
-  //delay(1000);
-
+  Serial.print(" | 64x ADC result is: " + String(ADCresult>>6) );      
 }

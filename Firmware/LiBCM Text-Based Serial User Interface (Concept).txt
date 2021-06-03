@@ -100,9 +100,10 @@ Enter command:
 			Set SoC to 76%? (Y/N)
 
 	B: Temperature Settings
-		A: Fans turn on at:	23 C 
-		B: Fans full speed at:	35 C
-		C: Fans disabled below:	25% SoC
+		A: Fans turn on at:	        23 C 
+		B: Fans full speed at:	        35 C
+		C: Fans disabled below:	        25% SoC
+		D: Disable Grid Charging above: 45 C@pack
 
 		N: OEM Sensor Names
 			A: GRN: "Bay1"

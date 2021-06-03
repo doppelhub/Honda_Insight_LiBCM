@@ -1,0 +1,25 @@
+MVP PoC:
+
+Don't care about:
+-SoC (accumulation)
+-Temperature
+-Fan speed
+-Spoofing ConnE
+-Spoofing Vpin
+-Grid charger
+
+...
+Needs:
+
+Initialization:
+-Turn on battery current sensor
+
+Constants (spoofed, never updated):
+-battery Soc, health, temp, etc
+-No error codes
+
+Loop
+-get current sensor value
+-Read cell voltages
+-METSCI Decoding
+-BATTSCI creation
