@@ -90,6 +90,7 @@ void setup()
 
 	Serial.begin(115200);	//USB
 	METSCI_begin();
+  BATTSCI_begin();
 
   //Place into BATTSCI_end()
   pinMode(PIN_BATTSCI_DIR,OUTPUT);
@@ -98,22 +99,40 @@ void setup()
 	Serial.print("\n\nWelcome to LiBCM\n\n");
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void loop()
 {
-	(digitalRead(PIN_KEY_ON) ) ? (BATTSCI_enable() ) : (BATTSCI_disable() ); //Must disable BATTSCI when key is off to prevent backdriving MCM
+  //Handle Key state changes
+  uint8_t keyStatus_now = digitalRead(PIN_KEY_ON);
+  static uint8_t keyStatus_previous;
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  if( keyStatus_now != keyStatus_previous) //key state changed
+  {
+    Serial.print("Key is: ");
+    if( keyStatus_now == 0 )
+    {
+      Serial.print("OFF");
+      BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
+    } else {
+      Serial.print("ON");
+      BATTSCI_enable();
+    } 
+  }
+  keyStatus_previous = keyStatus_now;
+  
+//---------------------------------------------------------------------------------------
 
 	//Read cell voltages, sum to stack voltage
 	//ADD LTC6804 stuff here
 	//sum all 48 cells
   uint8_t stackVoltage=169;
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//---------------------------------------------------------------------------------------
 
 	//get 64x oversampled current sensor value
   uint16_t ADC_oversampledAccumulator = 0;
-  for(int ii=0; ii<64; ii++)
+  for(int ii=0; ii<64; ii++)  //This takes ~112 us per run (7.2 ms total)
   { 
     ADC_oversampledAccumulator += analogRead(PIN_BATTCURRENT);
   }
@@ -126,7 +145,7 @@ void loop()
 	int16_t battCurrent_amps = ( (ADC_oversampledResult * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
 	Serial.print(" counts, which is: " + String(battCurrent_amps) + " amps.");
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//---------------------------------------------------------------------------------------
 
 	//METSCI Decoding
   METSCI_Packets = METSCI_getLatestFrame();
@@ -135,7 +154,7 @@ void loop()
                       ", B4: " + String(METSCI_Packets.latestB4Packet_engine,HEX) +
                       ", E1: " + String(METSCI_Packets.latestE1Packet_SoC,HEX) );
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  
+//---------------------------------------------------------------------------------------  
 	
 	//Send BATTSCI packets to MCM
   BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps);

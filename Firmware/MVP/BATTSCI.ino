@@ -16,7 +16,7 @@ void BATTSCI_begin()
 {
   pinMode(PIN_BATTSCI_DIR, OUTPUT);
   digitalWrite(PIN_BATTSCI_DIR,LOW);
-  Serial2.begin(9600,SERIAL_8E1);
+  Serial1.begin(9600,SERIAL_8E1);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
