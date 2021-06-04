@@ -80,6 +80,7 @@ Enter command:
 		C72-C84: .... .... 1...
 
 2: Configure Parameters
+Note: These parameters cannot be change if a DIP switch on the PCB is set
 	A: BMS Settings
 		A: Minimum cell discharge voltage: 2750 mV
 			Enter new cell Vmin ('P' to abort): 

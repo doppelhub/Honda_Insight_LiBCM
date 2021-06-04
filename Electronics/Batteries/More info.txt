@@ -1,0 +1,21 @@
+Cell Specifications:
+
+NMC cell chemistry
+Low 2.8V high 4.2v
+Nominal 3.6v
+120.7 mm L
+13.3 mm W
+100 mm H with terminals.
+Terminal size: M5 0.8
+1lb 8oz
+Capacity:  5 Ah
+Capacity: 18.75 Wh
+60C
+
+Cell voltages:
+
+4.2V = 100% SOC (Absolute MAX)
+4.1V = 90% SOC (recommended max)
+3.7V = 70% SOC
+3.5V = 20% SOC (recommended min)
+3V = 0% SOC
