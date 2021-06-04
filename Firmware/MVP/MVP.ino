@@ -55,12 +55,13 @@
 #define DEBUG_SDA 20
 #define DEBUG_CLK 21
 
-struct triByte
+struct packetTypes
 {
-  uint8_t dashAssistLevel;
-  uint8_t dataType;
-  uint8_t data;
-} METSCI_Frame;
+  uint8_t latestE6Packet_assistLevel;
+  uint8_t latestB4Packet_engine;
+  uint8_t latestB3Packet_engine;
+  uint8_t latestE1Packet_SoC;
+} METSCI_Packets;
 
 void setup()
 {
@@ -120,15 +121,19 @@ void loop()
   int16_t ADC_oversampledResult = int16_t( (ADC_oversampledAccumulator >> 6) );
   Serial.print("\n\nRaw ADC result is: " + String(ADC_oversampledResult) );  
   
-	//convert current sensor result into approximate amperage for MCM
+	//convert current sensor result into approximate amperage for MCM & user-display
+  //don't use this result for current accumulation... it's not accurate enough
 	int16_t battCurrent_amps = ( (ADC_oversampledResult * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
 	Serial.print(" counts, which is: " + String(battCurrent_amps) + " amps.");
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//METSCI Decoding
-  METSCI_Frame = METSCI_getLatestFrame();
-  Serial.print("\nMETSCI Frame is: " + String(METSCI_Frame.dashAssistLevel,HEX) + String(METSCI_Frame.dataType,HEX) + String(METSCI_Frame.data,HEX) );
+  METSCI_Packets = METSCI_getLatestFrame();
+  Serial.print("\nMETSCI E6: " + String(METSCI_Packets.latestE6Packet_assistLevel,HEX) +
+                      ", B3: " + String(METSCI_Packets.latestB3Packet_engine,HEX) +
+                      ", B4: " + String(METSCI_Packets.latestB4Packet_engine,HEX) +
+                      ", E1: " + String(METSCI_Packets.latestE1Packet_SoC,HEX) );
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  
 	
@@ -136,22 +141,4 @@ void loop()
 
   
   delay(220); //forcing buffers to overqueue to verify LiBCM responds
-}
-
-
-void BATTSCI_begin()
-{
-  pinMode(PIN_BATTSCI_DIR, OUTPUT);
-  digitalWrite(PIN_BATTSCI_DIR,LOW);
-  Serial2.begin(9600,SERIAL_8E1);
-}
-
-void BATTSCI_enable()
-{
-  digitalWrite(PIN_BATTSCI_DIR,HIGH); 
-}
-
-void BATTSCI_disable()
-{
-  digitalWrite(PIN_BATTSCI_DIR,LOW);
 }

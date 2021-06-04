@@ -146,7 +146,7 @@ inline uint8_t METSCI_bytesAvailable()
 //This is a non-blocking function:
 //If a new frame isn't available in the serial receive buffer when this function is called,
 //then the previous frame is returned immediately. No time to wait around for 9600 baud frames!
-struct triByte METSCI_getLatestFrame(void)
+struct packetTypes METSCI_getLatestFrame(void)
 {
   //Check if we have more than one complete frame in queue (which indicates we've somehow fallen behind)
   while( METSCI_bytesAvailable() > (METSCI_BYTES_IN_FRAME << 1) ) //True if two or more full frames are stored in serial ring buffer
@@ -172,7 +172,7 @@ struct triByte METSCI_getLatestFrame(void)
       resyncAttempt++;
       if( resyncAttempt > (METSCI_BYTES_IN_FRAME << 2) )
       {
-        return METSCI_Frame; //prevent hanging in while loop if METSCI signal is corrupt (i.e. 0xE6 never occurs)
+        return METSCI_Packets; //prevent hanging in while loop if METSCI signal is corrupt (i.e. 0xE6 never occurs)
       }
     }
 
@@ -183,21 +183,20 @@ struct triByte METSCI_getLatestFrame(void)
     packetCRC  = METSCI_readByte(); //Byte2 (checksum)
     if( METSCI_isChecksumValid( packetType, packetData, packetCRC) )
     {
-      METSCI_Frame.dashAssistLevel = packetData;
-    } else {
-      METSCI_Frame.dashAssistLevel = 0; //CRC failed
-    }
+      METSCI_Packets.latestE6Packet_assistLevel = packetData;
+    } //Note: If checksum invalid, value not updated (i.e. previous packet persists)
     
     packetType = METSCI_readByte(); //Byte3 (either 0xE1, 0xB3, or 0xB4)
     packetData = METSCI_readByte(); //Byte4 (data)
     packetCRC  = METSCI_readByte(); //Byte5 (checksum)
     if( METSCI_isChecksumValid( packetType, packetData, packetCRC ) )
     {
-      METSCI_Frame.data     = packetData; 
-      METSCI_Frame.dataType = packetType;  
-    } //Note: If the checksum is invalid, these values are not updated (i.e. the previous packet is returned)    
+      if     ( packetType == 0xB4 ) { METSCI_Packets.latestB4Packet_engine = packetData; }
+      else if( packetType == 0xB3 ) { METSCI_Packets.latestB3Packet_engine = packetData; }
+      else if( packetType == 0xE1 ) { METSCI_Packets.latestE1Packet_SoC    = packetData; }
+    } //Note: If checksum invalid, these values are not updated (i.e. previous packet persists)    
   }
-  return METSCI_Frame;
+  return METSCI_Packets;
 }
 
 uint8_t METSCI_isChecksumValid( uint8_t type, uint8_t data, uint8_t checksum )
