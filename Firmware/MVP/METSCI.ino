@@ -153,22 +153,27 @@ struct triByte METSCI_getLatestFrame(void)
   while( METSCI_bytesAvailable() > (METSCI_BYTES_IN_FRAME << 1) ) //True if two or more full frames are stored in serial ring buffer
   {
     Serial.print(F("\nMETSCI stale.  Discarding frame: "));
-    for(int ii=0; ii < METSCI_BYTES_IN_FRAME; ii++) //delete complete frame
+    for(int ii=0; ii < METSCI_BYTES_IN_FRAME; ii++) //delete oldest frame
     {
-      Serial.print(String(METSCI_readByte(), HEX) ); //Display discarded, outdated frame
+      Serial.print(String(METSCI_readByte(), HEX) ); //Display discarded frame
     }
   }
   
   //At this point we should have ONLY the latest complete frame in queue
-
-  //if everything is in sync, guarantees a complete frame is waiting in serial receive ring buffer
-  if( METSCI_bytesAvailable() > METSCI_BYTES_IN_FRAME) 
+ 
+  if( METSCI_bytesAvailable() > METSCI_BYTES_IN_FRAME)  //if everything is in sync, then there's a complete frame waiting in serial buffer
   {
     uint8_t packetType, packetData, packetCRC;
- 
-    while( METSCI_readByte() != 0xE6 ) //throw away data until the next 0xE6 byte occurs
+    uint8_t resyncAttempt = 0; //prevent hanging if METSCI signal not present (e.g. when key off)
+  
+    while( (METSCI_readByte() != 0xE6) )  //Runs at startup and/or after data corruption occurs
     {
-      Serial.print( F("\nMETSCI synchronizing buffer\n") ); //Resynchronize buffer after METSCI data corruption 
+      Serial.print( F("\nMETSCI buffer sync\n") ); //throw away data until the next frame starts (0xE6 byte) 
+      resyncAttempt++;
+      if( resyncAttempt > (METSCI_BYTES_IN_FRAME << 2) )
+      {
+        return METSCI_Frame;
+      }
     }
     
     packetType = 0xE6;              //Byte0 (always 0xE6) (we discarded it above)
@@ -188,7 +193,7 @@ struct triByte METSCI_getLatestFrame(void)
       METSCI_Frame.dataType = packetType;  
     }
   }
-  //Serial.print("\nMETSCI_Frame inside METSCI.c is: " + String(METSCI_Frame.dashAssistLevel,HEX) + "|" + String(METSCI_Frame.dataType,HEX) + "|" + String(METSCI_Frame.data,HEX) ); 
+  
   return METSCI_Frame;
 }
 

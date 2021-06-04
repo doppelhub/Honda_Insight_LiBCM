@@ -125,7 +125,7 @@ void loop()
 	//BATTSCI creation
 
   
-  delay(1);
+  delay(220); //forcing buffers to overqueue to verify LiBCM responds
 }
 
 
