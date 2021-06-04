@@ -14,7 +14,7 @@
  * As shown above, each 30 byte message consists of ten packets.
  * A single packet is sent every 100 ms, hence a complete message is sent every second.
  * Every other packet always starts with 0xE6.
- * Storing the complete message isn't important, as each frame is self-contained. 
+ * Storing the complete message isn't important, as each frame is self-contained.
  * 
  * At the frame level, the above table reduces to:
  * ---------------------------------------------------------
@@ -35,12 +35,14 @@
  * -Byte2 & Byte5 are checksums.  After verifying the checksum, we don't need to store them.
  * -Therefore, we only return Byte1/Byte3/Byte4.
  * 
+ * Only the latest METSCI frame is important... If LiBCM gets behind, old frames are deleted.
+ * 
  * ---------------------------------------------------------------------------------------------------------------------
  * 
  * **The number of assist/regen bars is:
  * Byte0 Byte1 Byte2
  * -----------------
- * E6 40 5A = No Assist or Regen JTS
+ * E6 40 5A = No Assist or Regen
  * E6 41 59 = 01 Bars Assist
  * E6 42 58 = 02 Bars Assist
  * E6 43 57 = 03 Bars Assist
@@ -110,8 +112,8 @@
  * E1 33 6C = 19 Bars
  * E1 34 6B = 20 Bars
  * 
- * If Byte3 = 0xB3, then Byte4 indicates engine status.  Details not fully understood.  Peter knows the most about this.
- * If Byte3 = 0xB4, then Byte4 indicates engine status.  Details not fully understood.  Peter knows the most about this.
+ * If Byte3 = 0xB3, then Byte4 indicates engine status.  Details not fully deciphered (or important).  Peter knows the most about this.
+ * If Byte3 = 0xB4, then Byte4 indicates engine status.  Details not fully deciphered (or important).  Peter knows the most about this.
  ************************************************************************************************************************/
  
 #define METSCI_BYTES_IN_FRAME 6
@@ -142,14 +144,11 @@ inline uint8_t METSCI_bytesAvailable()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //This is a non-blocking function:
-//If a new frame isn't available in the serial receive buffer,
-//then the previous frame is returned immediately.
-//No time to wait around for 9600 baud frames!
+//If a new frame isn't available in the serial receive buffer when this function is called,
+//then the previous frame is returned immediately. No time to wait around for 9600 baud frames!
 struct triByte METSCI_getLatestFrame(void)
 {
-  //Serial.print("\nMETSCI_getLatestFrame Ran. ");
-
-  //Check if we have more than one complete frame in queue (because we've somehow fallen behind)
+  //Check if we have more than one complete frame in queue (which indicates we've somehow fallen behind)
   while( METSCI_bytesAvailable() > (METSCI_BYTES_IN_FRAME << 1) ) //True if two or more full frames are stored in serial ring buffer
   {
     Serial.print(F("\nMETSCI stale.  Discarding frame: "));
@@ -161,10 +160,10 @@ struct triByte METSCI_getLatestFrame(void)
   
   //At this point we should have ONLY the latest complete frame in queue
  
-  if( METSCI_bytesAvailable() > METSCI_BYTES_IN_FRAME)  //if everything is in sync, then there's a complete frame waiting in serial buffer
+  if( METSCI_bytesAvailable() > METSCI_BYTES_IN_FRAME)  //if everything is in sync, then the next six bytes (in the buffer) are a complete frame
   {
     uint8_t packetType, packetData, packetCRC;
-    uint8_t resyncAttempt = 0; //prevent hanging if METSCI signal not present (e.g. when key off)
+    uint8_t resyncAttempt = 0;
   
     while( (METSCI_readByte() != 0xE6) )  //Runs at startup and/or after data corruption occurs
     {
@@ -172,7 +171,7 @@ struct triByte METSCI_getLatestFrame(void)
       resyncAttempt++;
       if( resyncAttempt > (METSCI_BYTES_IN_FRAME << 2) )
       {
-        return METSCI_Frame;
+        return METSCI_Frame; //prevent hanging in while loop if METSCI signal is corrupt
       }
     }
     
@@ -189,7 +188,7 @@ struct triByte METSCI_getLatestFrame(void)
     packetCRC  = METSCI_readByte(); //Byte5 (checksum)
     if( METSCI_isChecksumValid( packetType, packetData, packetCRC ) )
     {
-      METSCI_Frame.data = packetData; 
+      METSCI_Frame.data     = packetData; 
       METSCI_Frame.dataType = packetType;  
     }
   }
