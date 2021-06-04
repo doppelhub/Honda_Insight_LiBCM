@@ -100,7 +100,6 @@ void setup()
 
 void loop()
 {
-  uint8_t stackVoltage = 0;
 	(digitalRead(PIN_KEY_ON) ) ? (BATTSCI_enable() ) : (BATTSCI_disable() ); //Must disable BATTSCI when key is off to prevent backdriving MCM
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -108,6 +107,7 @@ void loop()
 	//Read cell voltages, sum to stack voltage
 	//ADD LTC6804 stuff here
 	//sum all 48 cells
+  uint8_t stackVoltage=169;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -137,8 +137,9 @@ void loop()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  
 	
-	//BATTSCI creation
+	//Send BATTSCI packets to MCM
+  BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps);
 
   
-  delay(220); //forcing buffers to overqueue to verify LiBCM responds
+  delay(220); //forcing buffers to overqueue to verify LiBCM responds correctly
 }

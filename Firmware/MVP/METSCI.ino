@@ -31,6 +31,7 @@
  * -Byte5: Checksum (Byte3+Byte4)
  * 
  * Given the above, we know the following:
+ * -When we eventually add new data types to METSCI, we MUST NEVER send 0xE6 (0b11100110) in METSCI datastream.
  * -Byte0 never changes, so we don't need to store it.
  * -Byte2 & Byte5 are checksums.  After verifying the checksum, we don't need to store them.
  * -Therefore, we only return Byte1/Byte3/Byte4.
