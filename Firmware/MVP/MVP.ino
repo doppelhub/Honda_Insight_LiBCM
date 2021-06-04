@@ -106,13 +106,19 @@ void loop()
 	//ADD LTC6804 stuff here
 	//sum all 48 cells
 
-	//get current sensor value
-	int16_t battCurrent_RawADC = analogRead(PIN_BATTCURRENT);
-	Serial.print("\nRaw ADC Current Reading is: " + String(battCurrent_RawADC) );
-
+	//get 64x oversampled current sensor value
+  uint16_t ADC_oversampledAccumulator = 0;
+  for(int ii=0; ii<64; ii++)
+  { 
+    ADC_oversampledAccumulator += analogRead(PIN_BATTCURRENT);
+  }
+  
+  int16_t ADC_oversampledResult = int16_t( (ADC_oversampledAccumulator >> 6) );
+  Serial.print("\n\nRaw ADC result is: " + String(ADC_oversampledResult) );  
+  
 	//convert current sensor result into approximate amperage for MCM
-	int16_t battCurrent_amps = ( (battCurrent_RawADC * 13) >> 6) - 68; //Accurate to within 3.7 amps of actual value
-	Serial.print(" counts, which is : " + String(battCurrent_amps) + " amps.");
+	int16_t battCurrent_amps = ( (ADC_oversampledResult * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
+	Serial.print(" counts, which is: " + String(battCurrent_amps) + " amps.");
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

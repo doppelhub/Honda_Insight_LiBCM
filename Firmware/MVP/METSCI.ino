@@ -158,22 +158,25 @@ struct triByte METSCI_getLatestFrame(void)
     }
   }
   
-  //At this point we should have ONLY the latest complete frame in queue
+  //At this point we should have ONLY the latest complete frame in queue (i.e. not more than 12 bytes in the serial receive buffer)
+  //If everything is in sync, then the next six bytes are a complete frame, and the first byte is 0xE6.
  
-  if( METSCI_bytesAvailable() > METSCI_BYTES_IN_FRAME)  //if everything is in sync, then the next six bytes (in the buffer) are a complete frame
+  if( METSCI_bytesAvailable() > METSCI_BYTES_IN_FRAME)  //Verify a full frame exists in the buffer
   {
     uint8_t packetType, packetData, packetCRC;
     uint8_t resyncAttempt = 0;
   
-    while( (METSCI_readByte() != 0xE6) )  //Runs at startup and/or after data corruption occurs
+    while( (METSCI_readByte() != 0xE6) )  //Verify the first byte is 0xE6
     {
       Serial.print( F("\nMETSCI buffer sync\n") ); //throw away data until the next frame starts (0xE6 byte) 
       resyncAttempt++;
       if( resyncAttempt > (METSCI_BYTES_IN_FRAME << 2) )
       {
-        return METSCI_Frame; //prevent hanging in while loop if METSCI signal is corrupt
+        return METSCI_Frame; //prevent hanging in while loop if METSCI signal is corrupt (i.e. 0xE6 never occurs)
       }
     }
+
+    //At this point we've read the first byte, which we know is 0xE6... now read the remaining five bytes in the frame
     
     packetType = 0xE6;              //Byte0 (always 0xE6) (we discarded it above)
     packetData = METSCI_readByte(); //Byte1 (always number of bars assist/regen)
@@ -181,6 +184,8 @@ struct triByte METSCI_getLatestFrame(void)
     if( METSCI_isChecksumValid( packetType, packetData, packetCRC) )
     {
       METSCI_Frame.dashAssistLevel = packetData;
+    } else {
+      METSCI_Frame.dashAssistLevel = 0; //CRC failed
     }
     
     packetType = METSCI_readByte(); //Byte3 (either 0xE1, 0xB3, or 0xB4)
@@ -190,9 +195,8 @@ struct triByte METSCI_getLatestFrame(void)
     {
       METSCI_Frame.data     = packetData; 
       METSCI_Frame.dataType = packetType;  
-    }
+    } //Note: If the checksum is invalid, these values are not updated (i.e. the previous packet is returned)    
   }
-  
   return METSCI_Frame;
 }
 
