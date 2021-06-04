@@ -116,67 +116,7 @@
  
 #define METSCI_BYTES_IN_FRAME 6
 
-uint8_t * METSCI_getFrame()
-{
-  static uint8_t METSCI_Frame[3]; //Stores Byte1/Byte3/Byte4.
-  Serial.print("\nMETSCI_getFrame Ran");
-  //Check if we have more than one complete frame in queue (because we've fallen behind)
-  if( METSCI_bytesAvailable() > (METSCI_BYTES_IN_FRAME << 1) ) 
-  {
-    Serial.println(F("METSCI stale.  Discarding frame(s): "));
-    do
-    {
-      for(int ii=0; ii<6; ii++) //delete complete frame
-      {
-        Serial.print(String(METSCI_readByte(), HEX) ); //Display discarded, outdated frame
-      }
-      Serial.print(" ");
-    } while( METSCI_bytesAvailable() > METSCI_BYTES_IN_FRAME );
-  }
-  
-  //At this point we should have ONLY the latest complete frame in queue
-
-  //if everything is in sync, guarantees a complete frame is waiting in serial receive ring buffer
-  if( METSCI_bytesAvailable() > METSCI_BYTES_IN_FRAME) 
-  {
-    uint8_t packetType, packetData, packetCRC;
-    
-    if( METSCI_readByte() != 0xE6 ) //True only after data corruption and/or at startup
-    { 
-      while( METSCI_readByte() != 0xE6 ) //throw away data until the next 0xE6 byte occurs
-      {
-        Serial.println( F("METSCI synchronizing buffer") ); //Resynchronize buffer after METSCI data corruption 
-      }
-    }
-    packetType = 0xE6;              //Byte0 (always 0xE6)
-    packetData = METSCI_readByte(); //Byte1 (always number of bars assist/regen)
-    packetCRC  = METSCI_readByte(); //Byte2 (checksum)
-    METSCI_Frame[0]   = METSCI_verifyChecksum( packetType, packetData, packetCRC);
-
-    packetType = METSCI_readByte(); //Byte3 (either 0xE1, 0xB3, or 0xB4)
-    packetData = METSCI_readByte(); //Byte4 (data)
-    packetCRC  = METSCI_readByte(); //Byte5 (checksum)
-    if( ( METSCI_Frame[2] = METSCI_verifyChecksum(packetType, packetData, packetCRC) ) )
-    {
-      METSCI_Frame[1] = packetType; //Checksum valid
-    } else {
-      METSCI_Frame[1] = 0; //Checksum error
-    }
-  }
-  Serial.print("\nMETSCI_Frame inside METSCI.c is: " + String(METSCI_Frame[0],HEX) + String(METSCI_Frame[1],HEX) + String(METSCI_Frame[2],HEX) ); 
-  return METSCI_Frame;
-}
-
-uint8_t METSCI_verifyChecksum( uint8_t type, uint8_t data, uint8_t checksum )
-{
-  if( ( (type + data + checksum) & 0x7F ) == 0  )
-  {
-    return data; //data is valid
-  } else {
-    Serial.println(F("METSCI Bad Checksum"));
-    return 0; //data invalid
-  }
-}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void METSCI_begin()
 {
@@ -185,13 +125,80 @@ void METSCI_begin()
   Serial2.begin(9600,SERIAL_8E1);
 }
 
-//Production
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 inline uint8_t METSCI_readByte()
 {
   return Serial2.read();
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 inline uint8_t METSCI_bytesAvailable()
 {
   return Serial2.available();
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//This is a non-blocking function:
+//If a new frame isn't available in the serial receive buffer,
+//then the previous frame is returned immediately.
+//No time to wait around for 9600 baud frames!
+struct triByte METSCI_getLatestFrame(void)
+{
+  //Serial.print("\nMETSCI_getLatestFrame Ran. ");
+
+  //Check if we have more than one complete frame in queue (because we've somehow fallen behind)
+  while( METSCI_bytesAvailable() > (METSCI_BYTES_IN_FRAME << 1) ) //True if two or more full frames are stored in serial ring buffer
+  {
+    Serial.print(F("\nMETSCI stale.  Discarding frame: "));
+    for(int ii=0; ii < METSCI_BYTES_IN_FRAME; ii++) //delete complete frame
+    {
+      Serial.print(String(METSCI_readByte(), HEX) ); //Display discarded, outdated frame
+    }
+  }
+  
+  //At this point we should have ONLY the latest complete frame in queue
+
+  //if everything is in sync, guarantees a complete frame is waiting in serial receive ring buffer
+  if( METSCI_bytesAvailable() > METSCI_BYTES_IN_FRAME) 
+  {
+    uint8_t packetType, packetData, packetCRC;
+ 
+    while( METSCI_readByte() != 0xE6 ) //throw away data until the next 0xE6 byte occurs
+    {
+      Serial.print( F("\nMETSCI synchronizing buffer\n") ); //Resynchronize buffer after METSCI data corruption 
+    }
+    
+    packetType = 0xE6;              //Byte0 (always 0xE6) (we discarded it above)
+    packetData = METSCI_readByte(); //Byte1 (always number of bars assist/regen)
+    packetCRC  = METSCI_readByte(); //Byte2 (checksum)
+    if( METSCI_isChecksumValid( packetType, packetData, packetCRC) )
+    {
+      METSCI_Frame.dashAssistLevel = packetData;
+    }
+    
+    packetType = METSCI_readByte(); //Byte3 (either 0xE1, 0xB3, or 0xB4)
+    packetData = METSCI_readByte(); //Byte4 (data)
+    packetCRC  = METSCI_readByte(); //Byte5 (checksum)
+    if( METSCI_isChecksumValid( packetType, packetData, packetCRC ) )
+    {
+      METSCI_Frame.data = packetData; 
+      METSCI_Frame.dataType = packetType;  
+    }
+  }
+  //Serial.print("\nMETSCI_Frame inside METSCI.c is: " + String(METSCI_Frame.dashAssistLevel,HEX) + "|" + String(METSCI_Frame.dataType,HEX) + "|" + String(METSCI_Frame.data,HEX) ); 
+  return METSCI_Frame;
+}
+
+uint8_t METSCI_isChecksumValid( uint8_t type, uint8_t data, uint8_t checksum )
+{
+  if( ( (type + data + checksum) & 0x7F ) == 0  )
+  {
+    return 1; //data is valid
+  } else {
+    Serial.println(F("METSCI Bad Checksum"));
+    return 0; //data invalid
+  }
 }

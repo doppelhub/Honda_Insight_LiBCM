@@ -55,6 +55,13 @@
 #define DEBUG_SDA 20
 #define DEBUG_CLK 21
 
+struct triByte
+{
+  uint8_t dashAssistLevel;
+  uint8_t dataType;
+  uint8_t data;
+} METSCI_Frame;
+
 void setup()
 {
 	//Prevent LiBCM from turning off the 12V->5V DCDC
@@ -87,15 +94,13 @@ void setup()
   pinMode(PIN_BATTSCI_DIR,OUTPUT);
   digitalWrite(PIN_BATTSCI_DIR,LOW); //BATTSCI Set HI to send. Must be low when key OFF to prevent backdriving MCM
   
-	Serial.println("Welcome to LiBCM");
+	Serial.print("\n\nWelcome to LiBCM\n\n");
 }
-
 
 void loop()
 {
 	//Enable BATTSCI only when key is on (to prevent backdriving unpowered MCM)
-	if( digitalRead(PIN_KEY_ON) ) { BATTSCI_begin(); }
-	else { BATTSCI_end(); }
+	(digitalRead(PIN_KEY_ON) ) ? (BATTSCI_enable() ) : (BATTSCI_disable() ); //Must disable BATTSCI when key is off to prevent backdriving MCM
 
 	//Read cell voltages, sum to stack voltage
 	//ADD LTC6804 stuff here
@@ -105,34 +110,38 @@ void loop()
 	int16_t battCurrent_RawADC = analogRead(PIN_BATTCURRENT);
 	Serial.print("\nRaw ADC Current Reading is: " + String(battCurrent_RawADC) );
 
-	//convert result into amps
+	//convert current sensor result into approximate amperage for MCM
 	int16_t battCurrent_amps = ( (battCurrent_RawADC * 13) >> 6) - 68; //Accurate to within 3.7 amps of actual value
 	Serial.print(" counts, which is : " + String(battCurrent_amps) + " amps.");
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	//METSCI Decoding
-  uint8_t *METSCI_Frame = METSCI_getFrame();
-  Serial.print("\nMETSCI Frame is: " + String(METSCI_Frame[0],HEX) + String(METSCI_Frame[1],HEX) + String(METSCI_Frame[2],HEX) ); //Number of assist/regen bars displayed
-  //METSCI_Frame[0] is Number of assist/regen bars displayed
-  //METSCI_Frame[1] is Packet Data Type
-  //METSCI_Frame[2] is Packet Data
-  
+  METSCI_Frame = METSCI_getLatestFrame();
+  Serial.print("\nMETSCI Frame is: " + String(METSCI_Frame.dashAssistLevel,HEX) + String(METSCI_Frame.dataType,HEX) + String(METSCI_Frame.data,HEX) );
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  
 	
 	//BATTSCI creation
 
   
-  delay(200);
+  delay(1);
 }
 
 
 void BATTSCI_begin()
 {
   pinMode(PIN_BATTSCI_DIR, OUTPUT);
-  digitalWrite(PIN_BATTSCI_DIR,HIGH);
+  digitalWrite(PIN_BATTSCI_DIR,LOW);
   Serial2.begin(9600,SERIAL_8E1);
 }
 
+void BATTSCI_enable()
+{
+  digitalWrite(PIN_BATTSCI_DIR,HIGH); 
+}
 
-void BATTSCI_end()
+void BATTSCI_disable()
 {
   digitalWrite(PIN_BATTSCI_DIR,LOW);
 }
