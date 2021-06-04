@@ -99,12 +99,16 @@ void setup()
 
 void loop()
 {
-	//Enable BATTSCI only when key is on (to prevent backdriving unpowered MCM)
+  uint8_t stackVoltage = 0;
 	(digitalRead(PIN_KEY_ON) ) ? (BATTSCI_enable() ) : (BATTSCI_disable() ); //Must disable BATTSCI when key is off to prevent backdriving MCM
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//Read cell voltages, sum to stack voltage
 	//ADD LTC6804 stuff here
 	//sum all 48 cells
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//get 64x oversampled current sensor value
   uint16_t ADC_oversampledAccumulator = 0;
