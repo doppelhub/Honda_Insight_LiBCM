@@ -342,7 +342,7 @@ void run_command(uint8_t cmd)
               {
                 cellVoltage_highest = cell_codes[current_ic][i];
               }
-              if( cell_codes[current_ic][i] > 36750 ) //3.7 volts
+              if( cell_codes[current_ic][i] > 39000 ) //10 mV per count, e.g. "39000" = 3.900 volts
               {
                 Serial.println("Cell " + String(current_ic * 12 + i + 1) + " is full." );
                 turnGridCharger_Off();
