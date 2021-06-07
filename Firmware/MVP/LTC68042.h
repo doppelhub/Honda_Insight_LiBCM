@@ -166,6 +166,8 @@ void LTC6804_startCellVoltageConversion();
 
 void LTC6804_getCellVoltages();
 
+uint8_t LTC6804_getStackVoltage();
+
 void print_cells();
 
 void LTC6804_initialize();

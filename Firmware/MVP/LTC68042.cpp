@@ -112,14 +112,12 @@ void LTC6804_startCellVoltageConversion()
 {
   wakeup_sleep();
   LTC6804_adcv();
-  Serial.print("\nLTC6804_startCellVoltageConversion Finished\n");
 }
 
 //---------------------------------------------------------------------------------------
 
 void LTC6804_getCellVoltages()
 {
-  Serial.print("\nLTC6804_getCellVoltage\n");
   wakeup_sleep();
   uint8_t error = LTC6804_rdcv(0, TOTAL_IC,cell_codes,FIRST_IC_ADDR);
   if (error != 0)
@@ -131,11 +129,32 @@ void LTC6804_getCellVoltages()
 
 //---------------------------------------------------------------------------------------
 
-void print_cells()
+uint8_t LTC6804_getStackVoltage()
 {
+  uint32_t stackVoltage_RAW = 0; //Multiply by 0.0001 for volts
+
   for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
   {
-    Serial.print(F(" IC "));
+    for (int i=0; i<12; i++)
+    {
+     stackVoltage_RAW += cell_codes[current_ic][i];
+    }
+  }
+
+  uint8_t stackVoltage = uint8_t(stackVoltage_RAW * 0.0001);
+
+  Serial.print("\nStack voltage is: " + String(stackVoltage) );
+  return stackVoltage;
+}
+
+//---------------------------------------------------------------------------------------
+
+void print_cells()
+{
+  Serial.print(F("\n"));
+  for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
+  {
+    Serial.print(F("IC "));
     Serial.print( (current_ic + FIRST_IC_ADDR) ,DEC);
     for (int i=0; i<12; i++)
     {
@@ -147,7 +166,6 @@ void print_cells()
     }
     Serial.println();
   }
-  Serial.println();
 }
 
 //---------------------------------------------------------------------------------------
@@ -198,8 +216,6 @@ void LTC6804_adcv()
   digitalWrite(PIN_SPI_CS,LOW);
   spi_write_array(4,cmd);
   digitalWrite(PIN_SPI_CS,HIGH);
-  Serial.print("\nLTC6804_adcv complete\n");
-
 }
 
 //---------------------------------------------------------------------------------------
@@ -241,7 +257,6 @@ uint8_t LTC6804_rdcv(uint8_t reg,  //controls which cell voltage register to rea
   const uint8_t BYT_IN_REG = 6;
   const uint8_t CELL_IN_REG = 3;
 
-  Serial.print("\nLTC6804_rdcv\n");
   uint8_t *cell_data;
   int8_t pec_error = 0;
   uint16_t parsed_cell;
@@ -808,7 +823,6 @@ void spi_write_array(uint8_t len, // Option: Number of bytes to be written on th
 {
   for (uint8_t i = 0; i < len; i++)
   {
-    Serial.print("\nspi_write_array loop: " + String(i) );
     spi_write((char)data[i]);
   }
 }

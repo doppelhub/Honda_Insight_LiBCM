@@ -135,6 +135,8 @@ void loop()
 //---------------------------------------------------------------------------------------
 
   LTC6804_startCellVoltageConversion();
+  //We don't immediately read the results afterwards because it takes a second to digitize
+  //In Coop Task setting we'll need to invoke reading n microseconds after this function is called
 
 //---------------------------------------------------------------------------------------
 
@@ -156,9 +158,10 @@ void loop()
 
 //---------------------------------------------------------------------------------------
 
-	LTC6804_getCellVoltages();
+	LTC6804_getCellVoltages(); //individual cell results stored in 'cell_codes' array 
 	//sum all 48 cells
-  uint8_t stackVoltage=169;
+
+	uint8_t stackVoltage = LTC6804_getStackVoltage();
 
 //---------------------------------------------------------------------------------------
 
