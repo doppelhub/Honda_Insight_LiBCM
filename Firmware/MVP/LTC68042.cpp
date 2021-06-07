@@ -110,20 +110,21 @@ void LTC6804_initialize()
 
 void LTC6804_startCellVoltageConversion()
 {
-  Serial.print("\nLTC6804_startCellVoltageConversion\n");
   wakeup_sleep();
   LTC6804_adcv();
+  Serial.print("\nLTC6804_startCellVoltageConversion Finished\n");
 }
 
 //---------------------------------------------------------------------------------------
 
 void LTC6804_getCellVoltages()
 {
+  Serial.print("\nLTC6804_getCellVoltage\n");
   wakeup_sleep();
   uint8_t error = LTC6804_rdcv(0, TOTAL_IC,cell_codes,FIRST_IC_ADDR);
-  if (error == -1)
+  if (error != 0)
   {
-    Serial.print(F("\nA PEC error was detected in the received LTC data\n"));
+   Serial.print(F("\nA PEC error was detected in the received LTC data\n"));
   }
   print_cells();
 }
@@ -194,9 +195,11 @@ void LTC6804_adcv()
   wakeup_idle (); //Guarantees LTC6804 isoSPI port is awake.
 
   //send broadcast adcv command to LTC6804 stack
-  digitalWrite(LTC6804_CS,LOW);
+  digitalWrite(PIN_SPI_CS,LOW);
   spi_write_array(4,cmd);
-  digitalWrite(LTC6804_CS,HIGH);
+  digitalWrite(PIN_SPI_CS,HIGH);
+  Serial.print("\nLTC6804_adcv complete\n");
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -220,9 +223,9 @@ void LTC6804_adax()
   wakeup_idle (); //Guarantees LTC6804 isoSPI port is awake.
 
   //send broadcast adax command to LTC6804 stack
-  digitalWrite(LTC6804_CS,LOW);
+  digitalWrite(PIN_SPI_CS,LOW);
   spi_write_array(4,cmd);
-  digitalWrite(LTC6804_CS,HIGH);
+  digitalWrite(PIN_SPI_CS,HIGH);
 }
 
 //---------------------------------------------------------------------------------------
@@ -269,7 +272,7 @@ uint8_t LTC6804_rdcv(uint8_t reg,  //controls which cell voltage register to rea
         data_pec = pec15_calc(BYT_IN_REG, &cell_data[current_ic * NUM_RX_BYT ]);
         if (received_pec != data_pec)
         {
-          pec_error = -1;
+          pec_error = 1;
         }
         data_counter = data_counter + 2;
       }
@@ -292,7 +295,7 @@ uint8_t LTC6804_rdcv(uint8_t reg,  //controls which cell voltage register to rea
       data_pec = pec15_calc(BYT_IN_REG, &cell_data[current_ic * NUM_RX_BYT]);
       if (received_pec != data_pec)
       {
-        pec_error = -1;
+        pec_error = 1;
       }
     }
   }
@@ -345,9 +348,9 @@ void LTC6804_rdcv_reg(uint8_t reg, //controls which cell voltage register to rea
     temp_pec = pec15_calc(2, cmd);
     cmd[2] = (uint8_t)(temp_pec >> 8);
     cmd[3] = (uint8_t)(temp_pec);
-    digitalWrite(LTC6804_CS,LOW);
+    digitalWrite(PIN_SPI_CS,LOW);
     spi_write_read(cmd,4,&data[current_ic*8],8);
-    digitalWrite(LTC6804_CS,HIGH);
+    digitalWrite(PIN_SPI_CS,HIGH);
   }
 }
 
@@ -391,7 +394,7 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
         data_pec = pec15_calc(BYT_IN_REG, &data[current_ic*NUM_RX_BYT]);
         if (received_pec != data_pec)
         {
-          pec_error = -1;
+          pec_error = 1;
         }
         data_counter=data_counter+2;
       }
@@ -413,7 +416,7 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
       data_pec = pec15_calc(6, &data[current_ic*8]);
       if (received_pec != data_pec)
       {
-        pec_error = -1;
+        pec_error = 1;
       }
     }
   }
@@ -481,9 +484,9 @@ void LTC6804_rdaux_reg(uint8_t reg,
     cmd_pec = pec15_calc(2, cmd);
     cmd[2] = (uint8_t)(cmd_pec >> 8);
     cmd[3] = (uint8_t)(cmd_pec);
-    digitalWrite(LTC6804_CS,LOW);
+    digitalWrite(PIN_SPI_CS,LOW);
     spi_write_read(cmd,4,&data[current_ic*8],8);
-    digitalWrite(LTC6804_CS,HIGH);
+    digitalWrite(PIN_SPI_CS,HIGH);
   }
 }
 /*
@@ -522,9 +525,9 @@ void LTC6804_clrcell()
   wakeup_idle (); //This will guarantee that the LTC6804 isoSPI port is awake. This command can be removed.
 
   //4
-  digitalWrite(LTC6804_CS,LOW);
+  digitalWrite(PIN_SPI_CS,LOW);
   spi_write_read(cmd,4,0,0);
-  digitalWrite(LTC6804_CS,HIGH);
+  digitalWrite(PIN_SPI_CS,HIGH);
 }
 /*
   LTC6804_clrcell Function sequence:
@@ -562,9 +565,9 @@ void LTC6804_clraux()
   //3
   wakeup_idle (); //This will guarantee that the LTC6804 isoSPI port is awake.This command can be removed.
   //4
-  digitalWrite(LTC6804_CS,LOW);
+  digitalWrite(PIN_SPI_CS,LOW);
   spi_write_read(cmd,4,0,0);
-  digitalWrite(LTC6804_CS,HIGH);
+  digitalWrite(PIN_SPI_CS,HIGH);
 }
 /*
   LTC6804_clraux Function sequence:
@@ -639,10 +642,10 @@ void LTC6804_wrcfg(uint8_t total_ic, uint8_t config[][6], uint8_t addr_first_ic)
     temp_pec = pec15_calc(2, cmd);
     cmd[2] = (uint8_t)(temp_pec >> 8);
     cmd[3] = (uint8_t)(temp_pec);
-    digitalWrite(LTC6804_CS,LOW);
+    digitalWrite(PIN_SPI_CS,LOW);
     spi_write_array(4,cmd);
     spi_write_array(8,&cmd[4+(8*current_ic)]);
-    digitalWrite(LTC6804_CS,HIGH);
+    digitalWrite(PIN_SPI_CS,HIGH);
   }
   free(cmd);
 }
@@ -699,9 +702,9 @@ int8_t LTC6804_rdcfg(uint8_t total_ic, uint8_t r_config[][8], uint8_t addr_first
     data_pec = pec15_calc(2, cmd);
     cmd[2] = (uint8_t)(data_pec >> 8);
     cmd[3] = (uint8_t)(data_pec);
-    digitalWrite(LTC6804_CS,LOW);
+    digitalWrite(PIN_SPI_CS,LOW);
     spi_write_read(cmd,4,&rx_data[current_ic*8],8);
-    digitalWrite(LTC6804_CS,HIGH);
+    digitalWrite(PIN_SPI_CS,HIGH);
   }
 
   for (uint8_t current_ic = 0; current_ic < total_ic; current_ic++) //executes for each LTC6804 in the stack
@@ -716,7 +719,7 @@ int8_t LTC6804_rdcfg(uint8_t total_ic, uint8_t r_config[][8], uint8_t addr_first
     data_pec = pec15_calc(6, &r_config[current_ic][0]);
     if (received_pec != data_pec)
     {
-      pec_error = -1;
+      pec_error = 1;
     }
   }
   free(rx_data);
@@ -742,9 +745,9 @@ int8_t LTC6804_rdcfg(uint8_t total_ic, uint8_t r_config[][8], uint8_t addr_first
  *****************************************************/
 void wakeup_idle()
 {
-  digitalWrite(LTC6804_CS,LOW);
+  digitalWrite(PIN_SPI_CS,LOW);
   delayMicroseconds(10); //Guarantees the isoSPI will be in ready mode
-  digitalWrite(LTC6804_CS,HIGH);
+  digitalWrite(PIN_SPI_CS,HIGH);
 }
 
 //---------------------------------------------------------------------------------------
@@ -757,9 +760,9 @@ void wakeup_idle()
  *****************************************************/
 void wakeup_sleep()
 {
-  digitalWrite(LTC6804_CS,LOW);
+  digitalWrite(PIN_SPI_CS,LOW);
   delay(1); // Guarantees the LTC6804 will be in standby
-  digitalWrite(LTC6804_CS,HIGH);
+  digitalWrite(PIN_SPI_CS,HIGH);
 }
 
 //---------------------------------------------------------------------------------------
@@ -805,6 +808,7 @@ void spi_write_array(uint8_t len, // Option: Number of bytes to be written on th
 {
   for (uint8_t i = 0; i < len; i++)
   {
+    Serial.print("\nspi_write_array loop: " + String(i) );
     spi_write((char)data[i]);
   }
 }

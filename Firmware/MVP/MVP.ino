@@ -10,12 +10,8 @@
 * -Grid charger
 */
 
-#include <Arduino.h>
-#include <stdint.h>
-#include "LT_SPI.h"
-#include "LTC68042.h"
-#include <SPI.h>
 
+//JTS2do: Move these to a separate header file
 #define PIN_BATTCURRENT A0
 #define PIN_FANOEM_LOW A1
 #define PIN_FANOEM_HI A2
@@ -45,6 +41,7 @@
 #define PIN_FAN_PWM 11
 #define PIN_LOAD5V 12
 #define PIN_KEY_ON 13
+#define PIN_SPI_CS SS
 
 //Serial3
 #define HLINE_TX 14
@@ -60,6 +57,12 @@
 
 #define DEBUG_SDA 20
 #define DEBUG_CLK 21
+
+#include <Arduino.h>
+#include <stdint.h>
+#include "LT_SPI.h"
+#include <SPI.h>
+#include "LTC68042.h"
 
 struct packetTypes
 {
@@ -102,7 +105,9 @@ void setup()
   pinMode(PIN_BATTSCI_DIR,OUTPUT);
   digitalWrite(PIN_BATTSCI_DIR,LOW); //BATTSCI Set HI to send. Must be low when key OFF to prevent backdriving MCM
   
-	Serial.print("\n\nWelcome to LiBCM\n\n");
+  LTC6804_initialize();
+
+	Serial.print("\n\nWelcome to LiBCM v0.0.1\n\n");
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -129,12 +134,10 @@ void loop()
   
 //---------------------------------------------------------------------------------------
 
-	//Read cell voltages, sum to stack voltage
-	//ADD LTC6804 stuff here
-	//sum all 48 cells
-  uint8_t stackVoltage=169;
+  LTC6804_startCellVoltageConversion();
 
 //---------------------------------------------------------------------------------------
+
 
 	//get 64x oversampled current sensor value
   uint16_t ADC_oversampledAccumulator = 0;
@@ -153,6 +156,13 @@ void loop()
 
 //---------------------------------------------------------------------------------------
 
+	LTC6804_getCellVoltages();
+	//sum all 48 cells
+  uint8_t stackVoltage=169;
+
+//---------------------------------------------------------------------------------------
+
+
 	//METSCI Decoding
   METSCI_Packets = METSCI_getLatestFrame();
   Serial.print("\nMETSCI E6: " + String(METSCI_Packets.latestE6Packet_assistLevel,HEX) +
@@ -162,6 +172,7 @@ void loop()
 
 //---------------------------------------------------------------------------------------  
 	
+
 	//Send BATTSCI packets to MCM
 	//Need to limit how often this occurs
   BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps);

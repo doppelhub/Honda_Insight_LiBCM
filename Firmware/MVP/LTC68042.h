@@ -47,14 +47,9 @@ Copyright 2013 Linear Technology Corp. (LTC)
     Header for LTC6804-2 Multicell Battery Monitor
 */
 
-#ifndef LTC68042_H
-#define LTC68042_H
 
-
-#ifndef LTC6804_CS
-#define LTC6804_CS SS //Arduino Mega SPI Slave Select line
-#endif
-
+//JTS2do: Add all pin defines to a separate header file, then include that header file everywhere
+#define PIN_SPI_CS SS
 
 static const unsigned int crc15Table[256] = {
   0x0,    0xc599, 0xceab, 0xb32,  0xd8cf, 0x1d56, 0x1664, 0xd3fd,
@@ -206,5 +201,3 @@ uint16_t pec15_calc(uint8_t len, uint8_t *data);
 void spi_write_array( uint8_t length, uint8_t *data);
 
 void spi_write_read(uint8_t *TxData, uint8_t TXlen, uint8_t *rx_data, uint8_t RXlen);
-
-#endif
