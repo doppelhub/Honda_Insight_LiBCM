@@ -10,6 +10,12 @@
 * -Grid charger
 */
 
+#include <Arduino.h>
+#include <stdint.h>
+#include "LT_SPI.h"
+#include "LTC68042.h"
+#include <SPI.h>
+
 #define PIN_BATTCURRENT A0
 #define PIN_FANOEM_LOW A1
 #define PIN_FANOEM_HI A2
@@ -157,6 +163,7 @@ void loop()
 //---------------------------------------------------------------------------------------  
 	
 	//Send BATTSCI packets to MCM
+	//Need to limit how often this occurs
   BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps);
 
   
