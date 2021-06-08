@@ -120,7 +120,7 @@ void loop()
 
   if( keyStatus_now != keyStatus_previous) //key state changed
   {
-    Serial.print("Key is: ");
+    Serial.print("\nKey is: ");
     if( keyStatus_now == 0 )
     {
       Serial.print("OFF");

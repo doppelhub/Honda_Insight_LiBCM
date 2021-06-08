@@ -169,7 +169,7 @@ struct packetTypes METSCI_getLatestFrame(void)
   
     while( (METSCI_readByte() != 0xE6) )  //Verify the first byte is 0xE6
     {
-      Serial.print( F("\nMETSCI buffer sync\n") ); //throw away data until the next frame starts (0xE6 byte) 
+      Serial.print( F("\nMETSCI buffer sync") ); //throw away data until the next frame starts (0xE6 byte) 
       resyncAttempt++;
       if( resyncAttempt > (METSCI_BYTES_IN_FRAME << 2) )
       {
@@ -206,7 +206,7 @@ uint8_t METSCI_isChecksumValid( uint8_t type, uint8_t data, uint8_t checksum )
   {
     return 1; //data is valid
   } else {
-    Serial.println(F("METSCI Bad Checksum"));
+    Serial.println(F("\nMETSCI Bad Checksum"));
     return 0; //data invalid
   }
 }
