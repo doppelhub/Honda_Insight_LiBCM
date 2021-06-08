@@ -1,0 +1,6 @@
+Each time MCM samples ConnE voltage (1 S/s), the load placed on the spoofed MCM ConnE circuit causes that high impedance source to droop 50 volts!
+
+Therefore, when the battery is at 178 volts... the OBDIIC&C reads 163 volts... but not always.  Need to look into more.  MCM doesn't seem to care that the voltage is off by 15 volts (between BATTSCI reporting 178 & MCM'E' measuring 163.
+
+If needed, we can use lower resistance (but higher power) voltage divider.  
+We could also just report a lower voltage to the MCM (via BATTSCI).

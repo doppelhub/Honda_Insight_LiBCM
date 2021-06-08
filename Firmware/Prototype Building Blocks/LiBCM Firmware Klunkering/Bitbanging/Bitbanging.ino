@@ -1,6 +1,3 @@
-//#include "METSCI.h"
-//#include "BATTSCI.h"
-
 #define BattCurrent_Pin A0
 #define FanOEMlow_Pin A1
 #define FanOEMhigh_Pin A2
@@ -52,65 +49,63 @@ uint16_t ADCresult=0;
 
 void setup() {
   // put your setup code here, to run once:
-pinMode(LED1_Pin,OUTPUT);
-pinMode(LED2_Pin,OUTPUT);
-pinMode(LED3_Pin,OUTPUT);
-pinMode(LED4_Pin,OUTPUT);
-pinMode(TurnOffLiBCM_Pin,OUTPUT);
-pinMode(ConnE_PWM_Pin,OUTPUT);
-pinMode(FanOnPWM_Pin,OUTPUT);
-pinMode(Load5v_Pin,OUTPUT);
-pinMode(FanOEMlow_Pin,OUTPUT);
-pinMode(FanOEMhigh_Pin,OUTPUT);
-pinMode(METSCI_DIR_PIN,OUTPUT);
-pinMode(BATTSCIdir_Pin,OUTPUT);
-pinMode(GridEn_Pin,OUTPUT);
-pinMode(VPIN_OUT_PIN,OUTPUT);
-
-digitalWrite(LED1_Pin,HIGH);
-digitalWrite(LED2_Pin,LOW);
-digitalWrite(TurnOffLiBCM_Pin,LOW);
-digitalWrite(ConnE_PWM_Pin,LOW);
-digitalWrite(FanOnPWM_Pin,LOW);
-digitalWrite(Load5v_Pin,HIGH);
-digitalWrite(FanOEMlow_Pin,LOW);
-digitalWrite(FanOEMhigh_Pin,LOW);
-digitalWrite(METSCI_DIR_PIN,LOW); // METSCI Set LO to receive Data. Must be low when key OFF (to prevent backdriving MCM)
-digitalWrite(BATTSCIdir_Pin,HIGH); //BATTSCI Set HI to send    Data. Must be low when key OFF (to prevent backdriving MCM)
-digitalWrite(GridEn_Pin,LOW);
-digitalWrite(VPIN_OUT_PIN,LOW);
-digitalWrite(TurnOffLiBCM_Pin,LOW);
-
-//Note: Changing this value messes with delay timing!
-//TCCR0B = (TCCR0B & B11111000) | B00000001; // for PWM frequency of 62500 Hz D04 & D13
-//TCCR0B = (TCCR0B & B11111000) | B00000010; // for PWM frequency of  7813 Hz D04 & D13
-//TCCR0B = (TCCR0B & B11111000) | B00000011; // for PWM frequency of   977 Hz D04 & D13 (DEFAULT)
-
-TCCR1B = (TCCR1B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D11 & D12
-//TCCR2B = (TCCR2B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D09 & D10
-//TCCR3B = (TCCR3B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D02 & D03 & D05
-
-//TCCR4B = (TCCR4B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D06 & D07 & D08
-TCCR4B = (TCCR4B & B11111000) | B00000010; // for PWM frequency of  3921 Hz D06 & D07 & D08
-//TCCR4B = (TCCR4B & B11111000) | B00000011; // for PWM frequency of   490 Hz D06 & D07 & D08
-//TCCR4B = (TCCR4B & B11111000) | B00000101; // for PWM frequency of    31 Hz D06 & D07 & D08
-
-analogReference(EXTERNAL); //use 5V AREF pin
-
-Serial.begin(115200);
-Serial1.begin(9600,SERIAL_8E1); //BATTSCI
-Serial2.begin(9600,SERIAL_8E1); //METSCI
-
+  pinMode(LED1_Pin,OUTPUT);
+  pinMode(LED2_Pin,OUTPUT);
+  pinMode(LED3_Pin,OUTPUT);
+  pinMode(LED4_Pin,OUTPUT);
+  pinMode(TurnOffLiBCM_Pin,OUTPUT);
+  pinMode(ConnE_PWM_Pin,OUTPUT);
+  pinMode(FanOnPWM_Pin,OUTPUT);
+  pinMode(Load5v_Pin,OUTPUT);
+  pinMode(FanOEMlow_Pin,OUTPUT);
+  pinMode(FanOEMhigh_Pin,OUTPUT);
+  pinMode(METSCI_DIR_PIN,OUTPUT);
+  pinMode(BATTSCIdir_Pin,OUTPUT);
+  pinMode(GridEn_Pin,OUTPUT);
+  pinMode(VPIN_OUT_PIN,OUTPUT);
+  
+  digitalWrite(LED1_Pin,HIGH);
+  digitalWrite(LED2_Pin,LOW);
+  digitalWrite(TurnOffLiBCM_Pin,LOW);
+  digitalWrite(ConnE_PWM_Pin,LOW);
+  digitalWrite(FanOnPWM_Pin,LOW);
+  digitalWrite(Load5v_Pin,HIGH);
+  digitalWrite(FanOEMlow_Pin,LOW);
+  digitalWrite(FanOEMhigh_Pin,LOW);
+  digitalWrite(METSCI_DIR_PIN,LOW); // METSCI Set LO to receive Data. Must be low when key OFF (to prevent backdriving MCM)
+  digitalWrite(BATTSCIdir_Pin,HIGH); //BATTSCI Set HI to send    Data. Must be low when key OFF (to prevent backdriving MCM)
+  digitalWrite(GridEn_Pin,LOW);
+  digitalWrite(VPIN_OUT_PIN,LOW);
+  digitalWrite(TurnOffLiBCM_Pin,LOW);
+  
+  //Note: Changing this value messes with delay timing!
+  //TCCR0B = (TCCR0B & B11111000) | B00000001; // for PWM frequency of 62500 Hz D04 & D13
+  //TCCR0B = (TCCR0B & B11111000) | B00000010; // for PWM frequency of  7813 Hz D04 & D13
+  //TCCR0B = (TCCR0B & B11111000) | B00000011; // for PWM frequency of   977 Hz D04 & D13 (DEFAULT)
+  
+  TCCR1B = (TCCR1B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D11 & D12
+  //TCCR2B = (TCCR2B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D09 & D10
+  //TCCR3B = (TCCR3B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D02 & D03 & D05
+  
+  //TCCR4B = (TCCR4B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D06 & D07 & D08
+  TCCR4B = (TCCR4B & B11111000) | B00000010; // for PWM frequency of  3921 Hz D06 & D07 & D08
+  //TCCR4B = (TCCR4B & B11111000) | B00000011; // for PWM frequency of   490 Hz D06 & D07 & D08
+  //TCCR4B = (TCCR4B & B11111000) | B00000101; // for PWM frequency of    31 Hz D06 & D07 & D08
+  
+  analogReference(EXTERNAL); //use 5V AREF pin
+  
+  Serial.begin(115200);
+  Serial1.begin(9600,SERIAL_8E1); //BATTSCI
+  Serial2.begin(9600,SERIAL_8E1); //METSCI
 }
 
 void loop()
 {
-  ADCresult = analogRead(BattCurrent_Pin);
-  Serial.print("\nFirst RAW 10b ADC Value is: " + String(ADCresult) );
-  
-  for(int ii=0; ii<63; ii++)
-  { 
-    ADCresult += analogRead(BattCurrent_Pin);
+  for (int ii = 0; ii<255 ; ii++)
+  {
+    analogWrite(ConnE_PWM_Pin, ii);
+    Serial.print("\nConnE@: " + String(ii) + " counts");
+    delay(200);
   }
-  Serial.print(" | 64x ADC result is: " + String(ADCresult>>6) );      
+  delay(5000);
 }
