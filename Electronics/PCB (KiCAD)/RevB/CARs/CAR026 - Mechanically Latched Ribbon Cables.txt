@@ -1,0 +1,2 @@
+Mario suggests using a mechanically latched connector.
+It's just a part change... will consider during beta testing.
