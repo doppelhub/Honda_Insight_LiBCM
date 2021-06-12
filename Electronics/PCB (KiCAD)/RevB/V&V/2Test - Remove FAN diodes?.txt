@@ -1,0 +1,5 @@
+Can we remove OEM fan diodes D11 & D12?
+Measure flyback voltage without them populated.
+
+Can we remove onboard fan diode?
+Measure flyback voltage without it.
