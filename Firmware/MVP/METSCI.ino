@@ -142,16 +142,20 @@ void METSCI_enable()
 {  
   //on RevB we need to properly turn LTC driver on (can't do it on RevA)
   METSCI_state = RUNNING;
+
+  //MCM throws CEL if old data sent when key first turned on
+  METSCI_Packets.latestB4Packet_engine = 0;
+  METSCI_Packets.latestE6Packet_assistLevel = 0;
+  METSCI_Packets.latestB3Packet_engine = 0;
+  METSCI_Packets.latestE1Packet_SoC = 0;
+  
   Serial.print(F("\n METSCI ENABLE\n")); 
 }
 
 void METSCI_disable()
 {
   //on RevB we need to properly turn LTC driver off (can't do it on RevA)
-  METSCI_Packets.latestB4Packet_engine = 0;
-  METSCI_Packets.latestE6Packet_assistLevel = 0;
-  METSCI_Packets.latestB3Packet_engine = 0;
-  METSCI_Packets.latestE1Packet_SoC = 0;
+
   METSCI_state = STOPPED;
   Serial.print(F("\n METSCI DISABLE\n"));
 }
