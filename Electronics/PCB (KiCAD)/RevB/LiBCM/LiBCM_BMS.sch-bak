@@ -10655,4 +10655,17 @@ Text Notes 4250 4950 2    110  ~ 0
 42S
 Text Notes 6050 4150 2    110  ~ 0
 48S
+NoConn ~ 4350 6300
+NoConn ~ 4350 6200
+NoConn ~ 4350 6100
+NoConn ~ 4350 6000
+NoConn ~ 4350 5900
+NoConn ~ 4350 5700
+NoConn ~ 4350 5800
+NoConn ~ 4350 5600
+NoConn ~ 4350 5500
+NoConn ~ 4350 5400
+NoConn ~ 4350 5300
+NoConn ~ 4350 5200
+NoConn ~ 4350 5100
 $EndSCHEMATC

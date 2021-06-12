@@ -6,3 +6,19 @@ Therefore, when the battery is at 178 volts... the OBDIIC&C reads 163 volts.  Ne
 
 If needed, we can use lower resistance (but higher power) voltage divider.  
 We could also just report a lower voltage to the MCM (via BATTSCI).
+
+...
+
+Ordered the following parts to test on MCM ConnE circuit:
+
+
+C31
+399-16724-1-ND‎ 68 nF
+
+R69 R72
+2019-RK73H2ATTD1002FTR-ND‎ 10k 250 mW
+
+R70 R71
+541-20.0KTCT-ND‎ 20k 500 mW
+
+Need to populate these parts and see how the circuit behaves.  This is 3.1x more capacitance, but 3.6x less shunting resistance... goal is to keep voltage ripple about the same.
