@@ -143,7 +143,8 @@ uint8_t LTC6804_getStackVoltage()
 
   uint8_t stackVoltage = uint8_t(stackVoltage_RAW * 0.0001);
 
-  Serial.print("\nStack voltage is: " + String(stackVoltage) );
+  Serial.print(F("\nStack voltage is: "));
+  Serial.print( String(stackVoltage) );
   return stackVoltage;
 }
 
@@ -162,7 +163,7 @@ void print_cells()
       Serial.print(i+1,DEC);
       Serial.print(F(":"));
       Serial.print( (cell_codes[current_ic][i] * 0.0001), 4 );
-      Serial.print(",");
+      Serial.print(F(","));
     }
     Serial.println();
   }

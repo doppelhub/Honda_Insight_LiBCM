@@ -107,7 +107,7 @@ void setup()
   
   LTC6804_initialize();
 
-	Serial.print("\n\nWelcome to LiBCM v0.0.1\n\n");
+	Serial.print(F("\n\nWelcome to LiBCM v0.0.1\n\n"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -120,14 +120,16 @@ void loop()
 
   if( keyStatus_now != keyStatus_previous) //key state changed
   {
-    Serial.print("\nKey is: ");
+    Serial.print(F("\nKey is: "));
     if( keyStatus_now == 0 )
     {
-      Serial.print("OFF");
+      Serial.print(F("OFF"));
       BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
+      METSCI_disable(); 
     } else {
-      Serial.print("ON");
+      Serial.print(F("ON"));
       BATTSCI_enable();
+      METSCI_enable();
     } 
   }
   keyStatus_previous = keyStatus_now;
@@ -149,12 +151,15 @@ void loop()
   }
   
   int16_t ADC_oversampledResult = int16_t( (ADC_oversampledAccumulator >> 6) );
-  Serial.print("\n\nRaw ADC result is: " + String(ADC_oversampledResult) );  
+  Serial.print(F("\n\nRaw ADC result is: "));
+  Serial.print( String(ADC_oversampledResult) );  
   
 	//convert current sensor result into approximate amperage for MCM & user-display
   //don't use this result for current accumulation... it's not accurate enough
 	int16_t battCurrent_amps = ( (ADC_oversampledResult * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
-	Serial.print(" counts, which is: " + String(battCurrent_amps) + " amps.");
+	Serial.print(F(" counts, which is: "));
+  Serial.print( String(battCurrent_amps) );
+  Serial.print(F(" amps."));
 
 //---------------------------------------------------------------------------------------
 

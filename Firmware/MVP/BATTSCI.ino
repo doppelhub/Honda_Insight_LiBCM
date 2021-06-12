@@ -9,6 +9,10 @@
  ************************************************************************************************************************/
  
 #define BATTSCI_BYTES_IN_FRAME 12
+#define RUNNING 1
+#define STOPPED 0
+
+uint8_t BATTSCI_state = RUNNING;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -17,13 +21,15 @@ void BATTSCI_begin()
   pinMode(PIN_BATTSCI_DIR, OUTPUT);
   digitalWrite(PIN_BATTSCI_DIR,LOW);
   Serial1.begin(9600,SERIAL_8E1);
+  BATTSCI_state = RUNNING;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void BATTSCI_enable()
 {
-  digitalWrite(PIN_BATTSCI_DIR,HIGH); 
+  digitalWrite(PIN_BATTSCI_DIR,HIGH);
+  BATTSCI_state = RUNNING;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -31,6 +37,7 @@ void BATTSCI_enable()
 void BATTSCI_disable()
 {
   digitalWrite(PIN_BATTSCI_DIR,LOW);
+  BATTSCI_state = STOPPED;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,7 +55,6 @@ inline uint8_t BATTSCI_writeByte(uint8_t data)
   return data;
 }
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -57,7 +63,7 @@ void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage,
   static uint8_t frame2send = 0x87;
   
   //Verify we have at least 12B free in the serial send ring buffer
-  if( BATTSCI_bytesAvailableForWrite() > BATTSCI_BYTES_IN_FRAME )
+  if( (BATTSCI_bytesAvailableForWrite() > BATTSCI_BYTES_IN_FRAME) && BATTSCI_state == RUNNING )
   {
     //Convert battery current (unit: amps) into BATTSCI format (unit: 50 mA per count)
     int16_t batteryCurrent_toBATTSCI = 2048 - batteryCurrent_Amps*20;
@@ -65,7 +71,7 @@ void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage,
     if(frame2send == 0x87)
     {
       //Place 0x87 frame into serial send buffer
-      Serial.print("BATTSCI Frame 0x87");
+      Serial.print(F("BATTSCI Frame 0x87"));
       uint8_t frameSum_87 = 0; //this will overflow, which is ok for CRC
       frameSum_87 += BATTSCI_writeByte( 0x87 );                                            //Never changes
       frameSum_87 += BATTSCI_writeByte( 0x40 );                                            //Never changes
@@ -83,7 +89,7 @@ void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage,
     } else if( frame2send == 0xAA )
     {  
       //Place 0xAA frame into serial send buffer   
-      Serial.print("BATTSCI Frame 0xAA");
+      Serial.print(F("BATTSCI Frame 0xAA"));
       uint8_t frameSum_AA = 0; //this will overflow, which is ok for CRC
       frameSum_AA += BATTSCI_writeByte( 0xAA );                                            //Never changes
       frameSum_AA += BATTSCI_writeByte( 0x10 );                                            //Never changes

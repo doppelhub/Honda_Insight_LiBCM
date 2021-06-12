@@ -118,6 +118,11 @@
  ************************************************************************************************************************/
  
 #define METSCI_BYTES_IN_FRAME 6
+#define RUNNING 1
+#define STOPPED 0
+
+
+uint8_t METSCI_state = RUNNING;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -126,6 +131,29 @@ void METSCI_begin()
   pinMode(PIN_METSCI_DIR, OUTPUT);
   digitalWrite(PIN_METSCI_DIR,LOW);
   Serial2.begin(9600,SERIAL_8E1);
+  METSCI_state = RUNNING;
+  Serial.print(F("\n METSCI BEGIN\n"));
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void METSCI_enable()
+{  
+  //on RevB we need to properly turn LTC driver on (can't do it on RevA)
+  METSCI_state = RUNNING;
+  Serial.print(F("\n METSCI ENABLE\n")); 
+}
+
+void METSCI_disable()
+{
+  //on RevB we need to properly turn LTC driver off (can't do it on RevA)
+  METSCI_Packets.latestB4Packet_engine = 0;
+  METSCI_Packets.latestE6Packet_assistLevel = 0;
+  METSCI_Packets.latestB3Packet_engine = 0;
+  METSCI_Packets.latestE1Packet_SoC = 0;
+  METSCI_state = STOPPED;
+  Serial.print(F("\n METSCI DISABLE\n"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -161,13 +189,23 @@ struct packetTypes METSCI_getLatestFrame(void)
   
   //At this point we should have ONLY the latest complete frame in queue (i.e. not more than 12 bytes in the serial receive buffer)
   //If everything is in sync, then the next six bytes are a complete frame, and the first byte is 0xE6.
- 
-  if( METSCI_bytesAvailable() > METSCI_BYTES_IN_FRAME)  //Verify a full frame exists in the buffer
+  
+  if( METSCI_state == STOPPED )
+  {
+    METSCI_Packets.latestE6Packet_assistLevel = 0;
+    METSCI_Packets.latestB4Packet_engine = 0;
+    METSCI_Packets.latestB3Packet_engine = 0;
+    METSCI_Packets.latestE1Packet_SoC    = 0;
+
+    return METSCI_Packets;
+  }
+
+  if( METSCI_bytesAvailable() > METSCI_BYTES_IN_FRAME )  //Verify a full frame exists in the buffer
   {
     uint8_t packetType, packetData, packetCRC;
-    uint8_t resyncAttempt = 0;
+    uint8_t resyncAttempt = 0; //prevents endless loop by bailing after N tries
   
-    while( (METSCI_readByte() != 0xE6) )  //Verify the first byte is 0xE6
+    while( (METSCI_readByte() != 0xE6) )  //Ensure the first byte is 0xE6
     {
       Serial.print( F("\nMETSCI buffer sync") ); //throw away data until the next frame starts (0xE6 byte) 
       resyncAttempt++;
@@ -182,23 +220,35 @@ struct packetTypes METSCI_getLatestFrame(void)
     packetType = 0xE6;              //Byte0 (always 0xE6) (we discarded it above)
     packetData = METSCI_readByte(); //Byte1 (always number of bars assist/regen)
     packetCRC  = METSCI_readByte(); //Byte2 (checksum)
-    if( METSCI_isChecksumValid( packetType, packetData, packetCRC) )
+    
+    if( METSCI_isChecksumValid(packetType, packetData, packetCRC) )
     {
       METSCI_Packets.latestE6Packet_assistLevel = packetData;
-    } //Note: If checksum invalid, value not updated (i.e. previous packet persists)
-    
-    packetType = METSCI_readByte(); //Byte3 (either 0xE1, 0xB3, or 0xB4)
-    packetData = METSCI_readByte(); //Byte4 (data)
-    packetCRC  = METSCI_readByte(); //Byte5 (checksum)
-    if( METSCI_isChecksumValid( packetType, packetData, packetCRC ) )
-    {
-      if     ( packetType == 0xB4 ) { METSCI_Packets.latestB4Packet_engine = packetData; }
-      else if( packetType == 0xB3 ) { METSCI_Packets.latestB3Packet_engine = packetData; }
-      else if( packetType == 0xE1 ) { METSCI_Packets.latestE1Packet_SoC    = packetData; }
-    } //Note: If checksum invalid, these values are not updated (i.e. previous packet persists)    
-  }
+      packetType = METSCI_readByte(); //Byte3 (either 0xE1, 0xB3, or 0xB4)
+      packetData = METSCI_readByte(); //Byte4 (data)
+      packetCRC  = METSCI_readByte(); //Byte5 (checksum)
+      if( METSCI_isChecksumValid( packetType, packetData, packetCRC ) )
+      {
+        if     ( packetType == 0xB4 ) { METSCI_Packets.latestB4Packet_engine = packetData; }
+        else if( packetType == 0xB3 ) { METSCI_Packets.latestB3Packet_engine = packetData; }
+        else if( packetType == 0xE1 ) { METSCI_Packets.latestE1Packet_SoC    = packetData; }
+      } 
+      else //didn't receive a valid packet type
+      {
+        METSCI_Packets.latestB4Packet_engine = 0;
+        METSCI_Packets.latestB3Packet_engine = 0;
+        METSCI_Packets.latestE1Packet_SoC    = 0;
+      }
+    } 
+    else //0xE6 checksum invalid 
+    { 
+      METSCI_Packets.latestE6Packet_assistLevel = 0;
+    }
+  } 
   return METSCI_Packets;
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t METSCI_isChecksumValid( uint8_t type, uint8_t data, uint8_t checksum )
 {
