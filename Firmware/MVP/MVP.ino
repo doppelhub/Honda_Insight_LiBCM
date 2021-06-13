@@ -160,7 +160,11 @@ void loop()
 	int16_t battCurrent_amps = ( (ADC_oversampledResult * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
 	Serial.print(F(" counts, which is: "));
   Serial.print( String(battCurrent_amps) );
-  Serial.print(F(" amps."));
+  Serial.print(F(" amps.  Telling MCM current is: "));
+
+  battCurrent_amps = (int16_t)(battCurrent_amps * 0.7); //140% current output required telling MCM 70% of current value
+  Serial.print( String(battCurrent_amps) );
+
 
 //---------------------------------------------------------------------------------------
 

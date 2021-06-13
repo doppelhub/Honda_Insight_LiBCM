@@ -9,3 +9,8 @@ We're only measuring 0.8 volts on 5V_ENABLE... this is odd, because my math show
 This worked on the benchtop, but isn't working in the car.
 
 I guess the next step is to lift pins on the 5V_ENABLE circuit until we figure out which component is the culprit.
+
+...
+
+Root cause:
+R32 wasn't soldered properly.  Thus, 12V_IGNITION never reached 5V_ENABLE.  Easy solution.
