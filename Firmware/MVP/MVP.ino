@@ -89,6 +89,7 @@ void setup()
 	pinMode(PIN_LED4,OUTPUT);
 
 	pinMode(PIN_CONNE_PWM,OUTPUT);
+  analogWrite(PIN_CONNE_PWM,0);
 	pinMode(PIN_FAN_PWM,OUTPUT);
 	pinMode(PIN_FANOEM_LOW,OUTPUT);
 	pinMode(PIN_FANOEM_HI,OUTPUT);
