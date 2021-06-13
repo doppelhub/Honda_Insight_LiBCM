@@ -1,0 +1,3 @@
+Key on pre-charge only takes 150 ms.
+Main contactor closes when VPIN HVDC gets to about 25 volts below actual pack voltage.
+That brings voltage up to final voltage in about 1 ms.

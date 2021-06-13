@@ -50,3 +50,27 @@ Conclusions:
 The ADC inside the MCM is sampling the voltage on connector 'E' during the Vdrop that occurs (only) when the system is operating without P-codes.  Once the MCM sets a P-code that opens the contactor (e.g. P1577), the MCM stops monitoring connector 'E' the same way... although it's certainly still monitoring it, since the BVO is still updated on OBDIIC&C (e.g. when you plug MCM'E' back in).
 
 I suspect that the MCM's "is HVDC+/- short-circuited to chassis?" circuit is disabled as soon as the HVDC contactor opens.  If true, this would suggest that the Vdrop we see on MCM'E' under normal conditions is in fact that short-circuit test. 
+
+.....
+
+Followup:
+
+BATTSCI(voltage) = 180
+VPIN = 180
+MCM'E'* = 180
+
+*MCM'E' is connected to isolated lambda gen...
+no p-codes, hence HVDC-ST is only looking for leakage above a certain value.
+
+Then, as I turned down the voltage on MCM'E' (by adjusting lambda gen, eventually got:
+P-1648 (64)
+got another error, too, but cleared it before logging.
+
+P1445 (62) (contactor voltage mismatch over 2 seconds) 
+
+Later... hot-swapping MCM'E' over to lambda gen:
+P1648(64) (BATTSCI data bad)
+
+I think the issue is that as I connect the lambda gen, the HVDC-ST circuit is detecting a fault.  I was able to get P1648(64) several times in a row while attempting the transfer.
+
+So can't test to see how far off MCM'E' can be.  But certainly at 40 volts the MCM cares.
