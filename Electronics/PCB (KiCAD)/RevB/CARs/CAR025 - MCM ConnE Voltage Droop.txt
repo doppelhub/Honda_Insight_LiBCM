@@ -22,3 +22,55 @@ R70 R71
 541-20.0KTCT-ND‎ 20k 500 mW
 
 Need to populate these parts and see how the circuit behaves.  This is 3.1x more capacitance, but 3.6x less shunting resistance... goal is to keep voltage ripple about the same.
+
+......
+
+Test data:
+At beginning of test, OBDIIC&C indicates no P codes.  CEL & IMA off.
+Actual voltage is: 181.6 volts (at main HVDC bolts)
+Actual voltage at MCM'E' is: 181, but odd fluctuation thing going on.
+LTC6804 voltage is: 181
+VPIN indicates:    172 to 177.4 volts (3.373 volts on VPIN)
+
+OBDIIC&C saying: 167 volts (BVO)
+
+If we unplug MCM'E':
+OBDIIC&C says 16 volts
+After a few seconds HVDC contactor opens, due to voltage mismatch
+At this point the MCM stops monitoring connector 'E', which causes "odd fluctuation" to go away.  At this point the battery voltage is correct, as follows:
+
+Actual voltage is: 0.0 volts (at main HVDC bolts)(because contactor is open)
+Actual voltage at MCM'E' is: 180.6, steady-state DC.
+LTC6804 voltage is: 181
+VPIN indicates:  ~12 volts (0.4 volts on VPIN)(because contactor is open)
+
+...
+
+Conclusions:
+The ADC inside the MCM is sampling the voltage on connector 'E' during the Vdrop that occurs (only) when the system is operating without P-codes.  Once the MCM sets a P-code that opens the contactor (e.g. P1577), the MCM stops monitoring connector 'E' the same way... although it's certainly still monitoring it, since the BVO is still updated on OBDIIC&C (e.g. when you plug MCM'E' back in).
+
+I suspect that the MCM's "is HVDC+/- short-circuited to chassis?" circuit is disabled as soon as the HVDC contactor opens.  If true, this would suggest that the Vdrop we see on MCM'E' under normal conditions is in fact that short-circuit test. 
+
+.....
+
+Followup:
+
+BATTSCI(voltage) = 180
+VPIN = 180
+MCM'E'* = 180
+
+*MCM'E' is connected to isolated lambda gen...
+no p-codes, hence HVDC-ST is only looking for leakage above a certain value.
+
+Then, as I turned down the voltage on MCM'E' (by adjusting lambda gen, eventually got:
+P-1648 (64)
+got another error, too, but cleared it before logging.
+
+P1445 (62) (contactor voltage mismatch over 2 seconds) 
+
+Later... hot-swapping MCM'E' over to lambda gen:
+P1648(64) (BATTSCI data bad)
+
+I think the issue is that as I connect the lambda gen, the HVDC-ST circuit is detecting a fault.  I was able to get P1648(64) several times in a row while attempting the transfer.
+
+So can't test to see how far off MCM'E' can be.  But certainly at 40 volts the MCM cares.

@@ -44,7 +44,7 @@ Searching online finds just one result (blue energy EHW5 battery):
 https://zhuanlan.zhihu.com/p/349899001
 Key findings here: 
 	Says from Honda immd hybrid
-	Chemistry: LiNiCoMnO2 (ternary lithium battery)
+	Chemistry: LiNiCoMnO2 (ternary lithium battery)(NMC)
 	"Panasonic used after localization, model UF121285H"
 	"At present, the detailed specifications of this battery of Panasonic are not available online, but because Honda directly replaces it, we have reason to believe that the specifications of the two batteries are compatible.
 	"UF 12 12 85" is based on cell dimensions (120 x12 x 85 mm)

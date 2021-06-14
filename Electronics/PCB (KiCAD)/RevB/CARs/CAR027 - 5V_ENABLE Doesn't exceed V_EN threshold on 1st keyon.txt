@@ -1,0 +1,16 @@
+After installing LiBCM for 1st time, or after turning off IMA switch (and turning back on), 5V_ENABLE only gets to 0.8 volts on subsequent keyon (with Vin = 11.8 volts @ BCM, which is 12.8 volts at battery).  This is less than the 12v->5v SMPS' minimum enable voltage (1.18 volts typical, 1.25 volts max).
+
+As configured on RevA, the supply should enable when 5V_ENABLE is greater than 3.4 volts, and should disable when 5V_ENABLE is less than 2.75 volts.
+This is using the equations listed on page 10 of the datasheet:
+https://www.mouser.com/datasheet/2/115/AP63200-AP63201-AP63203-AP63205-1525010.pdf
+
+We're only measuring 0.8 volts on 5V_ENABLE... this is odd, because my math shows that the voltage should be 3.93 volts when the key is on and 11.8 volts is present at the keyon pin on the BCM wire harness.  So something is pulling this pin 3.13 volts lower than it should be...
+
+This worked on the benchtop, but isn't working in the car.
+
+I guess the next step is to lift pins on the 5V_ENABLE circuit until we figure out which component is the culprit.
+
+...
+
+Root cause:
+R32 wasn't soldered properly.  Thus, 12V_IGNITION never reached 5V_ENABLE.  Easy solution.
