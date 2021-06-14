@@ -174,10 +174,10 @@ void printCellVoltage_all()
 
 void printCellVoltage_max_min()
 {
+  uint16_t minCellVoltage = 65535;
+  uint16_t maxCellVoltage = 0;
   for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
   {
-    uint16_t minCellVoltage = 65535;
-    uint16_t maxCellVoltage = 0;
     for (int i=0; i<12; i++)
     {
       if( cell_codes[current_ic][i] < minCellVoltage )
@@ -188,13 +188,12 @@ void printCellVoltage_max_min()
       {
         maxCellVoltage = cell_codes[current_ic][i];
       }
-
-      Serial.print(F("\nV_max = "));
-      Serial.print( (maxCellVoltage * 0.0001), 4 );
-      Serial.print(F(", V_min = "));
-      Serial.print( (minCellVoltage * 0.0001), 4 );
     }
   }
+  Serial.print(F("\nV_max = "));
+  Serial.print( (maxCellVoltage * 0.0001), 4 );
+  Serial.print(F(", V_min = "));
+  Serial.print( (minCellVoltage * 0.0001), 4 );
 }
 
 //---------------------------------------------------------------------------------------
