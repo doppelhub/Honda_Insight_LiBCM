@@ -107,7 +107,7 @@ void setup()
   
   LTC6804_initialize();
 
-	Serial.print(F("\n\nWelcome to LiBCM v0.0.1\n\n"));
+	Serial.print(F("\n\nWelcome to LiBCM v0.0.2\n\n"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -134,13 +134,13 @@ void loop()
   }
   keyStatus_previous = keyStatus_now;
   
-//---------------------------------------------------------------------------------------
+  //---------------------------------------------------------------------------------------
 
   LTC6804_startCellVoltageConversion();
   //We don't immediately read the results afterwards because it takes a second to digitize
   //In Coop Task setting we'll need to invoke reading n microseconds after this function is called
 
-//---------------------------------------------------------------------------------------
+  //---------------------------------------------------------------------------------------
 
 
 	//get 64x oversampled current sensor value
@@ -161,30 +161,31 @@ void loop()
   Serial.print( String(battCurrent_amps) );
   Serial.print(F(" amps."));
 
-//---------------------------------------------------------------------------------------
+  //---------------------------------------------------------------------------------------
 
 	LTC6804_getCellVoltages(); //individual cell results stored in 'cell_codes' array 
 	//sum all 48 cells
 
 	uint8_t stackVoltage = LTC6804_getStackVoltage();
 
-//---------------------------------------------------------------------------------------
+  //---------------------------------------------------------------------------------------
 
+  if( keyStatus_now ) //key is on
+  {
+  	//METSCI Decoding
+    METSCI_Packets = METSCI_getLatestFrame();
+    Serial.print("\nMETSCI E6: " + String(METSCI_Packets.latestE6Packet_assistLevel,HEX) +
+                        ", B3: " + String(METSCI_Packets.latestB3Packet_engine,HEX) +
+                        ", B4: " + String(METSCI_Packets.latestB4Packet_engine,HEX) +
+                        ", E1: " + String(METSCI_Packets.latestE1Packet_SoC,HEX) );
 
-	//METSCI Decoding
-  METSCI_Packets = METSCI_getLatestFrame();
-  Serial.print("\nMETSCI E6: " + String(METSCI_Packets.latestE6Packet_assistLevel,HEX) +
-                      ", B3: " + String(METSCI_Packets.latestB3Packet_engine,HEX) +
-                      ", B4: " + String(METSCI_Packets.latestB4Packet_engine,HEX) +
-                      ", E1: " + String(METSCI_Packets.latestE1Packet_SoC,HEX) );
+    //---------------------------------------------------------------------------------------  
+  	
 
-//---------------------------------------------------------------------------------------  
-	
-
-	//Send BATTSCI packets to MCM
-	//Need to limit how often this occurs
-  BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps);
-
+  	//Send BATTSCI packets to MCM
+  	//Need to limit how often this occurs
+    BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps);
+  }
   
-  delay(220); //forcing buffers to overqueue to verify LiBCM responds correctly
+  delay(100); //forcing buffers to overqueue to verify LiBCM responds correctly
 }

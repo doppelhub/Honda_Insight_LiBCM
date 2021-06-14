@@ -124,7 +124,8 @@ void LTC6804_getCellVoltages()
   {
    Serial.print(F("\nA PEC error was detected in the received LTC data\n"));
   }
-  print_cells();
+  //printCellVoltage_all();
+  printCellVoltage_max_min();
 }
 
 //---------------------------------------------------------------------------------------
@@ -150,7 +151,7 @@ uint8_t LTC6804_getStackVoltage()
 
 //---------------------------------------------------------------------------------------
 
-void print_cells()
+void printCellVoltage_all()
 {
   Serial.print(F("\n"));
   for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
@@ -166,6 +167,33 @@ void print_cells()
       Serial.print(F(","));
     }
     Serial.println();
+  }
+}
+
+//---------------------------------------------------------------------------------------
+
+void printCellVoltage_max_min()
+{
+  for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
+  {
+    uint16_t minCellVoltage = 65535;
+    uint16_t maxCellVoltage = 0;
+    for (int i=0; i<12; i++)
+    {
+      if( cell_codes[current_ic][i] < minCellVoltage )
+      {
+        minCellVoltage = cell_codes[current_ic][i];
+      }
+      if( cell_codes[current_ic][i] > maxCellVoltage )
+      {
+        maxCellVoltage = cell_codes[current_ic][i];
+      }
+
+      Serial.print(F("\nV_max = "));
+      Serial.print( (maxCellVoltage * 0.0001), 4 );
+      Serial.print(F(", V_min = "));
+      Serial.print( (minCellVoltage * 0.0001), 4 );
+    }
   }
 }
 

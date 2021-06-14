@@ -168,7 +168,9 @@ void LTC6804_getCellVoltages();
 
 uint8_t LTC6804_getStackVoltage();
 
-void print_cells();
+void printCellVoltage_all();
+
+void printCellVoltage_max_min();
 
 void LTC6804_initialize();
 
