@@ -37,6 +37,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "LT_SPI.h"
 #include "LTC68042.h"
 #include <SPI.h>
+#include "LiquidCrystal_I2C.h"
+#include <Wire.h>
+
+LiquidCrystal_I2C lcd2(0x27, 20, 4);
 
 //conversion command variables.
 uint8_t ADCV[2]; //!< Cell Voltage conversion command.
@@ -104,6 +108,7 @@ void LTC6804_initialize()
   spi_enable(SPI_CLOCK_DIV64);
   set_adc(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL,AUX_CH_GPIO1);
   LTC6804_init_cfg();        //initialize the 6804 configuration array to be written
+  lcd2.begin();
 }
 
 //---------------------------------------------------------------------------------------
@@ -146,6 +151,10 @@ uint8_t LTC6804_getStackVoltage()
 
   Serial.print(F("\nStack voltage is: "));
   Serial.print( String(stackVoltage) );
+  lcd2.setCursor(11,1);
+  lcd2.print(", sum=");
+  lcd2.print( stackVoltage );
+ 
   return stackVoltage;
 }
 
@@ -190,10 +199,38 @@ void printCellVoltage_max_min()
       }
     }
   }
-  Serial.print(F("\nV_max = "));
+  Serial.print(F("\nVmax = "));
   Serial.print( (maxCellVoltage * 0.0001), 4 );
-  Serial.print(F(", V_min = "));
+  Serial.print(F(", Vmin = "));
   Serial.print( (minCellVoltage * 0.0001), 4 );
+  lcd2.setCursor(0,0);
+  lcd2.print("max=");
+  lcd2.print( (maxCellVoltage * 0.0001), 3 );
+  lcd2.print(", min=");
+  lcd2.print( (minCellVoltage * 0.0001), 3 );
+  lcd2.setCursor(0,1);
+  lcd2.print("delta=");
+  lcd2.print( ((maxCellVoltage - minCellVoltage) * 0.0001), 3 );
+
+  static uint16_t lowestCellVoltage = 65535;
+  static uint16_t highestCellVoltage = 0;
+
+  if( minCellVoltage < lowestCellVoltage )
+  {
+    lowestCellVoltage  = minCellVoltage;
+    lcd2.setCursor(0,2);
+    lcd2.print("lowest ever=");
+    lcd2.print( (lowestCellVoltage * 0.0001) , 3);
+  }
+  if( maxCellVoltage > highestCellVoltage )
+  {
+    highestCellVoltage = maxCellVoltage;
+    lcd2.setCursor(0,3);
+    lcd2.print("highest ever=");
+    lcd2.print( (highestCellVoltage * 0.0001) , 3);
+  }
+
+
 }
 
 //---------------------------------------------------------------------------------------

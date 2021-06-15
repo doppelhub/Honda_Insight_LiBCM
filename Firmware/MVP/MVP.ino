@@ -10,7 +10,6 @@
 * -Grid charger
 */
 
-
 //JTS2do: Move these to a separate header file
 #define PIN_BATTCURRENT A0
 #define PIN_FANOEM_LOW A1
@@ -107,7 +106,7 @@ void setup()
   digitalWrite(PIN_BATTSCI_DIR,LOW); //BATTSCI Set HI to send. Must be low when key OFF to prevent backdriving MCM
   
   LTC6804_initialize();
-
+    
 	Serial.print(F("\n\nWelcome to LiBCM v0.0.2\n\n"));
 }
 
@@ -161,7 +160,7 @@ void loop()
 	Serial.print(F(" counts, which is: "));
   Serial.print( String(battCurrent_amps) );
   Serial.print(F(" amps.  Telling MCM current is: "));
-
+  
   battCurrent_amps = (int16_t)(battCurrent_amps * 0.7); //140% current output required telling MCM 70% of current value
   Serial.print( String(battCurrent_amps) );
 
