@@ -1,0 +1,5 @@
+Change R82 to cheaper resistor (7xkOhm)
+
+P&P: C151 won't place if small tip installed on left nozzle.  X travel limit.
+Solution: Make C151 larger cap (68 nF), and place 22 nF on C152
+Note: I've already made this change to the P&P file
