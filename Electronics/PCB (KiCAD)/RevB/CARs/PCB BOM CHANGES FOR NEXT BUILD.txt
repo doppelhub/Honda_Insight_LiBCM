@@ -1,0 +1,3 @@
+D16 to 82 Ohms
+
+Flip D5 180 degrees (symbol wrong)

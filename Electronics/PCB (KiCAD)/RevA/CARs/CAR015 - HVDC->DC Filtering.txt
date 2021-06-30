@@ -25,3 +25,6 @@ Add 44 nF
 
 Between HVDCDC output (12V) and LVDCDC:
 Add 587-5925-1-ND inline with both +12V and ENG_GND, with 22 uF cap on both sides.
+
+...
+Verified fixed on RevB

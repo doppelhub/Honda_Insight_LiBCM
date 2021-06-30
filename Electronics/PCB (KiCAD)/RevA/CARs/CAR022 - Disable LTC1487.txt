@@ -1,2 +1,5 @@
 Add separate control line to disable LTC1487 when key off.
 Right now you can only set between send and receive, but can't turn off.
+
+...
+Verified fixed on RevB

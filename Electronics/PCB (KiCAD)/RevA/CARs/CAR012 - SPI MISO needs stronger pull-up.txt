@@ -3,3 +3,6 @@ SPI MISO needs stronger pullup... 100k doesn't allow it to rise fast enough.
 Datasheet says 2k is about right value.  They guarantee values from 2k through 5k.  We can always slow the clock down as needed to get MISO pullup to respond in time.
 
 Solution: Changed R81 to 3.3k
+
+...
+Verified fixed on RevB

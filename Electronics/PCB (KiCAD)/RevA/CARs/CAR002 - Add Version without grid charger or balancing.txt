@@ -12,3 +12,7 @@ This allows us to remove:
 -QTY2 (of QTY3) 220 uF electrolytic capacitors
 
 People can still add a resistor divider to R48 (VPIN), and MCM 'E' (using R69/R70/R71/R72/DNP).
+
+
+...
+Verified fixed on RevB

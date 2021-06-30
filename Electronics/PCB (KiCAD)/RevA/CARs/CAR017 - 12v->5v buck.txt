@@ -15,3 +15,6 @@ Probably just leave existing power supply as-is, unless there's still too much n
 
 Solution:
 Leave as-is
+
+...
+Verified fixed on RevB

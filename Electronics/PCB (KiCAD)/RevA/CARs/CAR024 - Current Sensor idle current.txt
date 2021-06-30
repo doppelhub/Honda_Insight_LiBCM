@@ -139,3 +139,6 @@ I'm annoyed at myself for not catching this issue until now. I absolutely should
 If I hadn't caught this error, then a parked G1 would fully deplete the lithium battery in about two months... and there'd be no way to prevent this in firmware. I'm certainly glad to have figured it out prior to ordering the final production PCB. Obviously I would have caught this eventually... when I measured the the 'KEYOFF' power consumption. I'm just bothered that I didn't discover it during my extensive initial hardware testing.
 
 Never trust your assumptions. Trust, but verify.
+
+...
+Verified fixed on RevB

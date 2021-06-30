@@ -7,3 +7,6 @@ Manually repin external IMA wire harness.
 Final Implementation:
 Flipped pins around.
 Note that KiCAD wouldn't update the footprint until I deleted the old one and re-placed it.
+
+...
+Verified fixed on RevB

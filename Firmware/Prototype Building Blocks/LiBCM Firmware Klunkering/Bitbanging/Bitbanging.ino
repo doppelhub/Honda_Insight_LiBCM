@@ -63,20 +63,24 @@ void setup() {
   pinMode(BATTSCIdir_Pin,OUTPUT);
   pinMode(GridEn_Pin,OUTPUT);
   pinMode(VPIN_OUT_PIN,OUTPUT);
+  pinMode(GridPWM_Pin,OUTPUT);
   
   digitalWrite(LED1_Pin,HIGH);
-  digitalWrite(LED2_Pin,LOW);
+  digitalWrite(LED2_Pin,HIGH);
+  digitalWrite(LED3_Pin,HIGH);
+  digitalWrite(LED4_Pin,HIGH);
   digitalWrite(TurnOffLiBCM_Pin,LOW);
-  digitalWrite(ConnE_PWM_Pin,LOW);
+  digitalWrite(ConnE_PWM_Pin,HIGH);
   digitalWrite(FanOnPWM_Pin,LOW);
   digitalWrite(Load5v_Pin,HIGH);
   digitalWrite(FanOEMlow_Pin,LOW);
   digitalWrite(FanOEMhigh_Pin,LOW);
   digitalWrite(METSCI_DIR_PIN,LOW); // METSCI Set LO to receive Data. Must be low when key OFF (to prevent backdriving MCM)
   digitalWrite(BATTSCIdir_Pin,HIGH); //BATTSCI Set HI to send    Data. Must be low when key OFF (to prevent backdriving MCM)
-  digitalWrite(GridEn_Pin,LOW);
+  digitalWrite(GridEn_Pin,HIGH);
   digitalWrite(VPIN_OUT_PIN,LOW);
   digitalWrite(TurnOffLiBCM_Pin,LOW);
+  digitalWrite(GridPWM_Pin,HIGH);
   
   //Note: Changing this value messes with delay timing!
   //TCCR0B = (TCCR0B & B11111000) | B00000001; // for PWM frequency of 62500 Hz D04 & D13

@@ -9,3 +9,6 @@ This only occurs when Lambda Gen is connected to 12 volt rail, but its output is
 
 Solution:
 No action needed.  Test equipment caused issue.
+
+...
+Verified fixed on RevB

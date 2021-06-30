@@ -1,0 +1,1 @@
+The LTC 6804 and 6820 stencil needs to be smaller.

@@ -9,3 +9,6 @@ Wrong Rsense value used.  RevA has two 82 Ohm resistors in parallel (so 41 Ohms)
 With 82 Ohms the ADC can sense from 70 A regen to 140 A assist.
 
 To prevent accuracy issues due to Rsense heating, should place QTY4 82 Ohm resistors (2S2P).
+
+...
+Verified fixed on RevB

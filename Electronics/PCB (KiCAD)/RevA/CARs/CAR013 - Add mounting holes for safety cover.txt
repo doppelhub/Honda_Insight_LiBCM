@@ -1,1 +1,4 @@
 Add holes through PCB for separate safety cover mounting point.
+
+...
+Verified fixed on RevB
