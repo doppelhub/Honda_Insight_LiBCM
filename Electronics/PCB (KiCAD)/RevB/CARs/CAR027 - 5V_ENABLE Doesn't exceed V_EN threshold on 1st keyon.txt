@@ -14,3 +14,6 @@ I guess the next step is to lift pins on the 5V_ENABLE circuit until we figure o
 
 Root cause:
 R32 wasn't soldered properly.  Thus, 12V_IGNITION never reached 5V_ENABLE.  Easy solution.
+
+...
+Verified fixed on RevB

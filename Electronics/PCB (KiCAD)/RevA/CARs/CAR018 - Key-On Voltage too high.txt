@@ -2,3 +2,6 @@ Existing key-on voltage is too high.  A zener diode inside the Mega clamps the v
 
 Solution:
 Use QTY3 71.5k in series.  12 volt signal on top with isKeyOn? signal one resistor from ground.
+
+...
+Verified fixed on RevB

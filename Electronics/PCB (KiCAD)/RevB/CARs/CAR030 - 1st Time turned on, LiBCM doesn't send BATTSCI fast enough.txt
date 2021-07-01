@@ -1,0 +1,1 @@
+Probably a firmware fix... but when LiBCM has turned itself off - or use has turned off IMA switch - BATTSCI isn't sent fast enough, which causes MCM to throw a P-code.

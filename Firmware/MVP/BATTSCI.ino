@@ -18,16 +18,20 @@ uint8_t BATTSCI_state = STOPPED;
 
 void BATTSCI_begin()
 {
-  pinMode(PIN_BATTSCI_DIR, OUTPUT);
-  digitalWrite(PIN_BATTSCI_DIR,LOW);
-  Serial1.begin(9600,SERIAL_8E1);
+  pinMode(PIN_BATTSCI_DE, OUTPUT);
+  digitalWrite(PIN_BATTSCI_DE,LOW);
+  
+  pinMode(PIN_BATTSCI_REn, OUTPUT);
+  digitalWrite(PIN_BATTSCI_REn,HIGH);
+  
+  Serial2.begin(9600,SERIAL_8E1);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void BATTSCI_enable()
 {
-  digitalWrite(PIN_BATTSCI_DIR,HIGH);
+  digitalWrite(PIN_BATTSCI_DE,HIGH);
   BATTSCI_state = RUNNING;
 }
 
@@ -35,7 +39,7 @@ void BATTSCI_enable()
 
 void BATTSCI_disable()
 {
-  digitalWrite(PIN_BATTSCI_DIR,LOW);
+  digitalWrite(PIN_BATTSCI_DE,LOW);
   BATTSCI_state = STOPPED;
 }
 
@@ -43,14 +47,14 @@ void BATTSCI_disable()
 
 inline uint8_t BATTSCI_bytesAvailableForWrite()
 {
-  return Serial1.availableForWrite();
+  return Serial2.availableForWrite();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 inline uint8_t BATTSCI_writeByte(uint8_t data)
 {
-  Serial1.write(data);
+  Serial2.write(data);
   return data;
 }
 

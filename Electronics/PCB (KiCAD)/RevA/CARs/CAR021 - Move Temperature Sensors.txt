@@ -1,2 +1,5 @@
 Add 2nd temp sensor to each LTC6804.
 Move temp sensor closer to cells... they're the warmest by far.
+
+...
+Verified fixed on RevB

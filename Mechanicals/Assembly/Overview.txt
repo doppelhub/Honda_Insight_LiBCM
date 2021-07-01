@@ -1,0 +1,29 @@
+THIS IS A WORK IN PROGRESS
+
+Assembly instructions:
+
+0: Tear pack down to core.
+	Keep:
+	-Fan shroud (drill 0.75" hole)
+	-QTY6 self-tapping screws
+	-Side cover and QTY6 screws
+	-QTY4 MCM bolts
+	-QTY2 longest bolts
+	-QTY2 high current spacers
+	-QTY6 junction board bolts
+	-QTY8 fan shroud bolts
+	-Junction board (we'll modify below)
+	-MCM'E' connector (we'll modify below)
+	-Temp Sensor Harness (broken down as shown)
+	-Core (with inserts) (we'll modify below)
+
+1: Core modifications
+	-Drill QTY3 0.75" holes for high current lead
+	-Drill QTY6 holes for PCB
+	-Add stickers
+
+2: Batteries
+	-Add stickers
+
+2: Junction board modifications
+	-Covers: 5

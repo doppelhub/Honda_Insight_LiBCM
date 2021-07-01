@@ -20,3 +20,6 @@ Another option is to just convey that the USB port is a debug feature, and the r
 Final Implementation:
 Added a 120 Ohm pullup with a mechanical switch and capacitor to ground.
 Allows user to put device into "programming mode".
+
+...
+Verified fixed on RevB

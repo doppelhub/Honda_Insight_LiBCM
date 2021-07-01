@@ -128,9 +128,13 @@ uint8_t METSCI_state = RUNNING;
 
 void METSCI_begin()
 {
-  pinMode(PIN_METSCI_DIR, OUTPUT);
-  digitalWrite(PIN_METSCI_DIR,LOW);
-  Serial2.begin(9600,SERIAL_8E1);
+  pinMode(PIN_METSCI_DE, OUTPUT);
+  digitalWrite(PIN_METSCI_DE,LOW);
+  
+  pinMode(PIN_METSCI_REn, OUTPUT);
+  digitalWrite(PIN_METSCI_REn,HIGH);
+  
+  Serial3.begin(9600,SERIAL_8E1);
   METSCI_state = RUNNING;
   Serial.print(F("\n METSCI BEGIN\n"));
 }
@@ -140,7 +144,8 @@ void METSCI_begin()
 
 void METSCI_enable()
 {  
-  //on RevB we need to properly turn LTC driver on (can't do it on RevA)
+  digitalWrite(PIN_METSCI_REn,LOW);
+  
   METSCI_state = RUNNING;
 
   //MCM throws CEL if old data sent when key first turned on
@@ -154,7 +159,7 @@ void METSCI_enable()
 
 void METSCI_disable()
 {
-  //on RevB we need to properly turn LTC driver off (can't do it on RevA)
+  digitalWrite(PIN_METSCI_REn,HIGH);
 
   METSCI_state = STOPPED;
   Serial.print(F("\n METSCI DISABLE\n"));
@@ -164,14 +169,14 @@ void METSCI_disable()
 
 inline uint8_t METSCI_readByte()
 {
-  return Serial2.read();
+  return Serial3.read();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 inline uint8_t METSCI_bytesAvailable()
 {
-  return Serial2.available();
+  return Serial3.available();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

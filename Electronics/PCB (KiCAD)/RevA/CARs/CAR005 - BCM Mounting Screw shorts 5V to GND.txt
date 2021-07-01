@@ -1,1 +1,4 @@
 The top right BCM mounting screw hole has both +5V & GND under the screw head.  Installing the screw shorts these nets out.
+
+...
+Verified fixed on RevB

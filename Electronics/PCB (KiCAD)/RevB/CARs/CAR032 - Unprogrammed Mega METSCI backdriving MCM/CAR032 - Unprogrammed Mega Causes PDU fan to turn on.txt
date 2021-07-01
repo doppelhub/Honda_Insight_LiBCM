@@ -1,0 +1,34 @@
+See if adding a pull-down to RS485 busses prevents powered Mega 5V rail from backdriving through the RS485 into MCM, which then turns fan on.
+
+Need to add pulldown to METSCI_DE... resistor value can be quite high... touching with finger turns it off.  Can't even scope probe signal without changing state.
+
+Didn't need to pulldown BATTSCI_DE... but probably should anyway on next revision.
+
+...
+
+So if we program both LTC1487s to be in "low power mode":
+ //METSCI_DE 
+ pinMode(2,OUTPUT);
+ digitalWrite(2,LOW);
+
+ //BATTSCI_DE
+ pinMode(A10,OUTPUT);
+ digitalWrite(A10,LOW);
+
+ //METSCI_REn
+ pinMode(3,OUTPUT);
+ digitalWrite(3,HIGH);
+
+ //BATTSCI_REn
+ pinMode(4,OUTPUT);
+ digitalWrite(4,HIGH);
+
+...then the relay won't turn on, but we still get voltage leaking into BATTSCI/METSCI rails.  The pullup (R43/R45) and pulldown (R44/R46) resistors (all 1k) tied to the BATTSCI/METSCI lines should inject some current (e.g. 5 volts / 1 k = 5 mA per bus).  This doesn't appear to be enough current to turn the MCM on (enough to energize the fans, at least).
+
+...
+
+So it makes sense then that the pull up/down resistors inject some current (at 2.5 volts no load) into the MCM.  Probably no good way to fix this.
+
+However, we can fix the "fans turn on when Mega unprogrammed" issue by adding a weak pulldown to METSCI_DE.  I've added a 71.5k pulldown to METSCI_DE on the beta boards I've shipped (#004/005/007).
+
+For RevC, need to add pulldown to METSCI_DE & BATTSCI_DE.  

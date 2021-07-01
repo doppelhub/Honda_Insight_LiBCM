@@ -8,8 +8,6 @@ Reroute HVDC so that pack voltage goes through fuse, then cap, then HVDCDC.
 
 HVDC 8pin screw terminal probably blocked by aluminum shaft that bolts from PDU to IMA battery.
 
-Remove Redundd
-
 Move HVDCDC inward 0.1" to prevent interference with enclosure.  Same with cap and fuse.
 
 Add revB logo somewhere.
@@ -20,3 +18,6 @@ Clean up opamp area/ground.
 Add ground planes to GND_ISO_C/etc
 
 Switch bottom-side traces to top-side near Fan mounting holes
+
+...
+Verified fixed on RevB

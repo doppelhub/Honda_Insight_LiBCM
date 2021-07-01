@@ -1,0 +1,30 @@
+It appears we're not driving the isolator hard enough... V_CE isn't dropping to zero when we drive the opto-isolator (maybe 80 volts minimum V_CE).  We should try driving harder and/or increase base resistance to reduce parasitic drag.
+
+Measuring voltage across R65 (220 Ohm) indicates that 6.8 mA is flowing through U9 (isolator) when LED (D16) is on.  
+
+on the HV side, the base resistor R315 (10k) is pulling a small fraction of this current.
+
+The main goal here is that the voltage across collector to emitter should be dropping to zero volts whenever the opto is 'on'... but it's actually only dropping to ~80 volts (with Vin = 130 volts).
+
+
+...
+
+I removed the series LED and shorted it out.  This drives 13.6 mA thru isolator (V/R, as measured across resistor).
+
+V_CE now (correctly) drops to 0 volts.  I'm wondering if there's an odd harmonic between the two LEDs... will try putting another 220 Ohm resistor in series to see if V_CE still drops to zero with original current (6.8 mA), sans the non-linear LED.
+
+...
+
+V_CE no longer drops to zero volts with 440 Ohms total resistance.  Therefore, we need to change R65 to 120 Ohms, and D16 to 120 Ohms, to arrive at 240 Ohms (which is ~14 mA through optoisolator LED).  
+
+...
+
+Spoofing works correctly with above changes.
+
+...
+
+Let's see if this works if we leave R65 at 220 Ohms, and replace D16 with 82 Ohms (302 Ohms total, which is probably around 11 mA (TBD)).
+
+...
+
+As expected, (only) replacing D16 with 82 Ohm resistor allows V_CE to hit zero volts.  Going with this.

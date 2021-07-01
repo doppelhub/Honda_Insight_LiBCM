@@ -3,3 +3,6 @@ The footprint used by U7 will work for U9.
 
 U2 & U3 (RS485) pads are too far spaced from each other... the LTC chip has to 'stretch' across the pads.
 
+
+...
+Verified fixed on RevB

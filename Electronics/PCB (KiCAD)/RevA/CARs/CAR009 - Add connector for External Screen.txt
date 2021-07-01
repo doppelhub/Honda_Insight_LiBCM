@@ -6,3 +6,6 @@ VCC
 TX (Nextion)
 RX (Nextion)
 GND
+
+...
+Verified fixed on RevB

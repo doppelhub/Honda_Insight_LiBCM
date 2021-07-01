@@ -10,52 +10,107 @@
 * -Grid charger
 */
 
-//JTS2do: Move these to a separate header file
-#define PIN_BATTCURRENT A0
-#define PIN_FANOEM_LOW A1
-#define PIN_FANOEM_HI A2
-#define PIN_TEMP_YEL A3
-#define PIN_TEMP_GRN A4
-#define PIN_TEMP_WHT A5
-#define PIN_TEMP_BLU A6
-#define PIN_VPIN_IN A7
-#define PIN_TURNOFFLiBCM A8
-#define PIN_DEBUG_FET A9
-#define PIN_DEBUG_IO1 A10
-#define PIN_DEBUG_IO2 A11
-#define PIN_LED1 A12
-#define PIN_LED2 A13
-#define PIN_LED3 A14
-#define PIN_LED4 A15
+//JTS2do: Move pindefs to a separate header file
+//#define HW_REVA
+#define HW_REVB
 
-#define PIN_BATTSCI_DIR 2
-#define PIN_METSCI_DIR 3
-#define PIN_VPIN_OUT 4
-#define PIN_SPI_EXT_CS 5 
-#define PIN_TEMP_EN 6
-#define PIN_CONNE_PWM 7
-#define PIN_GRID_PWM 8
-#define PIN_GRID_SENSE 9
-#define PIN_GRID_EN 10
-#define PIN_FAN_PWM 11
-#define PIN_LOAD5V 12
-#define PIN_KEY_ON 13
-#define PIN_SPI_CS SS
+#ifdef HW_REVA
+  #define PIN_BATTCURRENT A0
+  #define PIN_FANOEM_LOW A1
+  #define PIN_FANOEM_HI A2
+  #define PIN_TEMP_YEL A3
+  #define PIN_TEMP_GRN A4
+  #define PIN_TEMP_WHT A5
+  #define PIN_TEMP_BLU A6
+  #define PIN_VPIN_IN A7
+  #define PIN_TURNOFFLiBCM A8
+  #define PIN_DEBUG_FET A9
+  #define PIN_DEBUG_IO1 A10
+  #define PIN_DEBUG_IO2 A11
+  #define PIN_LED1 A12
+  #define PIN_LED2 A13
+  #define PIN_LED3 A14
+  #define PIN_LED4 A15
+  
+  #define PIN_BATTSCI_DIR 2
+  #define PIN_METSCI_DIR 3
+  #define PIN_VPIN_OUT_PWM 4
+  #define PIN_SPI_EXT_CS 5 
+  #define PIN_TEMP_EN 6
+  #define PIN_CONNE_PWM 7
+  #define PIN_GRID_PWM 8
+  #define PIN_GRID_SENSE 9
+  #define PIN_GRID_EN 10
+  #define PIN_FAN_PWM 11
+  #define PIN_I_SENSOR_EN 12
+  #define PIN_KEY_ON 13
+  #define PIN_SPI_CS SS
+  
+  //Serial3
+  #define HLINE_TX 14
+  #define HLINE_RX 15
+  
+  //Serial2
+  #define METSCI_TX 16
+  #define METSCI_RX 17
+  
+  //Serial1
+  #define BATTSCI_TX 18
+  #define BATTSCI_RX 19
+  
+  #define DEBUG_SDA 20
+  #define DEBUG_CLK 21
+#endif
 
-//Serial3
-#define HLINE_TX 14
-#define HLINE_RX 15
-
-//Serial2
-#define METSCI_TX 16
-#define METSCI_RX 17
-
-//Serial1
-#define BATTSCI_TX 18
-#define BATTSCI_RX 19
-
-#define DEBUG_SDA 20
-#define DEBUG_CLK 21
+#ifdef HW_REVB
+  #define PIN_BATTCURRENT A0
+  #define PIN_FANOEM_LOW A1
+  #define PIN_FANOEM_HI A2
+  #define PIN_TEMP_YEL A3
+  #define PIN_TEMP_GRN A4
+  #define PIN_TEMP_WHT A5
+  #define PIN_TEMP_BLU A6
+  #define PIN_VPIN_IN A7
+  #define PIN_TURNOFFLiBCM A8
+  #define PIN_HMI_EN A9
+  #define PIN_BATTSCI_DE A10
+  #define PIN_BATTSCI_REn A11
+  #define PIN_LED1 A12
+  #define PIN_LED2 A13
+  #define PIN_LED3 A14
+  #define PIN_LED4 A15
+  
+  #define PIN_METSCI_DE 2
+  #define PIN_METSCI_REn 3
+  #define PIN_VPIN_OUT_PWM 4
+  #define PIN_SPI_EXT_CS 5 
+  #define PIN_TEMP_EN 6
+  #define PIN_CONNE_PWM 7
+  #define PIN_GRID_PWM 8
+  #define PIN_GRID_SENSE 9
+  #define PIN_GRID_EN 10
+  #define PIN_FAN_PWM 11
+  #define PIN_I_SENSOR_EN 12
+  #define PIN_KEY_ON 13
+  #define PIN_SPI_CS SS
+  #define PIN_GPIO1 48
+  #define PIN_USER_SW 49
+  
+  //Serial3
+  #define METSCI_TX 14
+  #define METSCI_RX 15
+  
+  //Serial2
+  #define BATTSCI_TX 16
+  #define BATTSCI_RX 17
+  
+  //Serial1
+  #define HMI_TX 18
+  #define HMI_RX 19
+  
+  #define DEBUG_SDA 20
+  #define DEBUG_CLK 21
+#endif
 
 #include <Arduino.h>
 #include <stdint.h>
@@ -76,10 +131,9 @@ void setup()
 	//Prevent LiBCM from turning off the 12V->5V DCDC
 	pinMode(PIN_TURNOFFLiBCM,OUTPUT);
 	digitalWrite(PIN_TURNOFFLiBCM,LOW);
-
-	//Place constant load on 5V rail to ensure OEM Current Sensor doesn't sink more current than 12V->5V is sourcing 
-	pinMode(PIN_LOAD5V,OUTPUT);
-	digitalWrite(PIN_LOAD5V,HIGH);
+ 
+	pinMode(PIN_I_SENSOR_EN,OUTPUT);
+	digitalWrite(PIN_I_SENSOR_EN,LOW);
 
 	pinMode(PIN_LED1,OUTPUT);
 	digitalWrite(PIN_LED1,HIGH);
@@ -93,17 +147,13 @@ void setup()
 	pinMode(PIN_FANOEM_LOW,OUTPUT);
 	pinMode(PIN_FANOEM_HI,OUTPUT);
 	pinMode(PIN_GRID_EN,OUTPUT);
-	pinMode(PIN_VPIN_OUT,OUTPUT);
+	pinMode(PIN_VPIN_OUT_PWM,OUTPUT);
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
 	Serial.begin(115200);	//USB
 	METSCI_begin();
   BATTSCI_begin();
-
-  //Place into BATTSCI_end()
-  pinMode(PIN_BATTSCI_DIR,OUTPUT);
-  digitalWrite(PIN_BATTSCI_DIR,LOW); //BATTSCI Set HI to send. Must be low when key OFF to prevent backdriving MCM
   
   LTC6804_initialize();
     
@@ -125,11 +175,14 @@ void loop()
     {
       Serial.print(F("OFF"));
       BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
-      METSCI_disable(); 
+      METSCI_disable();
+      digitalWrite(PIN_I_SENSOR_EN,LOW); //disable current sensor & constant 5V load
     } else {
       Serial.print(F("ON"));
       BATTSCI_enable();
       METSCI_enable();
+      digitalWrite(PIN_I_SENSOR_EN,HIGH); //enable current sensor & constant 5V load
+      
     } 
   }
   keyStatus_previous = keyStatus_now;

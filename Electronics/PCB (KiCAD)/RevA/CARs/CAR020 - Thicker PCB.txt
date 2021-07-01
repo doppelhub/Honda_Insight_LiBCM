@@ -1,1 +1,7 @@
 Make PCB thicker, so it deflects less.
+
+Solution:
+Did not make thicker
+
+...
+Verified fixed on RevB
