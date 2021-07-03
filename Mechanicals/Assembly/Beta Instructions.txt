@@ -1,0 +1,44 @@
+Remove the OEM battery from the IMA bay.
+
+Remove the NiMH sticks from the battery enclosure.
+
+Let's look at the OEM parts you're going to need to use LiBCM:
+Step 0:
+https://youtu.be/0KqhpafInwc
+
+Next let's look at the LiBCM kit.  With any luck, I've sent all the parts shown in this video:
+Step 1:
+https://youtu.be/b1Am878clMo
+
+The first step is to modify the OEM MCM'E' & temperature cables for use with LiBCM.  This video editing is really bad... I made a technical mistake at some point and didn't realize until much later... in my attempt to edit a cohesive video together, I've created a linearly, technically correct list of steps, but it's a bit choppy aesthetically:
+LiBCM Beta - Step 2: MCM'E' & Temp Cable Prep
+https://youtu.be/WAM3-0bZgP8
+
+...
+
+The audio volume is quiet in the next few videos... I was filming this video at 4AM, with my wife sleeping in the next room over... also, the microphone wasn't placed well.  Again, I'll be re-recording the entire installation process with better equipment and a wireless microphone for general release.
+
+LiBCM Beta - Step 3: Junction Board and Battery Case Modifications
+https://youtu.be/3Lgjrowf5Xw
+
+
+...
+
+
+Next let's install the batteries.  Remember you're dealing with high voltage.  Don't touch more than one thing at a time!
+LiBCM Beta - Step 4: Installing Batteries
+https://youtu.be/lDXR1nHAS50
+
+...
+
+Next we'll install the PCB and the various wires that plug into it:
+https://youtu.be/YIbVGhcSc5o
+
+...
+
+Now let's throw the complete pack into the IMA bay, load the firmware, and talk through a beta quirk (that will go away with better firmware):
+
+The MVP firmware I mentioned in this video is here:
+
+If you are using the OEM current, then no code changes are required.
+If you are using the "+40% current hack", then you need to change the following line of code in ______:

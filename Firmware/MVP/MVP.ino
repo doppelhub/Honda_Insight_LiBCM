@@ -11,56 +11,7 @@
 */
 
 //JTS2do: Move pindefs to a separate header file
-//#define HW_REVA
 #define HW_REVB
-
-#ifdef HW_REVA
-  #define PIN_BATTCURRENT A0
-  #define PIN_FANOEM_LOW A1
-  #define PIN_FANOEM_HI A2
-  #define PIN_TEMP_YEL A3
-  #define PIN_TEMP_GRN A4
-  #define PIN_TEMP_WHT A5
-  #define PIN_TEMP_BLU A6
-  #define PIN_VPIN_IN A7
-  #define PIN_TURNOFFLiBCM A8
-  #define PIN_DEBUG_FET A9
-  #define PIN_DEBUG_IO1 A10
-  #define PIN_DEBUG_IO2 A11
-  #define PIN_LED1 A12
-  #define PIN_LED2 A13
-  #define PIN_LED3 A14
-  #define PIN_LED4 A15
-  
-  #define PIN_BATTSCI_DIR 2
-  #define PIN_METSCI_DIR 3
-  #define PIN_VPIN_OUT_PWM 4
-  #define PIN_SPI_EXT_CS 5 
-  #define PIN_TEMP_EN 6
-  #define PIN_CONNE_PWM 7
-  #define PIN_GRID_PWM 8
-  #define PIN_GRID_SENSE 9
-  #define PIN_GRID_EN 10
-  #define PIN_FAN_PWM 11
-  #define PIN_I_SENSOR_EN 12
-  #define PIN_KEY_ON 13
-  #define PIN_SPI_CS SS
-  
-  //Serial3
-  #define HLINE_TX 14
-  #define HLINE_RX 15
-  
-  //Serial2
-  #define METSCI_TX 16
-  #define METSCI_RX 17
-  
-  //Serial1
-  #define BATTSCI_TX 18
-  #define BATTSCI_RX 19
-  
-  #define DEBUG_SDA 20
-  #define DEBUG_CLK 21
-#endif
 
 #ifdef HW_REVB
   #define PIN_BATTCURRENT A0
@@ -148,6 +99,10 @@ void setup()
 	pinMode(PIN_FANOEM_HI,OUTPUT);
 	pinMode(PIN_GRID_EN,OUTPUT);
 	pinMode(PIN_VPIN_OUT_PWM,OUTPUT);
+
+  pinMode(PIN_HMI_EN,OUTPUT);
+  digitalWrite(PIN_HMI_EN,HIGH); //turn on 4x20 display
+  delay(10); //wait for 4x20 to turn on
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
