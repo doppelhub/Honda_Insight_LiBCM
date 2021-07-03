@@ -32,13 +32,23 @@ https://youtu.be/lDXR1nHAS50
 ...
 
 Next we'll install the PCB and the various wires that plug into it:
+LiBCM Beta - Step 5
 https://youtu.be/YIbVGhcSc5o
 
 ...
 
 Now let's throw the complete pack into the IMA bay, load the firmware, and talk through a beta quirk (that will go away with better firmware):
-
+LiBCM Beta - Step 6
+https://youtu.be/IHuEETffAaQ
 The MVP firmware I mentioned in this video is here:
+https://github.com/doppelhub/Honda_Insight_LiBCM/MVP/MVP.ino
 
-If you are using the OEM current, then no code changes are required.
-If you are using the "+40% current hack", then you need to change the following line of code in ______:
+If you are using the "+40% current hack", then no code changes are required.
+If you are using the OEM current settings, then comment out line 172 (as of this writing) in MVP.ino.  Specifically, add '//' to the beginning of line 172:
+//battCurrent_amps = (int16_t)(battCurrent_amps * 0.7);
+
+...
+
+Finally, here's how to route the wires in the middle mat area:
+LiBCM Beta - Step 7
+https://youtu.be/T0TkoDq_NlQ

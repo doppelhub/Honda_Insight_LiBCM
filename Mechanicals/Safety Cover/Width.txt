@@ -1,0 +1,1 @@
+Beta Units Terry sent had maximum width 16.625", which made mounting cover to standoffs difficult.  Future covers should have maximum width 16.750".
