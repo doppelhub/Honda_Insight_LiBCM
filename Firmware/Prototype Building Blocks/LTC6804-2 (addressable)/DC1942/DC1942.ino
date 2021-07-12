@@ -161,6 +161,7 @@ uint8_t rx_cfg[TOTAL_IC][8];
 #define LED3_PIN         A14
 #define LED4_PIN         A15
 
+#define PIN_BATTSCI_DE A10
 #define BATTSCI_DIR_PIN 2
 #define METSCI_DIR_PIN  3
 #define VPIN_OUT_PIN    4
@@ -204,6 +205,8 @@ void setup()
   pinMode(GRIDSENSE_PIN, INPUT);
   pinMode(GRIDEN_PIN,   OUTPUT);
   pinMode(FAN_PWM_PIN,  OUTPUT);
+  pinMode(PIN_BATTSCI_DE,OUTPUT);
+  digitalWrite(PIN_BATTSCI_DE,LOW);
 }
 
 /*!*********************************************************************
