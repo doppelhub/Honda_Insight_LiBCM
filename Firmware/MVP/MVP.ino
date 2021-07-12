@@ -111,6 +111,8 @@ void setup()
   BATTSCI_begin();
   
   LTC6804_initialize();
+
+  TCCR1B = (TCCR1B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D11 & D12
     
 	Serial.print(F("\n\nWelcome to LiBCM v0.0.2\n\n"));
 }
@@ -146,7 +148,7 @@ void loop()
   //---------------------------------------------------------------------------------------
 
   //Determine whether grid charger is plugged in
-  uint8_t gridChargerPowered_now = digitalRead(PIN_GRID_SENSE);
+  uint8_t gridChargerPowered_now = !(digitalRead(PIN_GRID_SENSE));
   static uint8_t gridChargerPowered_previous;
 
   //steps to perform when grid charger state changes (plugged in || unplugged)
@@ -158,10 +160,10 @@ void loop()
       Serial.print(F("Unplugged"));
       analogWrite(PIN_FAN_PWM,0);     //turn onboard fans off
       digitalWrite(PIN_GRID_EN,0);    //turn grid charger off
+      Serial.print("\nGrid Charger Disabled");
 
     } else {                          //grid charger was just plugged in
       Serial.print(F("Plugged In"));
-      analogWrite(PIN_FAN_PWM,200);   //turn onboard fans on
     } 
   }
   gridChargerPowered_previous = gridChargerPowered_now;

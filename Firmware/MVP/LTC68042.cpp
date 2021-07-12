@@ -43,6 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //JTS2do: replace with #include "cpu_map.h" once that file exists
 #define PIN_GRID_SENSE 9
 #define PIN_GRID_EN 10
+#define PIN_FAN_PWM 11
 
 uint8_t LTC_isDataValid=0;
 
@@ -244,13 +245,18 @@ void printCellVoltage_max_min()
   }
 
   //grid charger handling
-  if( (maxCellVoltage <= 39000) && ( digitalRead(PIN_GRID_SENSE) ) ) //Battery not full and grid charger is plugged in
+  if( (maxCellVoltage <= 39000) && !(digitalRead(PIN_GRID_SENSE)) ) //Battery not full and grid charger is plugged in
   {
-    digitalWrite(PIN_GRID_EN,1); //enable grid charger
+    if( maxCellVoltage <= 38950) //hysteresis to prevent rapid cycling
+    {
+      digitalWrite(PIN_GRID_EN,1); //enable grid charger  
+      analogWrite(PIN_FAN_PWM,125); //enable fan
+    }
   }
   else
   {  //battery is full or grid charger isn't plugged in
     digitalWrite(PIN_GRID_EN,0); //disable grid charger
+    analogWrite(PIN_FAN_PWM,0); //disable fan
   }
 }
 
