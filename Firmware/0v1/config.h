@@ -5,6 +5,7 @@
 
 //Define CPU pin map
 #define CPU_MAP_MEGA2560
+#define LIBCM_HW_REVB
 
 //USB Serial baud rate
 #define BAUD_RATE_USB 115200

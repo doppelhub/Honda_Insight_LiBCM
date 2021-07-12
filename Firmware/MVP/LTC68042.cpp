@@ -40,6 +40,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "LiquidCrystal_I2C.h"
 #include <Wire.h>
 
+//JTS2do: replace with #include "cpu_map.h" once that file exists
+#define PIN_GRID_SENSE 9
+#define PIN_GRID_EN 10
+
 uint8_t LTC_isDataValid=0;
 
 LiquidCrystal_I2C lcd2(0x27, 20, 4);
@@ -186,6 +190,7 @@ void printCellVoltage_all()
 
 //---------------------------------------------------------------------------------------
 
+//This function is way overloaded.
 void printCellVoltage_max_min()
 {
   uint16_t minCellVoltage = 65535;
@@ -238,6 +243,15 @@ void printCellVoltage_max_min()
     }
   }
 
+  //grid charger handling
+  if( (maxCellVoltage <= 39000) && ( digitalRead(PIN_GRID_SENSE) ) ) //Battery not full and grid charger is plugged in
+  {
+    digitalWrite(PIN_GRID_EN,1); //enable grid charger
+  }
+  else
+  {  //battery is full or grid charger isn't plugged in
+    digitalWrite(PIN_GRID_EN,0); //disable grid charger
+  }
 }
 
 //---------------------------------------------------------------------------------------

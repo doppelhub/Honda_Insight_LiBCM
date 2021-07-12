@@ -119,11 +119,12 @@ void setup()
 
 void loop()
 {
-  //Handle Key state changes
+  //Get key position status
   uint8_t keyStatus_now = digitalRead(PIN_KEY_ON);
   static uint8_t keyStatus_previous;
 
-  if( keyStatus_now != keyStatus_previous) //key state changed
+  //steps to perform when key state changes (on->off, off->on)
+  if( keyStatus_now != keyStatus_previous)
   {
     Serial.print(F("\nKey is: "));
     if( keyStatus_now == 0 )
@@ -144,60 +145,86 @@ void loop()
   
   //---------------------------------------------------------------------------------------
 
-  LTC6804_startCellVoltageConversion();
-  //We don't immediately read the results afterwards because it takes a second to digitize
-  //In Coop Task setting we'll need to invoke reading n microseconds after this function is called
+  //Determine whether grid charger is plugged in
+  uint8_t gridChargerPowered_now = digitalRead(PIN_GRID_SENSE);
+  static uint8_t gridChargerPowered_previous;
 
-  //---------------------------------------------------------------------------------------
-
-
-	//get 64x oversampled current sensor value
-  uint16_t ADC_oversampledAccumulator = 0;
-  for(int ii=0; ii<64; ii++)  //This takes ~112 us per run (7.2 ms total)
-  { 
-    ADC_oversampledAccumulator += analogRead(PIN_BATTCURRENT);
-  }
-  
-  int16_t ADC_oversampledResult = int16_t( (ADC_oversampledAccumulator >> 6) );
-  Serial.print(F("\n\nRaw ADC result is: "));
-  Serial.print( String(ADC_oversampledResult) );  
-  
-	//convert current sensor result into approximate amperage for MCM & user-display
-  //don't use this result for current accumulation... it's not accurate enough
-	int16_t battCurrent_amps = ( (ADC_oversampledResult * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
-	Serial.print(F(" counts, which is: "));
-  Serial.print( String(battCurrent_amps) );
-  Serial.print(F(" amps.  Telling MCM current is: "));
-  
-  battCurrent_amps = (int16_t)(battCurrent_amps * 0.7); //140% current output required telling MCM 70% of current value
-  Serial.print( String(battCurrent_amps) );
-
-
-  //---------------------------------------------------------------------------------------
-
-	LTC6804_getCellVoltages(); //individual cell results stored in 'cell_codes' array 
-	//sum all 48 cells
-
-	uint8_t stackVoltage = LTC6804_getStackVoltage();
-
-  //---------------------------------------------------------------------------------------
-
-  if( keyStatus_now ) //key is on
+  //steps to perform when grid charger state changes (plugged in || unplugged)
+  if( gridChargerPowered_now != gridChargerPowered_previous)
   {
-  	//METSCI Decoding
-    METSCI_Packets = METSCI_getLatestFrame();
-    Serial.print("\nMETSCI E6: " + String(METSCI_Packets.latestE6Packet_assistLevel,HEX) +
-                        ", B3: " + String(METSCI_Packets.latestB3Packet_engine,HEX) +
-                        ", B4: " + String(METSCI_Packets.latestB4Packet_engine,HEX) +
-                        ", E1: " + String(METSCI_Packets.latestE1Packet_SoC,HEX) );
+    Serial.print(F("\nGrid Charger: "));
+    if( gridChargerPowered_now == 0 ) //grid charger was just unplugged
+    {
+      Serial.print(F("Unplugged"));
+      analogWrite(PIN_FAN_PWM,0);     //turn onboard fans off
+      digitalWrite(PIN_GRID_EN,0);    //turn grid charger off
 
-    //---------------------------------------------------------------------------------------  
-  	
-
-  	//Send BATTSCI packets to MCM
-  	//Need to limit how often this occurs
-    BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps);
+    } else {                          //grid charger was just plugged in
+      Serial.print(F("Plugged In"));
+      analogWrite(PIN_FAN_PWM,200);   //turn onboard fans on
+    } 
   }
-  
-  delay(100); //forcing buffers to overqueue to verify LiBCM responds correctly
+  gridChargerPowered_previous = gridChargerPowered_now;
+
+  //---------------------------------------------------------------------------------------
+
+  if( (keyStatus_now == 1) || (gridChargerPowered_now == 1) ) //key is on or grid charger plugged in
+  {
+    LTC6804_startCellVoltageConversion();
+    //We don't immediately read the results afterwards because it takes a second to digitize
+    //In Coop Task setting we'll need to invoke reading n microseconds after this function is called
+
+    //---------------------------------------------------------------------------------------
+
+  	//get 64x oversampled current sensor value
+    uint16_t ADC_oversampledAccumulator = 0;
+    for(int ii=0; ii<64; ii++)  //This takes ~112 us per run (7.2 ms total)
+    { 
+      ADC_oversampledAccumulator += analogRead(PIN_BATTCURRENT);
+    }
+    
+    int16_t ADC_oversampledResult = int16_t( (ADC_oversampledAccumulator >> 6) );
+    Serial.print(F("\n\nRaw ADC result is: "));
+    Serial.print( String(ADC_oversampledResult) );  
+    
+  	//convert current sensor result into approximate amperage for MCM & user-display
+    //don't use this result for current accumulation... it's not accurate enough
+  	int16_t battCurrent_amps = ( (ADC_oversampledResult * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
+  	Serial.print(F(" counts, which is: "));
+    Serial.print( String(battCurrent_amps) );
+    Serial.print(F(" amps.  Telling MCM current is: "));
+    
+    battCurrent_amps = (int16_t)(battCurrent_amps * 0.7); //140% current output required telling MCM 70% of current value
+    Serial.print( String(battCurrent_amps) );
+
+
+    //---------------------------------------------------------------------------------------
+
+  	LTC6804_getCellVoltages(); //individual cell results stored in 'cell_codes' array 
+  	
+    //sum all 48 cells
+  	uint8_t stackVoltage = LTC6804_getStackVoltage();
+
+    //---------------------------------------------------------------------------------------
+
+    if( keyStatus_now ) //key is on
+    {
+    	//METSCI Decoding
+      METSCI_Packets = METSCI_getLatestFrame();
+      Serial.print("\nMETSCI E6: " + String(METSCI_Packets.latestE6Packet_assistLevel,HEX) +
+                          ", B3: " + String(METSCI_Packets.latestB3Packet_engine,HEX) +
+                          ", B4: " + String(METSCI_Packets.latestB4Packet_engine,HEX) +
+                          ", E1: " + String(METSCI_Packets.latestE1Packet_SoC,HEX) );
+
+      //---------------------------------------------------------------------------------------  
+    	
+    	//Send BATTSCI packets to MCM
+    	//Need to limit how often this occurs
+      BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps);
+    }
+    
+    delay(100); //forcing buffers to overqueue to verify LiBCM responds correctly
+  } else {
+
+  }
 }
