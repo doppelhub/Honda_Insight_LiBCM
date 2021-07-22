@@ -46,6 +46,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define PIN_FAN_PWM 11
 
 uint8_t LTC_isDataValid=0;
+uint16_t isoSPI_errorCount = 0;
+uint8_t isoSPI_consecutiveErrors = 0;
+uint8_t isoSPI_consecutiveErrors_Peak = 0;
 
 LiquidCrystal_I2C lcd2(0x27, 20, 4);
 
@@ -112,6 +115,7 @@ void LTC6804_init_cfg()
 
 void LTC6804_initialize()
 {
+  LTC6804_isoSPI_errorCountReset();
   spi_enable(SPI_CLOCK_DIV64);
   set_adc(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL,AUX_CH_GPIO1);
   LTC6804_init_cfg();        //initialize the 6804 configuration array to be written
@@ -134,13 +138,22 @@ void LTC6804_getCellVoltages()
   uint8_t error = LTC6804_rdcv(0, TOTAL_IC,cell_codes,FIRST_IC_ADDR);
   if (error != 0)
   {
-   Serial.print(F("\nA PEC error was detected in the received LTC data\n"));
-   LTC_isDataValid = 0;
+   Serial.print(F("\nLTC data error\n"));
+    LTC_isDataValid = 0;
+    LTC6804_isoSPI_errorCountIncrement();
+    isoSPI_consecutiveErrors++;
+    if (isoSPI_consecutiveErrors > isoSPI_consecutiveErrors_Peak)
+    {
+      isoSPI_consecutiveErrors_Peak = isoSPI_consecutiveErrors;
+    }
   } else {
-   LTC_isDataValid = 1; 
+    LTC_isDataValid = 1; 
+    isoSPI_consecutiveErrors = 0;
   }
   //printCellVoltage_all();
   printCellVoltage_max_min();
+  Serial.print("\nisoSPI consecutive errors: " + String(isoSPI_consecutiveErrors) );
+  Serial.print(", cumulative errors: " + String(isoSPI_errorCount) );
 }
 
 //---------------------------------------------------------------------------------------
@@ -161,9 +174,15 @@ uint8_t LTC6804_getStackVoltage()
 
   Serial.print(F("\nStack voltage is: "));
   Serial.print( String(stackVoltage) );
-  lcd2.setCursor(11,1);
-  lcd2.print(", sum=");
+  lcd2.setCursor(7,2);
+  lcd2.print(", Vpack:");
   lcd2.print( stackVoltage );
+  lcd2.setCursor(0,3);
+  lcd2.print("errors:");
+  lcd2.print( isoSPI_errorCount );
+  lcd2.print("(");
+  lcd2.print( isoSPI_consecutiveErrors_Peak ); 
+  lcd2.print(")");
  
   return stackVoltage;
 }
@@ -216,32 +235,33 @@ void printCellVoltage_max_min()
   Serial.print( (minCellVoltage * 0.0001), 4 );
   if( LTC_isDataValid )
   {
-    lcd2.setCursor(0,0);
-    lcd2.print("max=");
-    lcd2.print( (maxCellVoltage * 0.0001), 3 );
-    lcd2.print(", min=");
-    lcd2.print( (minCellVoltage * 0.0001), 3 );
-    lcd2.setCursor(0,1);
-    lcd2.print("delta=");
-    lcd2.print( ((maxCellVoltage - minCellVoltage) * 0.0001), 3 );
-  
-    static uint16_t lowestCellVoltage = 65535;
     static uint16_t highestCellVoltage = 0;
-
-    if( minCellVoltage < lowestCellVoltage )
-    {
-      lowestCellVoltage  = minCellVoltage;
-      lcd2.setCursor(0,2);
-      lcd2.print("lowest ever=");
-      lcd2.print( (lowestCellVoltage * 0.0001) , 3);
-    }
+    lcd2.setCursor(0,0);
+    lcd2.print("hi:");
+    lcd2.print( (maxCellVoltage * 0.0001), 3 );
     if( maxCellVoltage > highestCellVoltage )
     {
       highestCellVoltage = maxCellVoltage;
-      lcd2.setCursor(0,3);
-      lcd2.print("highest ever=");
+      lcd2.print(" (max:");
       lcd2.print( (highestCellVoltage * 0.0001) , 3);
+      lcd2.print(")");
     }
+
+    static uint16_t lowestCellVoltage = 65535;
+    lcd2.setCursor(0,1);
+    lcd2.print("lo:");
+    lcd2.print( (minCellVoltage * 0.0001), 3 );
+    if( minCellVoltage < lowestCellVoltage )
+    {
+      lowestCellVoltage  = minCellVoltage;
+      lcd2.print(" (min:");
+      lcd2.print( (lowestCellVoltage * 0.0001) , 3);
+      lcd2.print(")");
+    }
+
+    lcd2.setCursor(0,2);
+    lcd2.print("d:");
+    lcd2.print( ((maxCellVoltage - minCellVoltage) * 0.0001), 3 );
   }
 
   //grid charger handling
@@ -950,3 +970,26 @@ void spi_write_read(uint8_t tx_Data[],//array of data to be written on SPI port
   }
 
 }
+
+//---------------------------------------------------------------------------------------
+
+
+void LTC6804_isoSPI_errorCountReset(void)
+{
+  isoSPI_errorCount = 0;
+  isoSPI_consecutiveErrors_Peak = 0;
+  lcd2.setCursor(7,3); //move to "error:     "
+  lcd2.print("              "); //clear counter
+}
+
+//---------------------------------------------------------------------------------------
+
+void LTC6804_isoSPI_errorCountIncrement(void)
+{
+  isoSPI_errorCount++;
+}
+
+//---------------------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------------------

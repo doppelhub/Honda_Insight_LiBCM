@@ -205,3 +205,7 @@ uint16_t pec15_calc(uint8_t len, uint8_t *data);
 void spi_write_array( uint8_t length, uint8_t *data);
 
 void spi_write_read(uint8_t *TxData, uint8_t TXlen, uint8_t *rx_data, uint8_t RXlen);
+
+void LTC6804_isoSPI_errorCountReset(void);
+
+void LTC6804_isoSPI_errorCountIncrement(void);

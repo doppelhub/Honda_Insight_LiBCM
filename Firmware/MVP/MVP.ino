@@ -100,6 +100,7 @@ void setup()
 	pinMode(PIN_GRID_EN,OUTPUT);
 	pinMode(PIN_VPIN_OUT_PWM,OUTPUT);
 
+
   pinMode(PIN_HMI_EN,OUTPUT);
   digitalWrite(PIN_HMI_EN,HIGH); //turn on 4x20 display
   delay(10); //wait for 4x20 to turn on
@@ -129,16 +130,20 @@ void loop()
   if( keyStatus_now != keyStatus_previous)
   {
     Serial.print(F("\nKey is: "));
+    LTC6804_isoSPI_errorCountReset();
+
     if( keyStatus_now == 0 )
     {
       Serial.print(F("OFF"));
       BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
       METSCI_disable();
+      digitalWrite(PIN_FANOEM_LOW,LOW);
       digitalWrite(PIN_I_SENSOR_EN,LOW); //disable current sensor & constant 5V load
     } else {
       Serial.print(F("ON"));
       BATTSCI_enable();
       METSCI_enable();
+      digitalWrite(PIN_FANOEM_LOW,HIGH);
       digitalWrite(PIN_I_SENSOR_EN,HIGH); //enable current sensor & constant 5V load
       
     } 
