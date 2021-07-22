@@ -390,9 +390,9 @@ uint8_t LTC6804_rdcv(uint8_t reg,  //controls which cell voltage register to rea
     {
       //current_ic is used as an IC counter
       //Parse raw cell voltage data in cell_codes array
-      for (uint8_t current_cell = 0; current_cell < CELL_IN_REG; current_cell++)                    // This loop parses the read back data. Loops
+      for (uint8_t current_cell = 0; current_cell < CELL_IN_REG; current_cell++)
       {
-        // once for each cell voltage in the register
+        //parses the read back data. Loops once for each cell voltage in the register
         parsed_cell = cell_data[data_counter] + (cell_data[data_counter+1]<<8);
         cell_codes[current_ic][current_cell + ((reg - 1) * CELL_IN_REG)] = 0x0000FFFF & parsed_cell;
         data_counter= data_counter + 2;

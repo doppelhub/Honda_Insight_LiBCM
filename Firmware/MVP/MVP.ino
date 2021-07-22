@@ -112,7 +112,7 @@ void setup()
   
   LTC6804_initialize();
 
-  TCCR1B = (TCCR1B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D11 & D12
+  TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
     
 	Serial.print(F("\n\nWelcome to LiBCM v0.0.2\n\n"));
 }
