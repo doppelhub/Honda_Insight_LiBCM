@@ -95,7 +95,7 @@ void setup()
 	pinMode(PIN_CONNE_PWM,OUTPUT);
   analogWrite(PIN_CONNE_PWM,0);
 	pinMode(PIN_FAN_PWM,OUTPUT);
-	pinMode(PIN_FANOEM_LOW,OUTPUT);
+	//pinMode(PIN_FANOEM_LOW,OUTPUT); //JTSdebug for Peter's PCB 
 	pinMode(PIN_FANOEM_HI,OUTPUT);
 	pinMode(PIN_GRID_EN,OUTPUT);
 	pinMode(PIN_VPIN_OUT_PWM,OUTPUT);
@@ -115,7 +115,7 @@ void setup()
 
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
     
-	Serial.print(F("\n\nWelcome to LiBCM v0.0.3\n\n"));
+	Serial.print(F("\n\nWelcome to LiBCM v0.0.4\n\n"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -137,13 +137,13 @@ void loop()
       Serial.print(F("OFF"));
       BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
       METSCI_disable();
-      digitalWrite(PIN_FANOEM_LOW,LOW);
+      //digitalWrite(PIN_FANOEM_LOW,LOW); //JTSdebug for Peter's PCB
       digitalWrite(PIN_I_SENSOR_EN,LOW); //disable current sensor & constant 5V load
     } else {
       Serial.print(F("ON"));
       BATTSCI_enable();
       METSCI_enable();
-      digitalWrite(PIN_FANOEM_LOW,HIGH);
+      //digitalWrite(PIN_FANOEM_LOW,HIGH); //JTSdebug for Peter's PCB
       digitalWrite(PIN_I_SENSOR_EN,HIGH); //enable current sensor & constant 5V load
       
     } 
