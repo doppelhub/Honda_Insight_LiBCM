@@ -1,0 +1,4 @@
+data on isoSPI bus fails CRC.  In my testing:
+-0 errors leaving car on (engine off) for ~40 hours
+-370 errors driving up to Reids
+-642 errors driving back down
