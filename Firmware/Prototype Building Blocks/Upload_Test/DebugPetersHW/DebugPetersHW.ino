@@ -99,23 +99,29 @@ void setup()
 	pinMode(PIN_FANOEM_HI,OUTPUT);
 	pinMode(PIN_GRID_EN,OUTPUT);
 	pinMode(PIN_VPIN_OUT_PWM,OUTPUT);
-
+  Serial.print("\nPins Set");
 
   pinMode(PIN_HMI_EN,OUTPUT);
   digitalWrite(PIN_HMI_EN,HIGH); //turn on 4x20 display
   delay(10); //wait for 4x20 to turn on
+  Serial.print("\nPass: IO Config");
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
 	Serial.begin(115200);	//USB
-	METSCI_begin();
+  Serial.print("\nPass: USB init"); delay(100);
+  METSCI_begin();
+  Serial.print("\nPass: METSCI init"); delay(100);
   BATTSCI_begin();
+  Serial.print("\nPass: BATTSCI init"); delay(100);
   
   LTC6804_initialize();
+  Serial.print("\nPass: LTC6804 init"); delay(100);
 
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
+  Serial.print("\nPass: set D11/D12 PWM frequency"); delay(100);
     
-	Serial.print(F("\n\nWelcome to LiBCM v0.0.5\n\n"));
+	Serial.print(F("\n\nPeter's LiBCM HW Debug 2021JUL26\n\n")); delay(100);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -125,11 +131,18 @@ void loop()
   //Get key position status
   uint8_t keyStatus_now = digitalRead(PIN_KEY_ON);
   static uint8_t keyStatus_previous;
+  Serial.print("\nPass(): Key is "); delay(100);
+  if(keyStatus_now)
+  {
+    Serial.print("ON"); delay(100);
+  } else {
+    Serial.print("OFF"); delay(100);
+  }
 
   //steps to perform when key state changes (on->off, off->on)
   if( keyStatus_now != keyStatus_previous)
   {
-    Serial.print(F("\nKey is: "));
+    Serial.print(F("\nKey is: ")); delay(100);
     LTC6804_isoSPI_errorCountReset();
 
     if( keyStatus_now == 0 )
@@ -181,7 +194,8 @@ void loop()
     LTC6804_startCellVoltageConversion();
     //We don't immediately read the results afterwards because it takes a second to digitize
     //In Coop Task setting we'll need to invoke reading n microseconds after this function is called
-
+    Serial.print("\nPass: LTC6804 Conversion Started"); delay(100);
+  
     //---------------------------------------------------------------------------------------
 
   	//get 64x oversampled current sensor value
@@ -190,6 +204,7 @@ void loop()
     { 
       ADC_oversampledAccumulator += analogRead(PIN_BATTCURRENT);
     }
+    Serial.print("\nPass: Current Sampled"); delay(100);
     
     int16_t ADC_oversampledResult = int16_t( (ADC_oversampledAccumulator >> 6) );
     Serial.print(F("\n\nRaw ADC result is: "));
