@@ -115,7 +115,7 @@ void setup()
 
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
     
-	Serial.print(F("\n\nWelcome to LiBCM v0.0.5\n\n"));
+	Serial.print(F("\n\nWelcome to LiBCM v0.0.6\n\n"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -139,12 +139,14 @@ void loop()
       METSCI_disable();
       digitalWrite(PIN_FANOEM_LOW,LOW);
       digitalWrite(PIN_I_SENSOR_EN,LOW); //disable current sensor & constant 5V load
+      LTC6804_4x20displayOFF();
     } else {
       Serial.print(F("ON"));
       BATTSCI_enable();
       METSCI_enable();
       digitalWrite(PIN_FANOEM_LOW,HIGH);
       digitalWrite(PIN_I_SENSOR_EN,HIGH); //enable current sensor & constant 5V load
+      LTC6804_4x20displayON();
     } 
   }
   keyStatus_previous = keyStatus_now;
@@ -165,9 +167,11 @@ void loop()
       analogWrite(PIN_FAN_PWM,0);     //turn onboard fans off
       digitalWrite(PIN_GRID_EN,0);    //turn grid charger off
       Serial.print("\nGrid Charger Disabled");
+      LTC6804_4x20displayOFF();
 
     } else {                          //grid charger was just plugged in
       Serial.print(F("Plugged In"));
+      LTC6804_4x20displayON();
     } 
   }
   gridChargerPowered_previous = gridChargerPowered_now;

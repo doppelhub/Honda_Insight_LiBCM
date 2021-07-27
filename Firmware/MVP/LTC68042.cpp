@@ -979,7 +979,7 @@ void LTC6804_isoSPI_errorCountReset(void)
   isoSPI_errorCount = 0;
   isoSPI_consecutiveErrors_Peak = 0;
   lcd2.setCursor(7,3); //move to "error:     "
-  lcd2.print("              "); //clear counter
+  lcd2.print("             "); //clear counter
 }
 
 //---------------------------------------------------------------------------------------
@@ -991,5 +991,15 @@ void LTC6804_isoSPI_errorCountIncrement(void)
 
 //---------------------------------------------------------------------------------------
 
+void LTC6804_4x20displayOFF(void)
+{
+  lcd2.noBacklight();
+}
+
 
 //---------------------------------------------------------------------------------------
+
+void LTC6804_4x20displayON(void)
+{
+  lcd2.backlight();
+}

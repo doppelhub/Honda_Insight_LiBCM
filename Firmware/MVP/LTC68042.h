@@ -209,3 +209,7 @@ void spi_write_read(uint8_t *TxData, uint8_t TXlen, uint8_t *rx_data, uint8_t RX
 void LTC6804_isoSPI_errorCountReset(void);
 
 void LTC6804_isoSPI_errorCountIncrement(void);
+
+void LTC6804_4x20displayOFF(void);
+
+void LTC6804_4x20displayON(void);
