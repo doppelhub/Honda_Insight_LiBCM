@@ -980,10 +980,15 @@ void spi_write_read(uint8_t tx_Data[],//array of data to be written on SPI port
 
 void LTC6804_isoSPI_errorCountReset(void)
 {
+  Serial.print("\nPass(LTC68042): starting LTC6804_isoSPI_errorCountReset()"); delay(100);
   isoSPI_errorCount = 0;
+  Serial.print("\nPass(LTC68042): clear isoSPI_errorCount"); delay(100);
   isoSPI_consecutiveErrors_Peak = 0;
+  Serial.print("\nPass(LTC68042): clear isoSPI_consecutiveErrors_Peak"); delay(100);
   lcd2.setCursor(7,3); //move to "error:     "
+  Serial.print("\nPass(LTC68042): move 4x20 cursor to 7,3"); delay(100);
   lcd2.print("              "); //clear counter
+  Serial.print("\nPass(LTC68042): clear 4x20 error count"); delay(100);
 }
 
 //---------------------------------------------------------------------------------------

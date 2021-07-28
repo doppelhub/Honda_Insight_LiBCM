@@ -114,6 +114,7 @@ void setup()
   Serial.print("\nPass: METSCI init"); delay(100);
   BATTSCI_begin();
   Serial.print("\nPass: BATTSCI init"); delay(100);
+  Serial.print("\nPass: one second delay"); delay(1000);
   
   LTC6804_initialize();
   Serial.print("\nPass: LTC6804 init"); delay(100);
@@ -121,7 +122,7 @@ void setup()
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
   Serial.print("\nPass: set D11/D12 PWM frequency"); delay(100);
     
-	Serial.print(F("\n\nPeter's LiBCM HW Debug 2021JUL26\n\n")); delay(100);
+	Serial.print(F("\n\nPeter's LiBCM HW Debug 2021JUL27\n\n")); delay(100);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
