@@ -115,11 +115,11 @@ void LTC6804_init_cfg()
 
 void LTC6804_initialize()
 {
+  lcd2.begin();
   LTC6804_isoSPI_errorCountReset();
   spi_enable(SPI_CLOCK_DIV64);
   set_adc(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL,AUX_CH_GPIO1);
   LTC6804_init_cfg();        //initialize the 6804 configuration array to be written
-  lcd2.begin();
 }
 
 //---------------------------------------------------------------------------------------
