@@ -115,6 +115,8 @@ void LTC6804_init_cfg()
 
 void LTC6804_initialize()
 {
+  lcd2.begin();
+  Serial.print("\nPass(LTC68042): 4x20 lcd init"); delay(100);
   LTC6804_isoSPI_errorCountReset();
   Serial.print("\nPass(LTC68042): ran LTC6804_isoSPI_errorCountReset()"); delay(100);
   spi_enable(SPI_CLOCK_DIV64);
@@ -122,8 +124,7 @@ void LTC6804_initialize()
   set_adc(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL,AUX_CH_GPIO1);
   LTC6804_init_cfg();        //initialize the 6804 configuration array to be written
   Serial.print("\nPass(LTC68042): ran LTC6804_init_cfg()"); delay(100);
-  lcd2.begin();
-  Serial.print("\nPass(LTC68042): 4x20 lcd init"); delay(100);
+
 }
 
 //---------------------------------------------------------------------------------------
