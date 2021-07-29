@@ -365,17 +365,21 @@ uint8_t LTC6804_rdcv(uint8_t reg,  //controls which cell voltage register to rea
                      uint8_t addr_first_ic
                     )
 {
-  const uint8_t NUM_RX_BYT = 8;
-  const uint8_t BYT_IN_REG = 6;
-  const uint8_t CELL_IN_REG = 3;
+
+
+  //Each LTC6804 has QTY4 "Cell Voltage Registers" (A/B/C/D)
+  const uint8_t NUM_CELLVOLTAGES_IN_REG = 3; //Each CVR contains QTY3 cell voltages.  Each cell voltage is 2B
+  const uint8_t NUM_BYTES_IN_REG        = 6; //NUM_CELLVOLTAGES_IN_REG * 2B
+  const uint8_t NUM_RX_BYTES            = 8; //numBytes received = NUM_BYTES_IN_REG + PEC (2B) 
 
   uint8_t *cell_data;
   int8_t pec_error = 0;
+  static uint8_t pec_error_location[4][4]; //JTSdebug: Tallies how many errors occur while reading each CVR
   uint16_t parsed_cell;
   uint16_t received_pec;
   uint16_t data_pec;
   uint8_t data_counter=0; //data counter
-  cell_data = (uint8_t *) malloc((NUM_RX_BYT*total_ic)*sizeof(uint8_t));
+  cell_data = (uint8_t *) malloc( (NUM_RX_BYTES*total_ic)*sizeof(uint8_t) );
   
   if (reg == 0) //JTS2do: Next ~1:15 lines substantially similar to next ~16:30 lines
   { //Read cell voltage registers A-D for every IC in the stack   
@@ -387,19 +391,29 @@ uint8_t LTC6804_rdcv(uint8_t reg,  //controls which cell voltage register to rea
       {
         //current_ic is used as an IC counter
         //Parse raw cell voltage data in cell_codes array
-        for (uint8_t current_cell = 0; current_cell<CELL_IN_REG; current_cell++)
+        for (uint8_t current_cell = 0; current_cell < NUM_CELLVOLTAGES_IN_REG; current_cell++)
         {
-          // once for each cell voltages in the register
+          // once for each cell voltage in the register
           parsed_cell = cell_data[data_counter] + (cell_data[data_counter + 1] << 8);
-          cell_codes[current_ic][current_cell  + ((cell_reg - 1) * CELL_IN_REG)] = parsed_cell;
+          cell_codes[current_ic][current_cell  + ((cell_reg - 1) * NUM_CELLVOLTAGES_IN_REG)] = parsed_cell;
           data_counter = data_counter + 2;
         }
+
         //Verify PEC matches calculated value for each read register command
         received_pec = (cell_data[data_counter] << 8) + cell_data[data_counter+1];
-        data_pec = pec15_calc(BYT_IN_REG, &cell_data[current_ic * NUM_RX_BYT ]);
+        data_pec = pec15_calc(NUM_BYTES_IN_REG, &cell_data[current_ic * NUM_RX_BYTES ]);
         if (received_pec != data_pec)
         {
           pec_error = 1;
+          pec_error_location[cell_reg][current_ic]++; //JTSdebug
+          Serial.print("\nErrors:");
+          for(uint8_t ii=0; ii<4 ; ii++)
+          {
+            for (uint8_t jj=0; jj<4; jj++)
+            {
+              Serial.print(" " + String( pec_error_location[jj][ii] ) );
+            }
+          }
         }
         data_counter = data_counter + 2;
       }
@@ -410,16 +424,16 @@ uint8_t LTC6804_rdcv(uint8_t reg,  //controls which cell voltage register to rea
     {
       //current_ic is used as an IC counter
       //Parse raw cell voltage data in cell_codes array
-      for (uint8_t current_cell = 0; current_cell < CELL_IN_REG; current_cell++)
+      for (uint8_t current_cell = 0; current_cell < NUM_CELLVOLTAGES_IN_REG; current_cell++)
       {
         //parses the read back data. Loops once for each cell voltage in the register
         parsed_cell = cell_data[data_counter] + (cell_data[data_counter+1]<<8);
-        cell_codes[current_ic][current_cell + ((reg - 1) * CELL_IN_REG)] = 0x0000FFFF & parsed_cell;
+        cell_codes[current_ic][current_cell + ((reg - 1) * NUM_CELLVOLTAGES_IN_REG)] = 0x0000FFFF & parsed_cell;
         data_counter= data_counter + 2;
       }
       //Verify PEC matches calculated value for each read register command
       received_pec = (cell_data[data_counter] << 8 )+ cell_data[data_counter + 1];
-      data_pec = pec15_calc(BYT_IN_REG, &cell_data[current_ic * NUM_RX_BYT]);
+      data_pec = pec15_calc(NUM_BYTES_IN_REG, &cell_data[current_ic * NUM_RX_BYTES]);
       if (received_pec != data_pec)
       {
         pec_error = 1;
@@ -491,8 +505,8 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
                      uint8_t addr_first_ic
                     )
 {
-  const uint8_t NUM_RX_BYT = 8;
-  const uint8_t BYT_IN_REG = 6;
+  const uint8_t NUM_RX_BYTES = 8;
+  const uint8_t NUM_BYTES_IN_REG = 6;
   const uint8_t GPIO_IN_REG = 3;
 
   uint8_t *data;
@@ -500,7 +514,7 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
   int8_t pec_error = 0;
   uint16_t received_pec;
   uint16_t data_pec;
-  data = (uint8_t *) malloc((NUM_RX_BYT*total_ic)*sizeof(uint8_t));
+  data = (uint8_t *) malloc((NUM_RX_BYTES*total_ic)*sizeof(uint8_t));
 
   if (reg == 0)
   { //Read GPIO voltage registers A-B for every IC in the stack
@@ -518,7 +532,7 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
         }
         //Verify PEC matches calculated value for each read register command
         received_pec = (data[data_counter]<<8)+ data[data_counter+1];
-        data_pec = pec15_calc(BYT_IN_REG, &data[current_ic*NUM_RX_BYT]);
+        data_pec = pec15_calc(NUM_BYTES_IN_REG, &data[current_ic*NUM_RX_BYTES]);
         if (received_pec != data_pec)
         {
           pec_error = 1;
