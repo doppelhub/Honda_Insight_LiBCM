@@ -107,6 +107,11 @@ void setup()
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
+  if( digitalRead(PIN_KEY_ON) )
+  {
+    digitalWrite(PIN_LED3,HIGH); //if the key is on when LiBCM starts up, turn LED3 on
+  }
+
 	Serial.begin(115200);	//USB
 	METSCI_begin();
   BATTSCI_begin();
@@ -115,7 +120,7 @@ void setup()
 
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
     
-	Serial.print(F("\n\nWelcome to LiBCM v0.0.9\n\n"));
+	Serial.print(F("\n\nWelcome to LiBCM v0.0.10\n\n"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
