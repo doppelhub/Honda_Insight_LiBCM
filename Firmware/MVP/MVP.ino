@@ -120,7 +120,7 @@ void setup()
 
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
     
-	Serial.print(F("\n\nWelcome to LiBCM v0.0.10\n\n"));
+	Serial.print(F("\n\nWelcome to LiBCM v0.0.11\n\n"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -221,6 +221,7 @@ void loop()
   	
     //sum all 48 cells
   	uint8_t stackVoltage = LTC6804_getStackVoltage();
+    stackVoltage = (uint8_t)(stackVoltage*0.94);
 
     //---------------------------------------------------------------------------------------
 
