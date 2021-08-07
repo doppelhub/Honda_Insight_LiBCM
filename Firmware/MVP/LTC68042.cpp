@@ -47,8 +47,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 uint8_t LTC_isDataValid=0;
 uint16_t isoSPI_errorCount = 0;
-uint8_t isoSPI_consecutiveErrors = 0;
-uint8_t isoSPI_consecutiveErrors_Peak = 0;
+uint16_t isoSPI_iterationCount = 0;
+uint16_t isoSPI_consecutiveErrors = 0;
+uint16_t isoSPI_consecutiveErrors_Peak = 0;
 
 LiquidCrystal_I2C lcd2(0x27, 20, 4);
 
@@ -150,6 +151,7 @@ void LTC6804_getCellVoltages()
     LTC_isDataValid = 1;
     isoSPI_consecutiveErrors = 0;
   }
+  isoSPI_iterationCount++;
   //printCellVoltage_all();
   printCellVoltage_max_min();
   Serial.print("\nisoSPI consecutive errors: " + String(isoSPI_consecutiveErrors) );
@@ -171,6 +173,8 @@ uint8_t LTC6804_getStackVoltage()
   }
 
   uint8_t stackVoltage = uint8_t(stackVoltage_RAW * 0.0001);
+  uint8_t percentErrors = (isoSPI_errorCount / isoSPI_iterationCount);
+  percentErrors *= 100;
 
   Serial.print(F("\nStack voltage is: "));
   Serial.print( String(stackVoltage) );
@@ -178,11 +182,13 @@ uint8_t LTC6804_getStackVoltage()
   lcd2.print(", Vpack:");
   lcd2.print( stackVoltage );
   lcd2.setCursor(0,3);
-  lcd2.print("errors:");
+  lcd2.print("err:");
   lcd2.print( isoSPI_errorCount );
   lcd2.print("(");
   lcd2.print( isoSPI_consecutiveErrors_Peak );
-  lcd2.print(")");
+  lcd2.print(") ");
+  lcd2.print(isoSPI_iterationCount);
+
 
   return stackVoltage;
 }
@@ -992,6 +998,7 @@ void LTC6804_isoSPI_errorCountReset(void)
 {
   isoSPI_errorCount = 0;
   isoSPI_consecutiveErrors_Peak = 0;
+  isoSPI_iterationCount = 0;
   lcd2.setCursor(7,3); //move to "error:     "
   lcd2.print("             "); //clear counter
 }
@@ -1010,14 +1017,13 @@ void LTC6804_4x20displayOFF(void)
   lcd2.noBacklight();
 }
 
-
 //---------------------------------------------------------------------------------------
 
 void LTC6804_4x20displayON(void)
 {
   lcd2.backlight();
   lcd2.setCursor(0,0);
-  lcd2.print("LiBCM Ver. 0.0.9    ");
+  lcd2.print("LiBCM Ver. 0.0.10   ");
   lcd2.setCursor(0,1);
   lcd2.print("                    ");
   lcd2.setCursor(0,2);
@@ -1028,4 +1034,6 @@ void LTC6804_4x20displayON(void)
   lcd2.print("                    ");
   lcd2.setCursor(0,0);
   delay(50);
+  printCellVoltage_max_min();
+  LTC6804_isoSPI_errorCountReset();
 }

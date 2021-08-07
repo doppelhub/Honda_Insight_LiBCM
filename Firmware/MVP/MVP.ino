@@ -14,6 +14,7 @@
 #define HW_REVB
 
 #ifdef HW_REVB
+  #define ENABLE_CURRENT_HACK false
   #define PIN_BATTCURRENT A0
   #define PIN_FANOEM_LOW A1
   #define PIN_FANOEM_HI A2
@@ -119,7 +120,7 @@ void setup()
   LTC6804_initialize();
 
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
-    
+
 	Serial.print(F("\n\nWelcome to LiBCM v0.0.10\n\n"));
 }
 
@@ -211,7 +212,7 @@ void loop()
     Serial.print( String(battCurrent_amps) );
     Serial.print(F(" amps.  Telling MCM current is: "));
 
-    battCurrent_amps = (int16_t)(battCurrent_amps * 0.7); //140% current output required telling MCM 70% of current value
+    if (ENABLE_CURRENT_HACK) battCurrent_amps = (int16_t)(battCurrent_amps * 0.7); //140% current output required telling MCM 70% of current value
     Serial.print( String(battCurrent_amps) );
 
 
