@@ -178,12 +178,9 @@ uint8_t LTC6804_getStackVoltage()
 
   uint8_t stackVoltage = uint8_t(stackVoltage_RAW * 0.0001);
 
+
+  // Natalya's edits below: average stackVoltage over 8 readings to smooth them out
   uint8_t sendStackVoltage = lastSentStackVoltage;
-/*
-  stackVoltageReadings
-  lastSentStackVoltage
-  stackVoltageReadIndex
-*/
 
   stackVoltageSum += stackVoltage;
 
@@ -216,7 +213,7 @@ uint8_t LTC6804_getStackVoltage()
   lcd2.print("(");
   lcd2.print( isoSPI_consecutiveErrors_Peak );
   lcd2.print(") ");
-  lcd2.print(stackVoltageSum);
+  lcd2.print(isoSPI_iterationCount);
   lcd2.print("   ");
 
   return sendStackVoltage;
