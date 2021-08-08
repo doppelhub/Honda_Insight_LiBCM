@@ -63,7 +63,7 @@ const uint8_t FIRST_IC_ADDR = 2; //!<lowest address.  All additional ICs must be
 //Stores returned cell voltages
 //Note that cells & ICs are 1-indexed, whereas array is 0-indexed:
 //cell_codes[0][0]  is IC1 Cell 01
-//cell_codes[3][11] is IC4 Cell 11
+//cell_codes[3][11] is IC4 Cell 12
 uint16_t cell_codes[TOTAL_IC][12];
 
 //Stores returned aux voltage
@@ -400,6 +400,7 @@ uint8_t LTC6804_rdcv(uint8_t reg,  //controls which cell voltage register to rea
         for (uint8_t current_cell = 0; current_cell < NUM_CELLVOLTAGES_IN_REG; current_cell++)
         {
           // once for each cell voltage in the register
+          //JTS2do: Add temporary array to store data in until PEC is verified
           parsed_cell = cell_data[data_counter] + (cell_data[data_counter + 1] << 8);
           cell_codes[current_ic][current_cell  + ((cell_reg - 1) * NUM_CELLVOLTAGES_IN_REG)] = parsed_cell;
           data_counter = data_counter + 2;
