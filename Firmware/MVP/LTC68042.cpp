@@ -175,12 +175,13 @@ uint8_t LTC6804_getStackVoltage()
   uint8_t stackVoltage = uint8_t(stackVoltage_RAW * 0.0001);
   uint8_t percentErrors = (isoSPI_errorCount / isoSPI_iterationCount);
   percentErrors *= 100;
+  uint8_t stackVoltageMultiplied = stackVoltage*0.94;
 
   Serial.print(F("\nStack voltage is: "));
   Serial.print( String(stackVoltage) );
   lcd2.setCursor(7,2);
-  lcd2.print(", Vpack:");
-  lcd2.print( stackVoltage );
+  lcd2.print(", Vpack M:");
+  lcd2.print( stackVoltageMultiplied );
   lcd2.setCursor(0,3);
   lcd2.print("err:");
   lcd2.print( isoSPI_errorCount );
@@ -248,10 +249,10 @@ void printCellVoltage_max_min()
     if( maxCellVoltage > highestCellVoltage )
     {
       highestCellVoltage = maxCellVoltage;
-      lcd2.print(" (max:");
-      lcd2.print( (highestCellVoltage * 0.0001) , 3);
-      lcd2.print(")");
     }
+    lcd2.print(" (max:");
+    lcd2.print( (highestCellVoltage * 0.0001) , 3);
+    lcd2.print(")");
 
     static uint16_t lowestCellVoltage = 65535;
     lcd2.setCursor(0,1);
@@ -260,10 +261,10 @@ void printCellVoltage_max_min()
     if( minCellVoltage < lowestCellVoltage )
     {
       lowestCellVoltage  = minCellVoltage;
-      lcd2.print(" (min:");
-      lcd2.print( (lowestCellVoltage * 0.0001) , 3);
-      lcd2.print(")");
     }
+    lcd2.print(" (min:");
+    lcd2.print( (lowestCellVoltage * 0.0001) , 3);
+    lcd2.print(")");
 
     lcd2.setCursor(0,2);
     lcd2.print("d:");
@@ -1024,7 +1025,7 @@ void LTC6804_4x20displayON(void)
 {
   lcd2.backlight();
   lcd2.setCursor(0,0);
-  lcd2.print("LiBCM Ver. 0.0.10   ");
+  lcd2.print("LiBCM Ver. 0.0.11a  ");
   lcd2.setCursor(0,1);
   lcd2.print("                    ");
   lcd2.setCursor(0,2);

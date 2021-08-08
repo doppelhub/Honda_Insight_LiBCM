@@ -120,13 +120,8 @@ void setup()
   LTC6804_initialize();
 
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
-<<<<<<< HEAD
 
-	Serial.print(F("\n\nWelcome to LiBCM v0.0.10\n\n"));
-=======
-    
-	Serial.print(F("\n\nWelcome to LiBCM v0.0.11\n\n"));
->>>>>>> main
+	Serial.print(F("\n\nWelcome to LiBCM v0.0.11a\n\n"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -244,7 +239,11 @@ void loop()
 
     	//Send BATTSCI packets to MCM
     	//Need to limit how often this occurs
-      BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps);
+      if (stackVoltage < 140) {
+        BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 2);
+      } else if (stackVoltage > 174) {
+        BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 1);
+      } else BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 0);
     }
 
     delay(100); //forcing buffers to overqueue to verify LiBCM responds correctly

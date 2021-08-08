@@ -1,18 +1,18 @@
 //BATTSCI Serial Functions
 
 /************************************************************************************************************************
- * The BCM constantly sends two different 12 Byte frames to the MCM. 
- * 
+ * The BCM constantly sends two different 12 Byte frames to the MCM.
+ *
  * The 1st frame has the following syntax:
- * 
+ *
  * The 2nd frame has the following syntax:
  ************************************************************************************************************************/
- 
+
 #define BATTSCI_BYTES_IN_FRAME 12
 #define RUNNING 1
 #define STOPPED 0
 
-uint8_t BATTSCI_state = STOPPED; 
+uint8_t BATTSCI_state = STOPPED;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -20,10 +20,10 @@ void BATTSCI_begin()
 {
   pinMode(PIN_BATTSCI_DE, OUTPUT);
   digitalWrite(PIN_BATTSCI_DE,LOW);
-  
+
   pinMode(PIN_BATTSCI_REn, OUTPUT);
   digitalWrite(PIN_BATTSCI_REn,HIGH);
-  
+
   Serial2.begin(9600,SERIAL_8E1);
 }
 
@@ -61,10 +61,10 @@ inline uint8_t BATTSCI_writeByte(uint8_t data)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage, int16_t batteryCurrent_Amps)
+void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage, int16_t batteryCurrent_Amps, uint8_t desiredBehaviourFlag)
 {
   static uint8_t frame2send = 0x87;
-  
+
   //Verify we have at least 12B free in the serial send ring buffer
   if( (BATTSCI_bytesAvailableForWrite() > BATTSCI_BYTES_IN_FRAME) && BATTSCI_state == RUNNING )
   {
@@ -90,8 +90,8 @@ void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage,
                      BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_87) );          //Send Checksum. sum(byte0:byte11) should equal 0
       frame2send = 0xAA;
     } else if( frame2send == 0xAA )
-    {  
-      //Place 0xAA frame into serial send buffer   
+    {
+      //Place 0xAA frame into serial send buffer
       Serial.print(F("BATTSCI Frame 0xAA"));
       uint8_t frameSum_AA = 0; //this will overflow, which is ok for CRC
       frameSum_AA += BATTSCI_writeByte( 0xAA );                                            //Never changes
@@ -99,7 +99,20 @@ void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage,
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                            //Never changes
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                            //Never changes unless P codes
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                            //Never changes unless P codes
-      frameSum_AA += BATTSCI_writeByte( 0x00 );                                            //0x00 enable all, 0x20 no regen, 0x10 no assist, 0x30 disables both
+      switch (desiredBehaviourFlag) {
+        case 1:
+          frameSum_AA += BATTSCI_writeByte( 0x20 ); // No Regen
+          break;
+        case 2:
+          frameSum_AA += BATTSCI_writeByte( 0x10 ); // No Assist
+          break;
+        case 3:
+          frameSum_AA += BATTSCI_writeByte( 0x30 ); // No Regen or Assist
+          break;
+        default:
+          frameSum_AA += BATTSCI_writeByte( 0x00 ); //0x00 enable all
+          break;
+      }
       frameSum_AA += BATTSCI_writeByte( 0x40 );                                            //Charge request.  0x20=charge@4bars, 0x00=charge@background
       frameSum_AA += BATTSCI_writeByte( 0x61 );                                            //Never changes
       frameSum_AA += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F );  //Battery Current (upper byte)
@@ -108,7 +121,7 @@ void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage,
                      BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_AA) );           //Send Checksum. sum(byte0:byte11) should equal 0
       frame2send = 0x87;
     }
-  } 
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
