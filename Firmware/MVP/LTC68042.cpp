@@ -51,6 +51,10 @@ uint16_t isoSPI_iterationCount = 0;
 uint16_t isoSPI_consecutiveErrors = 0;
 uint16_t isoSPI_consecutiveErrors_Peak = 0;
 
+uint16_t stackVoltageSum = 0;
+int lastSentStackVoltage = 0;
+uint8_t stackVoltageReadIndex = 9;
+
 LiquidCrystal_I2C lcd2(0x27, 20, 4);
 
 //conversion command variables.
@@ -173,25 +177,49 @@ uint8_t LTC6804_getStackVoltage()
   }
 
   uint8_t stackVoltage = uint8_t(stackVoltage_RAW * 0.0001);
-  uint8_t percentErrors = (isoSPI_errorCount / isoSPI_iterationCount);
-  percentErrors *= 100;
+
+  uint8_t sendStackVoltage = lastSentStackVoltage;
+/*
+  stackVoltageReadings
+  lastSentStackVoltage
+  stackVoltageReadIndex
+*/
+
+  stackVoltageSum += stackVoltage;
+
+  if (stackVoltageReadIndex > 7) {
+    // First iteration
+    lastSentStackVoltage = stackVoltage;
+    sendStackVoltage = stackVoltage;
+    stackVoltageSum = 0;
+    stackVoltageReadIndex = 0;
+  } else if (stackVoltageReadIndex == 7) {
+    stackVoltageReadIndex = -1;
+    sendStackVoltage = stackVoltageSum * 0.125;
+    stackVoltageSum = 0;
+  } else sendStackVoltage = lastSentStackVoltage;
+
+  stackVoltageReadIndex += 1;
+
+  uint8_t dispStackVoltage = (uint8_t)(sendStackVoltage*0.94);
+
   uint8_t stackVoltageMultiplied = stackVoltage*0.94;
 
   Serial.print(F("\nStack voltage is: "));
   Serial.print( String(stackVoltage) );
   lcd2.setCursor(7,2);
   lcd2.print(", VpackM:");
-  lcd2.print( stackVoltageMultiplied );
+  lcd2.print( dispStackVoltage );
   lcd2.setCursor(0,3);
   lcd2.print("err:");
   lcd2.print( isoSPI_errorCount );
   lcd2.print("(");
   lcd2.print( isoSPI_consecutiveErrors_Peak );
   lcd2.print(") ");
-  lcd2.print(isoSPI_iterationCount);
+  lcd2.print(stackVoltageSum);
+  lcd2.print("   ");
 
-
-  return stackVoltage;
+  return sendStackVoltage;
 }
 
 //---------------------------------------------------------------------------------------
@@ -1025,7 +1053,7 @@ void LTC6804_4x20displayON(void)
 {
   lcd2.backlight();
   lcd2.setCursor(0,0);
-  lcd2.print("LiBCM Ver. 0.0.12  ");
+  lcd2.print("LiBCM Ver. 0.0.12   ");
   lcd2.setCursor(0,1);
   lcd2.print("                    ");
   lcd2.setCursor(0,2);

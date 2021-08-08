@@ -79,8 +79,37 @@ void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage,
       frameSum_87 += BATTSCI_writeByte( 0x87 );                                            //Never changes
       frameSum_87 += BATTSCI_writeByte( 0x40 );                                            //Never changes
       frameSum_87 += BATTSCI_writeByte( (stackVoltage >> 1) );                             //Half battery voltage (e.g. 0x40 = d64 = 128 V
-      frameSum_87 += BATTSCI_writeByte( 0x15 );                                            //Battery SoC (upper byte)
-      frameSum_87 += BATTSCI_writeByte( 0x6F );                                            //Battery SoC (lower byte)
+//      frameSum_87 += BATTSCI_writeByte( 0x16 );                                            //Battery SoC (upper byte)
+//      frameSum_87 += BATTSCI_writeByte( 0x20 );                                            //Battery SoC (lower byte)
+      switch (desiredBehaviourFlag) {
+        case 3:
+          // No regen 80%
+          frameSum_87 += BATTSCI_writeByte( 0x16 );                                        //Battery SoC (upper byte)
+          frameSum_87 += BATTSCI_writeByte( 0x20 );                                        //Battery SoC (lower byte)
+          break;
+        case 2:
+          // Regen and Assist but no BG Regen 75.1%
+          frameSum_87 += BATTSCI_writeByte( 0x15 );                                        //Battery SoC (upper byte)
+          frameSum_87 += BATTSCI_writeByte( 0x6F );                                        //Battery SoC (lower byte)
+          break;
+        case 1:
+          // Regen and Assist vith BG Regen 60%
+          frameSum_87 += BATTSCI_writeByte( 0x14 );                                        //Battery SoC (upper byte)
+          frameSum_87 += BATTSCI_writeByte( 0x58 );                                        //Battery SoC (lower byte)
+          break;
+        case 0:
+          // No assist 20%
+          frameSum_87 += BATTSCI_writeByte( 0x11 );                                        //Battery SoC (upper byte)
+          frameSum_87 += BATTSCI_writeByte( 0x48 );                                        //Battery SoC (lower byte)
+          break;
+      }
+      /*
+      0x11 0x48 == 20.0
+      0x13 0x10 == 40.0
+      0x14 0x58 == 60.0;
+      0x15 0x6F == 75.1; // DEFAULT
+      0x16 0x20 == 80.0;
+      */
       frameSum_87 += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F );  //Battery Current (upper byte)
       frameSum_87 += BATTSCI_writeByte(  lowByte(batteryCurrent_toBATTSCI     ) & 0x7F );  //Battery Current (lower byte)
       frameSum_87 += BATTSCI_writeByte( 0x32 );                                            //Almost always 0x32
@@ -99,20 +128,7 @@ void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage,
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                            //Never changes
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                            //Never changes unless P codes
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                            //Never changes unless P codes
-      switch (desiredBehaviourFlag) {
-        case 1:
-          frameSum_AA += BATTSCI_writeByte( 0x20 ); // No Regen
-          break;
-        case 2:
-          frameSum_AA += BATTSCI_writeByte( 0x10 ); // No Assist
-          break;
-        case 3:
-          frameSum_AA += BATTSCI_writeByte( 0x30 ); // No Regen or Assist
-          break;
-        default:
-          frameSum_AA += BATTSCI_writeByte( 0x00 ); //0x00 enable all
-          break;
-      }
+      frameSum_AA += BATTSCI_writeByte( 0x00 );                                            //0x00 enable all, 0x20 no regen, 0x10 no assist, 0x30 disables both
       frameSum_AA += BATTSCI_writeByte( 0x40 );                                            //Charge request.  0x20=charge@4bars, 0x00=charge@background
       frameSum_AA += BATTSCI_writeByte( 0x61 );                                            //Never changes
       frameSum_AA += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F );  //Battery Current (upper byte)

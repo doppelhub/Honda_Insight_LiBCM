@@ -225,18 +225,6 @@ void loop()
   	uint8_t stackVoltage = LTC6804_getStackVoltage();
     stackVoltage = (uint8_t)(stackVoltage*0.94);
 
-    uint8_t calcStackVoltage = stackVoltage;
-
-    // next block is terrible, does not work, please ignore i'm going to replace this
-    if (lastStackVoltage == 0) {
-      lastStackVoltage = stackVoltage;
-    } else {
-      calcStackVoltage += lastStackVoltage;
-      calcStackVoltage = (uint8_t)(calcStackVoltage*0.5);
-      lastStackVoltage = stackVoltage;
-    }
-    // end non-working block
-
     //---------------------------------------------------------------------------------------
 
     if( keyStatus_now ) //key is on
@@ -252,11 +240,15 @@ void loop()
 
     	//Send BATTSCI packets to MCM
     	//Need to limit how often this occurs
-      if (calcStackVoltage < 141) {
+
+      if (stackVoltage > 180) {
+        BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 3);
+      } else if (stackVoltage > 160) {
         BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 2);
-      } else if (calcStackVoltage > 180) {
+      } else if (stackVoltage >= 144) {
         BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 1);
       } else BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 0);
+      
     }
 
     delay(100); //forcing buffers to overqueue to verify LiBCM responds correctly
