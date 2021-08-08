@@ -180,7 +180,7 @@ uint8_t LTC6804_getStackVoltage()
   Serial.print(F("\nStack voltage is: "));
   Serial.print( String(stackVoltage) );
   lcd2.setCursor(7,2);
-  lcd2.print(", Vpack M:");
+  lcd2.print(", VpackM:");
   lcd2.print( stackVoltageMultiplied );
   lcd2.setCursor(0,3);
   lcd2.print("err:");
@@ -1025,7 +1025,7 @@ void LTC6804_4x20displayON(void)
 {
   lcd2.backlight();
   lcd2.setCursor(0,0);
-  lcd2.print("LiBCM Ver. 0.0.11a  ");
+  lcd2.print("LiBCM Ver. 0.0.12  ");
   lcd2.setCursor(0,1);
   lcd2.print("                    ");
   lcd2.setCursor(0,2);

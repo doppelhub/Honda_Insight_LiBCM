@@ -62,8 +62,9 @@
 
   #define DEBUG_SDA 20
   #define DEBUG_CLK 21
-#endif
 
+#endif
+int lastStackVoltage = 0;
 #include <Arduino.h>
 #include <stdint.h>
 #include "LT_SPI.h"
@@ -121,7 +122,7 @@ void setup()
 
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
 
-	Serial.print(F("\n\nWelcome to LiBCM v0.0.11a\n\n"));
+	Serial.print(F("\n\nWelcome to LiBCM v0.0.12\n\n"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -224,6 +225,18 @@ void loop()
   	uint8_t stackVoltage = LTC6804_getStackVoltage();
     stackVoltage = (uint8_t)(stackVoltage*0.94);
 
+    uint8_t calcStackVoltage = stackVoltage;
+
+    // next block is terrible, does not work, please ignore i'm going to replace this
+    if (lastStackVoltage == 0) {
+      lastStackVoltage = stackVoltage;
+    } else {
+      calcStackVoltage += lastStackVoltage;
+      calcStackVoltage = (uint8_t)(calcStackVoltage*0.5);
+      lastStackVoltage = stackVoltage;
+    }
+    // end non-working block
+
     //---------------------------------------------------------------------------------------
 
     if( keyStatus_now ) //key is on
@@ -239,9 +252,9 @@ void loop()
 
     	//Send BATTSCI packets to MCM
     	//Need to limit how often this occurs
-      if (stackVoltage < 140) {
+      if (calcStackVoltage < 141) {
         BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 2);
-      } else if (stackVoltage > 174) {
+      } else if (calcStackVoltage > 180) {
         BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 1);
       } else BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 0);
     }
