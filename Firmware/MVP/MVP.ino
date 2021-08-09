@@ -14,7 +14,7 @@
 #define HW_REVB
 
 #ifdef HW_REVB
-  #define ENABLE_CURRENT_HACK false
+  #define ENABLE_CURRENT_HACK false // true for +40% hack false for stock
   #define PIN_BATTCURRENT A0
   #define PIN_FANOEM_LOW A1
   #define PIN_FANOEM_HI A2
@@ -64,7 +64,7 @@
   #define DEBUG_CLK 21
 
 #endif
-int lastStackVoltage = 0;
+
 #include <Arduino.h>
 #include <stdint.h>
 #include "LT_SPI.h"
@@ -122,7 +122,7 @@ void setup()
 
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
 
-	Serial.print(F("\n\nWelcome to LiBCM v0.0.12\n\n"));
+	Serial.print(F("\n\nWelcome to LiBCM v0.0.12NM\n\n"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -241,14 +241,14 @@ void loop()
     	//Send BATTSCI packets to MCM
     	//Need to limit how often this occurs
 
-      if (stackVoltage > 180) {
+      if (stackVoltage > 180) {                                                       // 180 = 3.75 volts per cell
         BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 3);
-      } else if (stackVoltage > 160) {
+      } else if (stackVoltage > 160) {                                                // 160 = 3.33 volts per cell
         BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 2);
-      } else if (stackVoltage >= 144) {
+      } else if (stackVoltage >= 144) {                                               // 144 = 3.00 volts per cell
         BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 1);
       } else BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 0);
-      
+
     }
 
     delay(100); //forcing buffers to overqueue to verify LiBCM responds correctly

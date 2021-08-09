@@ -93,7 +93,7 @@ void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage,
           frameSum_87 += BATTSCI_writeByte( 0x6F );                                        //Battery SoC (lower byte)
           break;
         case 1:
-          // Regen and Assist vith BG Regen 60%
+          // Regen and Assist with BG Regen 60%
           frameSum_87 += BATTSCI_writeByte( 0x14 );                                        //Battery SoC (upper byte)
           frameSum_87 += BATTSCI_writeByte( 0x58 );                                        //Battery SoC (lower byte)
           break;

@@ -194,6 +194,7 @@ uint8_t LTC6804_getStackVoltage()
     stackVoltageReadIndex = -1;
     sendStackVoltage = stackVoltageSum * 0.125;
     stackVoltageSum = 0;
+    lastSentStackVoltage = sendStackVoltage;
   } else sendStackVoltage = lastSentStackVoltage;
 
   stackVoltageReadIndex += 1;
@@ -1050,7 +1051,7 @@ void LTC6804_4x20displayON(void)
 {
   lcd2.backlight();
   lcd2.setCursor(0,0);
-  lcd2.print("LiBCM Ver. 0.0.12   ");
+  lcd2.print("LiBCM Ver. 0.0.12NM ");
   lcd2.setCursor(0,1);
   lcd2.print("                    ");
   lcd2.setCursor(0,2);
