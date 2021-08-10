@@ -1,3 +1,5 @@
 D16 to 82 Ohms
 
 Flip D5 180 degrees (symbol wrong)
+
+Replace 3k3 with some new value
