@@ -73,14 +73,6 @@ void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage,
 
     if(frame2send == 0x87)
     {
-      if (stackVoltage > 180) {                                                       // 180 = 3.75 volts per cell
-        desiredBehaviourFlag = 3;
-      } else if (stackVoltage > 160) {                                                // 160 = 3.33 volts per cell
-        desiredBehaviourFlag = 2;
-      } else if (stackVoltage >= 144) {                                               // 144 = 3.00 volts per cell
-        desiredBehaviourFlag = 1;
-      } else desiredBehaviourFlag = 0;
-
       //Place 0x87 frame into serial send buffer
       Serial.print(F("BATTSCI Frame 0x87"));
       uint8_t frameSum_87 = 0; //this will overflow, which is ok for CRC
