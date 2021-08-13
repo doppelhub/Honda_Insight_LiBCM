@@ -63,6 +63,7 @@ uint8_t isoSPI_consecutiveErrors = 0;
 uint8_t isoSPI_consecutiveErrors_Peak = 0;
 
 bool pauseScreenUpdates = false;
+bool maxMinForce = false;
 uint16_t splashIterationBegin = 0;
 
 #ifdef I2C_LIQUID_CRYSTAL
@@ -143,8 +144,7 @@ void LTC6804_initialize()
   #endif
 
   LTC6804_isoSPI_errorCountReset();
-  splashIterationBegin = isoSPI_iterationCount + 10;
-  displaySplash();
+  //displaySplash();
   spi_enable(SPI_CLOCK_DIV64);
   set_adc(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL,AUX_CH_GPIO1);
   LTC6804_init_cfg();        //initialize the 6804 configuration array to be written
@@ -181,9 +181,15 @@ void LTC6804_getCellVoltages()
   isoSPI_iterationCount++;
   if (isoSPI_iterationCount == splashIterationBegin) {
     pauseScreenUpdates = false;
+    lcd2.setCursor(0,0);
+    lcd2.print("                    ");
+    lcd2.setCursor(0,0);
+    maxMinForce = true;
+    printCellVoltage_max_min();
+    maxMinForce = false;
   }
   //printCellVoltage_all();
-  printCellVoltage_max_min(false);
+  printCellVoltage_max_min();
   Serial.print("\nisoSPI consecutive errors: " + String(isoSPI_consecutiveErrors) );
   Serial.print(", cumulative errors: " + String(isoSPI_errorCount) );
 }
@@ -251,8 +257,36 @@ void printCellVoltage_all()
 
 //---------------------------------------------------------------------------------------
 
+
+void printRecordVoltage_to_LCD(uint16_t voltage, bool max) {
+  if (pauseScreenUpdates) {
+    return;
+  }
+  if (max) { // true for max false for min
+    lcd2.print(" (max:");
+  } else lcd2.print(" (min:");
+  lcd2.print( (voltage * 0.0001) , 3);
+  lcd2.print(")");
+}
+
+void printMaxMinVoltage_to_LCD(uint16_t voltage, bool max) {
+  if (pauseScreenUpdates) {
+    return;
+  }
+  if (max) {
+    lcd2.setCursor(0,0);
+    lcd2.print("hi:");
+  } else {
+    lcd2.setCursor(0,1);
+    lcd2.print("lo:");
+  }
+  lcd2.print( (voltage * 0.0001), 3 );
+  // lcd2.print("            ");
+}
+
+
 //This function is way overloaded.
-void printCellVoltage_max_min(bool force)
+void printCellVoltage_max_min()
 {
   uint16_t minCellVoltage = 65535;
   uint16_t maxCellVoltage = 0;
@@ -282,7 +316,7 @@ void printCellVoltage_max_min(bool force)
     {
       highestCellVoltage = maxCellVoltage;
       printRecordVoltage_to_LCD(highestCellVoltage, true);
-    } else if (force) {
+    } else if (maxMinForce) {
       printRecordVoltage_to_LCD(highestCellVoltage, true);
     }
 
@@ -290,9 +324,9 @@ void printCellVoltage_max_min(bool force)
     printMaxMinVoltage_to_LCD(minCellVoltage, false);
     if( minCellVoltage < lowestCellVoltage )
     {
-      lowestCellVoltage  = minCellVoltage;
+      lowestCellVoltage = minCellVoltage;
       printRecordVoltage_to_LCD(lowestCellVoltage, false);
-    } else if (force) {
+    } else if (maxMinForce) {
       printRecordVoltage_to_LCD(lowestCellVoltage, false);
     }
 
@@ -317,31 +351,6 @@ void printCellVoltage_max_min(bool force)
     digitalWrite(PIN_GRID_EN,0); //disable grid charger
     analogWrite(PIN_FAN_PWM,0); //disable fan
   }
-}
-
-void printRecordVoltage_to_LCD(uint16_t voltage, bool max) {
-  if (pauseScreenUpdates) {
-    return;
-  }
-  if (max) { // true for max false for min
-    lcd2.print(" (max:");
-  } else lcd2.print(" (min:");
-  lcd2.print( (voltage * 0.0001) , 3);
-  lcd2.print(")");
-}
-
-void printMaxMinVoltage_to_LCD(uint16_t voltage, bool max) {
-  if (pauseScreenUpdates) {
-    return;
-  }
-  if (max) {
-    lcd2.setCursor(0,0);
-    lcd2.print("hi:");
-  } else {
-    lcd2.setCursor(0,1);
-    lcd2.print("lo:");
-  }
-  lcd2.print( (voltage * 0.0001), 3 );
 }
 
 //---------------------------------------------------------------------------------------
@@ -1079,17 +1088,9 @@ void LTC6804_4x20displayOFF(void)
 
 //---------------------------------------------------------------------------------------
 
-void LTC6804_4x20displayON(void)
-{
-  lcd2.backlight();
-  LTC6804_isoSPI_errorCountReset();
-  lcd2.display();
-}
-
-//---------------------------------------------------------------------------------------
-
 void displaySplash()
 {
+  splashIterationBegin = isoSPI_iterationCount + 10;
   pauseScreenUpdates = true;
   lcd2.setCursor(0,0);
   lcd2.print("LiBCM Ver. 0.0.12NM ");
@@ -1100,5 +1101,14 @@ void displaySplash()
   lcd2.setCursor(0,3);
   lcd2.print("                    ");
   lcd2.setCursor(0,0);
-  printCellVoltage_max_min(true);
 }
+
+void LTC6804_4x20displayON(void)
+{
+  lcd2.backlight();
+  LTC6804_isoSPI_errorCountReset();
+  lcd2.display();
+  displaySplash();
+}
+
+//---------------------------------------------------------------------------------------
