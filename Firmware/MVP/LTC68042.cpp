@@ -32,13 +32,24 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#define I2C_LIQUID_CRYSTAL //use LiquidCrystal_I2C library for 4x20
+//#define I2C_TWI //use TwiLiquidCrystal library for 4x20
+
 #include <stdint.h>
 #include <Arduino.h>
 #include "LT_SPI.h"
 #include "LTC68042.h"
 #include <SPI.h>
-#include "LiquidCrystal_I2C.h"
 #include <Wire.h>
+
+#ifdef I2C_LIQUID_CRYSTAL
+  #include "LiquidCrystal_I2C.h"
+#endif
+#ifdef I2C_TWI
+  #include "TwiLiquidCrystal.h"
+#endif
+
+
 
 //JTS2do: replace with #include "cpu_map.h" once that file exists
 #define PIN_GRID_SENSE 9
@@ -50,7 +61,12 @@ uint16_t isoSPI_errorCount = 0;
 uint8_t isoSPI_consecutiveErrors = 0;
 uint8_t isoSPI_consecutiveErrors_Peak = 0;
 
-LiquidCrystal_I2C lcd2(0x27, 20, 4);
+#ifdef I2C_LIQUID_CRYSTAL
+  LiquidCrystal_I2C lcd2(0x27, 20, 4);
+#endif
+#ifdef I2C_TWI
+  TwiLiquidCrystal lcd2(0x27);
+#endif
 
 //conversion command variables.
 uint8_t ADCV[2]; //!< Cell Voltage conversion command.
@@ -115,7 +131,13 @@ void LTC6804_init_cfg()
 
 void LTC6804_initialize()
 {
-  lcd2.begin();
+  #ifdef I2C_LIQUID_CRYSTAL
+    lcd2.begin();
+  #endif
+  #ifdef I2C_TWI
+    lcd2.begin(20,4);
+  #endif
+  
   LTC6804_isoSPI_errorCountReset();
   spi_enable(SPI_CLOCK_DIV64);
   set_adc(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL,AUX_CH_GPIO1);
@@ -993,6 +1015,7 @@ void LTC6804_isoSPI_errorCountReset(void)
 {
   isoSPI_errorCount = 0;
   isoSPI_consecutiveErrors_Peak = 0;
+  isoSPI_consecutiveErrors = 0;
   lcd2.setCursor(7,3); //move to "error:     "
   lcd2.print("             "); //clear counter
 }
@@ -1009,6 +1032,7 @@ void LTC6804_isoSPI_errorCountIncrement(void)
 void LTC6804_4x20displayOFF(void)
 {
   lcd2.noBacklight();
+  lcd2.noDisplay();
 }
 
 
@@ -1017,4 +1041,5 @@ void LTC6804_4x20displayOFF(void)
 void LTC6804_4x20displayON(void)
 {
   lcd2.backlight();
+  lcd2.display();
 }
