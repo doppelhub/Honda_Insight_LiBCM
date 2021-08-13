@@ -57,9 +57,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define PIN_FAN_PWM 11
 
 uint8_t LTC_isDataValid=0;
-uint16_t isoSPI_errorCount = 0;
+uint8_t isoSPI_errorCount = 0;
+uint16_t isoSPI_iterationCount = 0;
 uint8_t isoSPI_consecutiveErrors = 0;
 uint8_t isoSPI_consecutiveErrors_Peak = 0;
+
+bool pauseScreenUpdates = false;
+bool maxMinForce = false;
+uint16_t splashIterationBegin = 0;
 
 #ifdef I2C_LIQUID_CRYSTAL
   LiquidCrystal_I2C lcd2(0x27, 20, 4);
@@ -91,7 +96,7 @@ uint16_t cell_codes[TOTAL_IC][12];
 uint16_t aux_codes[TOTAL_IC][6];
 
 //Stores configuration data to be written to IC
-//tx_cfg[n][0] = CFGR0 
+//tx_cfg[n][0] = CFGR0
 //tx_cfg[n][1] = CFGR1
 //tx_cfg[n][2] = CFGR2
 //tx_cfg[n][3] = CFGR3
@@ -117,11 +122,11 @@ uint8_t rx_cfg[TOTAL_IC][8];
 void LTC6804_init_cfg()
 {
   for (int i = 0; i<TOTAL_IC; i++)
-  {                        // BIT7    BIT6    BIT5    BIT4    BIT3    BIT2    BIT1   BIT0 
+  {                        // BIT7    BIT6    BIT5    BIT4    BIT3    BIT2    BIT1   BIT0
     tx_cfg[i][0] = 0xF6 ;  //GPIO5   GPIO4   GPIO3   GPIO2   GPIO1   REFON   SWTRD  ADCOPT //Enable GPIO pulldown, etc
     tx_cfg[i][1] = 0x00 ;  //VUV[7]  VUV[6]  VUV[5]  VUV[4]  VUV[3]  VUV[2]  VUV[1] VUV[0] //Undervoltage comparison voltage
-    tx_cfg[i][2] = 0x00 ;  //VOV[3]  VOV[2]  VOV[1]  VOV[0]  VUV[11] VUV[10] VUV[9] VUV[8] 
-    tx_cfg[i][3] = 0x00 ;  //VOV[11] VOV[10] VOV[9]  VOV[8]  VOV[7]  VOV[6]  VOV[5] VOV[4] //Overvoltage comparison voltage 
+    tx_cfg[i][2] = 0x00 ;  //VOV[3]  VOV[2]  VOV[1]  VOV[0]  VUV[11] VUV[10] VUV[9] VUV[8]
+    tx_cfg[i][3] = 0x00 ;  //VOV[11] VOV[10] VOV[9]  VOV[8]  VOV[7]  VOV[6]  VOV[5] VOV[4] //Overvoltage comparison voltage
     tx_cfg[i][4] = 0x00 ;  //DCC8    DCC7    DCC6    DCC5    DCC4    DCC3    DCC2   DCC1   //Enables discharge on cells 8:1
     tx_cfg[i][5] = 0x00 ;  //DCTO[3] DCTO[2] DCTO[1] DCTO[0] DCC12   DCC11   DCC10  DCC9   //Discharge timer and cells 12:9
   }
@@ -137,8 +142,9 @@ void LTC6804_initialize()
   #ifdef I2C_TWI
     lcd2.begin(20,4);
   #endif
-  
+
   LTC6804_isoSPI_errorCountReset();
+  //displaySplash();
   spi_enable(SPI_CLOCK_DIV64);
   set_adc(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL,AUX_CH_GPIO1);
   LTC6804_init_cfg();        //initialize the 6804 configuration array to be written
@@ -169,8 +175,18 @@ void LTC6804_getCellVoltages()
       isoSPI_consecutiveErrors_Peak = isoSPI_consecutiveErrors;
     }
   } else {
-    LTC_isDataValid = 1; 
+    LTC_isDataValid = 1;
     isoSPI_consecutiveErrors = 0;
+  }
+  isoSPI_iterationCount++;
+  if (isoSPI_iterationCount == splashIterationBegin) {
+    pauseScreenUpdates = false;
+    lcd2.setCursor(0,0);
+    lcd2.print("                    ");
+    lcd2.setCursor(0,0);
+    maxMinForce = true;
+    printCellVoltage_max_min();
+    maxMinForce = false;
   }
   //printCellVoltage_all();
   printCellVoltage_max_min();
@@ -194,18 +210,27 @@ uint8_t LTC6804_getStackVoltage()
 
   uint8_t stackVoltage = uint8_t(stackVoltage_RAW * 0.0001);
 
+  uint8_t dispStackVoltage = (uint8_t)(stackVoltage*0.94);
+
   Serial.print(F("\nStack voltage is: "));
   Serial.print( String(stackVoltage) );
+
+  if (pauseScreenUpdates) {
+    return stackVoltage;
+  }
+
   lcd2.setCursor(7,2);
-  lcd2.print(", Vpack:");
-  lcd2.print( stackVoltage );
+  lcd2.print(", VpackM:");
+  lcd2.print( dispStackVoltage );
   lcd2.setCursor(0,3);
-  lcd2.print("errors:");
+  lcd2.print("err:");
   lcd2.print( isoSPI_errorCount );
   lcd2.print("(");
-  lcd2.print( isoSPI_consecutiveErrors_Peak ); 
-  lcd2.print(")");
- 
+  lcd2.print( isoSPI_consecutiveErrors_Peak );
+  lcd2.print(") ");
+  lcd2.print(isoSPI_iterationCount);
+  lcd2.print("   ");
+
   return stackVoltage;
 }
 
@@ -231,6 +256,34 @@ void printCellVoltage_all()
 }
 
 //---------------------------------------------------------------------------------------
+
+
+void printRecordVoltage_to_LCD(uint16_t voltage, bool max) {
+  if (pauseScreenUpdates) {
+    return;
+  }
+  if (max) { // true for max false for min
+    lcd2.print(" (max:");
+  } else lcd2.print(" (min:");
+  lcd2.print( (voltage * 0.0001) , 3);
+  lcd2.print(")");
+}
+
+void printMaxMinVoltage_to_LCD(uint16_t voltage, bool max) {
+  if (pauseScreenUpdates) {
+    return;
+  }
+  if (max) {
+    lcd2.setCursor(0,0);
+    lcd2.print("hi:");
+  } else {
+    lcd2.setCursor(0,1);
+    lcd2.print("lo:");
+  }
+  lcd2.print( (voltage * 0.0001), 3 );
+  // lcd2.print("            ");
+}
+
 
 //This function is way overloaded.
 void printCellVoltage_max_min()
@@ -258,32 +311,30 @@ void printCellVoltage_max_min()
   if( LTC_isDataValid )
   {
     static uint16_t highestCellVoltage = 0;
-    lcd2.setCursor(0,0);
-    lcd2.print("hi:");
-    lcd2.print( (maxCellVoltage * 0.0001), 3 );
+    printMaxMinVoltage_to_LCD(maxCellVoltage, true);
     if( maxCellVoltage > highestCellVoltage )
     {
       highestCellVoltage = maxCellVoltage;
-      lcd2.print(" (max:");
-      lcd2.print( (highestCellVoltage * 0.0001) , 3);
-      lcd2.print(")");
+      printRecordVoltage_to_LCD(highestCellVoltage, true);
+    } else if (maxMinForce) {
+      printRecordVoltage_to_LCD(highestCellVoltage, true);
     }
 
     static uint16_t lowestCellVoltage = 65535;
-    lcd2.setCursor(0,1);
-    lcd2.print("lo:");
-    lcd2.print( (minCellVoltage * 0.0001), 3 );
+    printMaxMinVoltage_to_LCD(minCellVoltage, false);
     if( minCellVoltage < lowestCellVoltage )
     {
-      lowestCellVoltage  = minCellVoltage;
-      lcd2.print(" (min:");
-      lcd2.print( (lowestCellVoltage * 0.0001) , 3);
-      lcd2.print(")");
+      lowestCellVoltage = minCellVoltage;
+      printRecordVoltage_to_LCD(lowestCellVoltage, false);
+    } else if (maxMinForce) {
+      printRecordVoltage_to_LCD(lowestCellVoltage, false);
     }
 
-    lcd2.setCursor(0,2);
-    lcd2.print("d:");
-    lcd2.print( ((maxCellVoltage - minCellVoltage) * 0.0001), 3 );
+    if (pauseScreenUpdates == false) {
+      lcd2.setCursor(0,2);
+      lcd2.print("d:");
+      lcd2.print( ((maxCellVoltage - minCellVoltage) * 0.0001), 3 );
+    }
   }
 
   //grid charger handling
@@ -291,7 +342,7 @@ void printCellVoltage_max_min()
   {
     if( maxCellVoltage <= 38950) //hysteresis to prevent rapid cycling
     {
-      digitalWrite(PIN_GRID_EN,1); //enable grid charger  
+      digitalWrite(PIN_GRID_EN,1); //enable grid charger
       analogWrite(PIN_FAN_PWM,125); //enable fan
     }
   }
@@ -316,7 +367,7 @@ void set_adc(uint8_t MD, //ADC Conversion Mode (LPF corner frequency)
 {
   uint8_t md_bits;
 
-  md_bits = (MD & 0x02) >> 1; //set bit 8 (MD[1]) in ADCV[0]... MD[0] is in ADCV[1] 
+  md_bits = (MD & 0x02) >> 1; //set bit 8 (MD[1]) in ADCV[0]... MD[0] is in ADCV[1]
   ADCV[0] = md_bits + 0x02;  //set bit 9 true
   md_bits = (MD & 0x01) << 7;
   ADCV[1] =  md_bits + 0x60 + (DCP<<4) + CH;
@@ -392,7 +443,7 @@ uint8_t LTC6804_rdcv(uint8_t reg,  //controls which cell voltage register to rea
   //Each LTC6804 has QTY4 "Cell Voltage Registers" (A/B/C/D)
   const uint8_t NUM_CELLVOLTAGES_IN_REG = 3; //Each CVR contains QTY3 cell voltages.  Each cell voltage is 2B
   const uint8_t NUM_BYTES_IN_REG        = 6; //NUM_CELLVOLTAGES_IN_REG * 2B
-  const uint8_t NUM_RX_BYTES            = 8; //numBytes received = NUM_BYTES_IN_REG + PEC (2B) 
+  const uint8_t NUM_RX_BYTES            = 8; //numBytes received = NUM_BYTES_IN_REG + PEC (2B)
 
   uint8_t *cell_data;
   int8_t pec_error = 0;
@@ -402,9 +453,9 @@ uint8_t LTC6804_rdcv(uint8_t reg,  //controls which cell voltage register to rea
   uint16_t data_pec;
   uint8_t data_counter=0; //data counter
   cell_data = (uint8_t *) malloc( (NUM_RX_BYTES*total_ic)*sizeof(uint8_t) );
-  
+
   if (reg == 0) //JTS2do: Next ~1:15 lines substantially similar to next ~16:30 lines
-  { //Read cell voltage registers A-D for every IC in the stack   
+  { //Read cell voltage registers A-D for every IC in the stack
     for (uint8_t cell_reg = 1; cell_reg<5; cell_reg++) //executes once for each cell voltage register
     {
       data_counter = 0;
@@ -1035,11 +1086,29 @@ void LTC6804_4x20displayOFF(void)
   lcd2.noDisplay();
 }
 
-
 //---------------------------------------------------------------------------------------
+
+void displaySplash()
+{
+  splashIterationBegin = isoSPI_iterationCount + 10;
+  pauseScreenUpdates = true;
+  lcd2.setCursor(0,0);
+  lcd2.print("LiBCM Ver. 0.0.12NM ");
+  lcd2.setCursor(0,1);
+  lcd2.print("                    ");
+  lcd2.setCursor(0,2);
+  lcd2.print("                    ");
+  lcd2.setCursor(0,3);
+  lcd2.print("                    ");
+  lcd2.setCursor(0,0);
+}
 
 void LTC6804_4x20displayON(void)
 {
   lcd2.backlight();
+  LTC6804_isoSPI_errorCountReset();
   lcd2.display();
+  displaySplash();
 }
+
+//---------------------------------------------------------------------------------------
