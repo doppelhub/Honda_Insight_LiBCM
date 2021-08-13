@@ -213,7 +213,7 @@ void loop()
     Serial.print( String(battCurrent_amps) );
     Serial.print(F(" amps.  Telling MCM current is: "));
 
-    if (ENABLE_CURRENT_HACK) battCurrent_amps = (int16_t)(battCurrent_amps * 0.7); //140% current output required telling MCM 70% of current value
+    if (ENABLE_CURRENT_HACK) {battCurrent_amps = (int16_t)(battCurrent_amps * 0.7);} //140% current output required telling MCM 70% of current value
     Serial.print( String(battCurrent_amps) );
 
 
@@ -241,13 +241,7 @@ void loop()
     	//Send BATTSCI packets to MCM
     	//Need to limit how often this occurs
 
-      if (stackVoltage > 180) {                                                       // 180 = 3.75 volts per cell
-        BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 3);
-      } else if (stackVoltage > 160) {                                                // 160 = 3.33 volts per cell
-        BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 2);
-      } else if (stackVoltage >= 144) {                                               // 144 = 3.00 volts per cell
-        BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 1);
-      } else BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps, 0);
+      BATTSCI_sendFrames(METSCI_Packets, stackVoltage, battCurrent_amps);
 
     }
 

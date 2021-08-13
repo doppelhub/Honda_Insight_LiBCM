@@ -61,7 +61,7 @@ inline uint8_t BATTSCI_writeByte(uint8_t data)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage, int16_t batteryCurrent_Amps, uint8_t desiredBehaviourFlag)
+void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage, int16_t batteryCurrent_Amps)
 {
   static uint8_t frame2send = 0x87;
 
@@ -73,6 +73,14 @@ void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage,
 
     if(frame2send == 0x87)
     {
+      if (stackVoltage > 180) {                                                       // 180 = 3.75 volts per cell
+        desiredBehaviourFlag = 3;
+      } else if (stackVoltage > 160) {                                                // 160 = 3.33 volts per cell
+        desiredBehaviourFlag = 2;
+      } else if (stackVoltage >= 144) {                                               // 144 = 3.00 volts per cell
+        desiredBehaviourFlag = 1;
+      } else desiredBehaviourFlag = 0;
+
       //Place 0x87 frame into serial send buffer
       Serial.print(F("BATTSCI Frame 0x87"));
       uint8_t frameSum_87 = 0; //this will overflow, which is ok for CRC
@@ -81,27 +89,26 @@ void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage,
       frameSum_87 += BATTSCI_writeByte( (stackVoltage >> 1) );                             //Half battery voltage (e.g. 0x40 = d64 = 128 V
 //      frameSum_87 += BATTSCI_writeByte( 0x16 );                                            //Battery SoC (upper byte)
 //      frameSum_87 += BATTSCI_writeByte( 0x20 );                                            //Battery SoC (lower byte)
-      switch (desiredBehaviourFlag) {
-        case 3:
-          // No regen 80%
-          frameSum_87 += BATTSCI_writeByte( 0x16 );                                        //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( 0x20 );                                        //Battery SoC (lower byte)
-          break;
-        case 2:
-          // Regen and Assist but no BG Regen 75.1%
-          frameSum_87 += BATTSCI_writeByte( 0x15 );                                        //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( 0x6F );                                        //Battery SoC (lower byte)
-          break;
-        case 1:
-          // Regen and Assist with BG Regen 60%
-          frameSum_87 += BATTSCI_writeByte( 0x14 );                                        //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( 0x58 );                                        //Battery SoC (lower byte)
-          break;
-        case 0:
-          // No assist 20%
-          frameSum_87 += BATTSCI_writeByte( 0x11 );                                        //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( 0x48 );                                        //Battery SoC (lower byte)
-          break;
+      if (stackVoltage > 180) {                                                       // 180 = 3.75 volts per cell
+        // No regen 80%
+        frameSum_87 += BATTSCI_writeByte( 0x16 );                                        //Battery SoC (upper byte)
+        frameSum_87 += BATTSCI_writeByte( 0x20 );                                        //Battery SoC (lower byte)
+      } else if (stackVoltage > 160) {                                                // 160 = 3.33 volts per cell
+        // Regen and Assist but no BG Regen 75.1%
+        frameSum_87 += BATTSCI_writeByte( 0x15 );                                        //Battery SoC (upper byte)
+        frameSum_87 += BATTSCI_writeByte( 0x6F );                                        //Battery SoC (lower byte)
+      } else if (stackVoltage >= 150) {                                               // 150 = 3.125 volts per cell
+        // Regen and Assist with BG Regen 60%
+        frameSum_87 += BATTSCI_writeByte( 0x14 );                                        //Battery SoC (upper byte)
+        frameSum_87 += BATTSCI_writeByte( 0x58 );                                        //Battery SoC (lower byte)
+      } else if (stackVoltage >= 144) {                                               // 144 = 3.00 volts per cell
+        // Regen and Assist with BG Regen 40%
+        frameSum_87 += BATTSCI_writeByte( 0x13 );                                        //Battery SoC (upper byte)
+        frameSum_87 += BATTSCI_writeByte( 0x10 );                                        //Battery SoC (lower byte)
+      } else {
+        // No assist 20%
+        frameSum_87 += BATTSCI_writeByte( 0x11 );                                        //Battery SoC (upper byte)
+        frameSum_87 += BATTSCI_writeByte( 0x48 );                                        //Battery SoC (lower byte)
       }
       /*
       0x11 0x48 == 20.0
