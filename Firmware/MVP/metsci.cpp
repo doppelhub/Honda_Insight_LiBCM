@@ -142,7 +142,7 @@ void METSCI_begin()
   
   Serial3.begin(9600,SERIAL_8E1);
   METSCI_state = RUNNING;
-  Serial.print(F("\n METSCI BEGIN\n"));
+  Serial.print(F("\nMETSCI BEGIN"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -159,8 +159,6 @@ void METSCI_enable()
   METSCI_Packets.latestE6Packet_assistLevel = 0;
   METSCI_Packets.latestB3Packet_engine = 0;
   METSCI_Packets.latestE1Packet_SoC = 0;
-  
-  Serial.print(F("\n METSCI ENABLE\n")); 
 }
 
 void METSCI_disable()
@@ -168,7 +166,6 @@ void METSCI_disable()
   digitalWrite(PIN_METSCI_REn,HIGH);
 
   METSCI_state = STOPPED;
-  Serial.print(F("\n METSCI DISABLE\n"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -260,12 +257,6 @@ void METSCI_processLatestFrame(void)
       METSCI_Packets.latestE6Packet_assistLevel = 0;
     }
   } 
-
-  Serial.print("\nMETSCI E6: " + String(METSCI_Packets.latestE6Packet_assistLevel,HEX) +
-                    ", B3: " + String(METSCI_Packets.latestB3Packet_engine,HEX) +
-                    ", B4: " + String(METSCI_Packets.latestB4Packet_engine,HEX) +
-                    ", E1: " + String(METSCI_Packets.latestE1Packet_SoC,HEX) );
-
   return;
 }
 

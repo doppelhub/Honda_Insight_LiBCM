@@ -22,6 +22,7 @@ void BATTSCI_begin()
   digitalWrite(PIN_BATTSCI_REn,HIGH);
 
   Serial2.begin(9600,SERIAL_8E1);
+  Serial.print(F("\nBATTSCI BEGIN"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,7 +72,6 @@ void BATTSCI_sendFrames(uint8_t stackVoltage, int16_t batteryCurrent_Amps)
     if(frame2send == 0x87)
     {
       //Place 0x87 frame into serial send buffer
-      Serial.print(F("BATTSCI Frame 0x87"));
       uint8_t frameSum_87 = 0; //this will overflow, which is ok for CRC
       frameSum_87 += BATTSCI_writeByte( 0x87 );                                            //Never changes
       frameSum_87 += BATTSCI_writeByte( 0x40 );                                            //Never changes
@@ -117,7 +117,6 @@ void BATTSCI_sendFrames(uint8_t stackVoltage, int16_t batteryCurrent_Amps)
     } else if( frame2send == 0xAA )
     {
       //Place 0xAA frame into serial send buffer
-      Serial.print(F("BATTSCI Frame 0xAA"));
       uint8_t frameSum_AA = 0; //this will overflow, which is ok for CRC
       frameSum_AA += BATTSCI_writeByte( 0xAA );                                            //Never changes
       frameSum_AA += BATTSCI_writeByte( 0x10 );                                            //Never changes

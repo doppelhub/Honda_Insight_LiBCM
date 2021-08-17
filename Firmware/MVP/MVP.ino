@@ -20,10 +20,11 @@
 
 void setup()
 {
-  //Prevent LiBCM from turning off the 12V->5V DCDC
+  //Ensure 12V->5V DCDC stays on
   pinMode(PIN_TURNOFFLiBCM,OUTPUT);
   digitalWrite(PIN_TURNOFFLiBCM,LOW);
 
+  //Enable BCM current sensor & constant 5V load
   pinMode(PIN_I_SENSOR_EN,OUTPUT);
   digitalWrite(PIN_I_SENSOR_EN,LOW);
 
@@ -32,7 +33,7 @@ void setup()
   pinMode(PIN_LED3,OUTPUT);
   pinMode(PIN_LED4,OUTPUT);
 
-  digitalWrite(PIN_LED1,HIGH);
+  digitalWrite(PIN_LED1,HIGH); //CPU booted successfully
 
   pinMode(PIN_CONNE_PWM,OUTPUT);
   analogWrite(PIN_CONNE_PWM,0);
@@ -59,10 +60,8 @@ void setup()
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
 
   Serial.print(F("\n\nWelcome to LiBCM v"));
-
   Serial.print(String(FW_VERSION));
-
-  Serial.print(F("\n\n"));
+  Serial.print("," + String(BUILD_DATE) + "\n\n");
   
 }
 
@@ -141,18 +140,19 @@ void loop()
 	  }
 
 	  int16_t ADC_oversampledResult = int16_t( (ADC_oversampledAccumulator >> 6) );
-	  Serial.print(F("\n\nRaw ADC result is: "));
+	  Serial.print(F("\nADC:"));
 	  Serial.print( String(ADC_oversampledResult) );
 
 	  //convert current sensor result into approximate amperage for MCM & user-display
 	  //don't use this result for current accumulation... it's not accurate enough
 	  int16_t battCurrent_amps = ( (ADC_oversampledResult * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
-	  Serial.print(F(" counts, which is: "));
+	  Serial.print(F(", "));
 	  Serial.print( String(battCurrent_amps) );
-	  Serial.print(F(" amps.  Telling MCM current is: "));
+	  Serial.print(F(" A(raw), "));
 
 	  if (ENABLE_CURRENT_HACK) {battCurrent_amps = (int16_t)(battCurrent_amps * 0.7);} //140% current hack = tell MCM 70% actual
 	  Serial.print( String(battCurrent_amps) );
+	  Serial.print(F(" A(MCM)"));
 
 
 	  //---------------------------------------------------------------------------------------

@@ -122,10 +122,10 @@ void LTC6804_initialize()
   #endif
 
   LTC6804_isoSPI_errorCountReset();
-  //displaySplash();
   spi_enable(SPI_CLOCK_DIV64);
   set_adc(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL,AUX_CH_GPIO1);
   LTC6804_init_cfg();        //initialize the 6804 configuration array to be written
+  Serial.print(F("\nLTC6804 BEGIN"));
 }
 
 //---------------------------------------------------------------------------------------
@@ -168,8 +168,6 @@ void LTC6804_getCellVoltages()
   }
   //printCellVoltage_all();
   printCellVoltage_max_min();
-  Serial.print("\nisoSPI consecutive errors: " + String(isoSPI_consecutiveErrors) );
-  Serial.print(", cumulative errors: " + String(isoSPI_errorCount) );
 }
 
 //---------------------------------------------------------------------------------------
@@ -190,7 +188,7 @@ uint8_t LTC6804_getStackVoltage()
 
   uint8_t dispStackVoltage = (uint8_t)(stackVoltage*0.94);
 
-  Serial.print(F("\nStack voltage is: "));
+  Serial.print(F(", V(stack):"));
   Serial.print( String(stackVoltage) );
 
   if (pauseScreenUpdates) {
@@ -282,9 +280,9 @@ void printCellVoltage_max_min()
       }
     }
   }
-  Serial.print(F("\nVmax = "));
+  Serial.print(F(", Vmax:"));
   Serial.print( (maxCellVoltage * 0.0001), 4 );
-  Serial.print(F(", Vmin = "));
+  Serial.print(F(", Vmin:"));
   Serial.print( (minCellVoltage * 0.0001), 4 );
   if( LTC_isDataValid )
   {
@@ -1066,7 +1064,7 @@ void LTC6804_4x20displayOFF(void)
 
 //---------------------------------------------------------------------------------------
 
-void displaySplash()
+void displaySplash(void)
 {
   splashIterationBegin = isoSPI_iterationCount + 10;
   pauseScreenUpdates = true;
