@@ -3,9 +3,7 @@
 #ifndef libcm_h
   #define libcm_h
 
-  #define FW_VERSION "0.0.14"
-  #define BUILD_DATE "2021AUG13"
-  #define HW_REVB
+
 
   //define standard libraries used by LiBCM
   #include <Arduino.h>

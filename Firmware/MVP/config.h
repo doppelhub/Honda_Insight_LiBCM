@@ -6,6 +6,10 @@
 
 	#define ENABLE_CURRENT_HACK true // true for +40% hack false for stock
 	#define CPU_MAP_MEGA2560
+
+	#define FW_VERSION "0.0.14"
+  	#define BUILD_DATE "2021AUG17"
+  	#define HW_REVB
 	
 	//Choose which I2C driver to use:
 	#define I2C_LIQUID_CRYSTAL //use LiquidCrystal_I2C library for 4x20
