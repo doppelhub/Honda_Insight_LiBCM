@@ -7,7 +7,7 @@
 	#define ENABLE_CURRENT_HACK true // true for +40% hack false for stock
 	#define CPU_MAP_MEGA2560
 
-	#define FW_VERSION "0.0.14"
+	#define FW_VERSION "x.x.x VPIN BRANCH"
   	#define BUILD_DATE "2021AUG17"
   	#define HW_REVB
 	
