@@ -117,9 +117,15 @@
  * If Byte3 = 0xB4, then Byte4 indicates engine status.  Details not fully deciphered (or important).  Peter knows the most about this.
  ************************************************************************************************************************/
  
-#define METSCI_BYTES_IN_FRAME 6
-#define RUNNING 1
-#define STOPPED 0
+#include "libcm.h"
+
+struct packetTypes
+{
+  uint8_t latestE6Packet_assistLevel;
+  uint8_t latestB4Packet_engine;
+  uint8_t latestB3Packet_engine;
+  uint8_t latestE1Packet_SoC;
+} METSCI_Packets;
 
 
 uint8_t METSCI_state = RUNNING;
@@ -167,14 +173,14 @@ void METSCI_disable()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline uint8_t METSCI_readByte()
+uint8_t METSCI_readByte()
 {
   return Serial3.read();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline uint8_t METSCI_bytesAvailable()
+uint8_t METSCI_bytesAvailable()
 {
   return Serial3.available();
 }
@@ -184,7 +190,7 @@ inline uint8_t METSCI_bytesAvailable()
 //This is a non-blocking function:
 //If a new frame isn't available in the serial receive buffer when this function is called,
 //then the previous frame is returned immediately. No time to wait around for 9600 baud frames!
-struct packetTypes METSCI_getLatestFrame(void)
+void METSCI_processLatestFrame(void)
 {
   //Check if we have more than one complete frame in queue (which indicates we've somehow fallen behind)
   while( METSCI_bytesAvailable() > (METSCI_BYTES_IN_FRAME << 1) ) //True if two or more full frames are stored in serial ring buffer
@@ -206,7 +212,7 @@ struct packetTypes METSCI_getLatestFrame(void)
     METSCI_Packets.latestB3Packet_engine = 0;
     METSCI_Packets.latestE1Packet_SoC    = 0;
 
-    return METSCI_Packets;
+    return;
   }
 
   if( METSCI_bytesAvailable() > METSCI_BYTES_IN_FRAME )  //Verify a full frame exists in the buffer
@@ -220,7 +226,7 @@ struct packetTypes METSCI_getLatestFrame(void)
       resyncAttempt++;
       if( resyncAttempt > (METSCI_BYTES_IN_FRAME << 2) )
       {
-        return METSCI_Packets; //prevent hanging in while loop if METSCI signal is corrupt (i.e. 0xE6 never occurs)
+        return; //prevent hanging in while loop if METSCI signal is corrupt (i.e. 0xE6 never occurs)
       }
     }
 
@@ -229,7 +235,7 @@ struct packetTypes METSCI_getLatestFrame(void)
     packetType = 0xE6;              //Byte0 (always 0xE6) (we discarded it above)
     packetData = METSCI_readByte(); //Byte1 (always number of bars assist/regen)
     packetCRC  = METSCI_readByte(); //Byte2 (checksum)
-    
+
     if( METSCI_isChecksumValid(packetType, packetData, packetCRC) )
     {
       METSCI_Packets.latestE6Packet_assistLevel = packetData;
@@ -254,7 +260,13 @@ struct packetTypes METSCI_getLatestFrame(void)
       METSCI_Packets.latestE6Packet_assistLevel = 0;
     }
   } 
-  return METSCI_Packets;
+
+  Serial.print("\nMETSCI E6: " + String(METSCI_Packets.latestE6Packet_assistLevel,HEX) +
+                    ", B3: " + String(METSCI_Packets.latestB3Packet_engine,HEX) +
+                    ", B4: " + String(METSCI_Packets.latestB4Packet_engine,HEX) +
+                    ", E1: " + String(METSCI_Packets.latestE1Packet_SoC,HEX) );
+
+  return;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -269,3 +281,10 @@ uint8_t METSCI_isChecksumValid( uint8_t type, uint8_t data, uint8_t checksum )
     return 0; //data invalid
   }
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  uint8_t METSCI_getPacketB3(){ return METSCI_Packets.latestB3Packet_engine; }
+  uint8_t METSCI_getPacketB4(){ return METSCI_Packets.latestB4Packet_engine; }
+  uint8_t METSCI_getPacketE1(){ return METSCI_Packets.latestE1Packet_SoC; }
+  uint8_t METSCI_getPacketE6(){ return METSCI_Packets.latestE6Packet_assistLevel; }

@@ -7,10 +7,7 @@
  *
  * The 2nd frame has the following syntax:
  ************************************************************************************************************************/
-
-#define BATTSCI_BYTES_IN_FRAME 12
-#define RUNNING 1
-#define STOPPED 0
+#include "libcm.h"
 
 uint8_t BATTSCI_state = STOPPED;
 
@@ -45,14 +42,14 @@ void BATTSCI_disable()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline uint8_t BATTSCI_bytesAvailableForWrite()
+uint8_t BATTSCI_bytesAvailableForWrite()
 {
   return Serial2.availableForWrite();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline uint8_t BATTSCI_writeByte(uint8_t data)
+uint8_t BATTSCI_writeByte(uint8_t data)
 {
   Serial2.write(data);
   return data;
@@ -61,7 +58,7 @@ inline uint8_t BATTSCI_writeByte(uint8_t data)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage, int16_t batteryCurrent_Amps)
+void BATTSCI_sendFrames(uint8_t stackVoltage, int16_t batteryCurrent_Amps)
 {
   static uint8_t frame2send = 0x87;
 
@@ -114,7 +111,7 @@ void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage,
       frameSum_87 += BATTSCI_writeByte( 0x32 );                                            //Almost always 0x32
       frameSum_87 += BATTSCI_writeByte( 0x3A );                                            //max temp. Syntax: degC*2 (e.g. 0x3A = 58d = 29 degC
       frameSum_87 += BATTSCI_writeByte( 0x3A );                                            //min temp. Syntax: degC*2 (e.g. 0x3A = 58d = 29 degC
-      frameSum_87 += BATTSCI_writeByte( METSCI_Packets.latestB3Packet_engine );            //MCM's sanity check that BCM isn't getting behind
+      frameSum_87 += BATTSCI_writeByte( METSCI_getPacketB3() );                            //MCM's sanity check that BCM isn't getting behind
                      BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_87) );          //Send Checksum. sum(byte0:byte11) should equal 0
       frame2send = 0xAA;
     } else if( frame2send == 0xAA )
@@ -132,8 +129,8 @@ void BATTSCI_sendFrames(struct packetTypes METSCI_Packets, uint8_t stackVoltage,
       frameSum_AA += BATTSCI_writeByte( 0x61 );                                            //Never changes
       frameSum_AA += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F );  //Battery Current (upper byte)
       frameSum_AA += BATTSCI_writeByte(  lowByte(batteryCurrent_toBATTSCI     ) & 0x7F );  //Battery Current (lower byte)
-      frameSum_AA += BATTSCI_writeByte( METSCI_Packets.latestB4Packet_engine );            //MCM's sanity check that BCM isn't getting behind
-                     BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_AA) );           //Send Checksum. sum(byte0:byte11) should equal 0
+      frameSum_AA += BATTSCI_writeByte( METSCI_getPacketB4() );                            //MCM's sanity check that BCM isn't getting behind
+                     BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_AA) );          //Send Checksum. sum(byte0:byte11) should equal 0
       frame2send = 0x87;
     }
   }

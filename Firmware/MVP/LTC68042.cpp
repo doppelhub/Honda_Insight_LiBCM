@@ -32,29 +32,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define I2C_LIQUID_CRYSTAL //use LiquidCrystal_I2C library for 4x20
-//#define I2C_TWI //use TwiLiquidCrystal library for 4x20
-
-#include <stdint.h>
-#include <Arduino.h>
-#include "LT_SPI.h"
-#include "LTC68042.h"
-#include <SPI.h>
-#include <Wire.h>
-
-#ifdef I2C_LIQUID_CRYSTAL
-  #include "LiquidCrystal_I2C.h"
-#endif
-#ifdef I2C_TWI
-  #include "TwiLiquidCrystal.h"
-#endif
-
-
-
-//JTS2do: replace with #include "cpu_map.h" once that file exists
-#define PIN_GRID_SENSE 9
-#define PIN_GRID_EN 10
-#define PIN_FAN_PWM 11
+#include "libcm.h"
 
 uint8_t LTC_isDataValid=0;
 uint8_t isoSPI_errorCount = 0;
@@ -1093,7 +1071,7 @@ void displaySplash()
   splashIterationBegin = isoSPI_iterationCount + 10;
   pauseScreenUpdates = true;
   lcd2.setCursor(0,0);
-  lcd2.print("LiBCM Ver. 0.0.12NM ");
+  lcd2.print("LiBCM v" + String(FW_VERSION) );
   lcd2.setCursor(0,1);
   lcd2.print("                    ");
   lcd2.setCursor(0,2);

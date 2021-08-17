@@ -47,9 +47,7 @@ Copyright 2013 Linear Technology Corp. (LTC)
     Header for LTC6804-2 Multicell Battery Monitor
 */
 
-
-//JTS2do: Add all pin defines to a separate header file, then include that header file everywhere
-#define PIN_SPI_CS SS
+#include "libcm.h"
 
 static const unsigned int crc15Table[256] = {
   0x0,    0xc599, 0xceab, 0xb32,  0xd8cf, 0x1d56, 0x1664, 0xd3fd,
