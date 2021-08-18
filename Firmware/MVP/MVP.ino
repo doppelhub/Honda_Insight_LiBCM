@@ -57,6 +57,7 @@ void setup()
   LTC6804_initialize();
 
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
+  TCCR0B = (TCCR0B & B11111000) | B00000001; // JTSdebug: for PWM frequency of 62500 Hz D04 & D13. This hoses delay()!
 
   Serial.print(F("\n\nWelcome to LiBCM v"));
   Serial.print(String(FW_VERSION));
@@ -168,7 +169,8 @@ void loop()
 	  {
 	    METSCI_processLatestFrame();
 
-	    BATTSCI_sendFrames(stackVoltage, battCurrent_amps);
+	    vPackSpoof_updateVoltage(stackVoltage, battCurrent_amps);
+	 	//BATTSCI_sendFrames(stackVoltage, battCurrent_amps);
 	  }
 
 	  delay(100); //forcing buffers to overqueue to verify LiBCM responds correctly

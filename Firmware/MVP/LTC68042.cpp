@@ -144,7 +144,7 @@ void LTC6804_getCellVoltages()
   uint8_t error = LTC6804_rdcv(0, TOTAL_IC,cell_codes,FIRST_IC_ADDR);
   if (error != 0)
   {
-   Serial.print(F("\nLTC data error\n"));
+   //Serial.print(F("\nLTC data error\n"));
     LTC_isDataValid = 0;
     LTC6804_isoSPI_errorCountIncrement();
     isoSPI_consecutiveErrors++;
@@ -456,14 +456,14 @@ uint8_t LTC6804_rdcv(uint8_t reg,  //controls which cell voltage register to rea
         {
           pec_error = 1;
           pec_error_location[cell_reg-1][current_ic]++; //JTSdebug
-          Serial.print("\nErrors:");
-          for(uint8_t ii=0; ii<4 ; ii++)
-          {
-            for (uint8_t jj=0; jj<4; jj++)
-            {
-              Serial.print(" " + String( pec_error_location[jj][ii] ) );
-            }
-          }
+          //Serial.print("\nErrors:");
+          //for(uint8_t ii=0; ii<4 ; ii++)
+          //{
+          //  for (uint8_t jj=0; jj<4; jj++)
+          //  {
+          //    Serial.print(" " + String( pec_error_location[jj][ii] ) );
+          //  }
+          //}
         }
         data_counter = data_counter + 2;
       }
