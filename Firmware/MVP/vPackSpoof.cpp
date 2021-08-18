@@ -39,16 +39,16 @@ static const uint8_t LUT_MCM_E[256] =
 
 void vPackSpoof_updateVoltage(uint8_t spoofedPackVoltage, int16_t packCurrent)
 {
-	static uint8_t vSpoof_BATTSCI = 0;  //JTSdebug
+	static uint16_t vSpoof_BATTSCI = 0;  //JTSdebug
 
 	if(igbtCapsCharged == 0) 
 	{	//key just turned on, but PDU capacitors are still charging thru pre-contactor (VPIN_IN tells us this)
-		uint8_t stackVoltageVpinIn = ( (analogRead(PIN_VPIN_IN)) >> 2 );
+		uint16_t stackVoltageVpinIn = ( ( (uint16_t)(analogRead(PIN_VPIN_IN)) ) );
 				//Derivation:
-				//VPIN_In_Counts = analogRead(VPIN_IN);
-				//VPIN_In_0to5000mv = (VPIN_In_Counts*1000*5)<<10;
-				//stackVoltageVpinIn = (VPIN_In_0to5000mv * 52) / 1000;
-				//stackVoltageVpinIn = analogRead(VPIN_IN) * 1000 * 5 /1024 * 52 /1000 
+				//VPIN_In_Counts = analogRead(VPIN_IN)
+				//VPIN_In_0to5v = (VPIN_In_Counts * 5V) / 1024counts
+				//stackVoltageVpinIn = (VPIN_In_0to5v * 52Vpack/VPIN)
+				//stackVoltageVpinIn = (analogRead(VPIN_IN) * 5 /1024 * 52
 				//stackVoltageVpinIn = analogRead(VPIN_IN) * 260 / 1024
 				//stackVoltageVpinIn ~= analogRead(VPIN_IN) / 4
 
@@ -56,8 +56,8 @@ void vPackSpoof_updateVoltage(uint8_t spoofedPackVoltage, int16_t packCurrent)
 		{
 			igbtCapsCharged = 1; //Remains true until next keyOff event
 		}
-		vSpoof_BATTSCI = stackVoltageVpinIn; //JTSdebug.  Get initial Lambda Gen voltage setpoint
-		Serial.print( "\nvSpoof_BATTSCI = " + String(vSpoof_BATTSCI) );
+		//vSpoof_BATTSCI = stackVoltageVpinIn; //JTSdebug.  Get initial Lambda Gen voltage setpoint
+		//Serial.print( "\nvSpoof_BATTSCI = " + String(vSpoof_BATTSCI) );
 	}
 
 	if(igbtCapsCharged == 1) //don't combine with above (e.g. "else if").  Needs to execute ASAP!
@@ -84,21 +84,26 @@ void vPackSpoof_updateVoltage(uint8_t spoofedPackVoltage, int16_t packCurrent)
 			do //scan USB serial until specific character encountered
 			{
 				byteRead = Serial.read();
-			} while( !( (byteRead == 'v') || (byteRead == 'w') ) && (Serial.available() > 0) );
+			} while( !( (byteRead == 'b') || (byteRead == 'p' || (byteRead == 'e') ) ) && (Serial.available() > 0) );
 
 			if( Serial.available() ) //verify there's still data to read
 			{			
 				uint8_t userInteger = Serial.parseInt();
 
-				if(byteRead == 'v') //lambda voltage command entered
+				if(byteRead == 'b') //lambda voltage command entered
 				{
 					vSpoof_BATTSCI = userInteger;
 					Serial.print( "\n vBATTSCI = " + String(vSpoof_BATTSCI) );
 				} 
-				else if(byteRead == 'w')
+				else if(byteRead == 'p')
 				{
 					analogWrite(PIN_VPIN_OUT_PWM, userInteger);
 					Serial.print( "\n VPIN_DUTY = " + String(userInteger) );
+				}
+				else if(byteRead == 'e')
+				{
+					analogWrite(PIN_CONNE_PWM, userInteger);
+					Serial.print( "\n MCM'E'_DUTY = " + String(userInteger) );
 				}
 			}
 		}

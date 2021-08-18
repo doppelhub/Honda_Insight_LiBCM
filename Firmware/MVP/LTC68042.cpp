@@ -188,8 +188,8 @@ uint8_t LTC6804_getStackVoltage()
 
   uint8_t dispStackVoltage = (uint8_t)(stackVoltage*0.94);
 
-  Serial.print(F(", V(stack):"));
-  Serial.print( String(stackVoltage) );
+  //Serial.print(F(", V(stack):"));
+  //Serial.print( String(stackVoltage) );
 
   if (pauseScreenUpdates) {
     return stackVoltage;
@@ -280,10 +280,10 @@ void printCellVoltage_max_min()
       }
     }
   }
-  Serial.print(F(", Vmax:"));
-  Serial.print( (maxCellVoltage * 0.0001), 4 );
-  Serial.print(F(", Vmin:"));
-  Serial.print( (minCellVoltage * 0.0001), 4 );
+  //Serial.print(F(", Vmax:"));
+  //Serial.print( (maxCellVoltage * 0.0001), 4 );
+  //Serial.print(F(", Vmin:"));
+  //Serial.print( (minCellVoltage * 0.0001), 4 );
   if( LTC_isDataValid )
   {
     static uint16_t highestCellVoltage = 0;

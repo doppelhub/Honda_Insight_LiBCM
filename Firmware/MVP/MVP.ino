@@ -140,19 +140,19 @@ void loop()
 	  }
 
 	  int16_t ADC_oversampledResult = int16_t( (ADC_oversampledAccumulator >> 6) );
-	  Serial.print(F("\nADC:"));
-	  Serial.print( String(ADC_oversampledResult) );
+	  //Serial.print(F("\nADC:"));
+	  //Serial.print( String(ADC_oversampledResult) );
 
 	  //convert current sensor result into approximate amperage for MCM & user-display
 	  //don't use this result for current accumulation... it's not accurate enough
 	  int16_t battCurrent_amps = ( (ADC_oversampledResult * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
-	  Serial.print(F(", "));
-	  Serial.print( String(battCurrent_amps) );
-	  Serial.print(F(" A(raw), "));
+	  //Serial.print(F(", "));
+	  //Serial.print( String(battCurrent_amps) );
+	  //Serial.print(F(" A(raw), "));
 
 	  if (ENABLE_CURRENT_HACK) {battCurrent_amps = (int16_t)(battCurrent_amps * 0.7);} //140% current hack = tell MCM 70% actual
-	  Serial.print( String(battCurrent_amps) );
-	  Serial.print(F(" A(MCM)"));
+	  //Serial.print( String(battCurrent_amps) );
+	  //Serial.print(F(" A(MCM)"));
 
 
 	  //---------------------------------------------------------------------------------------
