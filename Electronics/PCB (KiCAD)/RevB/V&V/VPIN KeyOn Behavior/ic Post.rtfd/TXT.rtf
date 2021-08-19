@@ -1,0 +1,93 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf600
+{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
+{\colortbl;\red255\green255\blue255;\red236\green240\blue242;\red26\green26\blue27;\red54\green155\blue77;
+}
+{\*\expandedcolortbl;;\cssrgb\c94118\c95294\c96078;\cssrgb\c13725\c13725\c14118;\cssrgb\c25490\c65882\c37255;
+}
+\margl1440\margr1440\vieww19760\viewh15980\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs30 \cf2 \cb3 \expnd0\expndtw0\kerning0
+Today I finally got around to measuring the VPIN startup behavior.  It turns out LiBCM has quite a bit more time than I thought it would to boot up and get ready to spoof VPIN: as shown below, it takes ~200 ms for the MCM to startup and process VPIN.\cb1 \
+\
+\cb3 In this first picture, LiBCM is installed, but VPIN isn't connected to it.  VPIN is passing through an inline 5.6kOhm resistor, but is otherwise OEM:\cb1 \
+\cb3 YEL: VPIN@PDU\cb1 \
+\cb3 GRN: VPIN@MCM\cb1 \
+\cb3 PNK: (12V+10s)\cb1 \
+\cb3 BLU: HVDC@PDU\cb1 \
+{{\NeXTGraphic ds1z_quickprint2-png.91997.png \width16000 \height9600 \noorient \appleattachmentpadding0 \appleembedtype0 \appleaqc
+}¬}\
+\
+\cb3 In this picture we're looking at the MCM's powerup timing diagram, and can deduce the following:\cb1 \
+\cb3 -t=0 is when PNK (12V+10s) rapidly rises (because we just turned the key on).\cb1 \
+\cb3 -from t=0 to 200ms, VPIN is loosely floating (because I/O is uninitialized)\cb1 \
+\cb3 -@191 ms HVDC@PDU starts charging (through pre-charge circuit)\cb1 \
+\cb3 -@203 ms VPIN starts tracking HVDC (because MCM has finished starting up and toggled I/O correctly to track VPIN)\cb1 \
+\cb3 -@331 ms MCM fires main contactor (HVDC@PDU is still 18 volts below HVDC@pack).\cb1 \
+\cb3 -@346 ms contactor mechanically engages, so HVDC@PDU rapidly rises to HVDC@pack.\cb1 \
+\
+\cb3 Thoughts:\cb1 \
+\cb3 -I don't think the MCM cares about the VPIN charge curve... it's simply looking for VPIN*52 ~= (V_MCM'E' - ~20 volts) before a timeout occurs.\cb1 \
+\cb3 -Thus, LiBCM shouldn't need to frantically update VPIN when the key first turns on... instead, we can just update the VPIN voltage as part of the superloop.\cb1 \
+\
+\cb3 ...\cb1 \
+\
+\cb3 Let's look at LiBCM's behavior as it stands today (RevB HW running 0.0.15 FW).  There are two unique cases:\cb1 \
+\cb3 1) If LiBCM is \cf4 already running when the key turns on**\cf2 , then LiBCM won't even break a sweat spoofing VPIN.  Piece of cake:\cb1 \
+{{\NeXTGraphic ds1z_quickprint4-png.92002.png \width16000 \height9600 \noorient \appleattachmentpadding0 \appleembedtype0 \appleaqc
+}¬}\
+\cb3 If the Arduino is already initialized, then keyON (PNK) to toggling LED2 (GRN) takes 16.8 ms, which leaves us 183.2 ms to do whatever we want prior to needing to sample VPIN_IN and update VPIN_OUT.\cb1 \
+\
+\cb3 ...............................................................................................\cb1 \
+\
+\cb3 2) However, if LiBCM is \cf4 unpowered when the key turns on**\cf2 , the MCM will presently throw a P-code, as it simply takes too long to get everything up and running.\cb1 \
+\
+\cf4 \cb3 **Fortunately, under normal operating conditions LiBCM always remains on.  Specifically, LiBCM will only be off under the following two conditions:\cf2 \cb1 \
+\cf4 \cb3 -If this is the first keyON event to occur after turning on the IMA switch, or;\cf2 \cb1 \
+\cf4 \cb3 -If LiBCM previously turned itself off, which only occurs if the HV battery gets critically low (to prevent over-discharging the pack).\cf2 \cb1 \
+\
+\cb3 Starting with the power supply, we can see that the 5 volt rail ramps up quite fast: less than 3% of our timing budget (6 ms / 200 ms):\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf2 {{\NeXTGraphic ds1z_quickprint1-png.91998.png \width16000 \height9600 \noorient \appleattachmentpadding0 \appleembedtype0 \appleaqc
+}¬}\pard\pardeftab720\partightenfactor0
+\cf2 \
+\
+\cb3 Next we see that the default MEGA2560 fuse settings configure the microcontroller to hold itself in reset for ~66 ms, to give the16 MHz oscillator time to start.  Right now this delay eats up 33% of our timing budget (we've now consumed 36% in total).  We can reduce this delay - possibly down to 4 ms - by reprogramming the fuses, but we'd need to characterize the oscillator's startup behavior.  This is a moot issue for now, due to the next step in the process.\cb1 \
+\
+\cb3 Things go downhill from there... after coming out of reset, the Arduino jumps to an in-memory bootloader, which waits for ~700 ms for the (possibly connected) host computer to (potentially) start downloading a new program.  This delay alone is 3.5 times our entire budget (200 ms).  We could remove this bootloader, but then LiBCM wouldn't be firmware-upgradable via USB; you'd need an external programmer (yuck).\cb1 \
+\
+\cb3 If we add this all up, right now it takes 908 ms from powerup to toggling LED1 (YEL signal):\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf2 {{\NeXTGraphic ds1z_quickprint3-png.91999.png \width16000 \height9600 \noorient \appleattachmentpadding0 \appleembedtype0 \appleaqc
+}¬}\pard\pardeftab720\partightenfactor0
+\cf2 \
+\cb3 This step exceeds our entire timing budget just over 4.5x.\cb1 \
+\
+\cb3 One solution to this problem is to modify the bootloader to check whether the "OPTION" mechanical switch (on the LiBCM PCB) is turned on or off:\cb1 \
+\cb3 -If the switch is on, the bootloader immediately exits (without waiting); programming via USB is not allowed, but LiBCM will meet 'cold start' timing requirements.\cb1 \
+\cb3 -If the switch is off, the bootloader waits ~700 ms (as described above); programming via USB is allowed, but LiBCM will only respond to a keyON event fast enough if \cf4 it's already on before the key turns on**\cf2 .\cb1 \
+\
+\cb3 Presumably tinkering types would leave the switch off, knowing that they'd need to manually turn on LiBCM each time after turning on the IMA switch (e.g. by plugging the USB cable into a portably lithium USB pack).  Another option would be to just accept the first-time-on P-code, then turn the car back off and back on, and then clear the P-code (via OBDIIC&C or unplugging 12 volt battery).\cb1 \
+\
+\cb3 And those that don't care about firmware upgrades could leave the switch on (default position), knowing that the firmware isn't upgradable (unless they turn the switch off.\cb1 \
+\
+\cb3 ................................................................\cb1 \
+\
+\cb3 Awesome, so now we've conceptually solved the "keyOn to toggling LED1" problem, so we're all good, right?\cb1 \
+\cb3 Ha, no!\cb1 \
+\cb3 In the above plot, we immediately toggled LED1, prior to initializing anything else (e.g. USB, METSCI, BATTSCI, the LTC6804s, etc).\cb1 \
+\cb3 If we toggle LED2 (GRN) after initializing everything, we see that the existing (terrible) architecture adds an additional 1240 ms, which blows our timing budget by an additional 6x:\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf2 {{\NeXTGraphic ds1z_quickprint2-png.92001.png \width12000 \height7200 \noorient \appleattachmentpadding0 \appleembedtype0 \appleaqc
+}¬}\pard\pardeftab720\partightenfactor0
+\cf2 \
+\cb3 We can certainly reduce this time considerably by (eventually) removing the Arduino-specific initialization functions, which are glacially slow.\cb1 \
+\cb3 We could also have a special startup handler that only loads the absolute bare essentials required to spoof VPIN on first powerup, and then later load everything else.\cb1 \
+\
+\cb3 Putting it all together, right now the Arduino takes more than ten times longer to "turn on" than the timing budget allows.\cb1 \
+\cb3 This will result in a P-code error\cf4  if LiBCM is powered down**\cf2  when the key is turned on.\cb1 \
+\
+\cb3 ..................................................................\cb1 \
+\
+\cb3 In summary: We're going with option 1 for now; LiBCM will need to be manually powered on the first time after the IMA switch is turned on (or else you'll receive a P-code).  After that, LiBCM will remain on, so no P-codes will occur on subsequent keyON events.}
