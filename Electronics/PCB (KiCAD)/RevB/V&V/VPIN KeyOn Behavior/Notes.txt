@@ -1,0 +1,40 @@
+picture 1: 
+picture 2:
+keyon VPIN with inline 5.6 kOhm resistor
+YEL: VPIN@PDU
+GRN: VPIN@MCM
+PNK: (12V+10s)
+BLU: HVDC@PDU
+
+Notes:
+t=0 is when PNK rapidly rises (key on)
+from t=0 to 200ms, VPIN is loosely floating (probably I/O is uninitialized)
+at 191 ms HVDC@PDU starts charging (through pre-charge circuit)
+at 203 ms VPIN starts tracking HVDC
+at 331 ms MCM fires main contactor (HVDC@PDU is still 18 volts below HVDC@pack).
+at 346 ms contactor mechanically engages
+
+..............................................................
+
+picture 3:
+as above, turning key off.
+Note HVDC@PDU doesn't drop during entire frame... even though HVDC relay opens, the PDU capacitors inside PDU stay energized for a while.
+
+..............................................................
+
+picture 4:
+keyon VPIN with LiBCM RevB + 6.6k btwn VPIN_IN & VPIN_OUT.  All MEGA VPIN I/O floating.
+YEL: VPIN@IGBT
+GRN: VPIN@MCM
+PNK: (12V+10s)
+BLU: HVDC@PDU
+Behavior nearly identical to pictures1/2
+
+..............................................................
+
+picture 5:
+as above, turning key off.
+
+..............................................................
+
+It appears we have around 200 ms for LiBCM to power-up and get to vSpoofVoltage in the firmware.
