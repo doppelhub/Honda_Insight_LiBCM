@@ -7,8 +7,8 @@
 	#define ENABLE_CURRENT_HACK true // true for +40% hack false for stock
 	#define CPU_MAP_MEGA2560
 
-	#define FW_VERSION "0.0.14"
-  	#define BUILD_DATE "2021AUG17"
+	#define FW_VERSION "0.0.15"
+  	#define BUILD_DATE "2021AUG18"
   	#define HW_REVB
 	
 	//Choose which I2C driver to use:

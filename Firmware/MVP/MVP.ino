@@ -41,7 +41,7 @@ void setup()
   pinMode(PIN_FANOEM_LOW,OUTPUT);
   pinMode(PIN_FANOEM_HI,OUTPUT);
   pinMode(PIN_GRID_EN,OUTPUT);
-  pinMode(PIN_VPIN_OUT_PWM,OUTPUT);
+  //pinMode(PIN_VPIN_OUT_PWM,OUTPUT);
 
   pinMode(PIN_HMI_EN,OUTPUT);
   digitalWrite(PIN_HMI_EN,HIGH); //turn on 4x20 display
