@@ -15,7 +15,7 @@
 
 	uint8_t BATTSCI_writeByte(uint8_t data);
 	
-	void BATTSCI_sendFrames(uint8_t stackVoltage, int16_t batteryCurrent_Amps);
+	void BATTSCI_sendFrames(uint8_t stackVoltage);
 
 	uint8_t BATTSCI_calculateChecksum( uint8_t frameSum );
 

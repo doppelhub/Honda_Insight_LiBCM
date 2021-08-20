@@ -59,7 +59,7 @@ uint8_t BATTSCI_writeByte(uint8_t data)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void BATTSCI_sendFrames(uint8_t stackVoltage, int16_t batteryCurrent_Amps)
+void BATTSCI_sendFrames(uint8_t stackVoltage)
 {
   static uint8_t frame2send = 0x87;
 
@@ -67,7 +67,7 @@ void BATTSCI_sendFrames(uint8_t stackVoltage, int16_t batteryCurrent_Amps)
   if( (BATTSCI_bytesAvailableForWrite() > BATTSCI_BYTES_IN_FRAME) && BATTSCI_state == RUNNING )
   {
     //Convert battery current (unit: amps) into BATTSCI format (unit: 50 mA per count)
-    int16_t batteryCurrent_toBATTSCI = 2048 - batteryCurrent_Amps*20;
+    int16_t batteryCurrent_toBATTSCI = 2048 - adc_batteryCurrent_Amps()*20;
 
     if(frame2send == 0x87)
     {
@@ -76,8 +76,11 @@ void BATTSCI_sendFrames(uint8_t stackVoltage, int16_t batteryCurrent_Amps)
       frameSum_87 += BATTSCI_writeByte( 0x87 );                                            //Never changes
       frameSum_87 += BATTSCI_writeByte( 0x40 );                                            //Never changes
       frameSum_87 += BATTSCI_writeByte( (stackVoltage >> 1) );                             //Half battery voltage (e.g. 0x40 = d64 = 128 V
-//      frameSum_87 += BATTSCI_writeByte( 0x16 );                                            //Battery SoC (upper byte)
-//      frameSum_87 += BATTSCI_writeByte( 0x20 );                                            //Battery SoC (lower byte)
+    //frameSum_87 += BATTSCI_writeByte( 0x16 );                                            //Battery SoC (upper byte)
+    //frameSum_87 += BATTSCI_writeByte( 0x20 );                                            //Battery SoC (lower byte)
+
+      //JTS2do: This should look at max/min cell voltage, not pack voltage
+      //JTS2do: Need to add hysteresis
       if (stackVoltage > 180) {                                                       // 180 = 3.75 volts per cell
         // No regen 80%
         frameSum_87 += BATTSCI_writeByte( 0x16 );                                        //Battery SoC (upper byte)
@@ -133,6 +136,7 @@ void BATTSCI_sendFrames(uint8_t stackVoltage, int16_t batteryCurrent_Amps)
       frame2send = 0x87;
     }
   }
+  delay(100); //JTS2do: Only send BATTSCI frames every 100 ms
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

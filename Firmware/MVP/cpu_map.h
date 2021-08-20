@@ -29,7 +29,7 @@
       #define PIN_VPIN_OUT_PWM 4
       #define PIN_SPI_EXT_CS 5
       #define PIN_TEMP_EN 6
-      #define PIN_CONNE_PWM 7
+      #define PIN_MCME_PWM 7
       #define PIN_GRID_PWM 8
       #define PIN_GRID_SENSE 9
       #define PIN_GRID_EN 10

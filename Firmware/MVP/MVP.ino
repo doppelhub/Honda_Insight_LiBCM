@@ -35,8 +35,8 @@ void setup()
 
   digitalWrite(PIN_LED1,HIGH); //CPU booted successfully
 
-  pinMode(PIN_CONNE_PWM,OUTPUT);
-  analogWrite(PIN_CONNE_PWM,0);
+  pinMode(PIN_MCME_PWM,OUTPUT);
+  analogWrite(PIN_MCME_PWM,0);
   pinMode(PIN_FAN_PWM,OUTPUT);
   pinMode(PIN_FANOEM_LOW,OUTPUT);
   pinMode(PIN_FANOEM_HI,OUTPUT);
@@ -84,6 +84,7 @@ void loop()
 	    digitalWrite(PIN_FANOEM_LOW,LOW);
 	    digitalWrite(PIN_I_SENSOR_EN,LOW); //disable current sensor & constant 5V load
 	    LTC6804_4x20displayOFF();
+	    vPackSpoof_handleKeyOFF();
 	  } else {
 	    Serial.print(F("ON"));
 	    BATTSCI_enable();
@@ -91,6 +92,7 @@ void loop()
 	    digitalWrite(PIN_FANOEM_LOW,HIGH);
 	    digitalWrite(PIN_I_SENSOR_EN,HIGH); //enable current sensor & constant 5V load
 	    LTC6804_4x20displayON();
+	    vPackSpoof_handleKeyON();
 	  }
 	}
 	keyStatus_previous = keyStatus_now;
@@ -132,48 +134,22 @@ void loop()
 
 	  //---------------------------------------------------------------------------------------
 
-	  //get 64x oversampled current sensor value
-	  uint16_t ADC_oversampledAccumulator = 0;
-	  for(int ii=0; ii<64; ii++)  //This takes ~112 us per run (7.2 ms total)
-	  {
-	    ADC_oversampledAccumulator += analogRead(PIN_BATTCURRENT);
-	  }
-
-	  int16_t ADC_oversampledResult = int16_t( (ADC_oversampledAccumulator >> 6) );
-	  //Serial.print(F("\nADC:"));
-	  //Serial.print( String(ADC_oversampledResult) );
-
-	  //convert current sensor result into approximate amperage for MCM & user-display
-	  //don't use this result for current accumulation... it's not accurate enough
-	  int16_t battCurrent_amps = ( (ADC_oversampledResult * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
-	  //Serial.print(F(", "));
-	  //Serial.print( String(battCurrent_amps) );
-	  //Serial.print(F(" A(raw), "));
-
-	  if (ENABLE_CURRENT_HACK) {battCurrent_amps = (int16_t)(battCurrent_amps * 0.7);} //140% current hack = tell MCM 70% actual
-	  //Serial.print( String(battCurrent_amps) );
-	  //Serial.print(F(" A(MCM)"));
-
-
-	  //---------------------------------------------------------------------------------------
-
 	  LTC6804_getCellVoltages(); //individual cell results stored in 'cell_codes' array
 
 	  //sum all 48 cells
-	  uint8_t stackVoltage = LTC6804_getStackVoltage();
-	  stackVoltage = (uint8_t)(stackVoltage*0.94);
+	  uint8_t packVoltage_actual  = LTC6804_getStackVoltage();
+	  uint8_t packVoltage_spoofed = (uint8_t)(packVoltage_actual*0.94);
 
 	  //---------------------------------------------------------------------------------------
 
 	  if( keyStatus_now ) //key is on
 	  {
 	    METSCI_processLatestFrame();
+	  //BATTSCI_sendFrames() is now called inside vPackSpoof_sendVoltage)
 
-	    vPackSpoof_updateVoltage(stackVoltage, battCurrent_amps);
-	 	//BATTSCI_sendFrames(stackVoltage, battCurrent_amps);
+	  	vPackSpoof_updateVoltage(packVoltage_spoofed, packVoltage_actual);
 	  }
 
-	  delay(100); //forcing buffers to overqueue to verify LiBCM responds correctly
 	} else {
 	  //key is off & grid charger unplugged
 	  static uint16_t toggleTimer = 0;

@@ -18,6 +18,7 @@
   #include "LTC68042.h"
   #include "battsci.h"
   #include "metsci.h"
+  #include "adc.h"
   #include "vPackSpoof.h"
 
   #ifdef I2C_LIQUID_CRYSTAL
