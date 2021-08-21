@@ -36,12 +36,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 uint8_t LTC_isDataValid=0;
 uint8_t isoSPI_errorCount = 0;
-uint16_t isoSPI_iterationCount = 0;
-uint8_t isoSPI_consecutiveErrors = 0;
-
-bool pauseScreenUpdates = false;
-bool maxMinForce = false;
-uint16_t splashIterationBegin = 0; //lcd2
 
 //conversion command variables.
 uint8_t ADCV[2]; //!< Cell Voltage conversion command.
@@ -49,15 +43,6 @@ uint8_t ADAX[2]; //!< GPIO conversion command.
 
 const uint8_t TOTAL_IC = 4;//!<number of ICs in the isoSPI network LTC6804-2 ICs must be addressed in ascending order starting at 0.
 const uint8_t FIRST_IC_ADDR = 2; //!<lowest address.  All additional ICs must be sequentially numbered.
-
-#ifdef I2C_LIQUID_CRYSTAL
-  #include "LiquidCrystal_I2C.h"
-  LiquidCrystal_I2C lcd2(0x27, 20, 4);
-#endif
-#ifdef I2C_TWI
-  #include "TwiLiquidCrystal.h"
-  TwiLiquidCrystal lcd2(0x27);
-#endif
 
 //Stores returned cell voltages
 //Note that cells & ICs are 1-indexed, whereas array is 0-indexed:
@@ -132,31 +117,24 @@ void LTC6804_startCellVoltageConversion()
 
 //---------------------------------------------------------------------------------------
 
-void LTC6804_getCellVoltages()
+void LTC6804_readCellVoltages()
 {
   wakeup_sleep();
-  uint8_t error = LTC6804_rdcv(0, TOTAL_IC,cell_codes,FIRST_IC_ADDR);
+  uint8_t error = LTC6804_rdcv(0, TOTAL_IC, cell_codes, FIRST_IC_ADDR);
   if (error != 0)
   {
    Serial.print(F("\nLTC data error\n"));
     LTC_isDataValid = 0;
-    LTC6804_isoSPI_errorCountIncrement();
-    isoSPI_consecutiveErrors++;
+    isoSPI_errorCount++;
+    lcd_printNumErrors(isoSPI_errorCount);
   } else {
     LTC_isDataValid = 1;
-    isoSPI_consecutiveErrors = 0;
   }
-  isoSPI_iterationCount++;
-  if (isoSPI_iterationCount == splashIterationBegin) {
-    pauseScreenUpdates = false;
-    lcd2.setCursor(0,0);
-    lcd2.print("                    ");
-    lcd2.setCursor(0,0);
-    maxMinForce = true;
-    printCellVoltage_max_min();
-    maxMinForce = false;
-  }
+  
+  lcd_incrementLoopCount();
+
   //printCellVoltage_all();
+
   printCellVoltage_max_min();
 }
 
@@ -175,30 +153,9 @@ uint8_t LTC6804_getStackVoltage()
     }
   }
 
-  uint8_t stackVoltage = uint8_t(stackVoltage_RAW * 0.0001);
-
-  uint8_t dispStackVoltage = (uint8_t)(stackVoltage*0.94);
-
-  Serial.print(F(", V(stack):"));
+  uint8_t stackVoltage = (uint8_t)(stackVoltage_RAW * 0.0001);
+  Serial.print(F(", Vpack:"));
   Serial.print( String(stackVoltage) );
-
-  if (pauseScreenUpdates) {
-    return stackVoltage;
-  }
-
-
-  //JTS2do: Split static text from numbers
-  lcd2.setCursor(7,2);
-  lcd2.print(", VpackM:");
-  lcd2.print( dispStackVoltage );
-
-  //JTS2do: Only update lcd if numbers have changed (i.e. move to LTC6804_isoSPI_errorCountIncrement() )
-  lcd2.setCursor(0,3);
-  lcd2.print("err:");
-  lcd2.print( isoSPI_errorCount );
-  lcd2.print(" ");
-  lcd2.print(isoSPI_iterationCount);
-  lcd2.print("   ");
 
   return stackVoltage;
 }
@@ -226,94 +183,64 @@ void printCellVoltage_all()
 
 //---------------------------------------------------------------------------------------
 
-
-void printRecordVoltage_to_LCD(uint16_t voltage, bool max) {
-  if (pauseScreenUpdates) {
-    return; //JTS2do: don't return mid-function
-  }
-
-  //JTS2do: Split static text from numbers
-  if (max) { // true for max false for min
-    lcd2.print(" (max:");
-  } else {
-    lcd2.print(" (min:");}
-  lcd2.print( (voltage * 0.0001) , 3);
-  lcd2.print(")");
-}
-
-void printMaxMinVoltage_to_LCD(uint16_t voltage, bool max) {
-  if (pauseScreenUpdates) {
-    return;
-  }
-  //JTS2do: Split static text from numbers
-  if (max) {
-    lcd2.setCursor(0,0);
-    lcd2.print("hi:");
-  } else {
-    lcd2.setCursor(0,1);
-    lcd2.print("lo:");
-  }
-  lcd2.print( (voltage * 0.0001), 3 );
-  // lcd2.print("            ");
-}
-
-
 //This function is way overloaded.
 void printCellVoltage_max_min()
 {
-  uint16_t minCellVoltage = 65535;
-  uint16_t maxCellVoltage = 0;
-  for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
-  {
-    for (int i=0; i<12; i++)
-    {
-      if( cell_codes[current_ic][i] < minCellVoltage )
-      {
-        minCellVoltage = cell_codes[current_ic][i];
-      }
-      if( cell_codes[current_ic][i] > maxCellVoltage )
-      {
-        maxCellVoltage = cell_codes[current_ic][i];
-      }
-    }
-  }
-  Serial.print(F(", Vmax:"));
-  Serial.print( (maxCellVoltage * 0.0001), 4 );
-  Serial.print(F(", Vmin:"));
-  Serial.print( (minCellVoltage * 0.0001), 4 );
+  uint16_t lowCellVoltage = 65535;
+  uint16_t highCellVoltage = 0;
+
   if( LTC_isDataValid )
   {
-    static uint16_t highestCellVoltage = 0;
-    printMaxMinVoltage_to_LCD(maxCellVoltage, true);
-    if( maxCellVoltage > highestCellVoltage )
+    //JTS2do: find high/low while retrieving data from LTC6804
+    //find high/low voltage
+    for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
     {
-      highestCellVoltage = maxCellVoltage;
-      printRecordVoltage_to_LCD(highestCellVoltage, true);
-    } else if (maxMinForce) {
-      printRecordVoltage_to_LCD(highestCellVoltage, true);
+      for (int i=0; i<12; i++)
+      {
+        if( cell_codes[current_ic][i] < lowCellVoltage )
+        {
+          lowCellVoltage = cell_codes[current_ic][i];
+        }
+        if( cell_codes[current_ic][i] > highCellVoltage )
+        {
+          highCellVoltage = cell_codes[current_ic][i];
+        }
+      }
     }
 
-    static uint16_t lowestCellVoltage = 65535;
-    printMaxMinVoltage_to_LCD(minCellVoltage, false);
-    if( minCellVoltage < lowestCellVoltage )
+    lcd_printCellVoltage_hiLoDelta(highCellVoltage, lowCellVoltage);
+
+    Serial.print(F(", hi:"));
+    Serial.print( (highCellVoltage * 0.0001), 4 );
+    Serial.print(F(", lo:"));
+    Serial.print( (lowCellVoltage * 0.0001), 4 );
+    
+    //////////////////////////////////////////////////////////////////////////////////
+
+    //JTS2do: These aren't displayed after key turns on 2nd time (unless exceeded)
+    static uint16_t maxEverCellVoltage = 0;
+    static uint16_t minEverCellVoltage = 65535;    
+
+    if( highCellVoltage > maxEverCellVoltage )
     {
-      lowestCellVoltage = minCellVoltage;
-      printRecordVoltage_to_LCD(lowestCellVoltage, false);
-    } else if (maxMinForce) {
-      printRecordVoltage_to_LCD(lowestCellVoltage, false);
+      maxEverCellVoltage = highCellVoltage;
+      lcd_printMaxEverVoltage(maxEverCellVoltage);
     }
 
-    if (pauseScreenUpdates == false) {
-      lcd2.setCursor(0,2);
-      lcd2.print("d:");
-      lcd2.print( ((maxCellVoltage - minCellVoltage) * 0.0001), 3 );
+    if( lowCellVoltage < minEverCellVoltage )
+    {
+      minEverCellVoltage = lowCellVoltage;
+      lcd_printMinEverVoltage(minEverCellVoltage);
     }
   }
 
+  //////////////////////////////////////////////////////////////////////////////////
+
+  //JTS2do: make this its own function
   //grid charger handling
-  if( (maxCellVoltage <= 39000) && !(digitalRead(PIN_GRID_SENSE)) ) //Battery not full and grid charger is plugged in
+  if( (highCellVoltage <= 39000) && !(digitalRead(PIN_GRID_SENSE)) ) //Battery not full and grid charger is plugged in
   {
-    if( maxCellVoltage <= 38950) //hysteresis to prevent rapid cycling
+    if( highCellVoltage <= 38950) //hysteresis to prevent rapid cycling
     {
       digitalWrite(PIN_GRID_EN,1); //enable grid charger
       analogWrite(PIN_FAN_PWM,125); //enable fan
@@ -1010,9 +937,7 @@ void spi_write_array(uint8_t len, // Option: Number of bytes to be written on th
 @param[in] uint8_t tx_len length of the tx_data array
 @param[out] uint8_t rx_data array that read data will be written too.
 @param[in] uint8_t rx_len number of bytes to be read from the SPI port.
-
 */
-
 void spi_write_read(uint8_t tx_Data[],//array of data to be written on SPI port
                     uint8_t tx_len, //length of the tx data arry
                     uint8_t *rx_data,//Input: array that will store the data read by the SPI port
@@ -1022,65 +947,17 @@ void spi_write_read(uint8_t tx_Data[],//array of data to be written on SPI port
   for (uint8_t i = 0; i < tx_len; i++)
   {
     spi_write(tx_Data[i]);
-
   }
 
   for (uint8_t i = 0; i < rx_len; i++)
   {
     rx_data[i] = (uint8_t)spi_read(0xFF);
   }
-
 }
 
 //---------------------------------------------------------------------------------------
-
 
 void LTC6804_isoSPI_errorCountReset(void)
 {
   isoSPI_errorCount = 0;
-  isoSPI_consecutiveErrors = 0;
-  lcd2.setCursor(7,3); //move to "error:     "
-  lcd2.print("             "); //clear counter
-}
-
-//---------------------------------------------------------------------------------------
-
-void LTC6804_isoSPI_errorCountIncrement(void)
-{
-  isoSPI_errorCount++;
-}
-
-//---------------------------------------------------------------------------------------
-
-void displaySplash(void)
-{
-  splashIterationBegin = isoSPI_iterationCount + 10;
-  pauseScreenUpdates = true;
-  lcd2.setCursor(0,0);
-  lcd2.print("LiBCM v" + String(FW_VERSION) );
-  lcd2.setCursor(0,1);
-  lcd2.print("                    ");
-  lcd2.setCursor(0,2);
-  lcd2.print("                    ");
-  lcd2.setCursor(0,3);
-  lcd2.print("                    ");
-  lcd2.setCursor(0,0);
-}
-
-//---------------------------------------------------------------------------------------
-
-void LTC6804_4x20displayON(void)
-{
-  lcd2.backlight();
-  lcd2.display();
-  displaySplash();
-}
-
-//---------------------------------------------------------------------------------------
-
-void LTC6804_4x20displayOFF(void)
-{
-  LTC6804_isoSPI_errorCountReset();
-  lcd2.noBacklight();
-  lcd2.noDisplay();
 }

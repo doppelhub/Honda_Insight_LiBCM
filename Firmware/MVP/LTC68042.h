@@ -162,13 +162,11 @@ void generate_crc15_table()
 
 void LTC6804_startCellVoltageConversion();
 
-void LTC6804_getCellVoltages();
+void LTC6804_readCellVoltages();
 
 uint8_t LTC6804_getStackVoltage();
 
 void printCellVoltage_all();
-
-void printCellVoltage_max_min();
 
 void LTC6804_initialize();
 
@@ -206,8 +204,4 @@ void spi_write_read(uint8_t *TxData, uint8_t TXlen, uint8_t *rx_data, uint8_t RX
 
 void LTC6804_isoSPI_errorCountReset(void);
 
-void LTC6804_isoSPI_errorCountIncrement(void);
-
-void LTC6804_4x20displayOFF(void);
-
-void LTC6804_4x20displayON(void);
+void printCellVoltage_max_min(void);

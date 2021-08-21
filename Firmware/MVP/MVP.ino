@@ -72,7 +72,7 @@ void setup()
 void loop()
 {
 	uint8_t keyStatus_now = digitalRead(PIN_KEY_ON);  //Get key position // executes in ~t=10 microseconds
-	static uint8_t keyStatus_previous = 0;
+	static uint8_t keyStatus_previous = 0; //JTS2do: should this = 1?
 
 	//---------------------------------------------------------------------------------------
 	//This section executes in t=  5 microseconds when key state has NOT changed
@@ -92,7 +92,7 @@ void loop()
 	    METSCI_disable();
 	    digitalWrite(PIN_FANOEM_LOW,LOW);
 	    digitalWrite(PIN_I_SENSOR_EN,LOW); //disable current sensor & constant 5V load
-	    LTC6804_4x20displayOFF();
+	  	lcd_displayOFF();
 	    vPackSpoof_handleKeyOFF();
 	  } else { //takes t=?? milliseconds to execute
 	    Serial.print(F("ON"));
@@ -100,7 +100,7 @@ void loop()
 	    METSCI_enable();
 	    digitalWrite(PIN_FANOEM_LOW,HIGH);
 	    digitalWrite(PIN_I_SENSOR_EN,HIGH); //enable current sensor & constant 5V load
-	    LTC6804_4x20displayON();
+	    lcd_displayON();
 	    vPackSpoof_handleKeyON();
 	  }
 
@@ -125,11 +125,11 @@ void loop()
 	    analogWrite(PIN_FAN_PWM,0);     //turn onboard fans off
 	    digitalWrite(PIN_GRID_EN,0);    //turn grid charger off
 	    Serial.print("\nGrid Charger Disabled");
-	    LTC6804_4x20displayOFF();
+	    lcd_displayOFF();
 
 	  } else {                          //grid charger was just plugged in
 	    Serial.print(F("Plugged In"));
-	    LTC6804_4x20displayON();
+	    lcd_displayON();
 	  }
 	}
 	gridChargerPowered_previous = gridChargerPowered_now;
@@ -146,7 +146,7 @@ void loop()
 
 	  //---------------------------------------------------------------------------------------
   
-	  LTC6804_getCellVoltages();	//individual cell results stored in 'cell_codes' array
+	  LTC6804_readCellVoltages();	//individual cell results stored in 'cell_codes' array
 	  														//executes in t=56 millisconds 
 	  
 	  //---------------------------------------------------------------------------------------
@@ -163,7 +163,7 @@ void loop()
 	    //executes in ~t=5 microseconds when MCM is NOT sending data to LiBCM
 	    //executes in  t=? microseconds when MCM is     sending data to LiBCM
 	    
-	  	vPackSpoof_updateVoltage(packVoltage_spoofed, packVoltage_actual);
+	  	vPackSpoof_updateVoltage(packVoltage_actual, packVoltage_spoofed);
 	  	//executes in t= 145 microseconds while IGBT caps are charging
 	  	//executes in t= 9.6 milliseconds after IGBT caps are charged 
 	  }

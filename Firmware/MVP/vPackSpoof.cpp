@@ -74,6 +74,10 @@ void vPackSpoof_updateVoltage(uint8_t actualPackVoltage, uint8_t voltageToSpoof)
 
 		//spoof BATTSCI voltage		
 		BATTSCI_sendFrames(voltageToSpoof);
+
+		lcd_printStackVoltage_spoofed(voltageToSpoof);
+		lcd_printStackVoltage_actual(actualPackVoltage);
+
 	}
 }
 
