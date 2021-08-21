@@ -21,6 +21,7 @@ void spoofVoltageMCMe(uint8_t desiredSpoofedVoltage, uint8_t actualPackVoltage)
 	        //pwmCounts_MCME = (              actualPackVoltage  * 256) / desiredSpoofedVoltage    * 2   - 551 //prevent 16b overflow
 	        //pwmCounts_MCME = (    (int16_t)(actualPackVoltage) * 256) / desiredSpoofedVoltage    * 2   - 551 
 	  uint8_t pwmCounts_MCME = ( ( ((int16_t)(actualPackVoltage) << 8 ) / desiredSpoofedVoltage ) << 2 ) - 551;
+	  //JTS2do: Add bounds checking on the output (e.g. 0:255)
 
 	  analogWrite(PIN_MCME_PWM, pwmCounts_MCME);
 }
@@ -59,7 +60,7 @@ void vPackSpoof_updateVoltage(uint8_t actualPackVoltage, uint8_t voltageToSpoof)
 	}
 
 	//don't combine with above
-	if(igbtCapsCharged == 1) //true for remainder of keyON (until key turned off)
+	if(igbtCapsCharged == 1) //true for remainder of keyON (until key turned off) //executes in ~t=9.5 milliseconds
 	{	//PDU capacitors are now fully charged
 		//HVDC relay is connected
 		//actual VPIN_IN voltage no longer matters; LiBCM spoofs VPIN_OUT
@@ -68,13 +69,12 @@ void vPackSpoof_updateVoltage(uint8_t actualPackVoltage, uint8_t voltageToSpoof)
 		analogWrite(PIN_VPIN_OUT_PWM, voltageToSpoof);	//analogWrite automatically connects PWM timer output to VPIN_OUT
 							    						//Derivation: Vpack (volts) ~= 0:5v PWM 8b value (counts)
 							     						//Example: when pack voltage is 184 volts, send analogWrite(VPIN_OUT, 184)
-	}
-
 		//spoof MCM E connector voltage
 		spoofVoltageMCMe(voltageToSpoof, actualPackVoltage);
 
 		//spoof BATTSCI voltage		
 		BATTSCI_sendFrames(voltageToSpoof);
+	}
 }
 
 //---------------------------------------------------------------------------------------

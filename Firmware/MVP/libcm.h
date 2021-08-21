@@ -20,12 +20,6 @@
   #include "metsci.h"
   #include "adc.h"
   #include "vPackSpoof.h"
-
-  #ifdef I2C_LIQUID_CRYSTAL
-    #include "LiquidCrystal_I2C.h"
-  #endif
-  #ifdef I2C_TWI
-    #include "TwiLiquidCrystal.h"
-  #endif
+  #include "lcd.h"
 
 #endif

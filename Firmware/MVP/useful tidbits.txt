@@ -30,3 +30,5 @@ uint8_t bytesSentFromUser = Serial.available();
 			}
 		}
 */
+
+//Each digitalWrite() call takes t=5:10 us to execute (~100 kCalls/s)

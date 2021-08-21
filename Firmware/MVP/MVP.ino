@@ -33,7 +33,7 @@ void setup()
   pinMode(PIN_LED3,OUTPUT);
   pinMode(PIN_LED4,OUTPUT);
 
-  digitalWrite(PIN_LED1,HIGH); //CPU booted successfully
+  //temp digitalWrite(PIN_LED1,HIGH); //CPU booted successfully
 
   pinMode(PIN_MCME_PWM,OUTPUT);
   analogWrite(PIN_MCME_PWM,0);
@@ -47,17 +47,21 @@ void setup()
 
   analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
-  if( digitalRead(PIN_KEY_ON) ){ digitalWrite(PIN_LED3,HIGH); } //if the key is on when LiBCM starts up, turn LED3 on
+  //JTS2do: if key is on when Arduino starts (e.g. first keyON after turning pack switch on), jump right into VPIN spoofing.
+  //temp if( digitalRead(PIN_KEY_ON) ){ digitalWrite(PIN_LED3,HIGH); } //if the key is on when LiBCM starts up, turn LED3 on
+
 
   Serial.begin(115200); //USB
 
   METSCI_begin();
   BATTSCI_begin();
 
+  lcd_initialize();
+
   LTC6804_initialize();
 
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
-  TCCR0B = (TCCR0B & B11111000) | B00000001; // JTSdebug: for PWM frequency of 62500 Hz D04 & D13. This hoses delay()!
+  //TCCR0B = (TCCR0B & B11111000) | B00000001; // JTSdebug: for PWM frequency of 62500 Hz D04 & D13. This hoses delay()!
 
   Serial.print(F("\n\nWelcome to LiBCM v"));
   Serial.print(String(FW_VERSION));
@@ -67,17 +71,22 @@ void setup()
 
 void loop()
 {
-	uint8_t keyStatus_now = digitalRead(PIN_KEY_ON);  //Get key position
-	static uint8_t keyStatus_previous;
+	uint8_t keyStatus_now = digitalRead(PIN_KEY_ON);  //Get key position // executes in ~t=10 microseconds
+	static uint8_t keyStatus_previous = 0;
+
+	//---------------------------------------------------------------------------------------
+	//This section executes in t=  5 microseconds when key state has NOT changed
+	//This section executes in t= ?? milliseconds when key state has     changed to ON
+	//This section executes in t= ?? milliseconds when key state has     changed to OFF
 
 	//steps to perform when key state changes (on->off, off->on)
 	if( keyStatus_now != keyStatus_previous)
 	{
-	  Serial.print(F("\nKey is: "));
-	  LTC6804_isoSPI_errorCountReset();
 
+	  Serial.print(F("\nKey:")); //takes t=?? microseconds to execute
+	  
 	  if( keyStatus_now == 0 )
-	  {
+	  { //takes t=?? milliseconds to execute
 	    Serial.print(F("OFF"));
 	    BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
 	    METSCI_disable();
@@ -85,7 +94,7 @@ void loop()
 	    digitalWrite(PIN_I_SENSOR_EN,LOW); //disable current sensor & constant 5V load
 	    LTC6804_4x20displayOFF();
 	    vPackSpoof_handleKeyOFF();
-	  } else {
+	  } else { //takes t=?? milliseconds to execute
 	    Serial.print(F("ON"));
 	    BATTSCI_enable();
 	    METSCI_enable();
@@ -94,11 +103,14 @@ void loop()
 	    LTC6804_4x20displayON();
 	    vPackSpoof_handleKeyON();
 	  }
+
+	  keyStatus_previous = keyStatus_now;
 	}
-	keyStatus_previous = keyStatus_now;
 
 	//---------------------------------------------------------------------------------------
+	//This section executes in t=8 microseconds when grid charger state has NOT changed
 
+	//JTS2do: if key is on, don't run this code (make sure to turn charger off in keyON handler)
 	//Determine whether grid charger is plugged in
 	uint8_t gridChargerPowered_now = !(digitalRead(PIN_GRID_SENSE));
 	static uint8_t gridChargerPowered_previous;
@@ -126,17 +138,20 @@ void loop()
 
 	if( (keyStatus_now == 1) || (gridChargerPowered_now == 1) ) //key is on or grid charger plugged in
 	{
-	  digitalWrite(PIN_LED4,HIGH);
+	  //temp digitalWrite(PIN_LED4,HIGH);
 
-	  LTC6804_startCellVoltageConversion();
+	  LTC6804_startCellVoltageConversion();  //executes in ~t=230 microseconds
 	  //We don't immediately read the results afterwards because it takes a second to digitize
 	  //In Coop Task setting we'll need to invoke reading n microseconds after this function is called
 
 	  //---------------------------------------------------------------------------------------
+  
+	  LTC6804_getCellVoltages();	//individual cell results stored in 'cell_codes' array
+	  														//executes in t=56 millisconds 
+	  
+	  //---------------------------------------------------------------------------------------
+	  //This section executes in t=53 milliseconds
 
-	  LTC6804_getCellVoltages(); //individual cell results stored in 'cell_codes' array
-
-	  //sum all 48 cells
 	  uint8_t packVoltage_actual  = LTC6804_getStackVoltage();
 	  uint8_t packVoltage_spoofed = (uint8_t)(packVoltage_actual*0.94);
 
@@ -145,19 +160,23 @@ void loop()
 	  if( keyStatus_now ) //key is on
 	  {
 	    METSCI_processLatestFrame();
-	  //BATTSCI_sendFrames() is now called inside vPackSpoof_sendVoltage)
-
+	    //executes in ~t=5 microseconds when MCM is NOT sending data to LiBCM
+	    //executes in  t=? microseconds when MCM is     sending data to LiBCM
+	    
 	  	vPackSpoof_updateVoltage(packVoltage_spoofed, packVoltage_actual);
+	  	//executes in t= 145 microseconds while IGBT caps are charging
+	  	//executes in t= 9.6 milliseconds after IGBT caps are charged 
 	  }
+	  //---------------------------------------------------------------------------------------
 
 	} else {
 	  //key is off & grid charger unplugged
 	  static uint16_t toggleTimer = 0;
 	  if( ++toggleTimer >= 10000 )
 	  {
-	    digitalWrite(PIN_LED4, !digitalRead(PIN_LED4)); //Toggle LED4 (heartbeat)
+	    //temp digitalWrite(PIN_LED4, !digitalRead(PIN_LED4)); //Toggle
 	    toggleTimer=0;
 	  }
 	}
-	digitalWrite(PIN_LED2, !digitalRead(PIN_LED2)); //Toggle LED2 (heartbeat)
+	//temp digitalWrite(PIN_LED2, !digitalRead(PIN_LED2)); //Toggle
 }

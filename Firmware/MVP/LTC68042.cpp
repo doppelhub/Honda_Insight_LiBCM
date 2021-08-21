@@ -38,18 +38,10 @@ uint8_t LTC_isDataValid=0;
 uint8_t isoSPI_errorCount = 0;
 uint16_t isoSPI_iterationCount = 0;
 uint8_t isoSPI_consecutiveErrors = 0;
-uint8_t isoSPI_consecutiveErrors_Peak = 0;
 
 bool pauseScreenUpdates = false;
 bool maxMinForce = false;
-uint16_t splashIterationBegin = 0;
-
-#ifdef I2C_LIQUID_CRYSTAL
-  LiquidCrystal_I2C lcd2(0x27, 20, 4);
-#endif
-#ifdef I2C_TWI
-  TwiLiquidCrystal lcd2(0x27);
-#endif
+uint16_t splashIterationBegin = 0; //lcd2
 
 //conversion command variables.
 uint8_t ADCV[2]; //!< Cell Voltage conversion command.
@@ -57,6 +49,15 @@ uint8_t ADAX[2]; //!< GPIO conversion command.
 
 const uint8_t TOTAL_IC = 4;//!<number of ICs in the isoSPI network LTC6804-2 ICs must be addressed in ascending order starting at 0.
 const uint8_t FIRST_IC_ADDR = 2; //!<lowest address.  All additional ICs must be sequentially numbered.
+
+#ifdef I2C_LIQUID_CRYSTAL
+  #include "LiquidCrystal_I2C.h"
+  LiquidCrystal_I2C lcd2(0x27, 20, 4);
+#endif
+#ifdef I2C_TWI
+  #include "TwiLiquidCrystal.h"
+  TwiLiquidCrystal lcd2(0x27);
+#endif
 
 //Stores returned cell voltages
 //Note that cells & ICs are 1-indexed, whereas array is 0-indexed:
@@ -114,14 +115,7 @@ void LTC6804_init_cfg()
 
 void LTC6804_initialize()
 {
-  #ifdef I2C_LIQUID_CRYSTAL
-    lcd2.begin();
-  #endif
-  #ifdef I2C_TWI
-    lcd2.begin(20,4);
-  #endif
-
-  LTC6804_isoSPI_errorCountReset();
+  //LTC6804_isoSPI_errorCountReset();
   spi_enable(SPI_CLOCK_DIV64);
   set_adc(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL,AUX_CH_GPIO1);
   LTC6804_init_cfg();        //initialize the 6804 configuration array to be written
@@ -148,10 +142,6 @@ void LTC6804_getCellVoltages()
     LTC_isDataValid = 0;
     LTC6804_isoSPI_errorCountIncrement();
     isoSPI_consecutiveErrors++;
-    if (isoSPI_consecutiveErrors > isoSPI_consecutiveErrors_Peak)
-    {
-      isoSPI_consecutiveErrors_Peak = isoSPI_consecutiveErrors;
-    }
   } else {
     LTC_isDataValid = 1;
     isoSPI_consecutiveErrors = 0;
@@ -172,6 +162,7 @@ void LTC6804_getCellVoltages()
 
 //---------------------------------------------------------------------------------------
 
+//JTS2do: Roll this into readCells() function; this fcn should just recall last summed value
 uint8_t LTC6804_getStackVoltage()
 {
   uint32_t stackVoltage_RAW = 0; //Multiply by 0.0001 for volts
@@ -195,15 +186,17 @@ uint8_t LTC6804_getStackVoltage()
     return stackVoltage;
   }
 
+
+  //JTS2do: Split static text from numbers
   lcd2.setCursor(7,2);
   lcd2.print(", VpackM:");
   lcd2.print( dispStackVoltage );
+
+  //JTS2do: Only update lcd if numbers have changed (i.e. move to LTC6804_isoSPI_errorCountIncrement() )
   lcd2.setCursor(0,3);
   lcd2.print("err:");
   lcd2.print( isoSPI_errorCount );
-  lcd2.print("(");
-  lcd2.print( isoSPI_consecutiveErrors_Peak );
-  lcd2.print(") ");
+  lcd2.print(" ");
   lcd2.print(isoSPI_iterationCount);
   lcd2.print("   ");
 
@@ -236,11 +229,14 @@ void printCellVoltage_all()
 
 void printRecordVoltage_to_LCD(uint16_t voltage, bool max) {
   if (pauseScreenUpdates) {
-    return;
+    return; //JTS2do: don't return mid-function
   }
+
+  //JTS2do: Split static text from numbers
   if (max) { // true for max false for min
     lcd2.print(" (max:");
-  } else lcd2.print(" (min:");
+  } else {
+    lcd2.print(" (min:");}
   lcd2.print( (voltage * 0.0001) , 3);
   lcd2.print(")");
 }
@@ -249,6 +245,7 @@ void printMaxMinVoltage_to_LCD(uint16_t voltage, bool max) {
   if (pauseScreenUpdates) {
     return;
   }
+  //JTS2do: Split static text from numbers
   if (max) {
     lcd2.setCursor(0,0);
     lcd2.print("hi:");
@@ -1041,7 +1038,6 @@ void spi_write_read(uint8_t tx_Data[],//array of data to be written on SPI port
 void LTC6804_isoSPI_errorCountReset(void)
 {
   isoSPI_errorCount = 0;
-  isoSPI_consecutiveErrors_Peak = 0;
   isoSPI_consecutiveErrors = 0;
   lcd2.setCursor(7,3); //move to "error:     "
   lcd2.print("             "); //clear counter
@@ -1052,14 +1048,6 @@ void LTC6804_isoSPI_errorCountReset(void)
 void LTC6804_isoSPI_errorCountIncrement(void)
 {
   isoSPI_errorCount++;
-}
-
-//---------------------------------------------------------------------------------------
-
-void LTC6804_4x20displayOFF(void)
-{
-  lcd2.noBacklight();
-  lcd2.noDisplay();
 }
 
 //---------------------------------------------------------------------------------------
@@ -1079,12 +1067,20 @@ void displaySplash(void)
   lcd2.setCursor(0,0);
 }
 
+//---------------------------------------------------------------------------------------
+
 void LTC6804_4x20displayON(void)
 {
   lcd2.backlight();
-  LTC6804_isoSPI_errorCountReset();
   lcd2.display();
   displaySplash();
 }
 
 //---------------------------------------------------------------------------------------
+
+void LTC6804_4x20displayOFF(void)
+{
+  LTC6804_isoSPI_errorCountReset();
+  lcd2.noBacklight();
+  lcd2.noDisplay();
+}

@@ -14,8 +14,8 @@
 	//Choose which I2C driver to use:
 	#define I2C_LIQUID_CRYSTAL //use LiquidCrystal_I2C library for 4x20
 	//#define I2C_TWI //use TwiLiquidCrystal library for 4x20
-	//In my testing, both libraries cause "P1648 hang" if SDA is manually pulled to GND.
-	//This is a low-level Arduino Wire bug (i.e. while loop waiting for SDA to return high).
-	//Workaround: pull SDA/CLK to VCC with 10k, which reduces aggressor noise onto serial bus.
+		//In my testing, both libraries cause "P1648 hang" if SDA is manually pulled to GND.
+		//This is a low-level Arduino Wire bug (i.e. while loop waiting for SDA to return high).
+		//Workaround: pull SDA/CLK to VCC with 10k, which reduces aggressor noise onto serial bus.
 
 #endif

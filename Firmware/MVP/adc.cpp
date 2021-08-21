@@ -1,7 +1,6 @@
 //handles all ADC calls
 //JTS2do: Remove Arduino functions
 //JTS2do: use interrupts, so ADC calls don't block execution (each conversion takes ~112 us)
-//JTS2do: Bring all analogRead functions into this file
 
 #include "libcm.h"
 
