@@ -11,6 +11,9 @@
 
 uint8_t BATTSCI_state = STOPPED;
 
+uint8_t packVoltageToSend = 0;
+int16_t packCurrentToSend = 0; //JTS2do spoofed pack current can probably be int8_t (+127 A)
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void BATTSCI_begin()
@@ -58,8 +61,22 @@ uint8_t BATTSCI_writeByte(uint8_t data)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void BATTSCI_setPackVoltage(uint8_t packVoltage)
+{
+  packVoltageToSend = packVoltage;
+}
 
-void BATTSCI_sendFrames(uint8_t stackVoltage)
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void BATTSCI_setPackCurrent(int16_t packCurrent) //JTS2do spoofed pack current can probably be int8_t (+127 A)
+{
+  packCurrentToSend = packCurrent;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void BATTSCI_sendFrames()
 {
   static uint8_t frame2send = 0x87;
 
@@ -67,7 +84,7 @@ void BATTSCI_sendFrames(uint8_t stackVoltage)
   if( (BATTSCI_bytesAvailableForWrite() > BATTSCI_BYTES_IN_FRAME) && BATTSCI_state == RUNNING )
   {
     //Convert battery current (unit: amps) into BATTSCI format (unit: 50 mA per count)
-    int16_t batteryCurrent_toBATTSCI = 2048 - adc_batteryCurrent_Amps()*20;
+    int16_t batteryCurrent_toBATTSCI = 2048 - packCurrentToSend*20;
 
     if(frame2send == 0x87)
     {
@@ -75,25 +92,25 @@ void BATTSCI_sendFrames(uint8_t stackVoltage)
       uint8_t frameSum_87 = 0; //this will overflow, which is ok for CRC
       frameSum_87 += BATTSCI_writeByte( 0x87 );                                            //Never changes
       frameSum_87 += BATTSCI_writeByte( 0x40 );                                            //Never changes
-      frameSum_87 += BATTSCI_writeByte( (stackVoltage >> 1) );                             //Half battery voltage (e.g. 0x40 = d64 = 128 V
+      frameSum_87 += BATTSCI_writeByte( (packVoltageToSend >> 1) );                        //Half battery voltage (e.g. 0x40 = d64 = 128 V
     //frameSum_87 += BATTSCI_writeByte( 0x16 );                                            //Battery SoC (upper byte)
     //frameSum_87 += BATTSCI_writeByte( 0x20 );                                            //Battery SoC (lower byte)
 
       //JTS2do: This should look at max/min cell voltage, not pack voltage
       //JTS2do: Need to add hysteresis
-      if (stackVoltage > 180) {                                                       // 180 = 3.75 volts per cell
+      if (packVoltageToSend > 180) {                                                     // 180 = 3.75 volts per cell
         // No regen 80%
         frameSum_87 += BATTSCI_writeByte( 0x16 );                                        //Battery SoC (upper byte)
         frameSum_87 += BATTSCI_writeByte( 0x20 );                                        //Battery SoC (lower byte)
-      } else if (stackVoltage > 160) {                                                // 160 = 3.33 volts per cell
+      } else if (packVoltageToSend > 160) {                                              // 160 = 3.33 volts per cell
         // Regen and Assist but no BG Regen 75.1%
         frameSum_87 += BATTSCI_writeByte( 0x15 );                                        //Battery SoC (upper byte)
         frameSum_87 += BATTSCI_writeByte( 0x6F );                                        //Battery SoC (lower byte)
-      } else if (stackVoltage >= 150) {                                               // 150 = 3.125 volts per cell
+      } else if (packVoltageToSend >= 150) {                                             // 150 = 3.125 volts per cell
         // Regen and Assist with BG Regen 60%
         frameSum_87 += BATTSCI_writeByte( 0x14 );                                        //Battery SoC (upper byte)
         frameSum_87 += BATTSCI_writeByte( 0x58 );                                        //Battery SoC (lower byte)
-      } else if (stackVoltage >= 144) {                                               // 144 = 3.00 volts per cell
+      } else if (packVoltageToSend >= 144) {                                             // 144 = 3.00 volts per cell
         // Regen and Assist with BG Regen 40%
         frameSum_87 += BATTSCI_writeByte( 0x13 );                                        //Battery SoC (upper byte)
         frameSum_87 += BATTSCI_writeByte( 0x10 );                                        //Battery SoC (lower byte)

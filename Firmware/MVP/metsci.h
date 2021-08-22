@@ -5,9 +5,6 @@
   #define RUNNING 1
   #define STOPPED 0
 
-
-
-
   void METSCI_begin();
 
   void METSCI_enable();

@@ -163,9 +163,26 @@ void loop()
 	    //executes in ~t=5 microseconds when MCM is NOT sending data to LiBCM
 	    //executes in  t=? microseconds when MCM is     sending data to LiBCM
 	    
+	    int16_t packCurrent_actual = adc_batteryCurrent_Amps();
+	    int16_t packCurrent_spoofed;
+
+			if( ENABLE_CURRENT_HACK )
+			{
+				packCurrent_spoofed = (int16_t)(packCurrent_actual * 0.7); //140% current hack = tell MCM 70% actual
+				Serial.print( String(packCurrent_spoofed) );
+				Serial.print(F(" A(MCM)"));
+			} else {
+				packCurrent_spoofed = packCurrent_actual;
+			}
+
+	    BATTSCI_setPackCurrent(packCurrent_spoofed);
+    	
+    	lcd_printPower(packVoltage_actual, packCurrent_actual);
+
 	  	vPackSpoof_updateVoltage(packVoltage_actual, packVoltage_spoofed);
-	  	//executes in t= 145 microseconds while IGBT caps are charging
-	  	//executes in t= 9.6 milliseconds after IGBT caps are charged 
+
+	  	BATTSCI_sendFrames();
+
 	  }
 	  //---------------------------------------------------------------------------------------
 

@@ -33,4 +33,6 @@
 
 	void lcd_printNumErrors(uint8_t errorCount);
 
+	void lcd_printPower(uint8_t packVoltage, int16_t packAmps);
+
 #endif

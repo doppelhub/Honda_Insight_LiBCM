@@ -19,7 +19,7 @@ int16_t adc_batteryCurrent_Amps(void)
 	uint16_t ADC_oversampledAccumulator = 0;
 
 	//JTS2do: Remove if() statement after code only gets one ADC result per call
-	if( vPackSpoof_isVpinSpoofed() == true )
+	if( vPackSpoof_isVpinSpoofed() == true ) //JTS2do: is this set anywhere?
 	{
 		//JTS2do: Convert to rolling average (only get one ADC value per run).
 		for(int ii=0; ii<64; ii++)  //takes 7.2 ms to get QTY64 conversions
@@ -34,17 +34,10 @@ int16_t adc_batteryCurrent_Amps(void)
 		//convert current sensor result into approximate amperage for MCM & user-display
 		//don't use this result for current accumulation... it's not accurate enough (FYI: SoC accumulates raw ADC result)
 		battCurrent_amps = ( (ADC_oversampledResult * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
+
 		Serial.print(F(", "));
 		Serial.print( String(battCurrent_amps) );
 		Serial.print(F(" A(raw), "));
-
-		if( ENABLE_CURRENT_HACK )
-		{
-			battCurrent_amps = (int16_t)(battCurrent_amps * 0.7); //140% current hack = tell MCM 70% actual
-		}
-
-		Serial.print( String(battCurrent_amps) );
-		Serial.print(F(" A(MCM)"));
 	} 
 	else
 	{

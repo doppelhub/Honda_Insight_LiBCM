@@ -15,8 +15,12 @@
 
 	uint8_t BATTSCI_writeByte(uint8_t data);
 	
-	void BATTSCI_sendFrames(uint8_t stackVoltage);
+	void BATTSCI_sendFrames();
 
 	uint8_t BATTSCI_calculateChecksum( uint8_t frameSum );
+
+	void BATTSCI_setPackVoltage(uint8_t voltage);
+
+	void BATTSCI_setPackCurrent(int16_t packCurrent);
 
 #endif
