@@ -69,6 +69,7 @@ void lcd_initialize(void)
 void lcd_displayOFF(void)
 {
 	lcd2.clear();
+	lcd2.setCursor(0,0);
 	lcd2.print("LiBCM v" + String(FW_VERSION) );
 	delay(1000);
 

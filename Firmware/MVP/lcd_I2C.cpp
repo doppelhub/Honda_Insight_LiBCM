@@ -24,21 +24,46 @@ void lcd_I2C_jts::setRowOffsets(int row1, int row2, int row3, int row4) {
   _rowOffsets[3] = row4;
 }
 
-// write a byte to the I2C bus
-size_t lcd_I2C_jts::write(uint8_t byte) {
-  _ctrlRegister |= RS_BIT; // Set register to DATA
-  sendCmd(byte);
-  _ctrlRegister &= ~RS_BIT; // Reset register to INSTRUCTION
+////////////////////////////////////////////////////////////////////////
+//Core commands used to send data over I2C bus
 
-  return 1;
+//command to send one byte to the LCD display (containing DATA_PORTION nibble & CTRL_PORTION nibble)
+void lcd_I2C_jts::send(uint8_t byte)
+{
+  Wire.beginTransmission(_i2cLcdAddress);                      //~t=5   microseconds
+  Wire.write(byte);                                            //~t=8   microseconds
+  Wire.endTransmission(); //Wire transmits all bytes in buffer // t=240 microseconds
 }
 
-//JTS: screen requires us to wait prior to sending each nibble
-void lcd_I2C_jts::send(uint8_t byte) {
-  Wire.beginTransmission(_i2cLcdAddress); //~t=5 microseconds
-  Wire.write(byte); //~t=8 microseconds
-  Wire.endTransmission(); //t=240 microseconds
+// Merge the command quartet with the control command (BL EN RW RS)
+void lcd_I2C_jts::sendQuartet(uint8_t data)
+{
+  data |= _ctrlRegister;
+
+  send(data);
+  send(data | EN_BIT); // pulse enable.  No idea why 'data' sent twice.
+  //delayMicroseconds(1);
+  //send(data); //JTS: Removing saves 8 ms, but prevents display from turning off. 
+  
+  delayMicroseconds(40); //This delay accounts for less than 1% of the overall display update time
 }
+
+// Take a command byte and split it in two quartets (LCD operates in 4 bit mode)
+// This is the primary method used to send data to display
+void lcd_I2C_jts::sendCmd(uint8_t data) //t=1 milliseconds
+{
+  digitalWrite(PIN_LED2,HIGH); //temp
+
+  sendQuartet(data & DATA_PORTION);
+
+  //JTS: Can delay as long as desired (i.e. split interrupt handler here if desired)
+
+  sendQuartet((data << 4) & DATA_PORTION);
+
+  digitalWrite(PIN_LED2,LOW); //temp
+}
+
+////////////////////////////////////////////////////////////////////////
 
 // Set the state of a bit in the Control register
 void lcd_I2C_jts::setCtrlRegisterBit(uint8_t bit, bool state) {
@@ -56,21 +81,13 @@ void lcd_I2C_jts::setEntryModeBit(uint8_t bit, bool state) {
   else _modeRegister &= ~bit;
 }
 
-// Merge the command quartet with the control command (BL EN RW RS)
-void lcd_I2C_jts::sendQuartet(uint8_t data) {
-  data |= _ctrlRegister;
+// write a byte to the I2C bus
+size_t lcd_I2C_jts::write(uint8_t byte) {
+  _ctrlRegister |= RS_BIT; // Set register to DATA
+  sendCmd(byte);
+  _ctrlRegister &= ~RS_BIT; // Reset register to INSTRUCTION
 
-  send(data);
-  send(data | EN_BIT); // pulse enable
-  delayMicroseconds(1);
-  send(data);
-  delayMicroseconds(42);
-}
-
-// Take a command byte and split it in two quartets (LCD in 4 bit mode)
-void lcd_I2C_jts::sendCmd(uint8_t data) {
-  sendQuartet(data & DATA_PORTION);
-  sendQuartet((data << 4) & DATA_PORTION);
+  return 1;
 }
 
 // Initialization routine to set the LCD to 4 bit mode
@@ -135,7 +152,7 @@ void lcd_I2C_jts::home() {
 // Setting up and initializig the LCD 
 void lcd_I2C_jts::begin(uint8_t cols, uint8_t rows, uint8_t font) {
   Wire.begin();
-
+  Wire.setWireTimeout(1000, true); //waits up to 1000 microseconds
   _cols = cols;
   _rows = rows;
   _font = font;
