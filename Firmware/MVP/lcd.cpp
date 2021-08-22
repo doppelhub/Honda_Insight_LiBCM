@@ -3,14 +3,23 @@
 #include "libcm.h"
 
 //JTS2do: only send value to screen if data has changed
+//JTS2do: Send up to 32 bytes per transmission (if timing allows it)
+
+//4x20 display accepts SCL up to 100 kHz
 
 #ifdef I2C_LIQUID_CRYSTAL
   #include "LiquidCrystal_I2C.h"
   LiquidCrystal_I2C lcd2(0x27, 20, 4);
 #endif
-#ifdef I2C_TWI
+
+#ifdef I2C_LCD
   #include "TwiLiquidCrystal.h"
   TwiLiquidCrystal lcd2(0x27);
+#endif
+
+#ifdef LCD_JTS
+  #include "lcd_I2C.h"
+  lcd_I2C_jts lcd2(0x27);
 #endif
 
 uint16_t loopCount = 0;
@@ -44,26 +53,31 @@ void lcd_initialize(void)
   #ifdef I2C_LIQUID_CRYSTAL
     lcd2.begin();
   #endif
-  #ifdef I2C_TWI
+
+  #ifdef I2C_LCD
     lcd2.begin(20,4);
   #endif
+
+  #ifdef LCD_JTS
+    lcd2.begin(20,4);
+  #endif
+
 }
 
 ////////////////////////////////////////////////////////////////////////
 
 void lcd_displayOFF(void)
 {
-	LTC6804_isoSPI_errorCountReset();
-
-	//JTS2do:
-	//-display version for a few seconds,
-	//-close lcd connection
-	//-reinitialize lcd
-	//-reload static text, then turn display off.
-
 	lcd2.clear();
 	lcd2.print("LiBCM v" + String(FW_VERSION) );
 	delay(1000);
+
+	LTC6804_isoSPI_errorCountReset();
+
+	//JTS2do:
+	//-close lcd connection
+	//-reinitialize lcd
+
 	lcd_printStaticText();
 
 	lcd2.noBacklight();
@@ -162,7 +176,9 @@ void lcd_incrementLoopCount(void)
 ////////////////////////////////////////////////////////////////////////
 
 void lcd_printCellVoltage_hiLoDelta(uint16_t highCellVoltage, uint16_t lowCellVoltage)
-{
+{	//t=28 milliseconds
+	digitalWrite(PIN_LED1,HIGH); //temp
+
 	lcd2.setCursor(3,0); //high
 	lcd2.print( (highCellVoltage * 0.0001), 3 );
 	lcd2.setCursor(3,1); //low
@@ -170,6 +186,8 @@ void lcd_printCellVoltage_hiLoDelta(uint16_t highCellVoltage, uint16_t lowCellVo
 
 	lcd2.setCursor(2,2); //delta
 	lcd2.print( ((highCellVoltage - lowCellVoltage) * 0.0001), 3 );
+
+	digitalWrite(PIN_LED1,LOW); //temp
 }
 
 ////////////////////////////////////////////////////////////////////////
