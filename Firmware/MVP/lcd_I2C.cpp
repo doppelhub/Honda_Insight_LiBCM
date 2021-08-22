@@ -11,6 +11,7 @@
 #include "Arduino.h"
 #include "Wire.h"
 #include "lcd_I2C.h"
+#include "libcm.h"
 
 lcd_I2C_jts::lcd_I2C_jts(uint8_t address) {
   _i2cLcdAddress = address;
@@ -32,10 +33,11 @@ size_t lcd_I2C_jts::write(uint8_t byte) {
   return 1;
 }
 
+//JTS: screen requires us to wait prior to sending each nibble
 void lcd_I2C_jts::send(uint8_t byte) {
-  Wire.beginTransmission(_i2cLcdAddress);
-  Wire.write(byte);
-  Wire.endTransmission();
+  Wire.beginTransmission(_i2cLcdAddress); //~t=5 microseconds
+  Wire.write(byte); //~t=8 microseconds
+  Wire.endTransmission(); //t=240 microseconds
 }
 
 // Set the state of a bit in the Control register
@@ -77,7 +79,8 @@ void lcd_I2C_jts::initializationRoutine() {
   // LiquidCrystal was outputing 0x30 4500µs - 0x30 4500µs 0x30 150µs
   // The datasheet for the HD44780  says 0x30 4100µs - 0x30 100µs 0x30 no delay...
   // (HD44780U datasheet, page 45)
-  // It also may be optionnal, useful only when "the power supply conditions for correctly operating the internal reset circuit are not met"
+  // It also may be optional, useful only when:
+  //"the power supply conditions for correctly operating the internal reset circuit are not met"
   sendQuartet(LCD_FUNCTIONSET | LCD_FUNCTIONSET_DL_BIT);
   delayMicroseconds(4200);
   sendQuartet(LCD_FUNCTIONSET | LCD_FUNCTIONSET_DL_BIT); 

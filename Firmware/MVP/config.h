@@ -12,9 +12,9 @@
   	#define HW_REVB
 	
 	//Choose which I2C LCD driver to use for 4x20 display:
-  #define I2C_LIQUID_CRYSTAL //use "LiquidCrystal_I2C.h"
-    //#define I2C_LCD            //use "TwiLiquidCrystal.h"
-  //#define LCD_JTS            //use "lcd_I2C.h" (modified version )  
+  //#define I2C_LIQUID_CRYSTAL //use "LiquidCrystal_I2C.h"
+  //#define I2C_LCD            //use "TwiLiquidCrystal.h"
+    #define LCD_JTS            //use "lcd_I2C.h" (modified version )  
 		//JTS2do: These libraries cause "P1648 hang" if SDA is manually pulled to GND.
 			//This is a low-level Arduino Wire bug (i.e. while loop waiting for SDA to return high).
 	
