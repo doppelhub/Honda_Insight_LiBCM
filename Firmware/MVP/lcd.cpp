@@ -42,8 +42,8 @@ void lcd_printStaticText(void)
 	//4x20 screen text display format:********************
 	lcd2.setCursor(0,0);  lcd2.print("hi:h.hhh (max:H.HHH)"); //row0, (3,0)=h.hhh, (14,0)=H.HHH
 	lcd2.setCursor(0,1);  lcd2.print("lo:l.lll (min:L.LLL)"); //row1, (3,1)=l.lll, (14,1)=L.LLL
-	lcd2.setCursor(0,2);  lcd2.print("d:d.ddd, V:VVV (SSS)"); //row2, (2,2)=d.ddd, (11,2)=VVV,   (16,2)=SSS
-	lcd2.setCursor(0,3);  lcd2.print("E:0 /CCCCC, kW:+WW.0"); //row3, (2,3)=    0, (5,3)=CCCCC,  (16,3)=WW.0
+	lcd2.setCursor(0,2);  lcd2.print("d:d.ddd, V:VVV (SSS)"); //row2, (2,2)=d.ddd, (11,2)=VVV  , (16,2)=SSS
+	lcd2.setCursor(0,3);  lcd2.print("E:0 /CCCCC, kW:+WW.0"); //row3, (2,3)=    0, (5,3)=CCCCC , (16,3)=WW.0
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -75,10 +75,10 @@ void lcd_displayOFF(void)
 
 	LTC6804_isoSPI_errorCountReset();
 
-	//JTS2do:
-	//-close lcd connection
-	//-reinitialize lcd
-
+	Wire.end();
+	delay(50);
+	lcd_initialize();
+	delay(50);
 	lcd_printStaticText();
 
 	lcd2.noBacklight();
@@ -178,7 +178,7 @@ void lcd_incrementLoopCount(void)
 
 void lcd_printCellVoltage_hiLoDelta(uint16_t highCellVoltage, uint16_t lowCellVoltage)
 {	//t=28 milliseconds
-	digitalWrite(PIN_LED1,HIGH); //temp
+	
 
 	lcd2.setCursor(3,0); //high
 	lcd2.print( (highCellVoltage * 0.0001), 3 );
@@ -188,7 +188,7 @@ void lcd_printCellVoltage_hiLoDelta(uint16_t highCellVoltage, uint16_t lowCellVo
 	lcd2.setCursor(2,2); //delta
 	lcd2.print( ((highCellVoltage - lowCellVoltage) * 0.0001), 3 );
 
-	digitalWrite(PIN_LED1,LOW); //temp
+	
 }
 
 ////////////////////////////////////////////////////////////////////////

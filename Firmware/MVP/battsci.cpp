@@ -153,7 +153,7 @@ void BATTSCI_sendFrames()
       frame2send = 0x87;
     }
   }
-  delay(100); //JTS2do: Only send BATTSCI frames every 100 ms
+  //delay(100); //JTS2do: Only send BATTSCI frames every 100 ms
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

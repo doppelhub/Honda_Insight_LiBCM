@@ -32,18 +32,19 @@ void lcd_I2C_jts::send(uint8_t byte)
 {
   Wire.beginTransmission(_i2cLcdAddress);                      //~t=5   microseconds
   Wire.write(byte);                                            //~t=8   microseconds
-  Wire.endTransmission(); //Wire transmits all bytes in buffer // t=240 microseconds
+  Wire.endTransmission(false); //Wire transmits all bytes in buffer // t=240 microseconds //JTS2do: Send 'stop' (false) or 'restart' (true)
 }
 
 // Merge the command quartet with the control command (BL EN RW RS)
 void lcd_I2C_jts::sendQuartet(uint8_t data)
 {
   data |= _ctrlRegister;
+  
+  //send(data); //Not necessary, per HD44780U timing diagram (page 22)
 
-  send(data);
-  send(data | EN_BIT); // pulse enable.  No idea why 'data' sent twice.
-  //delayMicroseconds(1);
-  //send(data); //JTS: Removing saves 8 ms, but prevents display from turning off. 
+  send(data | EN_BIT); // set EN ('E') line high.  Note: HD44780U latches nibble when 'E' line goes low.
+  delayMicroseconds(1); //HD44780U requires 400 ns delay
+  send(data); //set EN ('E') line back low.  This latches data nibble into HD44780U's buffer 
   
   delayMicroseconds(40); //This delay accounts for less than 1% of the overall display update time
 }
@@ -56,11 +57,11 @@ void lcd_I2C_jts::sendCmd(uint8_t data) //t=1 milliseconds
 
   sendQuartet(data & DATA_PORTION);
 
+  digitalWrite(PIN_LED2,LOW); //temp
+
   //JTS: Can delay as long as desired (i.e. split interrupt handler here if desired)
 
   sendQuartet((data << 4) & DATA_PORTION);
-
-  digitalWrite(PIN_LED2,LOW); //temp
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -171,9 +172,8 @@ void lcd_I2C_jts::begin(uint8_t cols, uint8_t rows, uint8_t font) {
   //  line 3, screen 1 [0x14 ; 0x27]
   //  line 4, screen 1 [0x54 ; 0x67]
   setRowOffsets(0x00, 0x40, 0x00 + cols, 0x40 + cols);
-
   
-  delay(1000); // LCD power up time
+  delay(1000); // LCD power up time //JTS2do: Reduce
 
   send(0x00); // clear data line
   initializationRoutine();

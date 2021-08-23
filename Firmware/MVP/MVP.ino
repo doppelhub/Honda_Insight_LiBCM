@@ -24,6 +24,10 @@ void setup()
   pinMode(PIN_TURNOFFLiBCM,OUTPUT);
   digitalWrite(PIN_TURNOFFLiBCM,LOW);
 
+	//turn on 4x20 display
+  pinMode(PIN_HMI_EN,OUTPUT);
+  digitalWrite(PIN_HMI_EN,HIGH);
+
   //Enable BCM current sensor & constant 5V load
   pinMode(PIN_I_SENSOR_EN,OUTPUT);
   digitalWrite(PIN_I_SENSOR_EN,LOW);
@@ -42,9 +46,6 @@ void setup()
   pinMode(PIN_FANOEM_HI,OUTPUT);
   pinMode(PIN_GRID_EN,OUTPUT);
 
-  pinMode(PIN_HMI_EN,OUTPUT);
-  digitalWrite(PIN_HMI_EN,HIGH); //turn on 4x20 display
-
   analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
   //JTS2do: if key is on when Arduino starts (e.g. first keyON after turning pack switch on), jump right into VPIN spoofing.
@@ -53,12 +54,14 @@ void setup()
 
   Serial.begin(115200); //USB
 
+  lcd_initialize();
+
   METSCI_begin();
   BATTSCI_begin();
 
-  lcd_initialize();
-
   LTC6804_initialize();
+
+  lcd_printStaticText();
 
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
   //TCCR0B = (TCCR0B & B11111000) | B00000001; // JTSdebug: for PWM frequency of 62500 Hz D04 & D13. This hoses delay()!
@@ -66,7 +69,6 @@ void setup()
   Serial.print(F("\n\nWelcome to LiBCM v"));
   Serial.print(String(FW_VERSION));
   Serial.print("," + String(BUILD_DATE) + "\n\n");
-  
 }
 
 void loop()
