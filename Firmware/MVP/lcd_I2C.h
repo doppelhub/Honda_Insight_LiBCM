@@ -105,7 +105,7 @@ private:
     void initializationRoutine();
 
     void send(uint8_t data);
-    void sendQuartet(uint8_t data);
+    void sendQuartet(uint8_t data, uint8_t includeDelayAfterWrite);
     void setCtrlRegisterBit(uint8_t bit, bool state);
     void setDsplRegisterBit(uint8_t bit, bool state);
     void setEntryModeBit(uint8_t bit, bool state);

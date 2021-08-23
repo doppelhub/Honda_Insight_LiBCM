@@ -13,6 +13,9 @@
 #include "lcd_I2C.h"
 #include "libcm.h"
 
+#define NO_DELAY 0
+#define ADD_DELAY 1
+
 lcd_I2C_jts::lcd_I2C_jts(uint8_t address) {
   _i2cLcdAddress = address;
 }
@@ -36,32 +39,32 @@ void lcd_I2C_jts::send(uint8_t byte)
 }
 
 // Merge the command quartet with the control command (BL EN RW RS)
-void lcd_I2C_jts::sendQuartet(uint8_t data)
+void lcd_I2C_jts::sendQuartet(uint8_t data, uint8_t includeDelayAfterWrite)
 {
   data |= _ctrlRegister;
   
   //send(data); //Not necessary, per HD44780U timing diagram (page 22)
 
   send(data | EN_BIT); // set EN ('E') line high.  Note: HD44780U latches nibble when 'E' line goes low.
-  delayMicroseconds(1); //HD44780U requires 400 ns delay
+  //delayMicroseconds(1); //HD44780U requires 400 ns delay
   send(data); //set EN ('E') line back low.  This latches data nibble into HD44780U's buffer 
   
-  delayMicroseconds(40); //This delay accounts for less than 1% of the overall display update time
+  if(includeDelayAfterWrite)
+  {
+    delayMicroseconds(40); //Guarantee HD44780U has processed data //less than 1% overall display CPU time  
+  } 
 }
 
 // Take a command byte and split it in two quartets (LCD operates in 4 bit mode)
 // This is the primary method used to send data to display
 void lcd_I2C_jts::sendCmd(uint8_t data) //t=1 milliseconds
 {
-  digitalWrite(PIN_LED2,HIGH); //temp
-
-  sendQuartet(data & DATA_PORTION);
-
-  digitalWrite(PIN_LED2,LOW); //temp
+  
+  sendQuartet( (data & DATA_PORTION), NO_DELAY);
 
   //JTS: Can delay as long as desired (i.e. split interrupt handler here if desired)
 
-  sendQuartet((data << 4) & DATA_PORTION);
+  sendQuartet( ((data << 4) & DATA_PORTION), ADD_DELAY);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -99,14 +102,15 @@ void lcd_I2C_jts::initializationRoutine() {
   // (HD44780U datasheet, page 45)
   // It also may be optional, useful only when:
   //"the power supply conditions for correctly operating the internal reset circuit are not met"
-  sendQuartet(LCD_FUNCTIONSET | LCD_FUNCTIONSET_DL_BIT);
+  sendQuartet( (LCD_FUNCTIONSET | LCD_FUNCTIONSET_DL_BIT), ADD_DELAY);
   delayMicroseconds(4200);
-  sendQuartet(LCD_FUNCTIONSET | LCD_FUNCTIONSET_DL_BIT); 
+  sendQuartet( (LCD_FUNCTIONSET | LCD_FUNCTIONSET_DL_BIT), ADD_DELAY); 
   delayMicroseconds(110);
-  sendQuartet(LCD_FUNCTIONSET | LCD_FUNCTIONSET_DL_BIT); 
+  sendQuartet( (LCD_FUNCTIONSET | LCD_FUNCTIONSET_DL_BIT), ADD_DELAY); 
+  //The above three commands guarantee HD44780U is in known state (see datasheet)
 
   // set in 4-bit mode (Function set)
-  sendQuartet(LCD_FUNCTIONSET);
+  sendQuartet(LCD_FUNCTIONSET, ADD_DELAY);
 }
 
 void lcd_I2C_jts::setBacklight(bool state) {
