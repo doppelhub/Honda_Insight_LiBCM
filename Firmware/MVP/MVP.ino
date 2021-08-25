@@ -89,9 +89,9 @@ void loop()
 	    METSCI_disable();
 	    digitalWrite(PIN_FANOEM_LOW,LOW);
 	    digitalWrite(PIN_I_SENSOR_EN,LOW); //disable current sensor & constant 5V load
-	  	lcd_displayOFF();
+	    lcd_displayOFF();
 	    vPackSpoof_handleKeyOFF();
-	    
+  
 	  } else { //takes t=?? milliseconds to execute
 	  	Serial.print(F("ON"));
 	  	//vPackSpoof_handleKeyON(); JTS2doNow: Figure out keyON VPIN spooging

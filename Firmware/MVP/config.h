@@ -14,5 +14,7 @@
 	//Choose which I2C LCD driver to use for 4x20 display:
   //#define I2C_LIQUID_CRYSTAL //use "LiquidCrystal_I2C.h"
   //#define I2C_LCD            //use "TwiLiquidCrystal.h"
-    #define LCD_JTS            //use "lcd_I2C.h" (modified version )  
+    #define LCD_JTS            //use "lcd_I2C.h" (modified version ) 
+
+    //#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands 
 #endif
