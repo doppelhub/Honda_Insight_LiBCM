@@ -55,7 +55,7 @@
       #define DEBUG_SDA 20
       #define DEBUG_CLK 21
 
-      //JTS2do: Replace Arduino I/O functions as shown in example code below
+      //JTS2doLater: Replace Arduino I/O functions as shown in example code below
       /*
         #define DIRECTION_DDR     DDRD
         #define DIRECTION_PORT    PORTD

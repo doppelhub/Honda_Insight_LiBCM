@@ -9,94 +9,77 @@
 
 #include "libcm.h"
 
-static uint8_t igbtCapsCharged = 0;
-
 //---------------------------------------------------------------------------------------
 
 void spoofVoltageMCMe(uint8_t desiredSpoofedVoltage, uint8_t actualPackVoltage)
 {
 	//Derivation:
-		    //Empirically determined, see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods
-	        //pwmCounts_MCME = (              actualPackVoltage  * 512) / desiredSpoofedVoltage          - 551
-	        //pwmCounts_MCME = (              actualPackVoltage  * 256) / desiredSpoofedVoltage    * 2   - 551 //prevent 16b overflow
-	        //pwmCounts_MCME = (    (int16_t)(actualPackVoltage) * 256) / desiredSpoofedVoltage    * 2   - 551 
-	  uint8_t pwmCounts_MCME = ( ( ((int16_t)(actualPackVoltage) << 8 ) / desiredSpoofedVoltage ) << 2 ) - 551;
-	  //JTS2do: Add bounds checking on the output (e.g. 0:255)
+	//Empirically determined, see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods
+	      //pwmCounts_MCME = (              actualPackVoltage  * 512) / desiredSpoofedVoltage          - 551
+	      //pwmCounts_MCME = (              actualPackVoltage  * 256) / desiredSpoofedVoltage    * 2   - 551 //prevent 16b overflow
+	      //pwmCounts_MCME = (    (int16_t)(actualPackVoltage) * 256) / desiredSpoofedVoltage    * 2   - 551 
+	int16_t pwmCounts_MCME = ( ( ((int16_t)(actualPackVoltage) << 8 ) / desiredSpoofedVoltage ) << 1 ) - 551;
+	  
+	//bounds checking
+	if     (pwmCounts_MCME > 255) {pwmCounts_MCME = 255;}
+	else if(pwmCounts_MCME <   0) {pwmCounts_MCME =   0;}
 
-	  analogWrite(PIN_MCME_PWM, pwmCounts_MCME);
+	analogWrite(PIN_MCME_PWM, (uint8_t)pwmCounts_MCME);
 }
-
-//---------------------------------------------------------------------------------------
-
-uint8_t getPackVoltage_VpinIn(void)
-{
-	//Derivation:
-	      //packVoltage_VpinIn  = VPIN_0to5v                               * 52 
-	      //                      VPIN_0to5v = adc_VPIN_raw() * 5 ) / 1024            //adc_VPIN_raw() returns 10b ADC result
-	      //packVoltage_VpinIn  =              adc_VPIN_raw() * 5 ) / 1024 * 52
-	      //packVoltage_VpinIn  =              adc_VPIN_raw() * 5 ) / 1024 * 52 
-	      //packVoltage_VpinIn  =              adc_VPIN_raw() * 260 / 1024
-	      //packVoltage_VpinIn ~=              adc_VPIN_raw() /  4
-	      //packVoltage_VpinIn ~=              adc_VPIN_raw() >> 2
-	uint8_t packVoltage_VpinIn  =   (uint8_t)( adc_VPIN_raw() >> 2 );
-
-	return packVoltage_VpinIn; //pack voltage in volts
-} 
 
 //---------------------------------------------------------------------------------------
 
 void vPackSpoof_updateVoltage(uint8_t actualPackVoltage, uint8_t voltageToSpoof)
 {
-	if(igbtCapsCharged == 0) //true until PDU capacitors are charged (thru pre-contactor)
-	{	
-		uint8_t packVoltage_VPINin = getPackVoltage_VpinIn();
-		
-		Serial.println(); //Otherwise newline doesn't occur on Serial debug
-		if( (packVoltage_VPINin + 18) >= actualPackVoltage ) //true after PDU capacitors are mostly charged
-		{
-			igbtCapsCharged = 1; //Remains true until next keyOff event
-			Serial.print("\nBegin spoofing VPIN");
-		}
-	}
+	//spoof VPIN_OUT voltage (to MCM).  VPIN_IN (from PDU) ignored after PDU caps are charged (immediately after keyON)
+	//JTS2doNow: Use spoofed voltage as long as actual voltage is within 20 volts of V6804.  This handles keyOFF event.
+	analogWrite(PIN_VPIN_OUT_PWM, voltageToSpoof);	
+		//Derivation: Vpack (volts) ~= 0:5v PWM 8b value (counts)
+		//Example: when pack voltage is 184 volts, send analogWrite(VPIN_OUT, 184)
 
-	//don't combine with above
-	if(igbtCapsCharged == 1) //true for remainder of keyON (until key turned off) //executes in ~t=9.5 milliseconds
-	{	//PDU capacitors are now fully charged
-		//HVDC relay is connected
-		//actual VPIN_IN voltage no longer matters; LiBCM spoofs VPIN_OUT
+	//spoof MCM E connector voltage
+	spoofVoltageMCMe(voltageToSpoof, actualPackVoltage);
 
-		//spoof VPIN voltage
-		analogWrite(PIN_VPIN_OUT_PWM, voltageToSpoof);	//analogWrite automatically connects PWM timer output to VPIN_OUT
-							    						//Derivation: Vpack (volts) ~= 0:5v PWM 8b value (counts)
-							     						//Example: when pack voltage is 184 volts, send analogWrite(VPIN_OUT, 184)
-		//spoof MCM E connector voltage
-		spoofVoltageMCMe(voltageToSpoof, actualPackVoltage);
+	//spoof BATTSCI voltage		
+	BATTSCI_setPackVoltage(voltageToSpoof);
 
-		//spoof BATTSCI voltage		
-		BATTSCI_setPackVoltage(voltageToSpoof);
-
-		lcd_printStackVoltage_spoofed(voltageToSpoof);
-		lcd_printStackVoltage_actual(actualPackVoltage);
-
-	}
+	lcd_printStackVoltage_spoofed(voltageToSpoof);
+	lcd_printStackVoltage_actual(actualPackVoltage);
 }
 
 //---------------------------------------------------------------------------------------
 
 void vPackSpoof_handleKeyON(void)
 {
-	;
+	uint8_t packVoltage_VPINin;
+
+	LTC6804_startCellVoltageConversion();
+	delayMicroseconds(500);
+	LTC6804_readCellVoltages(); //getStackVoltage sums cell voltages
+
+	uint8_t actualPackVoltage = LTC6804_getStackVoltage();
+	Serial.print("\nV6804=" + String(actualPackVoltage) );
+
+	uint8_t loopCounter = 0;
+	do
+	{
+		packVoltage_VPINin = adc_packVoltage_VpinIn(); 
+		Serial.print("\nVPIN=" + String(packVoltage_VPINin) );
+		analogWrite(PIN_VPIN_OUT_PWM, packVoltage_VPINin);
+		if(loopCounter == 50)
+		{
+			digitalWrite(PIN_LED1, !(digitalRead(PIN_LED1)) );
+			loopCounter = 0;
+		}
+		loopCounter++;
+		
+	} while( ((packVoltage_VPINin + 18) <= actualPackVoltage ) && digitalRead(PIN_KEY_ON) );
+	Serial.print("\nVPIN=V6804");
 }
 
 //---------------------------------------------------------------------------------------
 
 void vPackSpoof_handleKeyOFF(void)
 {
-	igbtCapsCharged = 0;
 	pinMode(PIN_VPIN_OUT_PWM,INPUT); //set VPIN back to high impedance
-}
-
-uint8_t vPackSpoof_isVpinSpoofed(void)
-{
-	return igbtCapsCharged;
 }

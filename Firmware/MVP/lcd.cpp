@@ -2,8 +2,7 @@
 
 #include "libcm.h"
 
-//JTS2do: only send value to screen if data has changed
-//JTS2do: Send up to 32 bytes per transmission (if timing allows it)
+//JTS2doNow: only send value to screen if data has changed
 
 //4x20 display accepts SCL up to 100 kHz
 
@@ -26,15 +25,9 @@ uint16_t loopCount = 0;
 uint8_t stackVoltageActual_previous = 0;
 uint8_t stackVoltageSpoofed_previous = 0;
 
-uint8_t screenUpdatesAllowed = 1; //JTS2do: not used anywhere... 
-const uint8_t loopsToDelayUpdatesAfterKeyOn = 10; //JTS2do: not used anywhere... 
-const uint8_t loopsToDisplaySplashScreen = 10; //JTS2do: not used anywhere... 
-
 ////////////////////////////////////////////////////////////////////////
 
-//JTS2do: Figure out where to call this (LiBCM init & each keyOFF?)
-//prints text that doesn't change often 
-void lcd_printStaticText(void)
+void lcd_printStaticText(void) //screen updates are slow
 {
 	lcd2.setCursor(0,0);
 	//                                          1111111111
@@ -71,7 +64,7 @@ void lcd_displayOFF(void)
 	lcd2.clear();
 	lcd2.setCursor(0,0);
 	lcd2.print("LiBCM v" + String(FW_VERSION) );
-	delay(1000);
+	delay(1000); //allow time to read firmware version
 
 	LTC6804_isoSPI_errorCountReset();
 
@@ -88,42 +81,12 @@ void lcd_displayOFF(void)
 ////////////////////////////////////////////////////////////////////////
 
 void lcd_displayON(void)
-{
-	//JTS2do: Ideally do nothing but set a flag here... move I2C calls to incrementLoopCount 
+{ 
 	lcd2.backlight();
 	lcd2.display();
 	loopCount=0;
 	stackVoltageActual_previous = 0;
 	stackVoltageSpoofed_previous = 0;
-}
-
-////////////////////////////////////////////////////////////////////////
-
-//JTS2do: Splash screen
-void lcd_displaySplash(void)
-{
-	;
-}
-
-////////////////////////////////////////////////////////////////////////
-
-void lcd_screenUpdates_disable(void)
-{
-	screenUpdatesAllowed = 0;
-}
-
-////////////////////////////////////////////////////////////////////////
-
-void lcd_screenUpdates_enable(void)
-{
-	screenUpdatesAllowed = 1;
-}
-
-////////////////////////////////////////////////////////////////////////
-
-uint8_t lcd_areScreenUpdatesAllowed(void)
-{
-	return screenUpdatesAllowed;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -163,7 +126,6 @@ void lcd_printNumErrors(uint8_t errorCount)
 
 void lcd_incrementLoopCount(void)
 {
-	//JTS2do: Reduce I2C traffic during keyON
 	lcd2.setCursor(5,3);
 	if(loopCount == 0)
 	{
@@ -177,9 +139,7 @@ void lcd_incrementLoopCount(void)
 ////////////////////////////////////////////////////////////////////////
 
 void lcd_printCellVoltage_hiLoDelta(uint16_t highCellVoltage, uint16_t lowCellVoltage)
-{	//t=28 milliseconds
-	
-
+{	//t=18 milliseconds (previously 28 milliseconds, prior to rewriting sendQuartet)
 	lcd2.setCursor(3,0); //high
 	lcd2.print( (highCellVoltage * 0.0001), 3 );
 	lcd2.setCursor(3,1); //low
@@ -187,29 +147,23 @@ void lcd_printCellVoltage_hiLoDelta(uint16_t highCellVoltage, uint16_t lowCellVo
 
 	lcd2.setCursor(2,2); //delta
 	lcd2.print( ((highCellVoltage - lowCellVoltage) * 0.0001), 3 );
-
-	
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-//JTS2do: Clear max/min on keyOFF
 void lcd_printMaxEverVoltage(uint16_t voltage)
 {
 	lcd2.setCursor(14,0);
 	lcd2.print( (voltage * 0.0001) , 3);
 }
 
-
 ////////////////////////////////////////////////////////////////////////
-
 
 void lcd_printMinEverVoltage(uint16_t voltage)
 {
 	lcd2.setCursor(14,1);
 	lcd2.print( (voltage * 0.0001) , 3);
 }
-
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -222,17 +176,5 @@ void lcd_printPower(uint8_t packVoltage, int16_t packAmps)
 	}
 	lcd2.print( (packVoltage * packAmps * 0.001), 1 );
 }
-
-////////////////////////////////////////////////////////////////////////
-
-
-////////////////////////////////////////////////////////////////////////
-
-
-////////////////////////////////////////////////////////////////////////
-
-
-////////////////////////////////////////////////////////////////////////
-
 
 ////////////////////////////////////////////////////////////////////////

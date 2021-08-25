@@ -82,7 +82,7 @@ uint8_t rx_cfg[TOTAL_IC][8];
 //---------------------------------------------------------------------------------------
 
 //Initializes the configuration array
-//JTS2do: This doesn't need to be a 2D array.  Data identical on all LTC, except DCC12:1.
+//JTS2doLater: This doesn't need to be a 2D array.  Data identical on all LTC, except DCC12:1.
 void LTC6804_init_cfg()
 {
   for (int i = 0; i<TOTAL_IC; i++)
@@ -135,12 +135,12 @@ void LTC6804_readCellVoltages()
 
   //printCellVoltage_all();
 
-  printCellVoltage_max_min();
+  LTC6804_printCellVoltage_max_min();
 }
 
 //---------------------------------------------------------------------------------------
 
-//JTS2do: Roll this into readCells() function; this fcn should just recall last summed value
+//JTS2doLater: Roll this into readCells() function; this fcn should just recall last summed value
 uint8_t LTC6804_getStackVoltage()
 {
   uint32_t stackVoltage_RAW = 0; //Multiply by 0.0001 for volts
@@ -184,14 +184,14 @@ void printCellVoltage_all()
 //---------------------------------------------------------------------------------------
 
 //This function is way overloaded.
-void printCellVoltage_max_min()
+void LTC6804_printCellVoltage_max_min()
 {
   uint16_t lowCellVoltage = 65535;
   uint16_t highCellVoltage = 0;
 
   if( LTC_isDataValid )
   {
-    //JTS2do: find high/low while retrieving data from LTC6804
+    //JTS2doLater: find high/low while retrieving data from LTC6804
     //find high/low voltage
     for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
     {
@@ -217,7 +217,7 @@ void printCellVoltage_max_min()
     
     //////////////////////////////////////////////////////////////////////////////////
 
-    //JTS2do: These aren't displayed after key turns on 2nd time (unless exceeded)
+    //JTS2doNow: These aren't displayed after key turns on 2nd time (unless exceeded)
     static uint16_t maxEverCellVoltage = 0;
     static uint16_t minEverCellVoltage = 65535;    
 
@@ -236,7 +236,7 @@ void printCellVoltage_max_min()
 
   //////////////////////////////////////////////////////////////////////////////////
 
-  //JTS2do: make this its own function
+  //JTS2doLater: make this its own function
   //grid charger handling
   if( (highCellVoltage <= 39000) && !(digitalRead(PIN_GRID_SENSE)) ) //Battery not full and grid charger is plugged in
   {
@@ -354,7 +354,7 @@ uint8_t LTC6804_rdcv(uint8_t reg,  //controls which cell voltage register to rea
   uint8_t data_counter=0; //data counter
   cell_data = (uint8_t *) malloc( (NUM_RX_BYTES*total_ic)*sizeof(uint8_t) );
 
-  if (reg == 0) //JTS2do: Next ~1:15 lines substantially similar to next ~16:30 lines
+  if (reg == 0) //JTS2doLater: Next ~1:15 lines substantially similar to next ~16:30 lines
   { //Read cell voltage registers A-D for every IC in the stack
     for (uint8_t cell_reg = 1; cell_reg<5; cell_reg++) //executes once for each cell voltage register
     {
@@ -367,7 +367,7 @@ uint8_t LTC6804_rdcv(uint8_t reg,  //controls which cell voltage register to rea
         for (uint8_t current_cell = 0; current_cell < NUM_CELLVOLTAGES_IN_REG; current_cell++)
         {
           // once for each cell voltage in the register
-          //JTS2do: Add temporary array to store data in until PEC is verified
+          //JTS2doLater: Add temporary array to store data in until PEC is verified
           parsed_cell = cell_data[data_counter] + (cell_data[data_counter + 1] << 8);
           cell_codes[current_ic][current_cell  + ((cell_reg - 1) * NUM_CELLVOLTAGES_IN_REG)] = parsed_cell;
           data_counter = data_counter + 2;

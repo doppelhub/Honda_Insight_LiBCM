@@ -204,4 +204,4 @@ void spi_write_read(uint8_t *TxData, uint8_t TXlen, uint8_t *rx_data, uint8_t RX
 
 void LTC6804_isoSPI_errorCountReset(void);
 
-void printCellVoltage_max_min(void);
+void LTC6804_printCellVoltage_max_min(void);

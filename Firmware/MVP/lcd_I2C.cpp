@@ -16,6 +16,9 @@
 #define NO_DELAY 0
 #define ADD_DELAY 1
 
+#define SEND_STOP_BIT 0
+#define SEND_RESTART_BIT 1
+
 lcd_I2C_jts::lcd_I2C_jts(uint8_t address) {
   _i2cLcdAddress = address;
 }
@@ -35,7 +38,7 @@ void lcd_I2C_jts::send(uint8_t byte)
 {
   Wire.beginTransmission(_i2cLcdAddress);                      //~t=5   microseconds
   Wire.write(byte);                                            //~t=8   microseconds
-  Wire.endTransmission(false); //Wire transmits all bytes in buffer // t=240 microseconds //JTS2do: Send 'stop' (false) or 'restart' (true)
+  Wire.endTransmission(SEND_RESTART_BIT); //Wire transmits all bytes in buffer // t=240 microseconds
 }
 
 // Merge the command quartet with the control command (BL EN RW RS)
@@ -177,9 +180,9 @@ void lcd_I2C_jts::begin(uint8_t cols, uint8_t rows, uint8_t font) {
   //  line 4, screen 1 [0x54 ; 0x67]
   setRowOffsets(0x00, 0x40, 0x00 + cols, 0x40 + cols);
   
-  delay(1000); // LCD power up time //JTS2do: Reduce
+  //delay(1000); //JTS: No reason to delay here.
 
-  send(0x00); // clear data line
+  send(0x00); // clear shift register data lines
   initializationRoutine();
 
   // first params(byte) = 0 -> Always 4bit

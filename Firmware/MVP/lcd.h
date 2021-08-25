@@ -3,15 +3,7 @@
 
 	void lcd_initialize(void);
 
-	void lcd_screenUpdates_disable(void);
-
-	void lcd_screenUpdates_enable(void);
-
-	uint8_t lcd_areScreenUpdatesAllowed(void);
-
 	void lcd_incrementLoopCount(void);
-
-	void lcd_displaySplash(void);
 
 	void lcd_displayON(void);
 

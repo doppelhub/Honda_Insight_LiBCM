@@ -12,7 +12,7 @@
 uint8_t BATTSCI_state = STOPPED;
 
 uint8_t packVoltageToSend = 0;
-int16_t packCurrentToSend = 0; //JTS2do spoofed pack current can probably be int8_t (+127 A)
+int16_t packCurrentToSend = 0; //JTS2doLater spoofed pack current can probably be int8_t (+127 A)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -68,7 +68,7 @@ void BATTSCI_setPackVoltage(uint8_t packVoltage)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_setPackCurrent(int16_t packCurrent) //JTS2do spoofed pack current can probably be int8_t (+127 A)
+void BATTSCI_setPackCurrent(int16_t packCurrent) //JTS2doLater spoofed pack current can probably be int8_t (+127 A)
 {
   packCurrentToSend = packCurrent;
 }
@@ -96,8 +96,8 @@ void BATTSCI_sendFrames()
     //frameSum_87 += BATTSCI_writeByte( 0x16 );                                            //Battery SoC (upper byte)
     //frameSum_87 += BATTSCI_writeByte( 0x20 );                                            //Battery SoC (lower byte)
 
-      //JTS2do: This should look at max/min cell voltage, not pack voltage
-      //JTS2do: Need to add hysteresis
+      //JTS2doLater: This should look at max/min cell voltage, not pack voltage
+      //JTS2doLater: Need to add hysteresis
       if (packVoltageToSend > 180) {                                                     // 180 = 3.75 volts per cell
         // No regen 80%
         frameSum_87 += BATTSCI_writeByte( 0x16 );                                        //Battery SoC (upper byte)
@@ -153,7 +153,7 @@ void BATTSCI_sendFrames()
       frame2send = 0x87;
     }
   }
-  //delay(100); //JTS2do: Only send BATTSCI frames every 100 ms
+  delay(50); //JTS2doNow: Send BATTSCI frame every 100 ms
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
