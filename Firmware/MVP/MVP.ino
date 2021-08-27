@@ -169,10 +169,16 @@ void loop()
 
 	    int16_t packCurrent_spoofed;
 
-			#ifdef ENABLE_CURRENT_HACK 
-				packCurrent_spoofed = (int16_t)(packCurrent_actual * 0.7); //140% current hack = tell MCM 70% actual
-			#else
+			#if   defined(SET_CURRENT_HACK_60)
+	    	packCurrent_spoofed = (int16_t)(packCurrent_actual * 0.62); //160% current hack = tell MCM 62% actual
+			#elif defined(SET_CURRENT_HACK_40) 
+				packCurrent_spoofed = (int16_t)(packCurrent_actual * 0.70); //140% current hack = tell MCM 70% actual
+			#elif defined(SET_CURRENT_HACK_20)
+				packCurrent_spoofed = (int16_t)(packCurrent_actual * 0.83); //120% current hack = tell MCM 83% actual
+			#elif defined(SET_CURRENT_HACK_00)
 				packCurrent_spoofed = packCurrent_actual;
+			#else
+				#pragma error (SET_CURRENT_HACK value not selected in config.c)
 			#endif
 
 			debugUSB_batteryCurrentSpoofed_amps(packCurrent_spoofed);
