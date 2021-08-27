@@ -31,19 +31,35 @@ void lcd_I2C_jts::setRowOffsets(int row1, int row2, int row3, int row4) {
 }
 
 ////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////
 //Core commands used to send data over I2C bus
 
-//JTS2doNow: Can we add dummy bytes (0b00000000) after each data byte, instead of delay timing?
-//If so, we can use I2C interrupts, as long as we pad enough dummy bytes to ensure timing is met
+//JTS2doNow: Can we add dummy bytes between real bytes, to allow I2C interrupt handler to handle entire "sendCMD()"?
 
 //4x20 display I2C SCL is running at 100 kHz (100 kHz max)
 
 //command to send one byte to the LCD display (containing DATA_PORTION nibble & CTRL_PORTION nibble)
-void lcd_I2C_jts::send(uint8_t byte)
-{
+void lcd_I2C_jts::send(uint8_t byte) 
+{ //time                bytes sent  time/Byte
+  //t= 39 microseconds      1B        39 us/B
+  //t= 52 microseconds      4B        13 us/B
+  //t= 71 microseconds      9B         8 us/B
+  //t=162 microseconds     31B         5 us/B
+  debugLED(4,HIGH);
   Wire.beginTransmission(_i2cLcdAddress);                      //~t=5   microseconds
-  Wire.write(byte);                                            //~t=8   microseconds
-  Wire.endTransmission(SEND_RESTART_BIT); //Wire transmits all bytes in buffer // t=240 microseconds
+  Wire.write(byte);
+
+  // test packets
+  // Wire.write(0xFF);
+  // Wire.write(0x00);
+  // Wire.write(0B01010101);
+  // Wire.write(0x00);
+
+  Wire.endTransmission(SEND_RESTART_BIT); //Wire transmits all bytes in buffer
+  debugLED(4,LOW);
+
 }
 
 // Merge the command quartet with the control command (BL EN RW RS)
@@ -65,14 +81,15 @@ void lcd_I2C_jts::sendQuartet(uint8_t data, uint8_t includeDelayAfterWrite)
 
 // Take a command byte and split it in two quartets (LCD operates in 4 bit mode)
 // This is the primary method used to send data to display
-void lcd_I2C_jts::sendCmd(uint8_t data) //t=1 milliseconds
+void lcd_I2C_jts::sendCmd(uint8_t data) //t=200 microseconds
 {
-  
+  debugLED(3,HIGH);
   sendQuartet( (data & DATA_PORTION), NO_DELAY);
 
   //JTS: Can delay as long as desired (i.e. split interrupt handler here if desired)
 
   sendQuartet( ((data << 4) & DATA_PORTION), ADD_DELAY);
+  debugLED(3,LOW);
 }
 
 ////////////////////////////////////////////////////////////////////////
