@@ -33,6 +33,11 @@ void lcd_I2C_jts::setRowOffsets(int row1, int row2, int row3, int row4) {
 ////////////////////////////////////////////////////////////////////////
 //Core commands used to send data over I2C bus
 
+//JTS2doNow: Can we add dummy bytes (0b00000000) after each data byte, instead of delay timing?
+//If so, we can use I2C interrupts, as long as we pad enough dummy bytes to ensure timing is met
+
+//4x20 display I2C SCL is running at 100 kHz (100 kHz max)
+
 //command to send one byte to the LCD display (containing DATA_PORTION nibble & CTRL_PORTION nibble)
 void lcd_I2C_jts::send(uint8_t byte)
 {

@@ -2,14 +2,9 @@
 
 //The 4x20 LCD I2C bus is super slow... therefore, only one screen variable is updated per superloop iteration.
 //This is handled by token 'lcd_whichFunctionUpdates', which is used for a round-robin scheduler
-//Avoid calling 'lcd2.' at all costs; it's ALWAYS faster to do math to see if you need to send 'lcd2.'
+//Avoid calling 'lcd2.' at all costs; it's ALWAYS faster to do math to see if you need to send data to screen.
 
 #include "libcm.h"
-
-//JTS2doNow: only send value to screen if data has changed
-//JTS2doNow: only update one screen parameter per superloop (increment variable to select which function actually writes) 
-
-//4x20 display accepts SCL up to 100 kHz
 
 #ifdef I2C_LIQUID_CRYSTAL
   #include "LiquidCrystal_I2C.h"
