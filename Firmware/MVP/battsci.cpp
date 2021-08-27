@@ -99,8 +99,10 @@ void BATTSCI_sendFrames()
       frameSum_87 += BATTSCI_writeByte( 0x40 );                                          //Never changes
       frameSum_87 += BATTSCI_writeByte( (packVoltageToSend >> 1) );                      //Half Vbatt (e.g. 0x40 = d64 = 128 V)
 
-      //JTS2doLater: This should look at max/min cell voltage, not pack voltage
+      //JTS2doNow: This should look at max/min cell voltage, not pack voltage
+      //JTS2doLater: Change SoC setpoints to different voltages
       //JTS2doLater: Need to add hysteresis (or maybe current-based cell voltage shift)
+      //             pseudocode: packVoltageToSend = packVoltageActual + batteryCurrent_toBATTSCI * VoffsetPerAmp
       if (packVoltageToSend > 180) {                                                      // 180 = 3.75 volts per cell
         // No regen 80%
         frameSum_87 += BATTSCI_writeByte( 0x16 );                                         //Battery SoC (upper byte)

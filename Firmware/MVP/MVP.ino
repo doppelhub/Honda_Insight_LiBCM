@@ -85,6 +85,7 @@ void loop()
 	    METSCI_disable();
 	    digitalWrite(PIN_FANOEM_LOW,LOW);
 	    digitalWrite(PIN_I_SENSOR_EN,LOW); //disable current sensor & constant 5V load
+	    LTC6804_handleKeyOff();
 	    lcd_displayOFF();
 	    vPackSpoof_handleKeyOFF();
   

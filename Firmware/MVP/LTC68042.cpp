@@ -44,6 +44,9 @@ uint8_t ADAX[2]; //!< GPIO conversion command.
 const uint8_t TOTAL_IC = 4;//!<number of ICs in the isoSPI network LTC6804-2 ICs must be addressed in ascending order starting at 0.
 const uint8_t FIRST_IC_ADDR = 2; //!<lowest address.  All additional ICs must be sequentially numbered.
 
+uint16_t maxEverCellVoltage; //since last key event
+uint16_t minEverCellVoltage; //since last key event
+
 //Stores returned cell voltages
 //Note that cells & ICs are 1-indexed, whereas array is 0-indexed:
 //cell_codes[0][0]  is IC1 Cell 01
@@ -206,17 +209,15 @@ void LTC6804_printCellVoltage_max_min()
       }
     }
 
-    lcd_printCellVoltage_hiLoDelta(highCellVoltage, lowCellVoltage);
+    lcd_printCellVoltage_hi(highCellVoltage);
+    lcd_printCellVoltage_lo(lowCellVoltage);
+    lcd_printCellVoltage_delta(highCellVoltage, lowCellVoltage);
 
     debugUSB_cellHI_counts(highCellVoltage);
     debugUSB_cellLO_counts(lowCellVoltage);
     
     //////////////////////////////////////////////////////////////////////////////////
-
-    //JTS2doNow: These aren't displayed after key turns on 2nd time (unless exceeded)
-    static uint16_t maxEverCellVoltage = 0;
-    static uint16_t minEverCellVoltage = 65535;    
-
+  
     if( highCellVoltage > maxEverCellVoltage )
     {
       maxEverCellVoltage = highCellVoltage;
@@ -953,7 +954,9 @@ void spi_write_read(uint8_t tx_Data[],//array of data to be written on SPI port
 
 //---------------------------------------------------------------------------------------
 
-void LTC6804_isoSPI_errorCountReset(void)
+void LTC6804_handleKeyOff(void)
 {
   isoSPI_errorCount = 0;
+  maxEverCellVoltage = 0;
+  minEverCellVoltage = 65535;  
 }
