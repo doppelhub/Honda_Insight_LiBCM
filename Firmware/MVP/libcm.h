@@ -14,6 +14,8 @@
   //Define LiBCM system include files.  Note: Do not alter order.
   #include "config.h"
   #include "cpu_map.h"
+  #include "debugLED.h"
+  #include "debugUSB.h"
   #include "LT_SPI.h"
   #include "LTC68042.h"
   #include "battsci.h"

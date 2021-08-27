@@ -32,16 +32,11 @@ int16_t adc_batteryCurrent_Amps(void)
 	}
 
 	int16_t ADC_oversampledResult = int16_t( (ADC_oversampledAccumulator >> 6) );
-	Serial.print(F("\nADC:"));
-	Serial.print( String(ADC_oversampledResult) );
+	debugUSB_batteryCurrent_counts(ADC_oversampledResult);
 
 	//convert current sensor result into approximate amperage for MCM & user-display
 	//don't use this result for current accumulation... it's not accurate enough (FYI: SoC accumulates raw ADC result)
 	battCurrent_amps = ( (ADC_oversampledResult * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
-
-	Serial.print(F(", "));
-	Serial.print( String(battCurrent_amps) );
-	Serial.print(F(" A(raw), "));
 	
 	return battCurrent_amps;
 }

@@ -111,7 +111,7 @@ void LTC6804_initialize()
 
 void LTC6804_startCellVoltageConversion()
 {
-  wakeup_sleep();
+  wakeup_sleep(); //JTS2doLater: use millis() to only call if LTC6804s have timed off
   LTC6804_adcv();
 }
 
@@ -119,11 +119,11 @@ void LTC6804_startCellVoltageConversion()
 
 void LTC6804_readCellVoltages()
 {
-  wakeup_sleep();
+  wakeup_sleep(); //JTS2doLater: use millis() to only call if LTC6804s have timed off
   uint8_t error = LTC6804_rdcv(0, TOTAL_IC, cell_codes, FIRST_IC_ADDR);
   if (error != 0)
   {
-   Serial.print(F("\nLTC data error\n"));
+   Serial.print(F("\nLTC error\n"));
     LTC_isDataValid = 0;
     isoSPI_errorCount++;
     lcd_printNumErrors(isoSPI_errorCount);
@@ -133,7 +133,9 @@ void LTC6804_readCellVoltages()
   
   lcd_incrementLoopCount();
 
-  //printCellVoltage_all();
+  #ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
+  printCellVoltage_all();
+  #endif
 
   LTC6804_printCellVoltage_max_min();
 }
@@ -154,8 +156,6 @@ uint8_t LTC6804_getStackVoltage()
   }
 
   uint8_t stackVoltage = (uint8_t)(stackVoltage_RAW * 0.0001);
-  Serial.print(F(", Vpack:"));
-  Serial.print( String(stackVoltage) );
 
   return stackVoltage;
 }
@@ -163,8 +163,8 @@ uint8_t LTC6804_getStackVoltage()
 //---------------------------------------------------------------------------------------
 
 void printCellVoltage_all()
-{
-  Serial.print(F("\n"));
+{ // t=42 milliseconds... blocking (serial transmit buffer filled)
+  Serial.print('\n');
   for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
   {
     Serial.print(F("IC "));
@@ -173,11 +173,11 @@ void printCellVoltage_all()
     {
       Serial.print(F(" C"));
       Serial.print(i+1,DEC);
-      Serial.print(F(":"));
+      Serial.print(':');
       Serial.print( (cell_codes[current_ic][i] * 0.0001), 4 );
-      Serial.print(F(","));
+      Serial.print(',');
     }
-    Serial.println();
+    Serial.print('\n');
   }
 }
 
@@ -210,10 +210,8 @@ void LTC6804_printCellVoltage_max_min()
 
     lcd_printCellVoltage_hiLoDelta(highCellVoltage, lowCellVoltage);
 
-    Serial.print(F(", hi:"));
-    Serial.print( (highCellVoltage * 0.0001), 4 );
-    Serial.print(F(", lo:"));
-    Serial.print( (lowCellVoltage * 0.0001), 4 );
+    debugUSB_cellHI_counts(highCellVoltage);
+    debugUSB_cellLO_counts(lowCellVoltage);
     
     //////////////////////////////////////////////////////////////////////////////////
 

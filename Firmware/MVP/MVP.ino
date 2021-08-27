@@ -46,7 +46,7 @@ void setup()
 
   analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
-  if( digitalRead(PIN_KEY_ON) ){ digitalWrite(PIN_LED3,HIGH); } //LED3 turns on if key was on when LiBCM first booted
+  if( digitalRead(PIN_KEY_ON) ){ LED(3,HIGH); } //LED3 turns on if key was on when LiBCM first booted
 
   Serial.begin(115200); //USB
 
@@ -60,9 +60,7 @@ void setup()
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
   //TCCR0B = (TCCR0B & B11111000) | B00000001; // JTSdebug: for PWM frequency of 62500 Hz D04 & D13. This hoses delay()!
 
-  Serial.print(F("\n\nWelcome to LiBCM v"));
-  Serial.print(String(FW_VERSION));
-  Serial.print("," + String(BUILD_DATE) + "\n\n");
+  Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION "," BUILD_DATE "\n\n")); //memory efficient (see useful_tidbits.txt)
 }
 
 void loop()
@@ -84,7 +82,7 @@ void loop()
 	  if( keyStatus_now == 0 )
 	  { //takes t=?? milliseconds to execute
 	    Serial.print(F("OFF"));
-	    digitalWrite(PIN_LED1,LOW);
+	    LED(1,LOW);
 	    BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
 	    METSCI_disable();
 	    digitalWrite(PIN_FANOEM_LOW,LOW);
@@ -94,14 +92,14 @@ void loop()
   
 	  } else { //takes t=?? milliseconds to execute
 	  	Serial.print(F("ON"));
-	  	//vPackSpoof_handleKeyON(); JTS2doNow: Figure out keyON VPIN spooging
+	  	//vPackSpoof_handleKeyON(); //JTS2doNow: Figure out keyON VPIN spooging
 	    BATTSCI_enable();
 	    METSCI_enable();
 	    digitalWrite(PIN_FANOEM_LOW,HIGH);
 	    digitalWrite(PIN_I_SENSOR_EN,HIGH); //enable current sensor & constant 5V load
 	    lcd_displayON();
 	    //JTS2doLater: Add gridCharger_isPluggedIn(); if true, hang in while(keyON), to cause P-code (to alert user)
-	    digitalWrite(PIN_LED1,HIGH);
+	    LED(1,HIGH);
 	  }
 
 	  keyStatus_previous = keyStatus_now;
@@ -126,12 +124,12 @@ void loop()
 	    digitalWrite(PIN_GRID_EN,0);    //turn grid charger off
 	    Serial.print("\nGrid Charger Disabled");
 	    lcd_displayOFF();
-	    digitalWrite(PIN_LED4,LOW);
+	    LED(4,LOW);
 
 	  } else {                          //grid charger was just plugged in
 	    Serial.print(F("Plugged In"));
 	    lcd_displayON();
-	    digitalWrite(PIN_LED4,HIGH);
+	    LED(4,HIGH);
 	  }
 	}
 	gridChargerPowered_previous = gridChargerPowered_now;
@@ -153,7 +151,9 @@ void loop()
 	  //This section executes in t=53 milliseconds
 
 	  uint8_t packVoltage_actual  = LTC6804_getStackVoltage();
+	  debugUSB_VpackActual_volts(packVoltage_actual);
 	  uint8_t packVoltage_spoofed = (uint8_t)(packVoltage_actual*0.94);
+	  debugUSB_VpackSpoofed_volts(packVoltage_spoofed);
 
 	  //---------------------------------------------------------------------------------------
 
@@ -164,13 +164,17 @@ void loop()
 	    //executes in  t=? microseconds when MCM is     sending data to LiBCM
 	    
 	    int16_t packCurrent_actual = adc_batteryCurrent_Amps();
+	    debugUSB_batteryCurrentActual_amps(packCurrent_actual);
+
 	    int16_t packCurrent_spoofed;
 
 			if( ENABLE_CURRENT_HACK )
 			{
 				packCurrent_spoofed = (int16_t)(packCurrent_actual * 0.7); //140% current hack = tell MCM 70% actual
-				Serial.print( String(packCurrent_spoofed) );
-				Serial.print(F(" A(MCM)"));
+				debugUSB_batteryCurrentSpoofed_amps(packCurrent_spoofed);
+
+
+
 			} else {
 				packCurrent_spoofed = packCurrent_actual;
 			}
@@ -192,5 +196,6 @@ void loop()
 	  //key is off & grid charger unplugged
 		//JTS2doLater: Balance cells
 	}
-	digitalWrite(PIN_LED2, !digitalRead(PIN_LED2)); //Heartbeat
+	blinkLED2(); //Heartbeat
+	debugUSB_printLatest_data();
 }

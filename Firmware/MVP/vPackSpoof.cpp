@@ -60,19 +60,12 @@ void vPackSpoof_handleKeyON(void)
 	uint8_t actualPackVoltage = LTC6804_getStackVoltage();
 	Serial.print("\nV6804=" + String(actualPackVoltage) );
 
-	uint8_t loopCounter = 0;
 	do
 	{
 		packVoltage_VPINin = adc_packVoltage_VpinIn(); 
 		Serial.print("\nVPIN=" + String(packVoltage_VPINin) );
 		analogWrite(PIN_VPIN_OUT_PWM, packVoltage_VPINin);
-		if(loopCounter == 50)
-		{
-			digitalWrite(PIN_LED1, !(digitalRead(PIN_LED1)) );
-			loopCounter = 0;
-		}
-		loopCounter++;
-		
+		blinkLED1();		
 	} while( ((packVoltage_VPINin + 18) <= actualPackVoltage ) && digitalRead(PIN_KEY_ON) );
 	Serial.print("\nVPIN=V6804");
 }
