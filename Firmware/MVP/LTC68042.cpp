@@ -36,6 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 uint8_t LTC_isDataValid=0;
 uint8_t isoSPI_errorCount = 0;
+uint32_t lastTimeDataSent_millis = 0; //LTC idle timer resets each time data is transferred
 
 //conversion command variables.
 uint8_t ADCV[2]; //!< Cell Voltage conversion command.
@@ -90,12 +91,12 @@ void LTC6804_init_cfg()
 {
   for (int i = 0; i<TOTAL_IC; i++)
   {                        // BIT7    BIT6    BIT5    BIT4    BIT3    BIT2    BIT1   BIT0
-    tx_cfg[i][0] = 0xF6 ;  //GPIO5   GPIO4   GPIO3   GPIO2   GPIO1   REFON   SWTRD  ADCOPT //Enable GPIO pulldown, etc
-    tx_cfg[i][1] = 0x00 ;  //VUV[7]  VUV[6]  VUV[5]  VUV[4]  VUV[3]  VUV[2]  VUV[1] VUV[0] //Undervoltage comparison voltage
-    tx_cfg[i][2] = 0x00 ;  //VOV[3]  VOV[2]  VOV[1]  VOV[0]  VUV[11] VUV[10] VUV[9] VUV[8]
-    tx_cfg[i][3] = 0x00 ;  //VOV[11] VOV[10] VOV[9]  VOV[8]  VOV[7]  VOV[6]  VOV[5] VOV[4] //Overvoltage comparison voltage
-    tx_cfg[i][4] = 0x00 ;  //DCC8    DCC7    DCC6    DCC5    DCC4    DCC3    DCC2   DCC1   //Enables discharge on cells 8:1
-    tx_cfg[i][5] = 0x00 ;  //DCTO[3] DCTO[2] DCTO[1] DCTO[0] DCC12   DCC11   DCC10  DCC9   //Discharge timer and cells 12:9
+    tx_cfg[i][0] = 0b11110110 ;  //GPIO5   GPIO4   GPIO3   GPIO2   GPIO1   REFON   SWTRD  ADCOPT //Enable GPIO pulldown, REFON
+    tx_cfg[i][1] = 0x00       ;  //VUV[7]  VUV[6]  VUV[5]  VUV[4]  VUV[3]  VUV[2]  VUV[1] VUV[0] //Undervoltage comparison voltage
+    tx_cfg[i][2] = 0x00       ;  //VOV[3]  VOV[2]  VOV[1]  VOV[0]  VUV[11] VUV[10] VUV[9] VUV[8]
+    tx_cfg[i][3] = 0x00       ;  //VOV[11] VOV[10] VOV[9]  VOV[8]  VOV[7]  VOV[6]  VOV[5] VOV[4] //Overvoltage comparison voltage
+    tx_cfg[i][4] = 0x00       ;  //DCC8    DCC7    DCC6    DCC5    DCC4    DCC3    DCC2   DCC1   //Enables discharge on cells 8:1
+    tx_cfg[i][5] = 0x00       ;  //DCTO[3] DCTO[2] DCTO[1] DCTO[0] DCC12   DCC11   DCC10  DCC9   //Discharge timer and cells 12:9
   }
 }
 
@@ -122,7 +123,7 @@ void LTC6804_startCellVoltageConversion()
 
 void LTC6804_readCellVoltages()
 {
-  wakeup_sleep(); //JTS2doLater: use millis() to only call if LTC6804s have timed off
+  wakeup_sleep();
   uint8_t error = LTC6804_rdcv(0, TOTAL_IC, cell_codes, FIRST_IC_ADDR);
   if (error != 0)
   {
@@ -184,7 +185,6 @@ void printCellVoltage_all()
 
 //---------------------------------------------------------------------------------------
 
-//This function is way overloaded.
 void LTC6804_printCellVoltage_max_min()
 {
   uint16_t lowCellVoltage = 65535;
@@ -233,7 +233,7 @@ void LTC6804_printCellVoltage_max_min()
 
   //////////////////////////////////////////////////////////////////////////////////
 
-  //JTS2doLater: make this its own function
+  //JTS2doLater: make this its own function (in gridCharger.c)
   //grid charger handling
   if( (highCellVoltage <= 39000) && !(digitalRead(PIN_GRID_SENSE)) ) //Battery not full and grid charger is plugged in
   {
@@ -853,13 +853,18 @@ int8_t LTC6804_rdcfg(uint8_t total_ic, uint8_t r_config[][8], uint8_t addr_first
 
 /*!****************************************************
   \brief Wake isoSPI up from idle state
- Generic wakeup commannd to wake isoSPI up out of idle
+ Generic wakeup command to wake isoSPI up out of idle
  *****************************************************/
 void wakeup_idle()
 {
-  digitalWrite(PIN_SPI_CS,LOW);
-  delayMicroseconds(10); //Guarantees the isoSPI will be in ready mode
-  digitalWrite(PIN_SPI_CS,HIGH);
+  const uint8_t T_IDLE_isoSPI_millis = 4; //'tidle' (absMIN) = 4.3 ms
+  
+  if( (millis() - lastTimeDataSent_millis) > T_IDLE_isoSPI_millis )
+  { //LTC6804 isoSPI might be asleep
+    digitalWrite(PIN_SPI_CS,LOW);
+    delayMicroseconds(10); //Guarantees the isoSPI will be in ready mode
+    digitalWrite(PIN_SPI_CS,HIGH);
+  }
 }
 
 //---------------------------------------------------------------------------------------
@@ -868,13 +873,18 @@ void wakeup_idle()
 /*!****************************************************
   \brief Wake the LTC6804 from the sleep state
 
- Generic wakeup commannd to wake the LTC6804 from sleep
+ Generic wakeup command to wake the LTC6804 from sleep
  *****************************************************/
 void wakeup_sleep()
 {
-  digitalWrite(PIN_SPI_CS,LOW);
-  delay(1); // Guarantees the LTC6804 will be in standby
-  digitalWrite(PIN_SPI_CS,HIGH);
+  const uint16_t T_SLEEP_WATCHDOG_MILLIS = 1800; //'tsleep' (absMIN) = 1800 ms 
+
+  if( (millis() - lastTimeDataSent_millis) > T_SLEEP_WATCHDOG_MILLIS )
+  { //LTC6804 core might be asleep
+    digitalWrite(PIN_SPI_CS,LOW);
+    delay(1); // Guarantees the LTC6804 will be in standby
+    digitalWrite(PIN_SPI_CS,HIGH);
+  }
 }
 
 //---------------------------------------------------------------------------------------
@@ -922,6 +932,8 @@ void spi_write_array(uint8_t len, // Option: Number of bytes to be written on th
   {
     spi_write((char)data[i]);
   }
+
+  lastTimeDataSent_millis = millis(); //all SPI writes occur here
 }
 
 //---------------------------------------------------------------------------------------
