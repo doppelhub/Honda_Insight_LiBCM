@@ -18,7 +18,7 @@
 
 #include "libcm.h"
 
-void setup()
+void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup or bootloader delay 
 {
   //Ensure 12V->5V DCDC stays on
   pinMode(PIN_TURNOFFLiBCM,OUTPUT);
@@ -70,17 +70,15 @@ void loop()
 
 	//---------------------------------------------------------------------------------------
 	//This section executes in t=  5 microseconds when key state has NOT changed
-	//This section executes in t= ?? milliseconds when key state has     changed to ON
-	//This section executes in t= ?? milliseconds when key state has     changed to OFF
 
 	//steps to perform when key state changes (on->off, off->on)
 	if( keyStatus_now != keyStatus_previous)
 	{
 
-	  Serial.print(F("\nKey:")); //takes t=?? microseconds to execute
+	  Serial.print(F("\nKey:"));
 	  
 	  if( keyStatus_now == 0 )
-	  { //takes t=?? milliseconds to execute
+	  {
 	    Serial.print(F("OFF"));
 	    LED(1,LOW);
 	    BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
@@ -90,7 +88,7 @@ void loop()
 	    lcd_displayOFF();
 	    vPackSpoof_handleKeyOFF();
   
-	  } else { //takes t=?? milliseconds to execute
+	  } else {
 	  	Serial.print(F("ON"));
 	  	//vPackSpoof_handleKeyON(); //JTS2doNow: Figure out keyON VPIN spooging
 	    BATTSCI_enable();
@@ -108,7 +106,6 @@ void loop()
 	//---------------------------------------------------------------------------------------
 	//This section executes in t=8 microseconds when grid charger state has NOT changed
 
-	//JTS2doLater: if key is on, don't run this code (make sure to turn charger off in keyON handler)
 	//Determine whether grid charger is plugged in
 	uint8_t gridChargerPowered_now = !(digitalRead(PIN_GRID_SENSE));
 	static uint8_t gridChargerPowered_previous;
@@ -122,7 +119,7 @@ void loop()
 	    Serial.print(F("Unplugged"));
 	    analogWrite(PIN_FAN_PWM,0);     //turn onboard fans off
 	    digitalWrite(PIN_GRID_EN,0);    //turn grid charger off
-	    Serial.print("\nGrid Charger Disabled");
+	    Serial.print(F("\nGrid Charger Disabled"));
 	    lcd_displayOFF();
 	    LED(4,LOW);
 
@@ -144,15 +141,18 @@ void loop()
 
 	  //---------------------------------------------------------------------------------------
   
+  	debugLED(1,HIGH);
 	  LTC6804_readCellVoltages();	//individual cell results stored in 'cell_codes' array
-	  														//executes in t=56 millisconds 
+	  														//executes in t=28 milliseconds 
+	  debugLED(1,LOW);
 	  
 	  //---------------------------------------------------------------------------------------
-	  //This section executes in t=53 milliseconds
+	  //This section executes in t=100 microseconds
 
-	  uint8_t packVoltage_actual  = LTC6804_getStackVoltage();
-	  debugUSB_VpackActual_volts(packVoltage_actual);
-	  uint8_t packVoltage_spoofed = (uint8_t)(packVoltage_actual*0.94);
+	  uint8_t packVoltage_actual  = LTC6804_getStackVoltage(); //t=85 microseconds
+	  debugUSB_VpackActual_volts(packVoltage_actual); //t=5 microseconds
+
+	  uint8_t packVoltage_spoofed = (uint8_t)(packVoltage_actual*0.94); //t=20 microseconds
 	  debugUSB_VpackSpoofed_volts(packVoltage_spoofed);
 
 	  //---------------------------------------------------------------------------------------
@@ -163,21 +163,18 @@ void loop()
 	    //executes in ~t=5 microseconds when MCM is NOT sending data to LiBCM
 	    //executes in  t=? microseconds when MCM is     sending data to LiBCM
 	    
-	    int16_t packCurrent_actual = adc_batteryCurrent_Amps();
+	    int16_t packCurrent_actual = adc_batteryCurrent_Amps(); //t=450 microseconds
 	    debugUSB_batteryCurrentActual_amps(packCurrent_actual);
 
 	    int16_t packCurrent_spoofed;
 
-			if( ENABLE_CURRENT_HACK )
-			{
+			#ifdef ENABLE_CURRENT_HACK 
 				packCurrent_spoofed = (int16_t)(packCurrent_actual * 0.7); //140% current hack = tell MCM 70% actual
-				debugUSB_batteryCurrentSpoofed_amps(packCurrent_spoofed);
-
-
-
-			} else {
+			#else
 				packCurrent_spoofed = packCurrent_actual;
-			}
+			#endif
+
+			debugUSB_batteryCurrentSpoofed_amps(packCurrent_spoofed);
 
 	    BATTSCI_setPackCurrent(packCurrent_spoofed);
     	
@@ -188,8 +185,9 @@ void loop()
 	  	BATTSCI_sendFrames();
 
 	  }
-	  //---------------------------------------------------------------------------------------
 
+	  debugUSB_printLatest_data();
+	  lcd_incrementLoopCount();
 	}
 	else
 	{
@@ -197,5 +195,4 @@ void loop()
 		//JTS2doLater: Balance cells
 	}
 	blinkLED2(); //Heartbeat
-	debugUSB_printLatest_data();
 }

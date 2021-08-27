@@ -130,8 +130,6 @@ void LTC6804_readCellVoltages()
   } else {
     LTC_isDataValid = 1;
   }
-  
-  lcd_incrementLoopCount();
 
   #ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
   printCellVoltage_all();

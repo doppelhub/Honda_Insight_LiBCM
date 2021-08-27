@@ -22,21 +22,32 @@ uint8_t adc_packVoltage_VpinIn(void) //returns pack voltage (in volts)
 
 int16_t adc_batteryCurrent_Amps(void)
 {
-	int16_t battCurrent_amps;
-	uint16_t ADC_oversampledAccumulator = 0;
+	#define NUM_ADCSAMPLES_PER_RESULT 64 //Valid values: 1,2,4,8,16,32,64 //MUST ALSO CHANGE next line!
+	#define NUM_ADCSAMPLES_2_TO_THE_N  6 //Valid values: 0,1,2,3, 4, 5, 6 //2^N = NUM_ADCSAMPLES_PER_RESULT
+	#define NUM_ADCSAMPLES_PER_CALL    4 //Must be divisible into NUM_ADCSAMPLES_PER_RESULT!
+	
+	static uint8_t adcSamplesTaken = 0;
+	static uint16_t adcAccumulator = 0;
 
-	//JTS2doLater: Convert to rolling average (only get one ADC value per run).
-	for(int ii=0; ii<64; ii++)  //takes 7.2 ms to get QTY64 conversions
+	for(int ii=0; ii<NUM_ADCSAMPLES_PER_CALL; ii++)
 	{
-		ADC_oversampledAccumulator += analogRead(PIN_BATTCURRENT);
+		adcAccumulator += analogRead(PIN_BATTCURRENT);
+		adcSamplesTaken++;
 	}
 
-	int16_t ADC_oversampledResult = int16_t( (ADC_oversampledAccumulator >> 6) );
-	debugUSB_batteryCurrent_counts(ADC_oversampledResult);
+	static int16_t latest_battCurrent_amps = 0;
+	if(adcSamplesTaken == NUM_ADCSAMPLES_PER_RESULT)
+	{
+		int16_t battCurrent_counts = int16_t( (adcAccumulator >> NUM_ADCSAMPLES_2_TO_THE_N) ); //Shift must match:
+		adcAccumulator = 0;
+		adcSamplesTaken = 0;
+		debugUSB_batteryCurrent_counts(battCurrent_counts);
 
-	//convert current sensor result into approximate amperage for MCM & user-display
-	//don't use this result for current accumulation... it's not accurate enough (FYI: SoC accumulates raw ADC result)
-	battCurrent_amps = ( (ADC_oversampledResult * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
-	
-	return battCurrent_amps;
+		//convert current sensor result into approximate amperage for MCM & user-display
+		//don't use this result for current accumulation... it's not accurate enough (FYI: SoC accumulates raw ADC result)
+		latest_battCurrent_amps = ( (battCurrent_counts * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
+	}
+
+	return latest_battCurrent_amps;
+
 }

@@ -4,7 +4,7 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define ENABLE_CURRENT_HACK true // true for +40% hack false for stock
+	#define ENABLE_CURRENT_HACK // Commented: OEM current sensor behavior //Uncommented: +40% current PCB installed (inside MCM)
 	#define CPU_MAP_MEGA2560
 
 	#define FW_VERSION "0.1.1 VPIN"
@@ -24,6 +24,6 @@
 //#define LED_NORMAL //enable "     LED()" functions (see debug.c)
   #define LED_DEBUG  //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
-	#define PRINT_USB_DEBUG_TEXT //prints text sent via debugUSB_debugText()
+	#define PRINT_USB_DEBUG_TEXT //prints text sent via debugUSB_debugText() //JTS2doLater: NOT IMPLEMENTED YET
 
 #endif
