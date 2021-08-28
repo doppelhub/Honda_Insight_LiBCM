@@ -141,6 +141,7 @@ void LTC6804_readCellVoltages()
   static char cellVoltageRegister = 'A'; //QTY3 cell voltages per register (e.g. A=cell01/cell02/cell03)
 
   uint8_t error = LTC6804_rdcv_process(chipAddress, cellVoltageRegister); 
+  //JTS2doNow: Figure out why PEC error returned, even though cell voltages valid.
 
   //increment cellVoltageRegister & chipAddress
   cellVoltageRegister++;
@@ -196,7 +197,7 @@ uint8_t LTC6804_rdcv_process(uint8_t chipAddress, char cellVoltageRegister)
 
   uint16_t calculated_pec = pec15_calc(NUM_BYTES_IN_REG, &returnedData[NUM_RX_BYTES]);
   if (received_pec != calculated_pec) { pec_error = 1; } //PEC error occurred
-
+  //JTS2doNow: Figure out why PEC values don't match (always errors)
   //JTS2doNow: only store result if PEC is valid
 
   //select which LTC cell voltages were read into returnedData
