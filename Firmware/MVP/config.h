@@ -21,7 +21,7 @@
 		//#define I2C_LCD            //use "TwiLiquidCrystal.h"
 	  #define LCD_JTS            //use "lcd_I2C.h" (modified version ) 
 	
-  //#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Print all cell voltages to USB Serial Monitor (slow) 
+  #define PRINT_ALL_CELL_VOLTAGES_TO_USB //Print all cell voltages to USB Serial Monitor (slow) 
 
 	//choose which functions control the LEDs
 	//#define LED_NORMAL //enable "     LED()" functions (see debug.c)

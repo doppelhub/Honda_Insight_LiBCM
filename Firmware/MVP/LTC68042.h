@@ -176,9 +176,9 @@ void LTC6804_adcv();
 
 void LTC6804_adax();
 
-uint8_t LTC6804_rdcv_process(uint8_t chipAddress, uint8_t cellVoltageRegister);                     
+uint8_t LTC6804_rdcv_process(uint8_t chipAddress, char cellVoltageRegister);                     
 
-void LTC6804_rdcv_query(uint8_t chipAddress, uint8_t cellVoltageRegister, uint8_t *data);
+void LTC6804_rdcv_query(uint8_t chipAddress, char cellVoltageRegister, uint8_t *data);
 
 int8_t LTC6804_rdaux(uint8_t reg, uint8_t nIC, uint16_t aux_codes[][6], uint8_t addr_first_ic);
 
