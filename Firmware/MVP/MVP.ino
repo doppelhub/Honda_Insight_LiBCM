@@ -178,7 +178,7 @@ void loop()
 			#elif defined(SET_CURRENT_HACK_00)
 				packCurrent_spoofed = packCurrent_actual;
 			#else
-				#pragma error (SET_CURRENT_HACK value not selected in config.c)
+				#error (SET_CURRENT_HACK_xx value not selected in config.c)
 			#endif
 
 			debugUSB_batteryCurrentSpoofed_amps(packCurrent_spoofed);

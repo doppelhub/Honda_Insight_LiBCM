@@ -1,4 +1,5 @@
 /*!
+Copyright 2021(c) John Sullivan
 Copyright 2018(c) Analog Devices, Inc.
 Copyright 2013 Linear Technology Corp. (LTC)
 
@@ -34,22 +35,27 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "libcm.h"
 
+//JTS2doNow: Split into multiple files:
+//-LTC68042_configure.c
+//-LTC68042_retrieve.c
+//-LTC68042_process.c
+
 uint8_t LTC_isDataValid=0;
 uint8_t isoSPI_errorCount = 0;
 uint32_t lastTimeDataSent_millis = 0; //LTC idle timer resets each time data is transferred
 
 //conversion command variables.
-uint8_t ADCV[2]; //!< Cell Voltage conversion command.
-uint8_t ADAX[2]; //!< GPIO conversion command.
+uint8_t ADCV[2]; //Cell Voltage conversion command.
+uint8_t ADAX[2]; //GPIO conversion command.
 
-const uint8_t TOTAL_IC = 4;//!<number of ICs in the isoSPI network LTC6804-2 ICs must be addressed in ascending order starting at 0.
-const uint8_t FIRST_IC_ADDR = 2; //!<lowest address.  All additional ICs must be sequentially numbered.
+const uint8_t TOTAL_IC = 4; //number of ICs in the isoSPI network
+const uint8_t FIRST_IC_ADDR = 2; //lowest address.  All additional IC addresses must be sequential
 
 uint16_t maxEverCellVoltage; //since last key event
 uint16_t minEverCellVoltage; //since last key event
 
 //Stores returned cell voltages
-//Note that cells & ICs are 1-indexed, whereas array is 0-indexed:
+//Note: cells & ICs are 1-indexed, whereas array is 0-indexed
 //cell_codes[0][0]  is IC1 Cell 01
 //cell_codes[3][11] is IC4 Cell 12
 uint16_t cell_codes[TOTAL_IC][12];
@@ -104,7 +110,6 @@ void LTC6804_init_cfg()
 
 void LTC6804_initialize()
 {
-  //LTC6804_isoSPI_errorCountReset();
   spi_enable(SPI_CLOCK_DIV64);
   set_adc(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL,AUX_CH_GPIO1);
   LTC6804_init_cfg();        //initialize the 6804 configuration array to be written
@@ -115,55 +120,133 @@ void LTC6804_initialize()
 
 void LTC6804_startCellVoltageConversion()
 {
-  wakeup_sleep(); //JTS2doLater: use millis() to only call if LTC6804s have timed off
-  LTC6804_adcv();
+  wakeup_sleep();
+  LTC6804_adcv(); //JTS2doNow: only run if all cell voltages have been read back
+  //JTS2doNow: Depending on ADC acquisition rate, might need to only digitize a few channels per call.
 }
 
 //---------------------------------------------------------------------------------------
 
+//Each call updates QTY3 cell voltages 
 void LTC6804_readCellVoltages()
 {
   wakeup_sleep();
-  uint8_t error = LTC6804_rdcv(0, TOTAL_IC, cell_codes, FIRST_IC_ADDR);
+  uint8_t cellVoltageRegister = 1; //1/2/3/4
+  uint8_t chipAddress = 2;
+
+  uint8_t error = LTC6804_rdcv_process(chipAddress, cellVoltageRegister); 
+  //JTS2doNow: Divide QTY48 reads into QTY3 per call
+ 
+  // for (uint8_t current_ic = 0 ; current_ic < total_ic; current_ic++) // executes for every LTC6804 in the stack
+  // {
+  //   //current_ic is used as an IC counter
+
   if (error != 0)
   {
-   Serial.print(F("\nLTC error\n"));
     LTC_isDataValid = 0;
     isoSPI_errorCount++;
+    Serial.print(F("\nisoSPI error"));
     lcd_printNumErrors(isoSPI_errorCount);
   } else {
     LTC_isDataValid = 1;
   }
 
   #ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
-  printCellVoltage_all();
+    #warning (Printing all cell voltages to USB severely reduces Superloop rate)
+    printCellVoltage_all();
   #endif
 
-  LTC6804_printCellVoltage_max_min();
+  LTC6804_printCellVoltage_max_min(); //JTS2doNow: only calculate max/min after all cell voltages read.
 }
 
 //---------------------------------------------------------------------------------------
 
-//JTS2doLater: Roll this into readCells() function; this fcn should just recall last summed value
-uint8_t LTC6804_getStackVoltage()
+//JTS2doNow: better function name
+//Reads and parses cell voltages from specified LTC6804 address and "cell voltage register" into 'cell_codes' array.
+uint8_t LTC6804_rdcv_process(uint8_t chipAddress,           
+                             uint8_t cellVoltageRegister  //(1=A, 2=B, 3=C, 4=D)                      
+                            )
 {
-  uint32_t stackVoltage_RAW = 0; //Multiply by 0.0001 for volts
+  //Each LTC6804 has QTY4 "Cell Voltage Registers" (A/B/C/D)
+  const uint8_t NUM_CELLVOLTAGES_IN_REG = 3; //Each CVR contains QTY3 cell voltages.  Each cell voltage is 2B
+  const uint8_t NUM_BYTES_IN_REG        = 6; //NUM_CELLVOLTAGES_IN_REG * 2B
+  const uint8_t NUM_RX_BYTES            = 8; //numBytes received = NUM_BYTES_IN_REG + PEC (2B)
 
-  for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
+  int8_t pec_error = 0;
+
+  uint8_t *returnedData;
+  returnedData = (uint8_t *) malloc( NUM_RX_BYTES * sizeof(uint8_t) ); //previously 'cell_data'
+
+  //Read single cell voltage register (QTY3 cell voltages) from specified IC
+  LTC6804_rdcv_query(chipAddress, cellVoltageRegister, returnedData); //result stored in returnedData
+
+  //parse 16b cell voltages from returnedData (from LTC6804)
+  uint16_t cellX_Voltage_counts = returnedData[0] + (returnedData[1]<<8); //(lower byte)(upper byte)
+  uint16_t cellY_Voltage_counts = returnedData[2] + (returnedData[3]<<8);
+  uint16_t cellZ_Voltage_counts = returnedData[4] + (returnedData[5]<<8);
+  uint16_t received_pec         = (returnedData[6]<<8) + returnedData[7]; 
+
+  uint16_t calculated_pec = pec15_calc(NUM_BYTES_IN_REG, &returnedData[NUM_RX_BYTES]);
+  if (received_pec != calculated_pec) { pec_error = 1; } //PEC error occurred
+
+  //JTS2doNow: only store result if PEC is valid
+
+  //select which LTC cell voltages were read into returnedData
+  uint8_t cellX; //1st cell in returnedData (LTC cell 1, 4, 7, or 10)
+  uint8_t cellY; //2nd cell in returnedData (LTC cell 2, 5, 8, or 11) 
+  uint8_t cellZ; //3rd cell in returnedData (LTC cell 3, 6, 9, or 12)
+  switch(cellVoltageRegister)  //LUT to prevent QTY3 multiplies & QTY12 adds per call
   {
-    for (int i=0; i<12; i++)
-    {
-     stackVoltage_RAW += cell_codes[current_ic][i];
-    }
+    case 0: cellX=0;  cellY=1;  cellZ=2; break; //cells  1/ 2/ 3 (LTC 1-indexed, array 0-indexed)
+    case 1: cellX=3;  cellY=4;  cellZ=5; break; //cells  4/ 5/ 6
+    case 2: cellX=6;  cellY=7;  cellZ=8; break; //cells  7/ 8/ 9
+    case 3: cellX=9; cellY=10; cellZ=11; break; //cells 10/11/12
   }
 
-  uint8_t stackVoltage = (uint8_t)(stackVoltage_RAW * 0.0001);
-
-  return stackVoltage;
+  cell_codes[chipAddress][cellX] = cellX_Voltage_counts;
+  cell_codes[chipAddress][cellY] = cellY_Voltage_counts;
+  cell_codes[chipAddress][cellZ] = cellZ_Voltage_counts;
+  
+  free(returnedData);
+  return(pec_error);
 }
 
 //---------------------------------------------------------------------------------------
 
+//Read a single "cell voltage register" and store the results in *data
+//This function is rarely used outside of the LTC6804_rdcv_process() command.
+//JTS2doNow: combine with LTC6804_rdcv_query
+void LTC6804_rdcv_query(uint8_t chipAddress,
+                         uint8_t cellVoltageRegister,
+                         uint8_t *data //Unparsed cell codes
+                        )
+{
+  uint8_t cmd[4];
+  uint16_t temp_pec;
+
+  cmd[0] = 0x80 + (chipAddress<<3); //configure LTC address (p46:Table33)
+
+  switch(cellVoltageRegister) //chose which "cell voltage register" to read
+  {
+    case 1: cmd[1] = 0x04; break;
+    case 2: cmd[1] = 0x06; break;
+    case 3: cmd[1] = 0x08; break;
+    case 4: cmd[1] = 0x0A; break;
+  }
+
+  temp_pec = pec15_calc(2, cmd);
+  cmd[2] = (uint8_t)(temp_pec >> 8);
+  cmd[3] = (uint8_t)(temp_pec);
+
+  wakeup_idle (); //Guarantees LTC6804 isoSPI port is awake.
+  digitalWrite(PIN_SPI_CS,LOW);
+  spi_write_read(cmd,4,&data[0],8);
+  digitalWrite(PIN_SPI_CS,HIGH);
+}
+
+//---------------------------------------------------------------------------------------
+
+//JTS2doLater: Only output a few cells per call?
 void printCellVoltage_all()
 { // t=42 milliseconds... blocking (serial transmit buffer filled)
   Serial.print('\n');
@@ -185,6 +268,28 @@ void printCellVoltage_all()
 
 //---------------------------------------------------------------------------------------
 
+//JTS2doNow: Roll for loops into LTC6804_printCellVoltage_max_min(); this fcn should just recall latest summed value
+uint8_t LTC6804_getStackVoltage()
+{
+  uint32_t stackVoltage_RAW = 0; //Multiply by 0.0001 for volts
+
+  //JTS2doNow: only update stack voltage if LTC_isDataValid
+  for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
+  {
+    for (int i=0; i<12; i++)
+    {
+     stackVoltage_RAW += cell_codes[current_ic][i];
+    }
+  }
+
+  uint8_t stackVoltage = (uint8_t)(stackVoltage_RAW * 0.0001);
+
+  return stackVoltage;
+}
+
+//---------------------------------------------------------------------------------------
+
+//JTS2doNow: rename LTC6804_calculateVoltages()
 void LTC6804_printCellVoltage_max_min()
 {
   uint16_t lowCellVoltage = 65535;
@@ -269,6 +374,7 @@ void set_adc(uint8_t MD, //ADC Conversion Mode (LPF corner frequency)
   md_bits = (MD & 0x01) << 7;
   ADCV[1] =  md_bits + 0x60 + (DCP<<4) + CH;
 
+  //JTS2doNow: Divide set_adc() into two functions.  New one does code below:
   md_bits = (MD & 0x02) >> 1;
   ADAX[0] = md_bits + 0x04;
   md_bits = (MD & 0x01) << 7;
@@ -324,146 +430,6 @@ void LTC6804_adax()
   digitalWrite(PIN_SPI_CS,LOW);
   spi_write_array(4,cmd);
   digitalWrite(PIN_SPI_CS,HIGH);
-}
-
-//---------------------------------------------------------------------------------------
-
-//Reads and parses cell voltages from LTC6804 registers into 'cell_codes' variable.
-uint8_t LTC6804_rdcv(uint8_t reg,  //controls which cell voltage register to read (0=all, 1=A, 2=B, 3=C, 4=D)
-                     uint8_t total_ic,
-                     uint16_t cell_codes[][12],
-                     uint8_t addr_first_ic
-                    )
-{
-
-
-  //Each LTC6804 has QTY4 "Cell Voltage Registers" (A/B/C/D)
-  const uint8_t NUM_CELLVOLTAGES_IN_REG = 3; //Each CVR contains QTY3 cell voltages.  Each cell voltage is 2B
-  const uint8_t NUM_BYTES_IN_REG        = 6; //NUM_CELLVOLTAGES_IN_REG * 2B
-  const uint8_t NUM_RX_BYTES            = 8; //numBytes received = NUM_BYTES_IN_REG + PEC (2B)
-
-  uint8_t *cell_data;
-  int8_t pec_error = 0;
-  static uint8_t pec_error_location[4][4]; //JTSdebug: Tallies how many errors occur while reading each CVR
-  uint16_t parsed_cell;
-  uint16_t received_pec;
-  uint16_t data_pec;
-  uint8_t data_counter=0; //data counter
-  cell_data = (uint8_t *) malloc( (NUM_RX_BYTES*total_ic)*sizeof(uint8_t) );
-
-  if (reg == 0) //JTS2doLater: Next ~1:15 lines substantially similar to next ~16:30 lines
-  { //Read cell voltage registers A-D for every IC in the stack
-    for (uint8_t cell_reg = 1; cell_reg<5; cell_reg++) //executes once for each cell voltage register
-    {
-      data_counter = 0;
-      LTC6804_rdcv_reg(cell_reg, total_ic,cell_data,addr_first_ic);
-      for (uint8_t current_ic = 0 ; current_ic < total_ic; current_ic++) // executes for every LTC6804 in the stack
-      {
-        //current_ic is used as an IC counter
-        //Parse raw cell voltage data in cell_codes array
-        for (uint8_t current_cell = 0; current_cell < NUM_CELLVOLTAGES_IN_REG; current_cell++)
-        {
-          // once for each cell voltage in the register
-          //JTS2doLater: Add temporary array to store data in until PEC is verified
-          parsed_cell = cell_data[data_counter] + (cell_data[data_counter + 1] << 8);
-          cell_codes[current_ic][current_cell  + ((cell_reg - 1) * NUM_CELLVOLTAGES_IN_REG)] = parsed_cell;
-          data_counter = data_counter + 2;
-        }
-
-        //Verify PEC matches calculated value for each read register command
-        received_pec = (cell_data[data_counter] << 8) + cell_data[data_counter+1];
-        data_pec = pec15_calc(NUM_BYTES_IN_REG, &cell_data[current_ic * NUM_RX_BYTES ]);
-        if (received_pec != data_pec)
-        {
-          pec_error = 1;
-          pec_error_location[cell_reg-1][current_ic]++; //JTSdebug
-          Serial.print("\nErrors:");
-          for(uint8_t ii=0; ii<4 ; ii++)
-          {
-            for (uint8_t jj=0; jj<4; jj++)
-            {
-              Serial.print(" " + String( pec_error_location[jj][ii] ) );
-            }
-          }
-        }
-        data_counter = data_counter + 2;
-      }
-    }
-  } else { //Read single cell voltage register for all ICs in stack
-    LTC6804_rdcv_reg(reg, total_ic,cell_data,addr_first_ic);
-    for (uint8_t current_ic = 0 ; current_ic < total_ic; current_ic++) // executes for every LTC6804 in the stack
-    {
-      //current_ic is used as an IC counter
-      //Parse raw cell voltage data in cell_codes array
-      for (uint8_t current_cell = 0; current_cell < NUM_CELLVOLTAGES_IN_REG; current_cell++)
-      {
-        //parses the read back data. Loops once for each cell voltage in the register
-        parsed_cell = cell_data[data_counter] + (cell_data[data_counter+1]<<8);
-        cell_codes[current_ic][current_cell + ((reg - 1) * NUM_CELLVOLTAGES_IN_REG)] = 0x0000FFFF & parsed_cell;
-        data_counter= data_counter + 2;
-      }
-      //Verify PEC matches calculated value for each read register command
-      received_pec = (cell_data[data_counter] << 8 )+ cell_data[data_counter + 1];
-      data_pec = pec15_calc(NUM_BYTES_IN_REG, &cell_data[current_ic * NUM_RX_BYTES]);
-      if (received_pec != data_pec)
-      {
-        pec_error = 1;
-      }
-    }
-  }
-  free(cell_data);
-  return(pec_error);
-}
-
-//---------------------------------------------------------------------------------------
-
-
-//Reads a single cell voltage register and stores the result in *data
-//This function is rarely used outside of the LTC6804_rdcv() command.
-void LTC6804_rdcv_reg(uint8_t reg, //controls which cell voltage register to read (0=all, 1=A, 2=B, 3=C, 4=D)
-                      uint8_t total_ic,
-                      uint8_t *data, //Unparsed cell codes
-                      uint8_t addr_first_ic
-                     )
-{
-  uint8_t cmd[4];
-  uint16_t temp_pec;
-
-  //Determine Command and initialize command array
-  if (reg == 1)
-  {
-    cmd[1] = 0x04;
-    cmd[0] = 0x00;
-  }
-  else if (reg == 2)
-  {
-    cmd[1] = 0x06;
-    cmd[0] = 0x00;
-  }
-  else if (reg == 3)
-  {
-    cmd[1] = 0x08;
-    cmd[0] = 0x00;
-  }
-  else if (reg == 4)
-  {
-    cmd[1] = 0x0A;
-    cmd[0] = 0x00;
-  }
-
-  wakeup_idle (); //Guarantees LTC6804 isoSPI port is awake.
-
-  //Send Global Command to LTC6804 stack
-  for (int current_ic = 0; current_ic<total_ic; current_ic++)
-  {
-    cmd[0] = 0x80 + ( (current_ic + addr_first_ic )<<3); //Setting address
-    temp_pec = pec15_calc(2, cmd);
-    cmd[2] = (uint8_t)(temp_pec >> 8);
-    cmd[3] = (uint8_t)(temp_pec);
-    digitalWrite(PIN_SPI_CS,LOW);
-    spi_write_read(cmd,4,&data[current_ic*8],8);
-    digitalWrite(PIN_SPI_CS,HIGH);
-  }
 }
 
 //---------------------------------------------------------------------------------------
@@ -542,7 +508,7 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
 /***********************************************//**
  \brief Read the raw data from the LTC6804 auxiliary register
 
- The function reads a single GPIO voltage register and stores thre read data
+ The function reads a single GPIO voltage register and stores the read data
  in the *data point as a byte array. This function is rarely used outside of
  the LTC6804_rdaux() command.
 
@@ -612,6 +578,7 @@ void LTC6804_rdaux_reg(uint8_t reg,
 //---------------------------------------------------------------------------------------
 
 
+//JTS: Not used anywhere.  Use as prototype for other similar calls.
 /********************************************************//**
  \brief Clears the LTC6804 cell voltage registers
 
@@ -652,7 +619,7 @@ void LTC6804_clrcell()
 
 //---------------------------------------------------------------------------------------
 
-
+//JTS: Not used anywhere.  Use as prototype for other similar calls.
 /***********************************************************//**
  \brief Clears the LTC6804 Auxiliary registers
 
@@ -858,7 +825,7 @@ int8_t LTC6804_rdcfg(uint8_t total_ic, uint8_t r_config[][8], uint8_t addr_first
 void wakeup_idle()
 {
   const uint8_t T_IDLE_isoSPI_millis = 4; //'tidle' (absMIN) = 4.3 ms
-  
+
   if( (millis() - lastTimeDataSent_millis) > T_IDLE_isoSPI_millis )
   { //LTC6804 isoSPI might be asleep
     digitalWrite(PIN_SPI_CS,LOW);

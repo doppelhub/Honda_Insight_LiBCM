@@ -4,26 +4,22 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	//choose ONE of the following:
-	//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
-	//#define SET_CURRENT_HACK_20 //+20%
-	#define SET_CURRENT_HACK_40 //+40%
-	//#define SET_CURRENT_HACK_60 //+60%
-
-	#define ENABLE_CURRENT_HACK // Commented: OEM current sensor behavior //Uncommented: +40% current PCB installed (inside MCM)
-	
+	#define FW_VERSION "0.1.2 VPIN"
+  #define BUILD_DATE "2021AUG27"
+  #define HW_REVB
 	#define CPU_MAP_MEGA2560
 
-	#define FW_VERSION "0.1.1 VPIN"
-  #define BUILD_DATE "2021AUG26"
-  #define HW_REVB
-	
-	//Choose which I2C LCD driver to use for 4x20 display:
-	//#define I2C_LIQUID_CRYSTAL //use "LiquidCrystal_I2C.h"
-	//#define I2C_LCD            //use "TwiLiquidCrystal.h"
-  #define LCD_JTS            //use "lcd_I2C.h" (modified version ) 
+	//choose ONE of the following:
+		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
+		//#define SET_CURRENT_HACK_20 //+20%
+		#define SET_CURRENT_HACK_40 //+40%
+		//#define SET_CURRENT_HACK_60 //+60%
 
-  #define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
+	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
+	//Choose which I2C LCD driver to use for 4x20 display:
+		//#define I2C_LIQUID_CRYSTAL //use "LiquidCrystal_I2C.h"
+		//#define I2C_LCD            //use "TwiLiquidCrystal.h"
+	  #define LCD_JTS            //use "lcd_I2C.h" (modified version ) 
 	
   //#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Print all cell voltages to USB Serial Monitor (slow) 
 
