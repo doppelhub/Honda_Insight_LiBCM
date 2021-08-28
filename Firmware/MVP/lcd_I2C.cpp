@@ -8,6 +8,8 @@
 
 */
 
+//JTS2doNow: Determine if LCD is connected (using NACK/ACK 9th bit)
+
 #include "Arduino.h"
 #include "Wire.h"
 #include "lcd_I2C.h"

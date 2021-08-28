@@ -65,3 +65,7 @@ uint8_t bytesSentFromUser = Serial.available();
 //  //+78B flash, +44B RAM
 //  const String BUILDINFO = "\n\nWelcome to LiBCM v" FW_VERSION "," BUILD_DATE "\n\n";
 //  Serial.print(BUILDINFO);
+
+///////////////////////////////////////////////////////////////////
+Fixed point libraries:
+https://github.com/Pharap/FixedPointsArduino/blob/master/src/FixedPoints/UFixed.h

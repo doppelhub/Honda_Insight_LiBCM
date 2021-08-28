@@ -193,9 +193,9 @@ uint8_t LTC6804_rdcv_process(uint8_t chipAddress, char cellVoltageRegister)
   uint16_t cellX_Voltage_counts = returnedData[0] + (returnedData[1]<<8); //(lower byte)(upper byte)
   uint16_t cellY_Voltage_counts = returnedData[2] + (returnedData[3]<<8);
   uint16_t cellZ_Voltage_counts = returnedData[4] + (returnedData[5]<<8);
-  uint16_t received_pec         = (returnedData[6]<<8) + returnedData[7]; 
+  uint16_t received_pec         = (returnedData[6]<<8) + returnedData[7]; //PEC0 PEC1
 
-  uint16_t calculated_pec = pec15_calc(NUM_BYTES_IN_REG, &returnedData[NUM_RX_BYTES]);
+  uint16_t calculated_pec = pec15_calc(NUM_BYTES_IN_REG, &returnedData[0]);
   if (received_pec != calculated_pec) { pec_error = 1; } //PEC error occurred
   //JTS2doNow: Figure out why PEC values don't match (always errors)
   //JTS2doNow: only store result if PEC is valid
@@ -217,6 +217,7 @@ uint8_t LTC6804_rdcv_process(uint8_t chipAddress, char cellVoltageRegister)
   cell_codes[chipAddress - FIRST_IC_ADDR][cellZ] = cellZ_Voltage_counts;
   
   free(returnedData);
+
   return(pec_error);
 }
 
