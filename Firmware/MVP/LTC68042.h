@@ -159,10 +159,7 @@ void generate_crc15_table()
 #define DCP_DISABLED 0
 #define DCP_ENABLED 1
 
-
-void LTC6804_startCellVoltageConversion();
-
-void LTC6804_readNextCellVoltageRegister();
+void LTC68042voltage_getNextCVR();
 
 uint8_t LTC6804_getStackVoltage();
 
@@ -174,9 +171,9 @@ void set_adc(uint8_t MD, uint8_t DCP, uint8_t CH, uint8_t CHG);
 
 void LTC6804_adax();
 
-uint8_t LTC6804_rdcv_process(uint8_t chipAddress, char cellVoltageRegister);                     
+void LTC68042voltage_validateCVR(uint8_t chipAddress, char cellVoltageRegister);                     
 
-void LTC6804_rdcv_query(uint8_t chipAddress, char cellVoltageRegister, uint8_t *data);
+void LTC68042voltage_transmitCVR(uint8_t chipAddress, char cellVoltageRegister, uint8_t *data);
 
 int8_t LTC6804_rdaux(uint8_t reg, uint8_t nIC, uint16_t aux_codes[][6], uint8_t addr_first_ic);
 

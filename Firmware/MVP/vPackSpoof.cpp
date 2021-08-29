@@ -33,6 +33,8 @@ void vPackSpoof_updateVoltage(uint8_t actualPackVoltage, uint8_t voltageToSpoof)
 {
 	//spoof VPIN_OUT voltage (to MCM).
 
+	//JTS2doNow: Figure out maths to map VPIN_OUT to VPIN_IN
+
 	uint8_t VPIN_in_volts = adc_packVoltage_VpinIn();
 
 	//uint8_t VPIN_out_PWM = VPIN_uint8_t vpinPWM = actualPackVoltage - ()
@@ -41,8 +43,12 @@ void vPackSpoof_updateVoltage(uint8_t actualPackVoltage, uint8_t voltageToSpoof)
 		//Derivation: Vpack (volts) ~= 0:5v PWM 8b value (counts)
 		//Example: when pack voltage is 184 volts, send analogWrite(VPIN_OUT, 184)
 
+	///////////////////////////////////////////////////////////////
+
 	//spoof MCM E connector voltage
 	spoofVoltageMCMe(voltageToSpoof, actualPackVoltage);
+
+	///////////////////////////////////////////////////////////////
 
 	//spoof BATTSCI voltage		
 	BATTSCI_setPackVoltage(voltageToSpoof);
@@ -55,25 +61,7 @@ void vPackSpoof_updateVoltage(uint8_t actualPackVoltage, uint8_t voltageToSpoof)
 
 void vPackSpoof_handleKeyON(void)
 {
-	uint8_t packVoltage_VPINin;
 
-
-	//JTS2doNow: No longer required... loop runs fast enough to always spoof VPIN.
-	// LTC6804_startCellVoltageConversion();
-	// delayMicroseconds(500);
-	// LTC6804_readCellVoltages(); //getStackVoltage sums cell voltages
-
-	// uint8_t actualPackVoltage = LTC6804_getStackVoltage();
-	// Serial.print("\nV6804=" + String(actualPackVoltage) );
-
-	// do
-	// {
-	// 	packVoltage_VPINin = adc_packVoltage_VpinIn(); 
-	// 	Serial.print("\nVPIN=" + String(packVoltage_VPINin) );
-	// 	analogWrite(PIN_VPIN_OUT_PWM, packVoltage_VPINin);
-	// 	blinkLED1();		
-	// } while( ((packVoltage_VPINin + 18) <= actualPackVoltage ) && digitalRead(PIN_KEY_ON) );
-	// Serial.print("\nVPIN=V6804");
 }
 
 //---------------------------------------------------------------------------------------

@@ -141,13 +141,10 @@ void loop()
 
 	if( (keyStatus_now == 1) || (gridChargerPowered_now == 1) ) //key is on or grid charger plugged in
 	{
-	  //LTC6804_startCellVoltageConversion();  //executes in ~t=230 microseconds
-		//JTS2doNow: if Pcode occurs, add this back somewhere else 
-
-	  //---------------------------------------------------------------------------------------
-  
   	debugLED(1,HIGH);
-	  LTC6804_readNextCellVoltageRegister();	//individual cell results stored in 'cellVoltages_counts' array
+  	//Retrieve and validate the next QTY3 cell voltages in the stack 
+  	//each "Cell Voltage Register" contains QTY3 cell voltages.
+	  LTC68042voltage_getNextCVR();	
 	  debugLED(1,LOW);
 	  
 	  //---------------------------------------------------------------------------------------
