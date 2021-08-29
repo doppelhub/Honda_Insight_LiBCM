@@ -132,7 +132,7 @@ void LTC6804_init_cfg()
 void LTC6804_initialize()
 {
   spi_enable(SPI_CLOCK_DIV64);
-  set_adc(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL,AUX_CH_GPIO1);
+  setADC_cells(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL);
   LTC6804_init_cfg();        //initialize the 6804 configuration array to be written
   Serial.print(F("\nLTC6804 BEGIN"));
   //JTS2doLater: If P-code occurs, read back 1st QTY3 cells and spoof returned voltage on all cellVoltages_counts[][] elements
@@ -157,7 +157,7 @@ void LTC68042voltage_startCellConversion()
   cmd[2] = (uint8_t)(temp_pec >> 8);
   cmd[3] = (uint8_t)(temp_pec);
 
-  wakeup_idle (); //Guarantees LTC6804 isoSPI port is awake.
+  wakeup_isoSPI(); //Guarantees LTC6804 isoSPI port is awake.
 
   //send broadcast adcv command to LTC6804 stack
   digitalWrite(PIN_SPI_CS,LOW);
@@ -446,7 +446,7 @@ void LTC68042voltage_transmitCVR( uint8_t chipAddress, char cellVoltageRegister,
   cmd[2] = (uint8_t)(temp_pec >> 8);
   cmd[3] = (uint8_t)(temp_pec);
 
-  wakeup_idle (); //Guarantees LTC6804 isoSPI port is awake.
+  wakeup_isoSPI(); //Guarantees LTC6804 isoSPI port is awake.
   digitalWrite(PIN_SPI_CS,LOW);
   spi_write_read(cmd,4,&data[0],8);
   digitalWrite(PIN_SPI_CS,HIGH);
@@ -485,312 +485,63 @@ void printCellVoltage_all()
 // |-----------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
 // |ADCV:      |   0   |   1   | MD[1] | MD[2] |   1   |   1   |  DCP  |   0   | CH[2] | CH[1] | CH[0] |
 // |ADAX:      |   1   |   0   | MD[1] | MD[2] |   1   |   1   |  DCP  |   0   | CHG[2]| CHG[1]| CHG[0]|
-void set_adc(uint8_t MD, //ADC Conversion Mode (LPF corner frequency)
-             uint8_t DCP,//Discharge permitted during cell conversions?
-             uint8_t CH, //Cell Channels to measure during ADC conversion command
-             uint8_t CHG //GPIO Channels to measure during Auxiliary conversion command
-            )
-{
-  uint8_t md_bits;
 
-  //JTS2doLater: Change corner frequency to reduce noise
-  //ADC LPF Fcorner:       Total conversion time (QTY12 cells/IC)
-  //ADCOPT(CFGR0[0] = 0)    
-  // MD = 01 27000 Hz        1.2 ms
-  // MD = 10  7000 Hz        2.5 ms (default)
-  // MD = 11    26 Hz      213.5 ms
-  //
-  //ADCOPT(CFGR0[0] = 1)
-  // MD = 01 14000 Hz        1.3 ms
-  // MD = 10  3000 Hz        3.0 ms
-  // MD = 11  2000 Hz        4.4 ms
+//JTS2doLater: Change corner frequency to reduce noise
+//ADC LPF Fcorner:       Total conversion time (QTY12 cells/IC)
+//ADCOPT(CFGR0[0] = 0)    
+// MD = 01 27000 Hz        1.2 ms
+// MD = 10  7000 Hz        2.5 ms (default)
+// MD = 11    26 Hz      213.5 ms
+//
+//ADCOPT(CFGR0[0] = 1)
+// MD = 01 14000 Hz        1.3 ms
+// MD = 10  3000 Hz        3.0 ms
+// MD = 11  2000 Hz        4.4 ms
+
+void setADC_cells(uint8_t adcFilterMode, //ADC Conversion Mode 'MD' (LPF corner frequency)
+             uint8_t isDischargeAllowedWhileDigitizing, //Discharge permitted during cell conversions? 'DCP'
+             uint8_t cellChannelsToDigitize ) //Cell Channels 'CELL_CH' to measure during ADC conversion command        
+{
+  uint8_t md_temp;
 
   //JTS2doLater: Replace magic numbers with #defines
-  md_bits = (MD & 0x02) >> 1; //set bit 8 (MD[1]) in ADCV[0]... MD[0] is in ADCV[1]
-  ADCV[0] = md_bits + 0x02;  //set bit 9 true
-  md_bits = (MD & 0x01) << 7;
-  ADCV[1] =  md_bits + 0x60 + (DCP<<4) + CH;
+  md_temp = (adcFilterMode & 0x02) >> 1; //set bit 8 (MD[1]) in ADCV[0]... MD[0] is in ADCV[1]
+  ADCV[0] = md_temp + 0x02;  //set bit 9 true
 
-  //JTS2doLater: Divide set_adc() into two functions.  New one does code below:
-  md_bits = (MD & 0x02) >> 1;
-  ADAX[0] = md_bits + 0x04;
-  md_bits = (MD & 0x01) << 7;
-  ADAX[1] = md_bits + 0x60 + CHG ;
+  md_temp = (adcFilterMode & 0x01) << 7;
+  ADCV[1] = md_temp + 0x60 + (isDischargeAllowedWhileDigitizing<<4) + cellChannelsToDigitize;
 }
 
 //---------------------------------------------------------------------------------------
 
-//Start GPIO conversion
-void LTC6804_adax()
+// |command    |  10   |   9   |   8   |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   |
+// |-----------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
+// |ADCV:      |   0   |   1   | MD[1] | MD[2] |   1   |   1   |  DCP  |   0   | CH[2] | CH[1] | CH[0] |
+// |ADAX:      |   1   |   0   | MD[1] | MD[2] |   1   |   1   |  DCP  |   0   | CHG[2]| CHG[1]| CHG[0]|
+//configure ADC to measure GPIO voltage
+void setADC_aux(uint8_t adcFilterMode, //ADC Conversion Mode 'MD' (LPF corner frequency)
+             uint8_t gpioChannelToDigitize) //GPIO Channels to measure during Auxiliary conversion command
 {
-  uint8_t cmd[4];
-  uint16_t temp_pec;
+  uint8_t md_temp;
 
-
-  //Load adax command into cmd array
-  cmd[0] = ADAX[0];
-  cmd[1] = ADAX[1];
-
-  //Calculate adax cmd PEC and load pec into cmd array
-  temp_pec = pec15_calc(2, ADAX);
-  cmd[2] = (uint8_t)(temp_pec >> 8);
-  cmd[3] = (uint8_t)(temp_pec);
-
-  wakeup_idle (); //Guarantees LTC6804 isoSPI port is awake.
-
-  //send broadcast adax command to LTC6804 stack
-  digitalWrite(PIN_SPI_CS,LOW);
-  spi_write_array(4,cmd);
-  digitalWrite(PIN_SPI_CS,HIGH);
+  md_temp = (adcFilterMode & 0x02) >> 1;
+  ADAX[0] = md_temp + 0x04;
+  
+  md_temp = (adcFilterMode & 0x01) << 7;
+  ADAX[1] = md_temp + 0x60 + gpioChannelToDigitize ;
 }
 
 //---------------------------------------------------------------------------------------
 
+//Write each LTC6804's configuration registers
+//written in descending order (last device's configuration is written first)
 
-//Reads and parses aux voltages from LTC6804 registers into 'aux_codes' variable.
-int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read (0=all, 1=A, 2=B)
-                     uint8_t total_ic,
-                     uint16_t aux_codes[][6],
-                     uint8_t addr_first_ic
-                    )
-{
-  const uint8_t NUM_RX_BYTES = 8;
-  const uint8_t NUM_BYTES_IN_REG = 6;
-  const uint8_t GPIO_IN_REG = 3;
+//uint8_t *config is configuration data array to write.  Contain 6 bytes for each IC in the stack
+//The lowest IC in the stack should be the first 6 byte block in the array. Array format:
+// |  config[0]| config[1] |  config[2]|  config[3]|  config[4]|  config[5]| config[6] |  config[7]|  config[8]|  .....    |
+// |-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
+// |IC1 CFGR0  |IC1 CFGR1  |IC1 CFGR2  |IC1 CFGR3  |IC1 CFGR4  |IC1 CFGR5  |IC2 CFGR0  |IC2 CFGR1  | IC2 CFGR2 |  .....    |
 
-  uint8_t *data;
-  uint8_t data_counter = 0;
-  int8_t pec_error = 0;
-  uint16_t received_pec;
-  uint16_t data_pec;
-  data = (uint8_t *) malloc((NUM_RX_BYTES*total_ic)*sizeof(uint8_t));
-
-  if (reg == 0)
-  { //Read GPIO voltage registers A-B for every IC in the stack
-    for (uint8_t gpio_reg = 1; gpio_reg<3; gpio_reg++) //executes once for each aux voltage register
-    {
-      data_counter = 0;
-      LTC6804_rdaux_reg(gpio_reg, total_ic,data, addr_first_ic);
-      for (uint8_t current_ic = 0 ; current_ic < total_ic; current_ic++) //executes once for each LTC6804
-      {
-        //Parse raw GPIO voltage data in aux_codes array
-        for (uint8_t current_gpio = 0; current_gpio< GPIO_IN_REG; current_gpio++) //Parses GPIO voltage stored in the register
-        {
-          aux_codes[current_ic][current_gpio +((gpio_reg-1)*GPIO_IN_REG)] = data[data_counter] + (data[data_counter+1]<<8);
-          data_counter=data_counter+2;
-        }
-        //Verify PEC matches calculated value for each read register command
-        received_pec = (data[data_counter]<<8)+ data[data_counter+1];
-        data_pec = pec15_calc(NUM_BYTES_IN_REG, &data[current_ic*NUM_RX_BYTES]);
-        if (received_pec != data_pec)
-        {
-          pec_error = 1;
-        }
-        data_counter=data_counter+2;
-      }
-    }
-  } else {
-    //Read single GPIO voltage register for all ICs in stack
-    LTC6804_rdaux_reg(reg, total_ic, data, addr_first_ic);
-    for (int current_ic = 0 ; current_ic < total_ic; current_ic++) // executes for every LTC6804 in the stack
-    {
-      //Parse raw GPIO voltage data in aux_codes array
-      for (int current_gpio = 0; current_gpio<GPIO_IN_REG; current_gpio++)  // This loop parses the read back data. Loops
-      {
-        // once for each aux voltage in the register
-        aux_codes[current_ic][current_gpio +((reg-1)*GPIO_IN_REG)] = 0x0000FFFF & (data[data_counter] + (data[data_counter+1]<<8));
-        data_counter=data_counter+2;
-      }
-      //Verify PEC matches calculated value for each read register command
-      received_pec = (data[data_counter]<<8) + data[data_counter+1];
-      data_pec = pec15_calc(6, &data[current_ic*8]);
-      if (received_pec != data_pec)
-      {
-        pec_error = 1;
-      }
-    }
-  }
-  free(data);
-  return (pec_error);
-}
-
-//---------------------------------------------------------------------------------------
-
-
-/***********************************************//**
- \brief Read the raw data from the LTC6804 auxiliary register
-
- The function reads a single GPIO voltage register and stores the read data
- in the *data point as a byte array. This function is rarely used outside of
- the LTC6804_rdaux() command.
-
- @param[in] uint8_t reg; This controls which GPIO voltage register is read back.
-
-          1: Read back auxiliary group A
-
-          2: Read back auxiliary group B
-
-
- @param[in] uint8_t total_ic; This is the number of ICs in the stack
-
- @param[out] uint8_t *data; An array of the unparsed aux codes
- *************************************************/
-void LTC6804_rdaux_reg(uint8_t reg,
-                       uint8_t total_ic,
-                       uint8_t *data,
-                       uint8_t addr_first_ic
-                      )
-{
-  uint8_t cmd[4];
-  uint16_t cmd_pec;
-
-  //1
-  if (reg == 1)
-  {
-    cmd[1] = 0x0C;
-    cmd[0] = 0x00;
-  }
-  else if (reg == 2)
-  {
-    cmd[1] = 0x0e;
-    cmd[0] = 0x00;
-  }
-  else
-  {
-    cmd[1] = 0x0C;
-    cmd[0] = 0x00;
-  }
-  //2
-  cmd_pec = pec15_calc(2, cmd);
-  cmd[2] = (uint8_t)(cmd_pec >> 8);
-  cmd[3] = (uint8_t)(cmd_pec);
-
-  //3
-  wakeup_idle (); //This will guarantee that the LTC6804 isoSPI port is awake, this command can be removed.
-  //4
-  for (int current_ic = 0; current_ic<total_ic; current_ic++)
-  {
-    cmd[0] = 0x80 + ( (current_ic + addr_first_ic) << 3); //Setting address
-    cmd_pec = pec15_calc(2, cmd);
-    cmd[2] = (uint8_t)(cmd_pec >> 8);
-    cmd[3] = (uint8_t)(cmd_pec);
-    digitalWrite(PIN_SPI_CS,LOW);
-    spi_write_read(cmd,4,&data[current_ic*8],8);
-    digitalWrite(PIN_SPI_CS,HIGH);
-  }
-}
-/*
-  LTC6804_rdaux_reg Function Process:
-  1. Determine Command and initialize command array
-  2. Calculate Command PEC
-  3. Wake up isoSPI, this step is optional
-  4. Send Global Command to LTC6804 stack
-*/
-
-//---------------------------------------------------------------------------------------
-
-
-//JTS: Not used anywhere.  Use as prototype for other similar calls.
-/********************************************************//**
- \brief Clears the LTC6804 cell voltage registers
-
- The command clears the cell voltage registers and intiallizes
- all values to 1. The register will read back hexadecimal 0xFF
- after the command is sent.
-************************************************************/
-void LTC6804_clrcell()
-{
-  uint8_t cmd[4];
-  uint16_t cmd_pec;
-
-  //1
-  cmd[0] = 0x07;
-  cmd[1] = 0x11;
-
-  //2
-  cmd_pec = pec15_calc(2, cmd);
-  cmd[2] = (uint8_t)(cmd_pec >> 8);
-  cmd[3] = (uint8_t)(cmd_pec );
-
-  //3
-  wakeup_idle (); //This will guarantee that the LTC6804 isoSPI port is awake. This command can be removed.
-
-  //4
-  digitalWrite(PIN_SPI_CS,LOW);
-  spi_write_read(cmd,4,0,0);
-  digitalWrite(PIN_SPI_CS,HIGH);
-}
-/*
-  LTC6804_clrcell Function sequence:
-
-  1. Load clrcell command into cmd array
-  2. Calculate clrcell cmd PEC and load pec into cmd array
-  3. wakeup isoSPI port, this step can be removed if isoSPI status is previously guaranteed
-  4. send broadcast clrcell command to LTC6804 stack
-*/
-
-//---------------------------------------------------------------------------------------
-
-//JTS: Not used anywhere.  Use as prototype for other similar calls.
-/***********************************************************//**
- \brief Clears the LTC6804 Auxiliary registers
-
- The command clears the Auxiliary registers and intiallizes
- all values to 1. The register will read back hexadecimal 0xFF
- after the command is sent.
-***************************************************************/
-void LTC6804_clraux()
-{
-  uint8_t cmd[4];
-  uint16_t cmd_pec;
-
-  //1
-  cmd[0] = 0x07;
-  cmd[1] = 0x12;
-
-  //2
-  cmd_pec = pec15_calc(2, cmd);
-  cmd[2] = (uint8_t)(cmd_pec >> 8);
-  cmd[3] = (uint8_t)(cmd_pec);
-
-  //3
-  wakeup_idle (); //This will guarantee that the LTC6804 isoSPI port is awake.This command can be removed.
-  //4
-  digitalWrite(PIN_SPI_CS,LOW);
-  spi_write_read(cmd,4,0,0);
-  digitalWrite(PIN_SPI_CS,HIGH);
-}
-/*
-  LTC6804_clraux Function sequence:
-
-  1. Load clraux command into cmd array
-  2. Calculate clraux cmd PEC and load pec into cmd array
-  3. wakeup isoSPI port, this step can be removed if isoSPI status is previously guaranteed
-  4. send broadcast clraux command to LTC6804 stack
-*/
-
-//---------------------------------------------------------------------------------------
-
-/*****************************************************//**
- \brief Write the LTC6804 configuration register
-
- This command will write the configuration registers of the stacks
- connected in a stack stack. The configuration is written in descending
- order so the last device's configuration is written first.
-
-
-@param[in] uint8_t total_ic; The number of ICs being written.
-
-@param[in] uint8_t *config an array of the configuration data that will be written, the array should contain the 6 bytes for each
- IC in the stack. The lowest IC in the stack should be the first 6 byte block in the array. The array should
- have the following format:
- |  config[0]| config[1] |  config[2]|  config[3]|  config[4]|  config[5]| config[6] |  config[7]|  config[8]|  .....    |
- |-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
- |IC1 CFGR0  |IC1 CFGR1  |IC1 CFGR2  |IC1 CFGR3  |IC1 CFGR4  |IC1 CFGR5  |IC2 CFGR0  |IC2 CFGR1  | IC2 CFGR2 |  .....    |
-
- The function will calculate the needed PEC codes for the write data
- and then transmit data to the ICs on a stack.
-********************************************************/
 void LTC6804_wrcfg(uint8_t total_ic, uint8_t config[][6], uint8_t addr_first_ic)
 {
   const uint8_t BYTES_IN_REG = 6;
@@ -825,7 +576,7 @@ void LTC6804_wrcfg(uint8_t total_ic, uint8_t config[][6], uint8_t addr_first_ic)
   }
 
   //4
-  wakeup_idle ();                                //This will guarantee that the LTC6804 isoSPI port is awake.This command can be removed.
+  wakeup_isoSPI();                                //This will guarantee that the LTC6804 isoSPI port is awake.This command can be removed.
   //5
   for (int current_ic = 0; current_ic<total_ic; current_ic++)
   {
@@ -885,7 +636,7 @@ int8_t LTC6804_rdcfg(uint8_t total_ic, uint8_t r_config[][8], uint8_t addr_first
   cmd[3] = 0x0A;
 
   //2
-  wakeup_idle (); //This will guarantee that the LTC6804 isoSPI port is awake. This command can be removed.
+  wakeup_isoSPI(); //This will guarantee that the LTC6804 isoSPI port is awake. This command can be removed.
   //3
   for (int current_ic = 0; current_ic<total_ic; current_ic++)
   {
@@ -934,7 +685,7 @@ int8_t LTC6804_rdcfg(uint8_t total_ic, uint8_t r_config[][8], uint8_t addr_first
   \brief Wake isoSPI up from idle state
  Generic wakeup command to wake isoSPI up out of idle
  *****************************************************/
-void wakeup_idle()
+void wakeup_isoSPI()
 {
   const uint8_t T_IDLE_isoSPI_millis = 4; //'tidle' (absMIN) = 4.3 ms
 
@@ -948,12 +699,7 @@ void wakeup_idle()
 
 //---------------------------------------------------------------------------------------
 
-
-/*!****************************************************
-  \brief Wake the LTC6804 from the sleep state
-
- Generic wakeup command to wake the LTC6804 from sleep
- *****************************************************/
+//wake up from 'generic sleep'
 void wakeup_sleep()
 {
   const uint16_t T_SLEEP_WATCHDOG_MILLIS = 1800; //'tsleep' (absMIN) = 1800 ms 
@@ -961,48 +707,30 @@ void wakeup_sleep()
   if( (millis() - lastTimeDataSent_millis) > T_SLEEP_WATCHDOG_MILLIS )
   { //LTC6804 core might be asleep
     digitalWrite(PIN_SPI_CS,LOW);
-    delay(1); // Guarantees the LTC6804 will be in standby
+    delayMicroseconds(300); // Guarantees the LTC6804 is in standby (tWake) //JTS2doNow: Do we need to wait tRefup (4400 us)?  
     digitalWrite(PIN_SPI_CS,HIGH);
   }
 }
 
 //---------------------------------------------------------------------------------------
 
-
-/*!**********************************************************
- \brief calaculates  and returns the CRC15
-
-
-@param[in]  uint8_t len: the length of the data array being passed to the function
-
-@param[in]  uint8_t data[] : the array of data that the PEC will be generated from
-
-
-@return  The calculated pec15 as an unsigned int16_t
-***********************************************************/
-uint16_t pec15_calc(uint8_t len, uint8_t *data)
+uint16_t pec15_calc(uint8_t len, //data array length
+                    uint8_t *data) //data array to generate PEC from
 {
   uint16_t remainder,addr;
 
   remainder = 16;//initialize the PEC
   for (uint8_t i = 0; i<len; i++) // loops for each byte in data array
   {
-    addr = ((remainder>>7)^data[i])&0xff;//calculate PEC table address
-    remainder = (remainder<<8)^crc15Table[addr];
+    addr = ( (remainder>>7)^data[i] ) & 0xff;//calculate PEC table address
+    remainder = (remainder<<8) ^ crc15Table[addr];
   }
-  return(remainder*2);//The CRC15 has a 0 in the LSB so the remainder must be multiplied by 2
+  return(remainder<<1);//The CRC15 LSB is 0, so multiply by 2
 }
 
 //---------------------------------------------------------------------------------------
 
-
-/*!
- \brief Writes an array of bytes out of the SPI port
-
- @param[in] uint8_t len length of the data array being written on the SPI port
- @param[in] uint8_t data[] the data array to be written on the SPI port
-
-*/
+//write data to SPI
 void spi_write_array(uint8_t len, // Option: Number of bytes to be written on the SPI port
                      uint8_t data[] //Array of bytes to be written on the SPI port
                     )
@@ -1017,15 +745,7 @@ void spi_write_array(uint8_t len, // Option: Number of bytes to be written on th
 
 //---------------------------------------------------------------------------------------
 
-
-/*!
- \brief Writes and read a set number of bytes using the SPI port.
-
-@param[in] uint8_t tx_data[] array of data to be written on the SPI port
-@param[in] uint8_t tx_len length of the tx_data array
-@param[out] uint8_t rx_data array that read data will be written too.
-@param[in] uint8_t rx_len number of bytes to be read from the SPI port.
-*/
+//read & write data to SPI
 void spi_write_read(uint8_t tx_Data[],//array of data to be written on SPI port
                     uint8_t tx_len, //length of the tx data arry
                     uint8_t *rx_data,//Input: array that will store the data read by the SPI port

@@ -1,10 +1,5 @@
 /*!
-LTC6804-2 Multicell Battery Monitor
-
-http://www.linear.com/product/LTC6804-1
-
-http://www.linear.com/product/LTC6804-1#demoboards
-
+Copyright 2021(c) John Sullivan
 
 Copyright 2018(c) Analog Devices, Inc.
 
@@ -41,11 +36,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Copyright 2013 Linear Technology Corp. (LTC)
 ***********************************************************/
-
-/*! @file
-    @ingroup LTC68042
-    Header for LTC6804-2 Multicell Battery Monitor
-*/
 
 #include "libcm.h"
 
@@ -167,7 +157,7 @@ void printCellVoltage_all();
 
 void LTC6804_initialize();
 
-void set_adc(uint8_t MD, uint8_t DCP, uint8_t CH, uint8_t CHG);
+void setADC_cells(uint8_t MD, uint8_t DCP, uint8_t CH);
 
 void LTC6804_adax();
 
@@ -187,7 +177,7 @@ void LTC6804_wrcfg(uint8_t nIC, uint8_t config[][6], uint8_t addr_first_ic);
 
 int8_t LTC6804_rdcfg(uint8_t nIC, uint8_t r_config[][8], uint8_t addr_first_ic);
 
-void wakeup_idle();
+void wakeup_isoSPI();
 
 void wakeup_sleep();
 

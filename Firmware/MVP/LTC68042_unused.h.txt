@@ -1,0 +1,1 @@
+void setADC_aux(uint8_t adcFilterMode, uint8_t gpioChannelToDigitize);
