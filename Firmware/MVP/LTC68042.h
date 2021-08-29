@@ -173,10 +173,6 @@ void LTC6804_clrcell();
 
 void LTC6804_clraux();
 
-void LTC6804_wrcfg(uint8_t nIC, uint8_t config[][6], uint8_t addr_first_ic);
-
-int8_t LTC6804_rdcfg(uint8_t nIC, uint8_t r_config[][8], uint8_t addr_first_ic);
-
 void wakeup_isoSPI();
 
 void wakeup_sleep();
