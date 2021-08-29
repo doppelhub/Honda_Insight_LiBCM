@@ -58,7 +58,7 @@ const uint8_t CELLS_PER_IC = 12; //Each LTC6804 measures QTY12 cells
 uint16_t maxEverCellVoltage; //since last key event
 uint16_t minEverCellVoltage; //since last key event
 
-//Stores returned cell voltages
+//Stores all returned cell voltages
 //Note: cell# & IC# are 1-indexed, whereas array data is 0-indexed
 //  cellVoltages_counts[0][ 3] is IC1 cell  4
 //  cellVoltages_counts[3][11] is IC4 cell 12
@@ -94,7 +94,7 @@ uint8_t tx_cfg[TOTAL_IC][6];
 //JTS2doLater: Write separate function to control discharge FETs (cell balancing)
 //JTS2doLater: This doesn't need to be a 2D array.  Data identical on all LTC, except DCC12:1.
 //JTS2doLater: Figure out where tx_cfg is actually written to LTC ICs
-//JTS2doNow: Are we properly configuring LTC ADC?
+//JTS2doNow: Program never actually writes this to LTC ICs
 void LTC6804_init_cfg()
 {
   for (int i = 0; i<TOTAL_IC; i++)
@@ -114,18 +114,15 @@ void LTC6804_initialize()
 {
   spi_enable(SPI_CLOCK_DIV64);
   setADC_cells(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL);
-  LTC6804_init_cfg();        //initialize the 6804 configuration array to be written
+  LTC6804_init_cfg();        //JTS2doNow: Doesn't actually send configuration to LTC ICs.
   Serial.print(F("\nLTC6804 BEGIN"));
-  //JTS2doLater: If P-code occurs, read back 1st QTY3 cells and spoof returned voltage on all cellVoltages_counts[][] elements
 }
 
 //---------------------------------------------------------------------------------------
 
-//all cell voltages are measured
+//all 12 cell voltages are measured
 void LTC68042voltage_startCellConversion()
 {
-  wakeup_sleep();
-
   uint8_t cmd[4];
   uint16_t temp_pec;
 
@@ -138,9 +135,9 @@ void LTC68042voltage_startCellConversion()
   cmd[2] = (uint8_t)(temp_pec >> 8);
   cmd[3] = (uint8_t)(temp_pec);
 
-  wakeup_isoSPI(); //Guarantees LTC6804 isoSPI port is awake.
+  wakeup_sleep();
 
-  //send broadcast adcv command to LTC6804 stack
+  //send 'adcv' command to all LTC6804s (broadcast command)
   digitalWrite(PIN_SPI_CS,LOW);
   spi_write_array(4,cmd);
   digitalWrite(PIN_SPI_CS,HIGH); 
