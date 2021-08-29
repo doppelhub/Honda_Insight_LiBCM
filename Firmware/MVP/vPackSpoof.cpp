@@ -31,8 +31,12 @@ void spoofVoltageMCMe(uint8_t desiredSpoofedVoltage, uint8_t actualPackVoltage)
 
 void vPackSpoof_updateVoltage(uint8_t actualPackVoltage, uint8_t voltageToSpoof)
 {
-	//spoof VPIN_OUT voltage (to MCM).  VPIN_IN (from PDU) ignored after PDU caps are charged (immediately after keyON)
-	//JTS2doNow: Use spoofed voltage as long as actual voltage is within 20 volts of V6804.  This handles keyOFF event.
+	//spoof VPIN_OUT voltage (to MCM).
+
+	uint8_t VPIN_in_volts = adc_packVoltage_VpinIn();
+
+	//uint8_t VPIN_out_PWM = VPIN_uint8_t vpinPWM = actualPackVoltage - ()
+
 	analogWrite(PIN_VPIN_OUT_PWM, voltageToSpoof);	
 		//Derivation: Vpack (volts) ~= 0:5v PWM 8b value (counts)
 		//Example: when pack voltage is 184 volts, send analogWrite(VPIN_OUT, 184)
@@ -53,21 +57,23 @@ void vPackSpoof_handleKeyON(void)
 {
 	uint8_t packVoltage_VPINin;
 
-	LTC6804_startCellVoltageConversion();
-	delayMicroseconds(500);
-	LTC6804_readCellVoltages(); //getStackVoltage sums cell voltages
 
-	uint8_t actualPackVoltage = LTC6804_getStackVoltage();
-	Serial.print("\nV6804=" + String(actualPackVoltage) );
+	//JTS2doNow: No longer required... loop runs fast enough to always spoof VPIN.
+	// LTC6804_startCellVoltageConversion();
+	// delayMicroseconds(500);
+	// LTC6804_readCellVoltages(); //getStackVoltage sums cell voltages
 
-	do
-	{
-		packVoltage_VPINin = adc_packVoltage_VpinIn(); 
-		Serial.print("\nVPIN=" + String(packVoltage_VPINin) );
-		analogWrite(PIN_VPIN_OUT_PWM, packVoltage_VPINin);
-		blinkLED1();		
-	} while( ((packVoltage_VPINin + 18) <= actualPackVoltage ) && digitalRead(PIN_KEY_ON) );
-	Serial.print("\nVPIN=V6804");
+	// uint8_t actualPackVoltage = LTC6804_getStackVoltage();
+	// Serial.print("\nV6804=" + String(actualPackVoltage) );
+
+	// do
+	// {
+	// 	packVoltage_VPINin = adc_packVoltage_VpinIn(); 
+	// 	Serial.print("\nVPIN=" + String(packVoltage_VPINin) );
+	// 	analogWrite(PIN_VPIN_OUT_PWM, packVoltage_VPINin);
+	// 	blinkLED1();		
+	// } while( ((packVoltage_VPINin + 18) <= actualPackVoltage ) && digitalRead(PIN_KEY_ON) );
+	// Serial.print("\nVPIN=V6804");
 }
 
 //---------------------------------------------------------------------------------------

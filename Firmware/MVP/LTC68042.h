@@ -162,7 +162,7 @@ void generate_crc15_table()
 
 void LTC6804_startCellVoltageConversion();
 
-void LTC6804_readCellVoltages();
+void LTC6804_readNextCellVoltageRegister();
 
 uint8_t LTC6804_getStackVoltage();
 
@@ -171,8 +171,6 @@ void printCellVoltage_all();
 void LTC6804_initialize();
 
 void set_adc(uint8_t MD, uint8_t DCP, uint8_t CH, uint8_t CHG);
-
-void LTC6804_adcv();
 
 void LTC6804_adax();
 

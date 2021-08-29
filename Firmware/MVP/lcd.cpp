@@ -95,7 +95,7 @@ void lcd_displayOFF(void)
 		lcd2.noBacklight();
 		lcd2.noDisplay();
 
-		loopCount=0;
+		
 		stackVoltageActual_previous = 0;
 		stackVoltageSpoofed_previous = 0;
 		errorCount_previous = 0;
@@ -106,6 +106,7 @@ void lcd_displayOFF(void)
 
 void lcd_displayON(void)
 { 
+	loopCount=0;
 	#ifdef LCD_4X20_CONNECTED
 		lcd2.backlight();
 		lcd2.display();

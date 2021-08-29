@@ -40,29 +40,45 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-LTC68042_retrieve.c
 //-LTC68042_process.c
 
-//-LTC68042_celLVoltage.c
+//-LTC68042_cellVoltage.c
 //-LTC68042_GPIO.c
-//-LTC68042_lowLevel.c
+//-LTC68042_configure.c
 
-uint8_t LTC_isDataValid=0;
+uint8_t LTC_isDataValid=0; //JTS2doNow: No longer necessary once other 'JTS2do' items implemented
 uint8_t isoSPI_errorCount = 0;
 uint32_t lastTimeDataSent_millis = 0; //LTC idle timer resets each time data is transferred
 
-//conversion command variables.
+//conversion command variables. //JTS2doLater: Bring these inside each function that uses them (as temp)
 uint8_t ADCV[2]; //Cell Voltage conversion command.
 uint8_t ADAX[2]; //GPIO conversion command.
 
 const uint8_t TOTAL_IC = 4; //number of ICs in the isoSPI network
 const uint8_t FIRST_IC_ADDR = 2; //lowest address.  All additional IC addresses must be sequential
+const uint8_t CELLS_PER_IC = 12; //Each LTC6804 measures QTY12 cells
 
 uint16_t maxEverCellVoltage; //since last key event
 uint16_t minEverCellVoltage; //since last key event
 
 //Stores returned cell voltages
-//Note: cells & ICs are 1-indexed, whereas array is 0-indexed
-//cell_codes[0][0]  is IC1 Cell 01
-//cell_codes[3][11] is IC4 Cell 12
-uint16_t cell_codes[TOTAL_IC][12];
+//Note: cell# & IC# are 1-indexed, whereas array data is 0-indexed
+//  cellVoltages_counts[0][ 3] is IC1 cell  4
+//  cellVoltages_counts[3][11] is IC4 cell 12
+//There are twice as many array elements as there are cell voltages (e.g. with QTY48 cells, there are QTY96 elements)
+//Either the top or bottom half is a buffer containing the last completely read back frame.
+//The other half is always where the incoming voltages are stored as they're read back from each LTC6804.
+//Therefore, cell voltage comparisons use ADC data that was acquired by the ADC at roughly the same time.
+//cellVoltages_counts[0][               8] is IC1 Cell 9 when cellVoltages_lastCompleteFrame == BOTTOM
+//cellVoltages_counts[0][CELLS_PER_IC + 8] is IC1 Cell 9 when cellVoltages_lastCompleteFrame == TOP
+uint16_t cellVoltages_counts[TOTAL_IC][CELLS_PER_IC * 2]; //Twice as many rows as cells, so we can ping-pong between complete frames
+
+//JTS2doNow: Move to header file
+#define COMPLETE_FRAME_IS_TOP    2
+#define COMPLETE_FRAME_IS_BOTTOM 1
+#define COMPLETE_FRAME_IS_NONE   0
+
+//JTS2doNow: create LTC6804_getLastCompleteFrame() & LTC6804_setLastCompleteFrame()
+//Determines which half (top or bottom) of cellVoltages_counts[][] contains the last complete frame
+uint8_t cellVoltages_lastCompleteFrame = COMPLETE_FRAME_IS_NONE;
 
 //Stores returned aux voltage
 //aux_codes[n][0] = GPIO1
@@ -96,6 +112,7 @@ uint8_t rx_cfg[TOTAL_IC][8];
 //---------------------------------------------------------------------------------------
 
 //Initializes the configuration array
+//JTS2doLater: Write separate function to control discharge FETs (cell balancing)
 //JTS2doLater: This doesn't need to be a 2D array.  Data identical on all LTC, except DCC12:1.
 void LTC6804_init_cfg()
 {
@@ -118,6 +135,7 @@ void LTC6804_initialize()
   set_adc(MD_NORMAL,DCP_DISABLED,CELL_CH_ALL,AUX_CH_GPIO1);
   LTC6804_init_cfg();        //initialize the 6804 configuration array to be written
   Serial.print(F("\nLTC6804 BEGIN"));
+  //JTS2doLater: If P-code occurs, read back 1st QTY3 cells and spoof returned voltage on all cellVoltages_counts[][] elements
 }
 
 //---------------------------------------------------------------------------------------
@@ -125,42 +143,95 @@ void LTC6804_initialize()
 void LTC6804_startCellVoltageConversion()
 {
   wakeup_sleep();
-  LTC6804_adcv(); //JTS2doNow: only run if all cell voltages have been read back
+
+  uint8_t cmd[4];
+  uint16_t temp_pec;
+
+  //Load 'ADCV' command into cmd array
+  cmd[0] = ADCV[0];
+  cmd[1] = ADCV[1];
+
+  //Calculate adcv cmd PEC and load pec into cmd array
+  temp_pec = pec15_calc(2, ADCV);
+  cmd[2] = (uint8_t)(temp_pec >> 8);
+  cmd[3] = (uint8_t)(temp_pec);
+
+  wakeup_idle (); //Guarantees LTC6804 isoSPI port is awake.
+
+  //send broadcast adcv command to LTC6804 stack
+  digitalWrite(PIN_SPI_CS,LOW);
+  spi_write_array(4,cmd);
+  digitalWrite(PIN_SPI_CS,HIGH); 
 }
 
 //---------------------------------------------------------------------------------------
 
-//JTS2doNow: rename LTC6804_readNextCellVoltageRegister()
-//Each call updates QTY3 cell voltages 
-void LTC6804_readCellVoltages()
+//Each call updates QTY3 cell voltages
+//Results stored in file-scoped "cellVoltages_counts[][]"" array
+void LTC6804_readNextCellVoltageRegister()
 {
   wakeup_sleep();
 
   //round-robin state handlers
-  static uint8_t chipAddress = FIRST_IC_ADDR;
-  static char cellVoltageRegister = 'A'; //QTY3 cell voltages per register (e.g. A=cell01/cell02/cell03)
+  static uint8_t chipAddress = (FIRST_IC_ADDR);
+  static char cellVoltageRegister = 'A'; //QTY3 cell voltages per register
 
-  uint8_t error = LTC6804_rdcv_process(chipAddress, cellVoltageRegister); 
-  //JTS2doNow: Figure out why PEC error returned, even though cell voltages valid.
+  uint8_t errorPEC;
 
-  //increment cellVoltageRegister & chipAddress
-  cellVoltageRegister++;
-  if(cellVoltageRegister == 'E' ) //LTC6804 only has registers A,B,C,D... reset to A
-  { 
-    cellVoltageRegister = 'A'; //reset
-    chipAddress++;
-    if(chipAddress == (FIRST_IC_ADDR + TOTAL_IC) ) { chipAddress = FIRST_IC_ADDR; } //reset  
-  }
-
-  if (error != 0)
+  //only true first time called after reset 
+  if(cellVoltages_lastCompleteFrame == COMPLETE_FRAME_IS_NONE)
   {
-    LTC_isDataValid = 0;
-    isoSPI_errorCount++;
-    Serial.print(F("\nisoSPI error"));
-    lcd_printNumErrors(isoSPI_errorCount); //JTS2doLater: Add LCD I2C update to round-robin (multiple errors could slow Superloop)
-  } else {
-    LTC_isDataValid = 1;
+    LTC6804_startCellVoltageConversion();
+    delayMicroseconds(5000);  //wait for initial ADC conversion to complete //JTS2doNow: Figure out minimum delay
   }
+
+  //on first run (after reset), while loop repeats until all cells measured
+  //after first run, while loop always runs exactly once (i.e. only three cells retrieved)
+  do 
+  {
+    //read single "cell voltage register", which contains three 16b cell voltages
+    errorPEC = LTC6804_rdcv_process(chipAddress, cellVoltageRegister); 
+
+    if (errorPEC != 0)
+    {
+      LTC_isDataValid = 0;
+      isoSPI_errorCount++;
+      Serial.print(F("\nerr:LTC"));
+      lcd_printNumErrors(isoSPI_errorCount); //JTS2doLater: Add LCD I2C update to round-robin (multiple errors could slow Superloop)
+    } else
+    {
+      LTC_isDataValid = 1;
+    }
+
+    //determine which cell voltage register to read next 
+    cellVoltageRegister++;
+    if(cellVoltageRegister >= 'E' ) //LTC6804 only has registers A,B,C,D... so reset back to A
+    { 
+      cellVoltageRegister = 'A'; //reset
+      chipAddress++; //move to next LTC6804 IC
+
+      if(chipAddress >= (FIRST_IC_ADDR + TOTAL_IC) ) //when we get to last address, reset back to first CVR
+      {
+        chipAddress = FIRST_IC_ADDR; //reset back to first IC
+        LTC6804_startCellVoltageConversion(); //start new conversion (all ICs will measure all cells)
+
+        //set which half of cellVoltages_counts[][] (top or bottom) we just completed storing all cell voltages into
+        switch(cellVoltages_lastCompleteFrame)
+        {
+          case COMPLETE_FRAME_IS_TOP   : cellVoltages_lastCompleteFrame = COMPLETE_FRAME_IS_BOTTOM; break; //just finished writing bottom
+          case COMPLETE_FRAME_IS_BOTTOM: cellVoltages_lastCompleteFrame = COMPLETE_FRAME_IS_TOP;    break; //just finished writing top
+          case COMPLETE_FRAME_IS_NONE  : cellVoltages_lastCompleteFrame = COMPLETE_FRAME_IS_TOP;    break;
+        }
+      }
+    }
+  } while (cellVoltages_lastCompleteFrame == COMPLETE_FRAME_IS_NONE);
+
+  switch(cellVoltages_lastCompleteFrame)
+    {
+      case COMPLETE_FRAME_IS_TOP   : break;
+      case COMPLETE_FRAME_IS_BOTTOM: break; 
+      case COMPLETE_FRAME_IS_NONE  : break;
+    }
 
   #ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
     #warning (Printing all cell voltages to USB severely reduces Superloop rate)
@@ -172,8 +243,27 @@ void LTC6804_readCellVoltages()
 
 //---------------------------------------------------------------------------------------
 
+//determine which half of cellVoltages_counts[][] (top or bottom) contains updated array elements for all pack cell voltages
+//frameOffset == 0            means we read array elements 00:11 (bottom)
+//frameOffset == CELLS_PER_IC means we read array elements 12:23 (top)
+uint8_t LTC6804_getFrameOffset_Read(void)
+{
+  uint8_t frameOffset=0;
+
+  switch(cellVoltages_lastCompleteFrame)
+  {  
+    case COMPLETE_FRAME_IS_TOP   : frameOffset = CELLS_PER_IC; break;
+    case COMPLETE_FRAME_IS_BOTTOM: frameOffset = 0           ; break; 
+       //COMPLETE_FRAME_IS_NONE never makes it here 
+  }
+
+  return frameOffset;
+}
+
+//---------------------------------------------------------------------------------------
+
 //JTS2doNow: better function name
-//Reads and parses cell voltages from specified LTC6804 address and "cell voltage register" into 'cell_codes' array.
+//Reads and parses cell voltages from specified LTC6804 address and "cell voltage register" into 'cellVoltages_counts' array.
 uint8_t LTC6804_rdcv_process(uint8_t chipAddress, char cellVoltageRegister)
 {
   //Each LTC6804 has QTY4 "Cell Voltage Registers" (A/B/C/D)
@@ -181,10 +271,8 @@ uint8_t LTC6804_rdcv_process(uint8_t chipAddress, char cellVoltageRegister)
   const uint8_t NUM_BYTES_IN_REG        = 6; //QTY3 cells * 2B
   const uint8_t NUM_RX_BYTES            = 8; //NUM_BYTES_IN_REG + PEC (2B)
 
-  int8_t pec_error = 0;
-
-  uint8_t *returnedData;
-  returnedData = (uint8_t *) malloc( NUM_RX_BYTES * sizeof(uint8_t) ); //previously 'cell_data'
+  uint8_t *returnedData; //previously named 'cell_data'
+  returnedData = (uint8_t *) malloc( NUM_RX_BYTES * sizeof(uint8_t) );
 
   //Read single cell voltage register (QTY3 cell voltages) from specified IC
   LTC6804_rdcv_query(chipAddress, cellVoltageRegister, returnedData); //result stored in returnedData
@@ -196,8 +284,9 @@ uint8_t LTC6804_rdcv_process(uint8_t chipAddress, char cellVoltageRegister)
   uint16_t received_pec         = (returnedData[6]<<8) + returnedData[7]; //PEC0 PEC1
 
   uint16_t calculated_pec = pec15_calc(NUM_BYTES_IN_REG, &returnedData[0]);
+
+  int8_t pec_error = 0;
   if (received_pec != calculated_pec) { pec_error = 1; } //PEC error occurred
-  //JTS2doNow: Figure out why PEC values don't match (always errors)
   //JTS2doNow: only store result if PEC is valid
 
   //select which LTC cell voltages were read into returnedData
@@ -212,9 +301,19 @@ uint8_t LTC6804_rdcv_process(uint8_t chipAddress, char cellVoltageRegister)
     case 'D': cellX=9; cellY=10; cellZ=11; break; //cells 10/11/12
   }
 
-  cell_codes[chipAddress - FIRST_IC_ADDR][cellX] = cellX_Voltage_counts;
-  cell_codes[chipAddress - FIRST_IC_ADDR][cellY] = cellY_Voltage_counts;
-  cell_codes[chipAddress - FIRST_IC_ADDR][cellZ] = cellZ_Voltage_counts;
+  uint8_t frameOffset=0;
+  switch(cellVoltages_lastCompleteFrame)
+    {  
+      case COMPLETE_FRAME_IS_TOP   : frameOffset = 0; break;
+      case COMPLETE_FRAME_IS_BOTTOM: frameOffset = CELLS_PER_IC           ; break;
+      case COMPLETE_FRAME_IS_NONE  : frameOffset = 0           ; break;
+         //COMPLETE_FRAME_IS_NONE never makes it here 
+    }
+  
+  //store cell voltages in the proper location
+  cellVoltages_counts[chipAddress - FIRST_IC_ADDR][cellX + frameOffset] = cellX_Voltage_counts;
+  cellVoltages_counts[chipAddress - FIRST_IC_ADDR][cellY + frameOffset] = cellY_Voltage_counts;
+  cellVoltages_counts[chipAddress - FIRST_IC_ADDR][cellZ + frameOffset] = cellZ_Voltage_counts;
   
   free(returnedData);
 
@@ -226,10 +325,7 @@ uint8_t LTC6804_rdcv_process(uint8_t chipAddress, char cellVoltageRegister)
 //Read a single "cell voltage register" and store the results in *data
 //This function is rarely used outside of the LTC6804_rdcv_process() command.
 //JTS2doNow: combine with LTC6804_rdcv_query
-void LTC6804_rdcv_query(uint8_t chipAddress,
-                         char cellVoltageRegister,
-                         uint8_t *data //Unparsed cell codes
-                        )
+void LTC6804_rdcv_query( uint8_t chipAddress, char cellVoltageRegister, uint8_t *data ) //data: Unparsed cellVoltage_counts
 {
   uint8_t cmd[4];
   uint16_t temp_pec;
@@ -256,21 +352,26 @@ void LTC6804_rdcv_query(uint8_t chipAddress,
 
 //---------------------------------------------------------------------------------------
 
-//JTS2doLater: Only output a few cells per call?
 void printCellVoltage_all()
-{ // t=42 milliseconds... blocking (serial transmit buffer filled)
+{ // VERY SLOW & blocking (serial transmit buffer filled)
+  // Use only for debug purposes
   Serial.print('\n');
+
+  //Returns 0           when reading from bottom half of cellVoltages array
+  //Returns CELL_PER_IC when reading from top    half of cellVoltages array
+  uint8_t frameOffset = LTC6804_getFrameOffset_Read();
+
   for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
   {
     Serial.print(F("IC "));
     Serial.print( (current_ic + FIRST_IC_ADDR) ,DEC);
-    for (int i=0; i<12; i++)
+    for (int i=0; i<(CELLS_PER_IC); i++)
     {
+      const uint8_t NUM_DECIMAL_PLACES = 4; //JTS2doNow: change back to 4 digits
       Serial.print(F(" C"));
-      Serial.print(i+1,DEC);
+      Serial.print(i+1,DEC); //Note: cell voltages always reported back C1:C12 (not C13:C24)
       Serial.print(':');
-      Serial.print( (cell_codes[current_ic][i] * 0.0001), 4 );
-      Serial.print(',');
+      Serial.print( (cellVoltages_counts[current_ic][i + frameOffset] * 0.0001), NUM_DECIMAL_PLACES ); 
     }
     Serial.print('\n');
   }
@@ -283,12 +384,15 @@ uint8_t LTC6804_getStackVoltage()
 {
   uint32_t stackVoltage_RAW = 0; //Multiply by 0.0001 for volts
 
-  //JTS2doNow: only update stack voltage if LTC_isDataValid
+  //Returns 0           when reading from bottom half of cellVoltages array
+  //Returns CELL_PER_IC when reading from top    half of cellVoltages array
+  uint8_t frameOffset = LTC6804_getFrameOffset_Read();
+
   for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
   {
     for (int i=0; i<12; i++)
     {
-     stackVoltage_RAW += cell_codes[current_ic][i];
+     stackVoltage_RAW += cellVoltages_counts[current_ic][i+frameOffset];
     }
   }
 
@@ -300,10 +404,15 @@ uint8_t LTC6804_getStackVoltage()
 //---------------------------------------------------------------------------------------
 
 //JTS2doNow: rename LTC6804_calculateVoltages()
+//JTS2doNow: combine with other functions
 void LTC6804_printCellVoltage_max_min()
 {
   uint16_t lowCellVoltage = 65535;
   uint16_t highCellVoltage = 0;
+
+  //Returns 0           when reading from bottom half of cellVoltages array
+  //Returns CELL_PER_IC when reading from top    half of cellVoltages array
+  uint8_t frameOffset = LTC6804_getFrameOffset_Read();
 
   if( LTC_isDataValid )
   {
@@ -313,13 +422,13 @@ void LTC6804_printCellVoltage_max_min()
     {
       for (int i=0; i<12; i++)
       {
-        if( cell_codes[current_ic][i] < lowCellVoltage )
+        if( cellVoltages_counts[current_ic][i+frameOffset] < lowCellVoltage )
         {
-          lowCellVoltage = cell_codes[current_ic][i];
+          lowCellVoltage = cellVoltages_counts[current_ic][i+frameOffset];
         }
-        if( cell_codes[current_ic][i] > highCellVoltage )
+        if( cellVoltages_counts[current_ic][i+frameOffset] > highCellVoltage )
         {
-          highCellVoltage = cell_codes[current_ic][i];
+          highCellVoltage = cellVoltages_counts[current_ic][i+frameOffset];
         }
       }
     }
@@ -379,41 +488,29 @@ void set_adc(uint8_t MD, //ADC Conversion Mode (LPF corner frequency)
 {
   uint8_t md_bits;
 
+  //JTS2doLater: Change corner frequency to reduce noise
+  //ADC LPF Fcorner:       Total conversion time (QTY12 cells/IC)
+  //ADCOPT(CFGR0[0] = 0)    
+  // MD = 01 27000 Hz        1.2 ms
+  // MD = 10  7000 Hz        2.5 ms (default)
+  // MD = 11    26 Hz      213.5 ms
+  //
+  //ADCOPT(CFGR0[0] = 1)
+  // MD = 01 14000 Hz        1.3 ms
+  // MD = 10  3000 Hz        3.0 ms
+  // MD = 11  2000 Hz        4.4 ms
+
+  //JTS2doLater: Replace magic numbers with #defines
   md_bits = (MD & 0x02) >> 1; //set bit 8 (MD[1]) in ADCV[0]... MD[0] is in ADCV[1]
   ADCV[0] = md_bits + 0x02;  //set bit 9 true
   md_bits = (MD & 0x01) << 7;
   ADCV[1] =  md_bits + 0x60 + (DCP<<4) + CH;
 
-  //JTS2doNow: Divide set_adc() into two functions.  New one does code below:
+  //JTS2doLater: Divide set_adc() into two functions.  New one does code below:
   md_bits = (MD & 0x02) >> 1;
   ADAX[0] = md_bits + 0x04;
   md_bits = (MD & 0x01) << 7;
   ADAX[1] = md_bits + 0x60 + CHG ;
-}
-
-//---------------------------------------------------------------------------------------
-
-//Start cell voltage conversion
-void LTC6804_adcv()
-{
-  uint8_t cmd[4];
-  uint16_t temp_pec;
-
-  //Load ADCV command into cmd array
-  cmd[0] = ADCV[0];
-  cmd[1] = ADCV[1];
-
-  //Calculate adcv cmd PEC and load pec into cmd array
-  temp_pec = pec15_calc(2, ADCV);
-  cmd[2] = (uint8_t)(temp_pec >> 8);
-  cmd[3] = (uint8_t)(temp_pec);
-
-  wakeup_idle (); //Guarantees LTC6804 isoSPI port is awake.
-
-  //send broadcast adcv command to LTC6804 stack
-  digitalWrite(PIN_SPI_CS,LOW);
-  spi_write_array(4,cmd);
-  digitalWrite(PIN_SPI_CS,HIGH);
 }
 
 //---------------------------------------------------------------------------------------
@@ -492,7 +589,7 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
     LTC6804_rdaux_reg(reg, total_ic, data, addr_first_ic);
     for (int current_ic = 0 ; current_ic < total_ic; current_ic++) // executes for every LTC6804 in the stack
     {
-      //Parse raw GPIO voltage data in cell_codes array
+      //Parse raw GPIO voltage data in aux_codes array
       for (int current_gpio = 0; current_gpio<GPIO_IN_REG; current_gpio++)  // This loop parses the read back data. Loops
       {
         // once for each aux voltage in the register
@@ -947,5 +1044,6 @@ void LTC6804_handleKeyOff(void)
 {
   isoSPI_errorCount = 0;
   maxEverCellVoltage = 0;
-  minEverCellVoltage = 65535;  
+  minEverCellVoltage = 65535; 
+  cellVoltages_lastCompleteFrame = COMPLETE_FRAME_IS_NONE; //JTS2doNow: necessary to reinit? 
 }

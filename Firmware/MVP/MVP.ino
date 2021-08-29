@@ -59,12 +59,17 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
   //TCCR0B = (TCCR0B & B11111000) | B00000001; // JTSdebug: for PWM frequency of 62500 Hz D04 & D13. This hoses delay()!
+    //Default is 976.56 Hz
 
   Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION "," BUILD_DATE "\n\n")); //memory efficient (see useful_tidbits.txt)
 }
 
 void loop()
 {
+	#define LOOP_RATE_MS 4 //limit Superloop to 250 Hz
+
+	static uint32_t previousMillis = millis();
+
 	uint8_t keyStatus_now = digitalRead(PIN_KEY_ON);  //Get key position // executes in ~t=10 microseconds
 	static uint8_t keyStatus_previous = 1; //JTS2doNow: See if setting '0' prevents BATTSCI P-code
 
@@ -91,7 +96,7 @@ void loop()
   
 	  } else {
 	  	Serial.print(F("ON"));
-	  	//vPackSpoof_handleKeyON(); //JTS2doNow: Figure out keyON VPIN spooging
+	  	//vPackSpoof_handleKeyON(); //JTS2doNow: Figure out keyON VPIN spoofing
 	    BATTSCI_enable();
 	    METSCI_enable();
 	    digitalWrite(PIN_FANOEM_LOW,HIGH);
@@ -136,15 +141,13 @@ void loop()
 
 	if( (keyStatus_now == 1) || (gridChargerPowered_now == 1) ) //key is on or grid charger plugged in
 	{
-	  LTC6804_startCellVoltageConversion();  //executes in ~t=230 microseconds
-	  //We don't immediately read the results afterwards because it takes a second to digitize
-	  //In Coop Task setting we'll need to invoke reading n microseconds after this function is called
+	  //LTC6804_startCellVoltageConversion();  //executes in ~t=230 microseconds
+		//JTS2doNow: if Pcode occurs, add this back somewhere else 
 
 	  //---------------------------------------------------------------------------------------
   
   	debugLED(1,HIGH);
-	  LTC6804_readCellVoltages();	//individual cell results stored in 'cell_codes' array
-	  														//executes in t=28 milliseconds 
+	  LTC6804_readNextCellVoltageRegister();	//individual cell results stored in 'cellVoltages_counts' array
 	  debugLED(1,LOW);
 	  
 	  //---------------------------------------------------------------------------------------
@@ -201,5 +204,16 @@ void loop()
 	  //key is off & grid charger unplugged
 		//JTS2doLater: Balance cells
 	}
+
 	blinkLED2(); //Heartbeat
+
+
+	
+
+	while( (millis() - previousMillis) < LOOP_RATE_MS )
+	{
+		; //nop until 
+	}
+
+	previousMillis = millis();
 }
