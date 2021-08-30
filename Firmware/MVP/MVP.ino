@@ -151,10 +151,8 @@ void loop()
 	  //---------------------------------------------------------------------------------------
 
 	  uint8_t packVoltage_actual  = LTC68042result_stackVoltage_get();
-	  debugUSB_VpackActual_volts(packVoltage_actual); //t=5 microseconds
 
 	  uint8_t packVoltage_spoofed = (uint8_t)(packVoltage_actual*0.94); //t=20 microseconds
-	  debugUSB_VpackSpoofed_volts(packVoltage_spoofed);
 
 	  //---------------------------------------------------------------------------------------
 
@@ -164,9 +162,7 @@ void loop()
 	    //executes in ~t=5 microseconds when MCM is NOT sending data to LiBCM
 	    //executes in  t=? microseconds when MCM is     sending data to LiBCM
 	    
-	    int16_t packCurrent_actual = adc_measureBatteryCurrent_Amps(); //t=450 microseconds
-	    debugUSB_batteryCurrentActual_amps(packCurrent_actual);
-
+	    int16_t packCurrent_actual = adc_measureBatteryCurrent_amps(); //t=450 microseconds
 	    int16_t packCurrent_spoofed;
 
 			#if   defined(SET_CURRENT_HACK_60)

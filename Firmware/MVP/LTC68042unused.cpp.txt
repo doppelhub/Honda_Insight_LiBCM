@@ -50,7 +50,7 @@ void LTC6804_clrcell()
 //JTS2doLater: Write separate function to control discharge FETs (cell balancing)
 //JTS2doLater: This doesn't need to be a 2D array.  Data identical on all LTC, except DCC12:1.
 //JTS2doLater: Figure out where tx_cfg is actually written to LTC ICs
-//JTS2doNow: Program never actually writes this to LTC ICs
+//JTS2doLater: Program never actually writes this to LTC ICs
 //resets is LTC watchdog timer expires (i.e. LTC LED turns off after ~2s)
 void LTC6804configure_calculate_CFGRn()
 {

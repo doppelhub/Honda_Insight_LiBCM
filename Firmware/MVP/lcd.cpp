@@ -265,9 +265,9 @@ bool lcd_printPower(void)
 	#ifdef LCD_4X20_CONNECTED
 		static int16_t packAmps_onScreen = 0; //don't want to multiply to determine power
 
-		if( packAmps_onScreen != adc_getLatestBatteryCurrent_Amps() )
+		if( packAmps_onScreen != adc_getLatestBatteryCurrent_amps() )
 		{
-			packAmps_onScreen = adc_getLatestBatteryCurrent_Amps();
+			packAmps_onScreen = adc_getLatestBatteryCurrent_amps();
 			lcd2.setCursor(15,3);
 			if(packAmps_onScreen >=0 )
 			{

@@ -24,16 +24,17 @@ uint8_t adc_packVoltage_VpinIn(void) //returns pack voltage (in volts)
 /////////////////////////////////////////////////////////////////////
 
 int16_t latest_battCurrent_amps = 0;
+int16_t latest_battCurrent_counts = 0;
 
 //sample ADC and returns battery
-int16_t adc_measureBatteryCurrent_Amps(void)
+int16_t adc_measureBatteryCurrent_amps(void)
 {
 	#define NUM_ADCSAMPLES_PER_RESULT 64 //Valid values: 1,2,4,8,16,32,64 //MUST ALSO CHANGE next line!
 	#define NUM_ADCSAMPLES_2_TO_THE_N  6 //Valid values: 0,1,2,3, 4, 5, 6 //2^N = NUM_ADCSAMPLES_PER_RESULT
 	#define NUM_ADCSAMPLES_PER_CALL    4 //Must be divisible into NUM_ADCSAMPLES_PER_RESULT!
 	
-	static uint8_t adcSamplesTaken = 0;
-	static uint16_t adcAccumulator = 0;
+	static uint8_t adcSamplesTaken = 0; //number of samples
+	static uint16_t adcAccumulator = 0; //raw 10b ADC results
 
 	for(int ii=0; ii<NUM_ADCSAMPLES_PER_CALL; ii++)
 	{
@@ -43,14 +44,13 @@ int16_t adc_measureBatteryCurrent_Amps(void)
 
 	if(adcSamplesTaken == NUM_ADCSAMPLES_PER_RESULT)
 	{
-		int16_t battCurrent_counts = int16_t( (adcAccumulator >> NUM_ADCSAMPLES_2_TO_THE_N) ); //Shift must match:
+		latest_battCurrent_counts = (int16_t)( (adcAccumulator >> NUM_ADCSAMPLES_2_TO_THE_N) ); //Shift must match:
 		adcAccumulator = 0;
 		adcSamplesTaken = 0;
-		debugUSB_batteryCurrent_counts(battCurrent_counts);
 
 		//convert current sensor result into approximate amperage for MCM & user-display
 		//don't use this result for current accumulation... it's not accurate enough (FYI: SoC accumulates raw ADC result)
-		latest_battCurrent_amps = ( (battCurrent_counts * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
+		latest_battCurrent_amps = ( (latest_battCurrent_counts * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
 	}
 
 	return latest_battCurrent_amps;
@@ -58,7 +58,13 @@ int16_t adc_measureBatteryCurrent_Amps(void)
 }
 
 //non-blocking
-int16_t adc_getLatestBatteryCurrent_Amps(void)
+int16_t adc_getLatestBatteryCurrent_amps(void)
 {
 	return latest_battCurrent_amps;
+}
+
+//non-blocking
+int16_t adc_getLatestBatteryCurrent_counts(void)
+{
+	return latest_battCurrent_counts;
 }
