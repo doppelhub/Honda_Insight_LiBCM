@@ -1,3 +1,6 @@
+//Copyright 2021(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
+
 //Handles serial debug data transfers from LIBCM to  host
 //FYI:    Serial       data transfers from host  to LiBCM are handled elsewhere.
 

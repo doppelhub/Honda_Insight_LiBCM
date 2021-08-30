@@ -1,3 +1,6 @@
+//Copyright 2021(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
+
 //handles all communication with lcd display(s) (4x20 and/or Nextion)
 
 //The 4x20 LCD I2C bus is super slow... therefore, only one screen variable is updated per superloop iteration.

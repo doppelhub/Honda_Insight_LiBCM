@@ -1,3 +1,6 @@
+//Copyright 2021(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
+
 /*The MCM measures pack voltage in three different spots:
 / -MCM'E' connector, which is the actual analog pack voltage (e.g. 170 volts).  LiBCM man-in-the-middles this voltage.
 / -VPIN connector, which is a 0:5 volt analog voltage 52 times less than actual pack voltage. LiBCM man-in-the-middles this voltage.

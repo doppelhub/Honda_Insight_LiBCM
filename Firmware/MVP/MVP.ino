@@ -1,3 +1,6 @@
+//Copyright 2021(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
+
 //MVP PoC:
 
 /*
@@ -55,7 +58,7 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
   METSCI_begin();
   BATTSCI_begin();
 
-  LTC6804_initialize();
+  LTC68042configure_initialize();
 
   TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
   //TCCR0B = (TCCR0B & B11111000) | B00000001; // JTSdebug: for PWM frequency of 62500 Hz D04 & D13. This hoses delay()!
@@ -90,7 +93,7 @@ void loop()
 	    METSCI_disable();
 	    digitalWrite(PIN_FANOEM_LOW,LOW);
 	    digitalWrite(PIN_I_SENSOR_EN,LOW); //disable current sensor & constant 5V load
-	    LTC6804_handleKeyOff();
+	    LTC6804configure_handleKeyOff();
 	    lcd_displayOFF();
 	    vPackSpoof_handleKeyOFF();
   
@@ -144,13 +147,12 @@ void loop()
   	debugLED(1,HIGH);
   	//Retrieve and validate the next QTY3 cell voltages in the stack 
   	//each "Cell Voltage Register" contains QTY3 cell voltages.
-	  LTC68042voltage_getNextCVR();	
+	  LTC68042cell_getVoltages();	
 	  debugLED(1,LOW);
 	  
 	  //---------------------------------------------------------------------------------------
-	  //This section executes in t=100 microseconds
 
-	  uint8_t packVoltage_actual  = LTC6804_getStackVoltage(); //t=85 microseconds
+	  uint8_t packVoltage_actual  = LTC68042result_stackVoltage_get();
 	  debugUSB_VpackActual_volts(packVoltage_actual); //t=5 microseconds
 
 	  uint8_t packVoltage_spoofed = (uint8_t)(packVoltage_actual*0.94); //t=20 microseconds

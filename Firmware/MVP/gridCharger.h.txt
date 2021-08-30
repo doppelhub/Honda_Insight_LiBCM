@@ -1,0 +1,7 @@
+//Copyright 2021(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
+
+#ifndef gridCharger_h
+    #define gridCharger_h
+
+#endif

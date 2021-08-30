@@ -1,3 +1,6 @@
+//Copyright 2021(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
+
 //cpu_map.h - CPU and pin mapping configuration file
 //central pin mapping selection file for different processor types
 

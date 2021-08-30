@@ -1,3 +1,6 @@
+//Copyright 2021(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
+
 //handles all ADC calls
 //JTS2doLater: Remove Arduino functions
 //JTS2doLater: use interrupts, so ADC calls don't block execution (each conversion takes ~112 us)

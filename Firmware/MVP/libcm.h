@@ -1,3 +1,6 @@
+//Copyright 2021(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
+
 //main LiBCM include file
 
 #ifndef libcm_h
@@ -17,11 +20,14 @@
   #include "debugLED.h"
   #include "debugUSB.h"
   #include "LT_SPI.h"
-  #include "LTC68042.h"
   #include "battsci.h"
   #include "metsci.h"
   #include "adc.h"
   #include "vPackSpoof.h"
   #include "lcd.h"
+  #include "LTC68042configure.h"
+  #include "LTC68042cell.h"
+  #include "LTC68042gpio.h"
+  #include "LTC68042result.h"
 
 #endif

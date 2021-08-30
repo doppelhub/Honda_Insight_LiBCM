@@ -1,3 +1,6 @@
+//Copyright 2021(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
+
 /*
   Library created in February 2021
   by Arnaud Ouvrier (http://www.arnaudouvrier.fr)
