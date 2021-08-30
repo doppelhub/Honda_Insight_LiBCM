@@ -15,6 +15,7 @@ uint16_t cellVoltages_counts[TOTAL_IC][CELLS_PER_IC];
 
 //---------------------------------------------------------------------------------------
 
+
 //tell all LTC68042 ICs to measure all cells
 void startCellConversion()
 {
@@ -23,7 +24,7 @@ void startCellConversion()
   //JTS2doLater: Replace magic numbers with #define
   //Cell Voltage conversion command.
   uint8_t ADCV[2] = { ((MD_NORMAL & 0x02 ) >> 1) + 0x02,  //set bit 9 true
-                            ((MD_NORMAL & 0x01 ) << 7) + 0x60 + (DCP_DISABLED<<4) + CELL_CH_ALL }; 
+                      ((MD_NORMAL & 0x01 ) << 7) + 0x60 + (DCP_DISABLED<<4) + CELL_CH_ALL }; 
 
   //Load 'ADCV' command into cmd array
   cmd[0] = ADCV[0];
@@ -186,7 +187,7 @@ void processAllCellVoltages(void)
 //Example with QTY48 cells:
 //        -the first sixteen calls ( (48 cells) / (3 cells per call) = 16 calls ) read back QTY48 cell voltages.
 //        -The next (seventeenth) call will perform all pack voltage math and store in LTC68042_result.c  
-void LTC68042cell_getVoltages(void)
+void LTC68042cell_nextVoltages(void)
 {
 	LTC68042configure_wakeupCore(); //non-blocking if LTC ICs already on
 

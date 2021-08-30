@@ -145,9 +145,7 @@ void loop()
 	if( (keyStatus_now == 1) || (gridChargerPowered_now == 1) ) //key is on or grid charger plugged in
 	{
   	debugLED(1,HIGH);
-  	//Retrieve and validate the next QTY3 cell voltages in the stack 
-  	//each "Cell Voltage Register" contains QTY3 cell voltages.
-	  LTC68042cell_getVoltages();	
+	  LTC68042cell_nextVoltages(); //each call measures QTY3 cell voltages in the stack (round-robin)
 	  debugLED(1,LOW);
 	  
 	  //---------------------------------------------------------------------------------------

@@ -14,24 +14,25 @@
 //aux_codes[n][5] = Vref
 uint16_t aux_codes[TOTAL_IC][6];
 
-uint8_t ADAX[2]; //GPIO conversion command
-
 
 //---------------------------------------------------------------------------------------
+
 
 //Start GPIO conversion
 void LTC6804_adax()
 {
   uint8_t cmd[4];
-  uint16_t temp_pec;
 
+  //JTS2do: Rewrite with #define logic
+  uint8_t ADAX[2] { ((MD_NORMAL & 0x02) >> 1) + 0x04,
+                    ((MD_NORMAL & 0x01) << 7) + 0x60 + AUX_CH_ALL };
 
   //Load adax command into cmd array
   cmd[0] = ADAX[0];
   cmd[1] = ADAX[1];
 
   //Calculate adax cmd PEC and load pec into cmd array
-  temp_pec = LTC68042configure_calcPEC15(2, ADAX);
+  uint16_t temp_pec = LTC68042configure_calcPEC15(2, ADAX);
   cmd[2] = (uint8_t)(temp_pec >> 8);
   cmd[3] = (uint8_t)(temp_pec);
 
@@ -43,6 +44,7 @@ void LTC6804_adax()
   digitalWrite(PIN_SPI_CS,HIGH);
 }
 
+
 //---------------------------------------------------------------------------------------
 
 
@@ -50,8 +52,7 @@ void LTC6804_adax()
 int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read (0=all, 1=A, 2=B)
                      uint8_t total_ic,
                      uint16_t aux_codes[][6],
-                     uint8_t addr_first_ic
-                    )
+                     uint8_t addr_first_ic )
 {
   const uint8_t NUM_RX_BYTES = 8;
   const uint8_t NUM_BYTES_IN_REG = 6;
@@ -113,60 +114,33 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
   return (pec_error);
 }
 
+
 //---------------------------------------------------------------------------------------
 
 
-/***********************************************//**
- \brief Read the raw data from the LTC6804 auxiliary register
-
- The function reads a single GPIO voltage register and stores the read data
- in the *data point as a byte array. This function is rarely used outside of
- the LTC6804_rdaux() command.
-
- @param[in] uint8_t reg; This controls which GPIO voltage register is read back.
-
-          1: Read back auxiliary group A
-
-          2: Read back auxiliary group B
-
-
- @param[in] uint8_t total_ic; This is the number of ICs in the stack
-
- @param[out] uint8_t *data; An array of the unparsed aux codes
- *************************************************/
-void LTC6804_rdaux_reg(uint8_t reg,
+//read a single GPIO voltage register and stores the read data in the *data point as a byte array
+//not used outside LTC6804_rdaux() 
+void LTC6804_rdaux_reg(uint8_t reg, //GPIO voltage register to read back (1:A, 2:B)
                        uint8_t total_ic,
-                       uint8_t *data,
-                       uint8_t addr_first_ic
-                      )
+                       uint8_t *data, //array of the unparsed aux codes
+                       uint8_t addr_first_ic )
 {
   uint8_t cmd[4];
   uint16_t cmd_pec;
 
-  //1
-  if (reg == 1)
-  {
-    cmd[1] = 0x0C;
-    cmd[0] = 0x00;
-  }
-  else if (reg == 2)
-  {
-    cmd[1] = 0x0e;
-    cmd[0] = 0x00;
-  }
-  else
-  {
-    cmd[1] = 0x0C;
-    cmd[0] = 0x00;
-  }
-  //2
+  //determine Command and initialize command array
+  if      (reg == 1) { cmd[1] = 0x0C; }
+  else if (reg == 2) { cmd[1] = 0x0e; }
+  else               { cmd[1] = 0x0C; }
+  
+  //calculate PEC
   cmd_pec = LTC68042configure_calcPEC15(2, cmd);
   cmd[2] = (uint8_t)(cmd_pec >> 8);
   cmd[3] = (uint8_t)(cmd_pec);
 
-  //3
-  LTC68042configure_wakeupIsoSPI(); //This will guarantee that the LTC6804 isoSPI port is awake, this command can be removed.
-  //4
+  LTC68042configure_wakeupIsoSPI(); 
+
+  //Send Global Command to LTC6804 stack
   for (int current_ic = 0; current_ic<total_ic; current_ic++)
   {
     cmd[0] = 0x80 + ( (current_ic + addr_first_ic) << 3); //Setting address
@@ -178,12 +152,3 @@ void LTC6804_rdaux_reg(uint8_t reg,
     digitalWrite(PIN_SPI_CS,HIGH);
   }
 }
-/*
-  LTC6804_rdaux_reg Function Process:
-  1. Determine Command and initialize command array
-  2. Calculate Command PEC
-  3. Wake up isoSPI, this step is optional
-  4. Send Global Command to LTC6804 stack
-*/
-
-//---------------------------------------------------------------------------------------

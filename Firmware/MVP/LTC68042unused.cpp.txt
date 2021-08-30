@@ -201,26 +201,3 @@ void LTC6804_wrcfg(uint8_t total_ic, uint8_t config[][6], uint8_t addr_first_ic)
 }
 
 
-//---------------------------------------------------------------------------------------
-
-
-// |command    |  10   |   9   |   8   |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   |
-// |-----------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
-// |ADAX:      |   1   |   0   | MD[1] | MD[2] |   1   |   1   |  DCP  |   0   | CHG[2]| CHG[1]| CHG[0]|
-//configure ADC to measure GPIO voltage
-void configureADC_aux(uint8_t adcFilterMode, //ADC Conversion Mode 'MD' (LPF corner frequency)
-             uint8_t gpioChannelToDigitize) //GPIO Channels to measure during Auxiliary conversion command
-{
-  uint8_t md_temp;
-
-  md_temp = (adcFilterMode & 0x02) >> 1;
-  ADAX[0] = md_temp + 0x04;
-  
-  md_temp = (adcFilterMode & 0x01) << 7;
-  ADAX[1] = md_temp + 0x60 + gpioChannelToDigitize ;
-}
-
-
-//---------------------------------------------------------------------------------------
-
-
