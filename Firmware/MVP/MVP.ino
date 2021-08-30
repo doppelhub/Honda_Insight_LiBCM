@@ -74,7 +74,7 @@ void loop()
 	static uint32_t previousMillis = millis();
 
 	uint8_t keyStatus_now = digitalRead(PIN_KEY_ON);  //Get key position // executes in ~t=10 microseconds
-	static uint8_t keyStatus_previous = 1; //JTS2doNow: See if setting '0' prevents BATTSCI P-code
+	static uint8_t keyStatus_previous = KEYON; //JTS2doNow: See if setting '0' prevents BATTSCI P-code
 
 	//---------------------------------------------------------------------------------------
 	//This section executes in t=  5 microseconds when key state has NOT changed
@@ -85,7 +85,7 @@ void loop()
 
 	  Serial.print(F("\nKey:"));
 	  
-	  if( keyStatus_now == 0 )
+	  if( keyStatus_now == KEYOFF )
 	  {
 	    Serial.print(F("OFF"));
 	    LED(1,LOW);
@@ -142,7 +142,7 @@ void loop()
 
 	//---------------------------------------------------------------------------------------
 
-	if( (keyStatus_now == 1) || (gridChargerPowered_now == 1) ) //key is on or grid charger plugged in
+	if( (keyStatus_now == KEYON) || (gridChargerPowered_now == 1) ) //key is on or grid charger plugged in
 	{
   	debugLED(1,HIGH);
 	  LTC68042cell_nextVoltages(); //each call measures QTY3 cell voltages in the stack (round-robin)
@@ -158,13 +158,13 @@ void loop()
 
 	  //---------------------------------------------------------------------------------------
 
-	  if( keyStatus_now ) //key is on
+	  if( keyStatus_now == KEYON ) //key is on
 	  {
 	    METSCI_processLatestFrame();
 	    //executes in ~t=5 microseconds when MCM is NOT sending data to LiBCM
 	    //executes in  t=? microseconds when MCM is     sending data to LiBCM
 	    
-	    int16_t packCurrent_actual = adc_batteryCurrent_Amps(); //t=450 microseconds
+	    int16_t packCurrent_actual = adc_measureBatteryCurrent_Amps(); //t=450 microseconds
 	    debugUSB_batteryCurrentActual_amps(packCurrent_actual);
 
 	    int16_t packCurrent_spoofed;
@@ -184,8 +184,6 @@ void loop()
 			debugUSB_batteryCurrentSpoofed_amps(packCurrent_spoofed);
 
 	    BATTSCI_setPackCurrent(packCurrent_spoofed);
-    	
-    	lcd_printPower(packVoltage_actual, packCurrent_actual);
 
 	  	vPackSpoof_updateVoltage(packVoltage_actual, packVoltage_spoofed);
 
@@ -194,7 +192,7 @@ void loop()
 	  }
 
 	  debugUSB_printLatest_data();
-	  lcd_incrementLoopCount();
+	  lcd_refresh();
 	}
 	else
 	{

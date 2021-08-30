@@ -51,6 +51,7 @@ void LTC6804_clrcell()
 //JTS2doLater: This doesn't need to be a 2D array.  Data identical on all LTC, except DCC12:1.
 //JTS2doLater: Figure out where tx_cfg is actually written to LTC ICs
 //JTS2doNow: Program never actually writes this to LTC ICs
+//resets is LTC watchdog timer expires (i.e. LTC LED turns off after ~2s)
 void LTC6804configure_calculate_CFGRn()
 {
   for (int i = 0; i<TOTAL_IC; i++)
@@ -63,8 +64,16 @@ void LTC6804configure_calculate_CFGRn()
     tx_cfg[i][5] = 0x00       ;  //DCTO[3] DCTO[2] DCTO[1] DCTO[0] DCC12   DCC11   DCC10  DCC9   //Discharge timer and cells 12:9
   }
 }
-
-
+//see p51 for more info:
+//DCTO  = set discharge timer
+//DCC   = control cell discharge FET (1=on)
+//VUV   = undervoltage comparison voltage ((VUV+1) * 16 * 100uV)
+//VOV   = over voltage comparison voltage ((VUV  ) * 16 * 100uV)
+//GPIO  = read to get pinState, write to enable/disable pull-down (disabled by default)
+//REFON = keep ADC reference powered whenever IC awake (reduces ADC delay)
+//SWTRD = (read only) is SWTEN (PIN_SOFTWARE_TIMER_ENABLE) high or low (high=SW timer allowed)
+//ADCOPT= sets adc fast/normal/slow LPF cutoff frequency values (0: 27k/7k/26 Hz)(1: 14k/3k/2k Hz)
+            //Note: fast, normal, or slow is configured in ADCV command
 //---------------------------------------------------------------------------------------
 
 

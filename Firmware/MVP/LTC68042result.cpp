@@ -32,46 +32,34 @@ uint16_t LTC68042result_hiCellVoltage_get(void                 ) { return hiCell
          
 //JTS2doNow: Incorporate with existing variable buffers in debugUSB.c & lcd.c
 
-// void printCellVoltage_all()
-// { // VERY SLOW & blocking (serial transmit buffer filled)
-//   // Use only for debug purposes
-//   Serial.print('\n');
+    // #ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
+    //   #warning (Printing all cell voltages to USB severely reduces Superloop rate)
+    //   printCellVoltage_all();
+    // #endif
 
-//   for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
-//   {
-//     Serial.print(F("IC "));
-//     Serial.print( (current_ic + FIRST_IC_ADDR) ,DEC);
-//     for (int i=0; i<(CELLS_PER_IC); i++)
-//     {
-//       const uint8_t NUM_DECIMAL_PLACES = 4; //JTS2doNow: change back to 4 digits
-//       Serial.print(F(" C"));
-//       Serial.print(i+1,DEC); //Note: cell voltages always reported back C1:C12 (not C13:C24)
-//       Serial.print(':');
-//       Serial.print( (cellVoltages_counts[current_ic][i] * 0.0001), NUM_DECIMAL_PLACES ); 
-//     }
-//     Serial.print('\n');
-//   }
-// }
+    // void printCellVoltage_all()
+    // { // VERY SLOW & blocking (serial transmit buffer filled)
+    //   // Use only for debug purposes
+    //   Serial.print('\n');
+    //   for (int current_ic = 0 ; current_ic < TOTAL_IC; current_ic++)
+    //   {
+    //     Serial.print(F("IC "));
+    //     Serial.print( (current_ic + FIRST_IC_ADDR) ,DEC);
+    //     for (int i=0; i<(CELLS_PER_IC); i++)
+    //     {
+    //       const uint8_t NUM_DECIMAL_PLACES = 4; //JTS2doNow: change back to 4 digits
+    //       Serial.print(F(" C"));
+    //       Serial.print(i+1,DEC); //Note: cell voltages always reported back C1:C12 (not C13:C24)
+    //       Serial.print(':');
+    //       Serial.print( (cellVoltages_counts[current_ic][i] * 0.0001), NUM_DECIMAL_PLACES ); 
+    //     }
+    //     Serial.print('\n');
+    //   }
+    // }
 
-    // lcd_printMinEverVoltage(minEverCellVoltage);
-    //    lcd_printMaxEverVoltage(maxEverCellVoltage);
+    // debugUSB_cellHI_counts(highCellVoltage);
+    // debugUSB_cellLO_counts(lowCellVoltage);
 
-  // lcd_printCellVoltage_hi(highCellVoltage);
-  // lcd_printCellVoltage_lo(lowCellVoltage);
-  // lcd_printCellVoltage_delta(highCellVoltage, lowCellVoltage);
+    // LTC6804_printCellVoltage_max_min(); //JTS2doNow: only calculate max/min after all cell voltages read.
 
-  // debugUSB_cellHI_counts(highCellVoltage);
-  // debugUSB_cellLO_counts(lowCellVoltage);
-
-
-  // #ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
-  //   #warning (Printing all cell voltages to USB severely reduces Superloop rate)
-  //   printCellVoltage_all();
-  // #endif
-
-  // LTC6804_printCellVoltage_max_min(); //JTS2doNow: only calculate max/min after all cell voltages read.
-
-
-  // Periodically print errors
-  //    Serial.print(F("\nerr:LTC"));
- //    lcd_printNumErrors(isoSPI_errorCount); //JTS2doLater: Add LCD I2C update to round-robin (multiple errors could slow Superloop)
+    //    Serial.print(F("\nerr:LTC"));

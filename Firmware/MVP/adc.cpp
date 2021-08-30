@@ -23,7 +23,10 @@ uint8_t adc_packVoltage_VpinIn(void) //returns pack voltage (in volts)
 
 /////////////////////////////////////////////////////////////////////
 
-int16_t adc_batteryCurrent_Amps(void)
+int16_t latest_battCurrent_amps = 0;
+
+//sample ADC and returns battery
+int16_t adc_measureBatteryCurrent_Amps(void)
 {
 	#define NUM_ADCSAMPLES_PER_RESULT 64 //Valid values: 1,2,4,8,16,32,64 //MUST ALSO CHANGE next line!
 	#define NUM_ADCSAMPLES_2_TO_THE_N  6 //Valid values: 0,1,2,3, 4, 5, 6 //2^N = NUM_ADCSAMPLES_PER_RESULT
@@ -38,7 +41,6 @@ int16_t adc_batteryCurrent_Amps(void)
 		adcSamplesTaken++;
 	}
 
-	static int16_t latest_battCurrent_amps = 0;
 	if(adcSamplesTaken == NUM_ADCSAMPLES_PER_RESULT)
 	{
 		int16_t battCurrent_counts = int16_t( (adcAccumulator >> NUM_ADCSAMPLES_2_TO_THE_N) ); //Shift must match:
@@ -53,4 +55,10 @@ int16_t adc_batteryCurrent_Amps(void)
 
 	return latest_battCurrent_amps;
 
+}
+
+//non-blocking
+int16_t adc_getLatestBatteryCurrent_Amps(void)
+{
+	return latest_battCurrent_amps;
 }

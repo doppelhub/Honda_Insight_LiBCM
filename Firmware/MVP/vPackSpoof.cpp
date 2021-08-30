@@ -12,6 +12,8 @@
 
 #include "libcm.h"
 
+uint8_t latestSpoofedPackVoltage = 0;
+
 //---------------------------------------------------------------------------------------
 
 void spoofVoltageMCMe(uint8_t desiredSpoofedVoltage, uint8_t actualPackVoltage)
@@ -34,6 +36,11 @@ void spoofVoltageMCMe(uint8_t desiredSpoofedVoltage, uint8_t actualPackVoltage)
 
 void vPackSpoof_updateVoltage(uint8_t actualPackVoltage, uint8_t voltageToSpoof)
 {
+
+	latestSpoofedPackVoltage = voltageToSpoof;
+
+	///////////////////////////////////////////////////////////////
+
 	//spoof VPIN_OUT voltage (to MCM).
 
 	//JTS2doNow: Figure out maths to map VPIN_OUT to VPIN_IN
@@ -55,9 +62,6 @@ void vPackSpoof_updateVoltage(uint8_t actualPackVoltage, uint8_t voltageToSpoof)
 
 	//spoof BATTSCI voltage		
 	BATTSCI_setPackVoltage(voltageToSpoof);
-
-	lcd_printStackVoltage_spoofed(voltageToSpoof);
-	lcd_printStackVoltage_actual(actualPackVoltage);
 }
 
 //---------------------------------------------------------------------------------------
@@ -72,4 +76,11 @@ void vPackSpoof_handleKeyON(void)
 void vPackSpoof_handleKeyOFF(void)
 {
 	pinMode(PIN_VPIN_OUT_PWM,INPUT); //set VPIN back to high impedance
+}
+
+//---------------------------------------------------------------------------------------
+
+uint8_t vPackSpoof_getSpoofedPackVoltage(void)
+{
+	return latestSpoofedPackVoltage;
 }

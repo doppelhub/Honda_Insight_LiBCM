@@ -5,8 +5,12 @@
 
 #ifndef libcm_h
   #define libcm_h
+  
+  #define KEYON  1
+  #define KEYOFF 0
 
-
+  #define NO  0
+  #define YES 1
 
   //define standard libraries used by LiBCM
   #include <Arduino.h>

@@ -1,7 +1,7 @@
 //Copyright 2021(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
-//handles all communication with lcd display(s) (4x20 and/or Nextion)
+//handles all communication with 4x20 lcd display
 
 //The 4x20 LCD I2C bus is super slow... therefore, only one screen variable is updated per superloop iteration.
 //This is handled by token 'lcd_whichFunctionUpdates', which is used for a round-robin scheduler
@@ -24,43 +24,18 @@
   lcd_I2C_jts lcd2(0x27);
 #endif
 
-#define LCDUPDATE_NO_UPDATE     0
-#define LCDUPDATE_LOOPCOUNT     1
-#define LCDUPDATE_VPACK_ACTUAL  2
-#define LCDUPDATE_VPACK_SPOOFED 3
-#define LCDUPDATE_NUMERRORS     4
-#define LCDUPDATE_CELL_HI       5
-#define LCDUPDATE_CELL_LO       6
-#define LCDUPDATE_CELL_DELTA    7
-#define LCDUPDATE_POWER         8
+//JTS2doNow: Move these elsewhere
+//These variables are reset during key change
+uint16_t loopCount = 64001;
+uint8_t  stackVoltageActual_onScreen = 0;
+uint8_t  stackVoltageSpoofed_onScreen = 0;
+uint8_t  errorCount_onScreen = 0;
+uint16_t  maxEverCellVoltage_onScreen = 0;
+uint16_t  minEverCellVoltage_onScreen = 0;
 
-#define LCDUPDATE_MAX_VALUE 8 //must be equal to the highest defined number (above) 
-
-uint8_t lcdUpdate_state = LCDUPDATE_NUMERRORS;
-
-//These variables are reset at each key change
-uint16_t loopCount;
-uint8_t  stackVoltageActual_previous;
-uint8_t  stackVoltageSpoofed_previous;
-uint8_t  errorCount_previous;
 
 ////////////////////////////////////////////////////////////////////////
 
-void lcd_printStaticText(void) //screen updates are slow
-{
-	#ifdef LCD_4X20_CONNECTED
-		lcd2.setCursor(0,0);
-		//                                          1111111111
-		//                                01234567890123456789
-		//4x20 screen text display format:********************
-		lcd2.setCursor(0,0);  lcd2.print("hi:h.hhh (max:H.HHH)"); //row0, (3,0)=h.hhh, (14,0)=H.HHH
-		lcd2.setCursor(0,1);  lcd2.print("lo:l.lll (min:L.LLL)"); //row1, (3,1)=l.lll, (14,1)=L.LLL
-		lcd2.setCursor(0,2);  lcd2.print("d:d.ddd, V:VVV (SSS)"); //row2, (2,2)=d.ddd, (11,2)=VVV  , (16,2)=SSS
-		lcd2.setCursor(0,3);  lcd2.print("E:0 /CCCCC, kW:+WW.0"); //row3, (2,3)=    0, (5,3)=CCCCC , (16,3)=WW.0
-	#endif
-}
-
-////////////////////////////////////////////////////////////////////////
 
 void lcd_initialize(void)
 {
@@ -79,7 +54,327 @@ void lcd_initialize(void)
 	#endif
 }
 
+
 ////////////////////////////////////////////////////////////////////////
+
+
+//Update loop iteration ("CCCCC") on screen
+bool lcd_printLoopCount(void)
+{
+	#ifdef LCD_4X20_CONNECTED
+
+		lcd2.setCursor(5,3);
+
+		if(loopCount > 64000)
+		{	//overflow occurred... replace "65535" with "0    "
+			lcd2.print("0    ");
+			loopCount = 0; //reset loop count
+		} 
+		else { lcd2.print(loopCount); }
+	#endif
+
+	bool didscreenUpdateOccur = SCREEN_UPDATED; //loopCount is always different
+	return didscreenUpdateOccur; 
+}
+
+
+////////////////////////////////////////////////////////////////////////
+
+bool lcd_printStackVoltage_actual(void)
+{
+	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
+	#ifdef LCD_4X20_CONNECTED	
+		if( stackVoltageActual_onScreen != LTC68042result_stackVoltage_get() )
+		{
+			stackVoltageActual_onScreen = LTC68042result_stackVoltage_get();
+			lcd2.setCursor(11,2);
+			lcd2.print(stackVoltageActual_onScreen);
+
+			didscreenUpdateOccur = SCREEN_UPDATED;
+		}
+	#endif
+
+	return didscreenUpdateOccur;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+bool lcd_printStackVoltage_spoofed(void)
+{
+	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
+	#ifdef LCD_4X20_CONNECTED
+		if( stackVoltageSpoofed_onScreen != vPackSpoof_getSpoofedPackVoltage() )
+		{
+			stackVoltageSpoofed_onScreen = vPackSpoof_getSpoofedPackVoltage();
+			lcd2.setCursor(16,2);
+			lcd2.print(stackVoltageSpoofed_onScreen);
+		}
+	#endif
+
+	return didscreenUpdateOccur;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+//only call this function when an error occurs
+bool lcd_printNumErrors(void)
+{
+	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+	
+	#ifdef LCD_4X20_CONNECTED
+		if( errorCount_onScreen != LTC68042result_errorCount_get() )
+		{
+			errorCount_onScreen = LTC68042result_errorCount_get();
+			lcd2.setCursor(2,3);
+			lcd2.print(errorCount_onScreen);
+
+			didscreenUpdateOccur = SCREEN_UPDATED;
+		}
+	#endif
+
+	return didscreenUpdateOccur;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+
+
+bool lcd_printCellVoltage_hi(void)
+{
+	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
+	#ifdef LCD_4X20_CONNECTED
+		static uint16_t hiCellVoltage_onScreen = 0;
+		if( hiCellVoltage_onScreen != LTC68042result_hiCellVoltage_get() )
+		{
+			hiCellVoltage_onScreen = LTC68042result_hiCellVoltage_get();
+			lcd2.setCursor(3,0); //high
+			lcd2.print( (hiCellVoltage_onScreen * 0.0001), 3 );
+			
+			didscreenUpdateOccur = SCREEN_UPDATED;
+		}
+	#endif
+
+	return didscreenUpdateOccur;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+
+
+bool lcd_printCellVoltage_lo(void)
+{
+	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
+	#ifdef LCD_4X20_CONNECTED
+		static uint16_t loCellVoltage_onScreen = 0;
+		if( loCellVoltage_onScreen != LTC68042result_loCellVoltage_get() ) 
+		{
+			loCellVoltage_onScreen = LTC68042result_loCellVoltage_get();
+			lcd2.setCursor(3,1); //low
+			lcd2.print( (loCellVoltage_onScreen * 0.0001), 3 );
+
+			didscreenUpdateOccur = SCREEN_UPDATED;
+		}	
+	#endif
+
+	return didscreenUpdateOccur;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+
+
+bool lcd_printCellVoltage_delta(void)
+{
+	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+	
+	#ifdef LCD_4X20_CONNECTED
+		static uint16_t deltaVoltage_onScreen = 0; 
+
+		uint16_t deltaVoltage_LTC6804 = LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get();
+
+		if( deltaVoltage_onScreen != deltaVoltage_LTC6804 )
+		{
+			deltaVoltage_onScreen = deltaVoltage_LTC6804;
+			lcd2.setCursor(2,2); //delta
+			lcd2.print( (deltaVoltage_onScreen * 0.0001), 3 );
+
+			didscreenUpdateOccur = SCREEN_UPDATED;
+		}
+	#endif
+
+	return didscreenUpdateOccur;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+
+
+bool lcd_printMaxEverVoltage()
+{ 
+	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
+	#ifdef LCD_4X20_CONNECTED
+		if( maxEverCellVoltage_onScreen != LTC68042result_maxEverCellVoltage_get() )
+		{
+			maxEverCellVoltage_onScreen = LTC68042result_maxEverCellVoltage_get();
+			lcd2.setCursor(14,0);
+			lcd2.print( (maxEverCellVoltage_onScreen * 0.0001) , 3);
+
+			didscreenUpdateOccur = SCREEN_UPDATED;
+		}
+	#endif
+
+	return didscreenUpdateOccur;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+
+
+bool lcd_printMinEverVoltage()
+{ 
+	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
+	#ifdef LCD_4X20_CONNECTED
+		if( minEverCellVoltage_onScreen != LTC68042result_minEverCellVoltage_get() )
+		{
+			minEverCellVoltage_onScreen = LTC68042result_minEverCellVoltage_get();
+			lcd2.setCursor(14,1);
+			lcd2.print( (minEverCellVoltage_onScreen * 0.0001) , 3);
+
+			didscreenUpdateOccur = SCREEN_UPDATED;
+		}
+	#endif
+
+	return didscreenUpdateOccur;
+}
+
+
+
+////////////////////////////////////////////////////////////////////////
+
+
+bool lcd_printPower(void)
+{
+	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
+	#ifdef LCD_4X20_CONNECTED
+		static int16_t packAmps_onScreen = 0; //don't want to multiply to determine power
+
+		if( packAmps_onScreen != adc_getLatestBatteryCurrent_Amps() )
+		{
+			packAmps_onScreen = adc_getLatestBatteryCurrent_Amps();
+			lcd2.setCursor(15,3);
+			if(packAmps_onScreen >=0 )
+			{
+				lcd2.print("+");
+			}
+			lcd2.print( (LTC68042result_stackVoltage_get() * packAmps_onScreen * 0.001), 1 );
+			didscreenUpdateOccur = SCREEN_UPDATED;
+		}
+	#endif
+
+	return didscreenUpdateOccur;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+
+//calling directly always updates screen immediately
+bool lcd_updateValue(uint8_t stateToUpdate)
+{
+	bool didScreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+	switch(stateToUpdate)
+	{
+		case LCDUPDATE_LOOPCOUNT    : didScreenUpdateOccur = lcd_printLoopCount();            break;
+		case LCDUPDATE_VPACK_ACTUAL : didScreenUpdateOccur = lcd_printStackVoltage_actual();  break;
+		case LCDUPDATE_VPACK_SPOOFED: didScreenUpdateOccur = lcd_printStackVoltage_spoofed(); break;
+		case LCDUPDATE_NUMERRORS    : didScreenUpdateOccur = lcd_printNumErrors();            break;
+		case LCDUPDATE_CELL_HI      : didScreenUpdateOccur = lcd_printCellVoltage_hi();       break;
+		case LCDUPDATE_CELL_LO      : didScreenUpdateOccur = lcd_printCellVoltage_lo();       break;
+		case LCDUPDATE_CELL_DELTA   : didScreenUpdateOccur = lcd_printCellVoltage_delta();    break;
+		case LCDUPDATE_POWER        : didScreenUpdateOccur = lcd_printPower();                break;
+		case LCDUPDATE_CELL_MAXEVER : didScreenUpdateOccur = lcd_printMaxEverVoltage();       break;
+		case LCDUPDATE_CELL_MINEVER : didScreenUpdateOccur = lcd_printMinEverVoltage();       break;
+		default                     : didScreenUpdateOccur = SCREEN_UPDATED; break; //if illigal input, exit immediately
+	}
+
+	return didScreenUpdateOccur;
+}	
+
+
+////////////////////////////////////////////////////////////////////////
+
+//primary interface
+//update one screen element (if any have changed)
+void lcd_refresh(void)
+{	
+	#ifdef LCD_4X20_CONNECTED
+
+		static uint8_t lcdUpdate_state = LCDUPDATE_NUMERRORS; //init round-robin with least likely state to have changed
+		static uint8_t lastElementUpdated = LCDUPDATE_NUMERRORS; //last LCD screen element updated //cannot = LCDUPDATE_NO_UPDATE
+		static uint32_t millis_previous = 0;
+
+		#define SCREEN_UPDATE_RATE_MILLIS 32 
+		// Number of screen element updates per second = (1.0 / SCREEN_UPDATE_RATE_MILLIS)
+		// Since only one screen element updates at a time, the per-element update rate is:
+		//     ( (1.0 / SCREEN_UPDATE_RATE_MILLIS) / LCDUPDATE_MAX_VALUE)
+		//  Ex:( (1.0 / 32E-3                    ) / 8                  ) = each screen element updates 3.9x/second
+
+		//Only update screen at a human-readable rate
+		if(millis() - millis_previous > SCREEN_UPDATE_RATE_MILLIS) 
+		{ //update which screen element is allowed to update (if changed via another lcd_ function)
+			millis_previous = millis();
+
+			//always true unless Superloop hangs longer than SCREEN_UPDATE_RATE_MILLIS
+			if(lcdUpdate_state == LCDUPDATE_NO_UPDATE) { lcdUpdate_state = lastElementUpdated; } //restore last updated screen element
+
+			#define MAX_LCDUPDATE_ATTEMPTS    LCDUPDATE_MAX_VALUE
+			uint8_t updateAttempts = 0;
+			do
+			{	//repeats until ONE screen element update occurs
+				lcdUpdate_state++; //select which LCD variable is next in line to update
+				
+				if(lcdUpdate_state > LCDUPDATE_MAX_VALUE) {lcdUpdate_state = 1;} //reset to first element
+				updateAttempts++;
+			} while( (lcd_updateValue(lcdUpdate_state) == SCREEN_DIDNT_UPDATE) && (updateAttempts < MAX_LCDUPDATE_ATTEMPTS) );	
+
+			lastElementUpdated = lcdUpdate_state; //store last updated screen element
+		}
+
+		else
+		{
+			lcdUpdate_state = LCDUPDATE_NO_UPDATE; //disable screen updates until SCREEN_UPDATE_RATE_MILLIS time has passed
+		}
+
+		loopCount++; //JTS2doNow: Figure out best stop for this
+	#endif
+}
+
+
+////////////////////////////////////////////////////////////////////////
+
+void lcd_printStaticText(void) //screen updates are slow //only call during keyOFF
+{
+	#ifdef LCD_4X20_CONNECTED
+		lcd2.setCursor(0,0);
+		//                                          1111111111
+		//                                01234567890123456789
+		//4x20 screen text display format:********************
+		lcd2.setCursor(0,0);  lcd2.print("hi:h.hhh (max:H.HHH)"); //row0, (3,0)=h.hhh, (14,0)=H.HHH
+		lcd2.setCursor(0,1);  lcd2.print("lo:l.lll (min:L.LLL)"); //row1, (3,1)=l.lll, (14,1)=L.LLL
+		lcd2.setCursor(0,2);  lcd2.print("d:d.ddd, V:VVV (SSS)"); //row2, (2,2)=d.ddd, (11,2)=VVV  , (16,2)=SSS
+		lcd2.setCursor(0,3);  lcd2.print("E:0 /CCCCC, kW:+WW.0"); //row3, (2,3)=    0, (5,3)=CCCCC , (16,3)=WW.0
+	#endif
+}
+
+
+////////////////////////////////////////////////////////////////////////
+
 
 void lcd_displayOFF(void)
 {
@@ -99,222 +394,23 @@ void lcd_displayOFF(void)
 		lcd2.noDisplay();
 
 		
-		stackVoltageActual_previous = 0;
-		stackVoltageSpoofed_previous = 0;
-		errorCount_previous = 0;
+		stackVoltageActual_onScreen = 0;
+		errorCount_onScreen = 0;
+
+		stackVoltageSpoofed_onScreen = 0;
+		LTC68042result_errorCount_set(0);
 	#endif
 }
 
+
 ////////////////////////////////////////////////////////////////////////
+
 
 void lcd_displayON(void)
 { 
-	loopCount=0;
+	loopCount=64001;
 	#ifdef LCD_4X20_CONNECTED
 		lcd2.backlight();
 		lcd2.display();
-	#endif
-}
-
-////////////////////////////////////////////////////////////////////////
-
-void lcd_incrementLoopCount(void)
-{
-	#ifdef LCD_4X20_CONNECTED
-
-		////////////////////////////////////////////////////////////////////
-		//Update loop iteration ("CCCC") on screen
-
-		//JTS2doNow: Change loopCount to output seconds (probably rename function, too)
-
-		static bool didCounterOverflow = false;
-		if(lcdUpdate_state == LCDUPDATE_LOOPCOUNT)
-		{
-			lcd2.setCursor(5,3);
-			if(didCounterOverflow == false)
-			{
-				lcd2.print(loopCount); //Update "CCCCC"
-			}
-			else //counter ("CCCCC") wrapped around to zero
-			{
-				lcd2.print("     ");
-				didCounterOverflow = false;
-			}
-		}
-		if(loopCount == 0) { didCounterOverflow = true; }
-
-		loopCount++; //number of superloop runs since key change
-
-		////////////////////////////////////////////////////////////////////
-		//Determine next screen element (if any) to update
-		//Only update screen at a human-readable rate
-		
-		static uint8_t lastElementUpdated = LCDUPDATE_NUMERRORS; //last LCD screen element updated
-		static uint32_t millis_previous = 0;
-
-		#define UPDATE_RATE_MILLIS 32 
-		// Number of screen element updates per second = (1.0 / UPDATE_RATE_MILLIS)
-		// Since only one screen element updates at a time, the per-element update rate is:
-		//     ( (1.0 / UPDATE_RATE_MILLIS) / LCDUPDATE_MAX_VALUE)
-		//  Ex:( (1.0 / 32E-3             ) / 8                  ) = each screen element updates 3.9x/second
-
-		if(millis() - millis_previous > UPDATE_RATE_MILLIS) 
-		{ //time to allow the next screen update, which will occur elsewhere (i.e. each lcd_() function)
-			millis_previous = millis();
-
-			if(lcdUpdate_state == LCDUPDATE_NO_UPDATE) //always true unless Superloop hangs more than 28 ms
-			{ 
-				lcdUpdate_state = lastElementUpdated; //restore last updated screen element
-			} 
-
-			lcdUpdate_state++; //select which LCD variable is allowed to update (via another lcd_() call)
-			
-			if(lcdUpdate_state > LCDUPDATE_MAX_VALUE) {lcdUpdate_state = 1;} //reset to first element
-
-			lastElementUpdated = lcdUpdate_state; //store last updated screen element
-		}
-		else
-		{
-			lcdUpdate_state = LCDUPDATE_NO_UPDATE; //disable screen updates
-		}
-		////////////////////////////////////////////////////////////////////
-
-	#endif
-}
-
-////////////////////////////////////////////////////////////////////////
-
-void lcd_printStackVoltage_actual(uint8_t stackVoltage)
-{
-	#ifdef LCD_4X20_CONNECTED
-		if(   (lcdUpdate_state == LCDUPDATE_VPACK_ACTUAL)
-			 && (stackVoltage != stackVoltageActual_previous) )
-		{
-			lcd2.setCursor(11,2);
-			lcd2.print(stackVoltage);
-			stackVoltageActual_previous = stackVoltage;
-		}
-	#endif
-}
-
-////////////////////////////////////////////////////////////////////////
-
-void lcd_printStackVoltage_spoofed(uint8_t stackVoltage)
-{
-	#ifdef LCD_4X20_CONNECTED
-		if(   (lcdUpdate_state == LCDUPDATE_VPACK_SPOOFED)
-		   && (stackVoltage != stackVoltageSpoofed_previous) )
-		{
-			lcd2.setCursor(16,2);
-			lcd2.print(stackVoltage);
-			stackVoltageSpoofed_previous = stackVoltage;
-		}
-	#endif
-}
-
-////////////////////////////////////////////////////////////////////////
-
-//only call this function when an error occurs
-void lcd_printNumErrors(uint8_t errorCount)
-{
-	#ifdef LCD_4X20_CONNECTED
-		if(   (lcdUpdate_state == LCDUPDATE_NUMERRORS)
-	     && (errorCount != errorCount_previous) )
-		{
-			errorCount_previous = errorCount;
-			lcd2.setCursor(2,3);
-			lcd2.print(errorCount);
-		}
-	#endif
-}
-
-////////////////////////////////////////////////////////////////////////
-
-void lcd_printCellVoltage_hi(uint16_t cellVoltage_counts)
-{
-	#ifdef LCD_4X20_CONNECTED
-	static uint16_t cellHI_previous = 0;
-		if(   (lcdUpdate_state == LCDUPDATE_CELL_HI)
-	     && (cellVoltage_counts != cellHI_previous) )
-		{
-			cellHI_previous = cellVoltage_counts;
-			lcd2.setCursor(3,0); //high
-			lcd2.print( (cellVoltage_counts * 0.0001), 3 );
-		}
-	#endif
-}
-
-////////////////////////////////////////////////////////////////////////
-
-void lcd_printCellVoltage_lo(uint16_t cellVoltage_counts)
-{
-	#ifdef LCD_4X20_CONNECTED
-	static uint16_t cellLO_previous = 0;
-		if(   (lcdUpdate_state == LCDUPDATE_CELL_LO)
-	     && (cellVoltage_counts != cellLO_previous) )
-		{
-			cellLO_previous = cellVoltage_counts;
-			lcd2.setCursor(3,1); //low
-			lcd2.print( (cellVoltage_counts * 0.0001), 3 );
-		}
-	#endif
-}
-
-////////////////////////////////////////////////////////////////////////
-
-void lcd_printCellVoltage_delta(uint16_t highCellVoltage, uint16_t lowCellVoltage)
-{
-	#ifdef LCD_4X20_CONNECTED
-	static uint16_t delta_previous = 0; 
-		if(lcdUpdate_state == LCDUPDATE_CELL_DELTA)
-		{
-			uint16_t delta = highCellVoltage - lowCellVoltage;
-			if (delta != delta_previous)
-			{
-				delta_previous = delta;
-				lcd2.setCursor(2,2); //delta
-				lcd2.print( (delta * 0.0001), 3 );
-			}
-		}
-	#endif
-}
-
-////////////////////////////////////////////////////////////////////////
-
-void lcd_printMaxEverVoltage(uint16_t voltage_counts)
-{ //only called when new maxEver occurs
-	#ifdef LCD_4X20_CONNECTED
-		lcd2.setCursor(14,0);
-		lcd2.print( (voltage_counts * 0.0001) , 3);
-	#endif
-}
-
-////////////////////////////////////////////////////////////////////////
-
-void lcd_printMinEverVoltage(uint16_t voltage_counts)
-{ //only called when new minEver occurs
-	#ifdef LCD_4X20_CONNECTED
-		lcd2.setCursor(14,1);
-		lcd2.print( (voltage_counts * 0.0001) , 3);
-	#endif
-}
-
-////////////////////////////////////////////////////////////////////////
-
-void lcd_printPower(uint8_t packVoltage, int16_t packAmps)
-{
-	#ifdef LCD_4X20_CONNECTED
-	static int16_t packAmps_previous = 0; //don't want to multiply to determine power
-		if(   (lcdUpdate_state == LCDUPDATE_POWER)
-	     && (packAmps != packAmps_previous) )
-		{
-			packAmps_previous = packAmps;
-			lcd2.setCursor(15,3);
-			if(packAmps >=0 )
-			{
-				lcd2.print("+");
-			}
-			lcd2.print( (packVoltage * packAmps * 0.001), 1 );
-		}
 	#endif
 }

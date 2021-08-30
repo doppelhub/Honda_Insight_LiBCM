@@ -6,5 +6,7 @@
 
 	uint8_t adc_packVoltage_VpinIn(void);
 
-	int16_t adc_batteryCurrent_Amps(void);
+	int16_t adc_measureBatteryCurrent_Amps(void);
+
+	int16_t adc_getLatestBatteryCurrent_Amps(void);
 #endif

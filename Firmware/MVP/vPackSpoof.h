@@ -10,4 +10,6 @@
 
 	void vPackSpoof_handleKeyON(void);
 
+	uint8_t vPackSpoof_getSpoofedPackVoltage(void);
+
 #endif
