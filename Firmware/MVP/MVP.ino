@@ -1,148 +1,35 @@
 //Copyright 2021(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
+//Lithium battery BMS for G1 Honda Insight.  Replaces OEM BCM module.
 
-//MVP PoC:
-
-/*
-* Don't care about:
-* -SoC (accumulation)
-* -Temperature
-* -Fan speed
-* -Spoofing ConnE
-* -Spoofing Vpin
-* -Grid charger
-*/
-
-/*This will eventually be the only line of code in this file:
-#include "libcm.h"
-
-//See main.c for superloop
-*/
-
+//JTS2doLater: Make this the only line of code in this file:
 #include "libcm.h"
 
 void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup or bootloader delay 
 {
-  //Ensure 12V->5V DCDC stays on
-  pinMode(PIN_TURNOFFLiBCM,OUTPUT);
-  digitalWrite(PIN_TURNOFFLiBCM,LOW);
-
-	//turn on lcd display
-  pinMode(PIN_HMI_EN,OUTPUT);
-  digitalWrite(PIN_HMI_EN,HIGH);
-
-  //Enable BCM current sensor & constant 5V load
-  pinMode(PIN_I_SENSOR_EN,OUTPUT);
-  digitalWrite(PIN_I_SENSOR_EN,LOW);
-
-  pinMode(PIN_LED1,OUTPUT);
-  pinMode(PIN_LED2,OUTPUT);
-  pinMode(PIN_LED3,OUTPUT);
-  pinMode(PIN_LED4,OUTPUT);
-
-  pinMode(PIN_MCME_PWM,OUTPUT);
-  analogWrite(PIN_MCME_PWM,0);
-  pinMode(PIN_FAN_PWM,OUTPUT);
-  pinMode(PIN_FANOEM_LOW,OUTPUT);
-  pinMode(PIN_FANOEM_HI,OUTPUT);
-  pinMode(PIN_GRID_EN,OUTPUT);
-
-  analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
-
-  if( digitalRead(PIN_KEY_ON) ){ LED(3,HIGH); } //LED3 turns on if key was on when LiBCM first booted
-
+	gpio_begin();
   Serial.begin(115200); //USB
-
-  //lcd_initialize(); //Don't call here, so LiBCM can recover quickly if watchdog resets while driving 
-
   METSCI_begin();
   BATTSCI_begin();
 
   LTC68042configure_initialize();
 
-  TCCR1B = (TCCR1B & B11111000) | B00000001; // Set onboard fan PWM frequency to 31372 Hz (pins D11 & D12)
-  //TCCR0B = (TCCR0B & B11111000) | B00000001; // JTSdebug: for PWM frequency of 62500 Hz D04 & D13. This hoses delay()!
-    //Default is 976.56 Hz
-
-  Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION "," BUILD_DATE "\n\n")); //memory efficient (see useful_tidbits.txt)
+  if( gpio_keyStateNow() == KEYON ){ LED(3,HIGH); } //LED3 turns on if key was on when LiBCM first booted
+  
+  Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION "," BUILD_DATE "\n\n"));
 }
 
 void loop()
 {
-	#define LOOP_RATE_MS 4 //limit Superloop to 250 Hz
-
 	static uint32_t previousMillis = millis();
 
-	uint8_t keyStatus_now = digitalRead(PIN_KEY_ON);  //Get key position // executes in ~t=10 microseconds
-	static uint8_t keyStatus_previous = KEYON; //JTS2doNow: See if setting '0' prevents BATTSCI P-code
+	key_stateChangeHandler();
 
-	//---------------------------------------------------------------------------------------
-	//This section executes in t=  5 microseconds when key state has NOT changed
-
-	//steps to perform when key state changes (on->off, off->on)
-	if( keyStatus_now != keyStatus_previous)
-	{
-
-	  Serial.print(F("\nKey:"));
-	  
-	  if( keyStatus_now == KEYOFF )
-	  {
-	    Serial.print(F("OFF"));
-	    LED(1,LOW);
-	    BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
-	    METSCI_disable();
-	    digitalWrite(PIN_FANOEM_LOW,LOW);
-	    digitalWrite(PIN_I_SENSOR_EN,LOW); //disable current sensor & constant 5V load
-	    LTC6804configure_handleKeyOff();
-	    lcd_displayOFF();
-	    vPackSpoof_handleKeyOFF();
-  
-	  } else {
-	  	Serial.print(F("ON"));
-	  	//vPackSpoof_handleKeyON(); //JTS2doNow: Figure out keyON VPIN spoofing
-	    BATTSCI_enable();
-	    METSCI_enable();
-	    digitalWrite(PIN_FANOEM_LOW,HIGH);
-	    digitalWrite(PIN_I_SENSOR_EN,HIGH); //enable current sensor & constant 5V load
-	    lcd_displayON();
-	    //JTS2doLater: Add gridCharger_isPluggedIn(); if true, hang in while(keyON), to cause P-code (to alert user)
-	    LED(1,HIGH);
-	  }
-
-	  keyStatus_previous = keyStatus_now;
-	}
-
-	//---------------------------------------------------------------------------------------
-	//This section executes in t=8 microseconds when grid charger state has NOT changed
-
-	//Determine whether grid charger is plugged in
-	uint8_t gridChargerPowered_now = !(digitalRead(PIN_GRID_SENSE));
-	static uint8_t gridChargerPowered_previous;
-
-	//steps to perform when grid charger state changes (plugged in || unplugged)
-	if( gridChargerPowered_now != gridChargerPowered_previous)
-	{
-	  Serial.print(F("\nGrid Charger: "));
-	  if( gridChargerPowered_now == 0 ) //grid charger was just unplugged
-	  {
-	    Serial.print(F("Unplugged"));
-	    analogWrite(PIN_FAN_PWM,0);     //turn onboard fans off
-	    digitalWrite(PIN_GRID_EN,0);    //turn grid charger off
-	    Serial.print(F("\nGrid Charger Disabled"));
-	    lcd_displayOFF();
-	    LED(4,LOW);
-
-	  } else {                          //grid charger was just plugged in
-	    Serial.print(F("Plugged In"));
-	    lcd_displayON();
-	    LED(4,HIGH);
-	  }
-	}
-	gridChargerPowered_previous = gridChargerPowered_now;
+	gridCharger_stateChangeHandler();
 
 	//---------------------------------------------------------------------------------------
 
-	if( (keyStatus_now == KEYON) || (gridChargerPowered_now == 1) ) //key is on or grid charger plugged in
+	if( (key_getSampledState() == KEYON) || (gridCharger_getSampledState() == PLUGGED_IN) )
 	{
   	debugLED(1,HIGH);
 	  LTC68042cell_nextVoltages(); //each call measures QTY3 cell voltages in the stack (round-robin)
@@ -156,7 +43,7 @@ void loop()
 
 	  //---------------------------------------------------------------------------------------
 
-	  if( keyStatus_now == KEYON ) //key is on
+	  if( key_getSampledState() == KEYON ) //key is on
 	  {
 	    METSCI_processLatestFrame();
 	    //executes in ~t=5 microseconds when MCM is NOT sending data to LiBCM

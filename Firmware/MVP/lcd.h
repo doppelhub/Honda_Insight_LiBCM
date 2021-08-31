@@ -4,8 +4,8 @@
 #ifndef lcd_h
 	#define lcd_h
 
-	#define SCREEN_DIDNT_UPDATE 0
-	#define SCREEN_UPDATED      1
+	#define SCREEN_DIDNT_UPDATE false
+	#define SCREEN_UPDATED      true
 
 	//define round-robin states //one screen element is updated at a time 
 	#define LCDUPDATE_NO_UPDATE     0

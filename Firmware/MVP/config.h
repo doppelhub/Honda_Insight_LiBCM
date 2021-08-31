@@ -32,4 +32,6 @@
 
 	#define PRINT_USB_DEBUG_TEXT //prints text sent via debugUSB_debugText() //JTS2doLater: NOT IMPLEMENTED YET
 
+	#define LOOP_RATE_MS 4 // Superloop execution rate: 1/LOOP_RATE_MS (e.g. LOOP_RATE_MS==4 is 250 Hz)
+
 #endif

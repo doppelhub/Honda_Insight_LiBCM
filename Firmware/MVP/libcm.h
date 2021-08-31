@@ -5,12 +5,12 @@
 
 #ifndef libcm_h
   #define libcm_h
-  
-  #define KEYON  1
-  #define KEYOFF 0
 
-  #define NO  0
-  #define YES 1
+  #define NO  false
+  #define YES true
+
+  #define OFF false
+  #define ON  true
 
   //define standard libraries used by LiBCM
   #include <Arduino.h>
@@ -23,12 +23,15 @@
   #include "cpu_map.h"
   #include "debugLED.h"
   #include "debugUSB.h"
+  #include "gpio.h"
+  #include "key.h"
   #include "LT_SPI.h"
   #include "battsci.h"
   #include "metsci.h"
   #include "adc.h"
   #include "vPackSpoof.h"
   #include "lcd.h"
+  #include "gridCharger.h"
   #include "LTC68042configure.h"
   #include "LTC68042cell.h"
   #include "LTC68042gpio.h"
