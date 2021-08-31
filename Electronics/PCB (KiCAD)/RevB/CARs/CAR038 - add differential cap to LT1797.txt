@@ -1,0 +1,5 @@
+similar to C22, but on LT1797 IN-.  This better balances the diff inputs, and should reduce noise.  Can always depop if it causes issues.
+
+Add LPF to opamp output, to filter noise sent to MEGA2560 ADC.  10k+100n should be good (tau= 1 ms)
+
+Also note that input resistance isn't identical on opamp inputs.

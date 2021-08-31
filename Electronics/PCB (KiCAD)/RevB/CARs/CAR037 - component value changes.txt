@@ -1,0 +1,13 @@
+Adding 20, 1k24, 768 resistors to BOM.
+
+Remove 3k3, 82, 1k
+
+Consider
+220 (120+120).
+20k (1/2W) becomes 10k+10k
+82 (120||768||768||768 = 81.7)
+Consider removing 120 (100+20), and adding 100, so that we don't violate LTC6804's recommendation to stay below 100 Ohms.  If we don't do this, it'll just add measurement error to each cell voltage... nothing major. 
+
+20p becomes 100p
+
+flyback diode
