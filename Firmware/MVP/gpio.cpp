@@ -62,23 +62,44 @@ void gpio_setFanSpeed_OEM(char speed)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+void gpio_setFanSpeed(char speed)
+{
+	switch(speed)
+	{
+		case '0': pinMode(PIN_FAN_PWM, INPUT); break; //high impedance
+		case 'L': analogWrite(PIN_FAN_PWM, 75); break;
+		case 'M': analogWrite(PIN_FAN_PWM, 125); break;
+		case 'H': analogWrite(PIN_FAN_PWM, 255); break;
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
 //power current sensor & constant 5V load
-void gpio_turnCurrentSensor_on(void) { digitalWrite(PIN_I_SENSOR_EN, HIGH); }
+void gpio_turnCurrentSensor_on( void) { digitalWrite(PIN_I_SENSOR_EN, HIGH); }
+void gpio_turnCurrentSensor_off(void) { digitalWrite(PIN_I_SENSOR_EN,  LOW); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//disable current sensor & constant 5V load
-void gpio_turnCurrentSensor_off(void) { digitalWrite(PIN_I_SENSOR_EN, LOW); }
+bool gpio_isGridChargerPluggedInNow(void) { return !(digitalRead(PIN_GRID_SENSE)); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-bool gpio_isGridChargerPluggedIn(void) { return !(digitalRead(PIN_GRID_SENSE)); }
+void gpio_turnGridCharger_on( void) { digitalWrite(PIN_GRID_EN, HIGH); }
+void gpio_turnGridCharger_off(void) { digitalWrite(PIN_GRID_EN,  LOW); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-
-////////////////////////////////////////////////////////////////////////////////////
-
+void gpio_setGridCharger_powerLevel(char powerLevel)
+{
+	switch(powerLevel)
+	{
+		case '0': analogWrite(PIN_GRID_PWM, 255); break; //negative logic
+		case 'L': analogWrite(PIN_GRID_PWM, 160); break;
+		case 'M': analogWrite(PIN_GRID_PWM, 80); break;
+		case 'H': pinMode(PIN_GRID_PWM, INPUT); break; //reduces power consumption
+	}
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 

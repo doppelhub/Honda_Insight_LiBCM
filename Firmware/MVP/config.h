@@ -34,4 +34,6 @@
 
 	#define LOOP_RATE_MS 4 // Superloop execution rate: 1/LOOP_RATE_MS (e.g. LOOP_RATE_MS==4 is 250 Hz)
 
+	#define GRID_CHARGER_CELL_VMAX 39000 // Vcell = GRID_CHARGER_CELL_VMAX * 0.0001 V //cells charged to this voltage
+
 #endif

@@ -55,7 +55,7 @@ void key_handleKeyEvent_on(void)
 	gpio_setFanSpeed_OEM('L');
 	gpio_turnCurrentSensor_on();
 	lcd_displayON();
-	//JTS2doLater: if(gpio_isGridChargerPluggedIn() == YES) { while(keyON){;} } // cause P-code (to alert user)
+	//JTS2doLater: if(gpio_isGridChargerPluggedInNow() == YES) { while(keyON){;} } // cause P-code (to alert user)
 	LED(1,HIGH);	
 }
 

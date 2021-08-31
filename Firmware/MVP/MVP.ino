@@ -25,7 +25,7 @@ void loop()
 
 	key_stateChangeHandler();
 
-	gridCharger_stateChangeHandler();
+	gridCharger_handler();
 
 	//---------------------------------------------------------------------------------------
 
