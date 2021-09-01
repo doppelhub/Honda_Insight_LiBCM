@@ -18,12 +18,11 @@ uint8_t spoofedPackVoltage = 0;
 
 void spoofVoltageMCMe(void)
 {
-	//Derivation:
-	//Empirically determined, see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods
-	      //pwmCounts_MCME = (              actualPackVoltage                  * 512) / spoofedPackVoltage          - 551
-	      //pwmCounts_MCME = (              actualPackVoltage                  * 256) / spoofedPackVoltage    * 2   - 551 //prevent 16b overflow
-	      //pwmCounts_MCME = (    (int16_t)(actualPackVoltage                ) * 256) / spoofedPackVoltage    * 2   - 551 
-	int16_t pwmCounts_MCME = ( ( ((int16_t)(LTC68042result_packVoltage_get()) << 8 ) / spoofedPackVoltage ) << 1 ) - 551;
+	//Derivation - Empirically determined, see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods
+	      //pwmCounts_MCME = (            actualPackVoltage                 * 512) / spoofedPackVoltage         - 551
+	      //pwmCounts_MCME = (            actualPackVoltage                 * 256) / spoofedPackVoltage   * 2   - 551 //prevent 16b overflow
+	      //pwmCounts_MCME = (  (int16_t)(actualPackVoltage               ) * 256) / spoofedPackVoltage   * 2   - 551 
+	int16_t pwmCounts_MCME = ((((int16_t)(LTC68042result_packVoltage_get()) << 8 ) / spoofedPackVoltage) << 1 ) - 551;
 	  
 	//bounds checking
 	if     (pwmCounts_MCME > 255) {pwmCounts_MCME = 255;}
@@ -34,17 +33,18 @@ void spoofVoltageMCMe(void)
 
 void spoofVoltage_VPINout(void)
 {
-	//spoof VPIN_OUT voltage (to MCM).
-	//LTC68042result_packVoltage_get()
-	//vPackSpoof_getSpoofedPackVoltage()
+	//      V_DIV_CORRECTION = RESISTANCE_MCM / RESISTANCE_R34
+	//      V_DIV_CORRECTION = 100k           / 10k
+	#define V_DIV_CORRECTION 1.1
 
-	//JTS2doNow: Figure out maths to map VPIN_OUT to VPIN_IN
+	int16_t pwmCounts_VPIN_OUT = (adc_packVoltage_VpinIn() * vPackSpoof_getSpoofedPackVoltage() * V_DIV_CORRECTION )
+	                             / LTC68042result_packVoltage_get();
 
-	//uint8_t VPIN_out_PWM = VPIN_uint8_t vpinPWM = actualPackVoltage - ()
+	//bounds checking
+	if     (pwmCounts_VPIN_OUT > 255) {pwmCounts_VPIN_OUT = 255;}
+	else if(pwmCounts_VPIN_OUT <   0) {pwmCounts_VPIN_OUT =   0;}
 
-	analogWrite(PIN_VPIN_OUT_PWM, adc_packVoltage_VpinIn());	
-		//Derivation: Vpack (volts) ~= 0:5v PWM 8b value (counts)
-		//Example: when pack voltage is 184 volts, send analogWrite(VPIN_OUT, 184)
+	analogWrite(PIN_VPIN_OUT_PWM, (uint8_t)pwmCounts_VPIN_OUT);	
 }
 
 //---------------------------------------------------------------------------------------

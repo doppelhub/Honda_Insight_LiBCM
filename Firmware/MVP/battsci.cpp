@@ -110,9 +110,9 @@ void BATTSCI_sendFrames()
         frameSum_87 += BATTSCI_writeByte( 0x16 );                                         //Battery SoC (upper byte)
         frameSum_87 += BATTSCI_writeByte( 0x20 );                                         //Battery SoC (lower byte)
       } else if (spoofedVoltageToSend > 160) {                                               
-        // Regen and Assist but no BG Regen 75.1%
+        // Regen and Assist but no BG Regen 72%
         frameSum_87 += BATTSCI_writeByte( 0x15 );                                         //Battery SoC (upper byte)
-        frameSum_87 += BATTSCI_writeByte( 0x6F );                                         //Battery SoC (lower byte)
+        frameSum_87 += BATTSCI_writeByte( 0x50 );                                         //Battery SoC (lower byte)
       } else if (spoofedVoltageToSend >= 150) {                                              
         // Regen and Assist with BG Regen 60%
         frameSum_87 += BATTSCI_writeByte( 0x14 );                                         //Battery SoC (upper byte)
