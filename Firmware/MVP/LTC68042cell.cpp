@@ -147,7 +147,7 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
 //results stored in LTC68042results.c
 void processAllCellVoltages(void)
 {
-	uint32_t stackVoltage_RAW = 0; //Multiply by 0.0001 for volts
+	uint32_t packVoltage_RAW = 0; //Multiply by 0.0001 for volts
 	uint16_t loCellVoltage = 65535;
 	uint16_t hiCellVoltage = 0;
 
@@ -159,7 +159,7 @@ void processAllCellVoltages(void)
 			uint16_t cellUnderTest = cellVoltages_counts[chip][cell];
 		
 			//accumulate Vpack	
-			stackVoltage_RAW += cellUnderTest;
+			packVoltage_RAW += cellUnderTest;
 			
 			//find hi/lo cells
 			if( cellUnderTest < loCellVoltage ) { loCellVoltage = cellUnderTest; }
@@ -171,7 +171,7 @@ void processAllCellVoltages(void)
 		}
 	}
 
-	LTC68042result_stackVoltage_set( (uint8_t)(stackVoltage_RAW * 0.0001) );
+	LTC68042result_packVoltage_set( (uint8_t)(packVoltage_RAW * 0.0001) );
 	
 	LTC68042result_loCellVoltage_set(loCellVoltage);
 	LTC68042result_hiCellVoltage_set(hiCellVoltage);

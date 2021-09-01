@@ -11,4 +11,8 @@
 	int16_t adc_getLatestBatteryCurrent_amps(void);
 
 	int16_t adc_getLatestBatteryCurrent_counts(void);
+
+	void adc_updateBatteryCurrent(void);
+
+	int16_t adc_getLatestSpoofedCurrent_amps(void);
 #endif

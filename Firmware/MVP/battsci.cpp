@@ -14,8 +14,8 @@
 
 uint8_t BATTSCI_state = STOPPED;
 
-uint8_t packVoltageToSend = 0;
-int16_t packCurrentToSend = 0; //JTS2doLater spoofed pack current can probably be int8_t (+127 A)
+uint8_t spoofedVoltageToSend = 0;
+int16_t spoofedCurrentToSend = 0; //JTS2doLater spoofed pack current can probably be int8_t (+127 A)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -64,20 +64,19 @@ uint8_t BATTSCI_writeByte(uint8_t data)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_setPackVoltage(uint8_t packVoltage)
+void BATTSCI_setPackVoltage(uint8_t spoofedVoltage)
 {
-  packVoltageToSend = packVoltage;
+  spoofedVoltageToSend = spoofedVoltage;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_setPackCurrent(int16_t packCurrent) //JTS2doLater spoofed pack current can probably be int8_t (+127 A)
+void BATTSCI_setSpoofedCurrent(int16_t spoofedCurrent) //JTS2doLater spoofed pack current can probably be int8_t (+127 A)
 {
-  packCurrentToSend = packCurrent;
+  spoofedCurrentToSend = spoofedCurrent;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 void BATTSCI_sendFrames()
 { //t=80 microseconds max
@@ -92,7 +91,7 @@ void BATTSCI_sendFrames()
     previousMillis = millis();
 
     //Convert battery current (unit: amps) into BATTSCI format (unit: 50 mA per count)
-    int16_t batteryCurrent_toBATTSCI = 2048 - packCurrentToSend*20;
+    int16_t batteryCurrent_toBATTSCI = 2048 - spoofedCurrentToSend*20;
 
     if(frame2send == 0x87)
     {
@@ -100,26 +99,25 @@ void BATTSCI_sendFrames()
       uint8_t frameSum_87 = 0; //this will overflow, which is ok for CRC
       frameSum_87 += BATTSCI_writeByte( 0x87 );                                          //Never changes
       frameSum_87 += BATTSCI_writeByte( 0x40 );                                          //Never changes
-      frameSum_87 += BATTSCI_writeByte( (packVoltageToSend >> 1) );                      //Half Vbatt (e.g. 0x40 = d64 = 128 V)
+      frameSum_87 += BATTSCI_writeByte( (spoofedVoltageToSend >> 1) );                      //Half Vbatt (e.g. 0x40 = d64 = 128 V)
 
       //JTS2doNow: This should look at max/min cell voltage, not pack voltage
       //JTS2doLater: Change SoC setpoints to different voltages
-      //JTS2doNow: packVoltageToSend is spoofed voltage... not actual voltage.  Need to form cell voltage in LTC6804, then pipe it in here.
       //JTS2doLater: Need to add hysteresis (or maybe current-based cell voltage shift)
-      //             pseudocode: packVoltageToSend = packVoltageActual + batteryCurrent_toBATTSCI * VoffsetPerAmp
-      if (packVoltageToSend > 180) {                                                      
+      //             pseudocode: spoofedVoltageToSend = packVoltageActual + batteryCurrent_toBATTSCI * VoffsetPerAmp
+      if (spoofedVoltageToSend > 180) {                                                      
         // No regen 80%
         frameSum_87 += BATTSCI_writeByte( 0x16 );                                         //Battery SoC (upper byte)
         frameSum_87 += BATTSCI_writeByte( 0x20 );                                         //Battery SoC (lower byte)
-      } else if (packVoltageToSend > 160) {                                               
+      } else if (spoofedVoltageToSend > 160) {                                               
         // Regen and Assist but no BG Regen 75.1%
         frameSum_87 += BATTSCI_writeByte( 0x15 );                                         //Battery SoC (upper byte)
         frameSum_87 += BATTSCI_writeByte( 0x6F );                                         //Battery SoC (lower byte)
-      } else if (packVoltageToSend >= 150) {                                              
+      } else if (spoofedVoltageToSend >= 150) {                                              
         // Regen and Assist with BG Regen 60%
         frameSum_87 += BATTSCI_writeByte( 0x14 );                                         //Battery SoC (upper byte)
         frameSum_87 += BATTSCI_writeByte( 0x58 );                                         //Battery SoC (lower byte)
-      } else if (packVoltageToSend >= 144) {                                              
+      } else if (spoofedVoltageToSend >= 144) {                                              
         // Regen and Assist with BG Regen 40%
         frameSum_87 += BATTSCI_writeByte( 0x13 );                                         //Battery SoC (upper byte)
         frameSum_87 += BATTSCI_writeByte( 0x10 );                                         //Battery SoC (lower byte)

@@ -12,18 +12,18 @@
 
 #include "libcm.h"
 
-uint8_t latestSpoofedPackVoltage = 0;
+uint8_t spoofedPackVoltage = 0;
 
 //---------------------------------------------------------------------------------------
 
-void spoofVoltageMCMe(uint8_t desiredSpoofedVoltage, uint8_t actualPackVoltage)
+void spoofVoltageMCMe(void)
 {
 	//Derivation:
 	//Empirically determined, see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods
-	      //pwmCounts_MCME = (              actualPackVoltage  * 512) / desiredSpoofedVoltage          - 551
-	      //pwmCounts_MCME = (              actualPackVoltage  * 256) / desiredSpoofedVoltage    * 2   - 551 //prevent 16b overflow
-	      //pwmCounts_MCME = (    (int16_t)(actualPackVoltage) * 256) / desiredSpoofedVoltage    * 2   - 551 
-	int16_t pwmCounts_MCME = ( ( ((int16_t)(actualPackVoltage) << 8 ) / desiredSpoofedVoltage ) << 1 ) - 551;
+	      //pwmCounts_MCME = (              actualPackVoltage                  * 512) / spoofedPackVoltage          - 551
+	      //pwmCounts_MCME = (              actualPackVoltage                  * 256) / spoofedPackVoltage    * 2   - 551 //prevent 16b overflow
+	      //pwmCounts_MCME = (    (int16_t)(actualPackVoltage                ) * 256) / spoofedPackVoltage    * 2   - 551 
+	int16_t pwmCounts_MCME = ( ( ((int16_t)(LTC68042result_packVoltage_get()) << 8 ) / spoofedPackVoltage ) << 1 ) - 551;
 	  
 	//bounds checking
 	if     (pwmCounts_MCME > 255) {pwmCounts_MCME = 255;}
@@ -32,16 +32,11 @@ void spoofVoltageMCMe(uint8_t desiredSpoofedVoltage, uint8_t actualPackVoltage)
 	analogWrite(PIN_MCME_PWM, (uint8_t)pwmCounts_MCME);
 }
 
-//---------------------------------------------------------------------------------------
-
-void vPackSpoof_updateVoltage(uint8_t actualPackVoltage, uint8_t voltageToSpoof)
+void spoofVoltage_VPINout(void)
 {
-
-	latestSpoofedPackVoltage = voltageToSpoof;
-
-	///////////////////////////////////////////////////////////////
-
 	//spoof VPIN_OUT voltage (to MCM).
+	//LTC68042result_packVoltage_get()
+	//vPackSpoof_getSpoofedPackVoltage()
 
 	//JTS2doNow: Figure out maths to map VPIN_OUT to VPIN_IN
 
@@ -49,38 +44,33 @@ void vPackSpoof_updateVoltage(uint8_t actualPackVoltage, uint8_t voltageToSpoof)
 
 	//uint8_t VPIN_out_PWM = VPIN_uint8_t vpinPWM = actualPackVoltage - ()
 
-	analogWrite(PIN_VPIN_OUT_PWM, voltageToSpoof);	
+	analogWrite(PIN_VPIN_OUT_PWM, spoofedPackVoltage);	
 		//Derivation: Vpack (volts) ~= 0:5v PWM 8b value (counts)
 		//Example: when pack voltage is 184 volts, send analogWrite(VPIN_OUT, 184)
+}
 
-	///////////////////////////////////////////////////////////////
+//---------------------------------------------------------------------------------------
 
-	//spoof MCM E connector voltage
-	spoofVoltageMCMe(voltageToSpoof, actualPackVoltage);
+void vPackSpoof_updateVoltages(void)
+{
+	spoofedPackVoltage = (uint8_t)(LTC68042result_packVoltage_get() * 0.94); //t=20 microseconds
 
-	///////////////////////////////////////////////////////////////
-
-	//spoof BATTSCI voltage		
-	BATTSCI_setPackVoltage(voltageToSpoof);
+	spoofVoltage_VPINout();
+	spoofVoltageMCMe();
+	BATTSCI_setPackVoltage(spoofedPackVoltage);
 }
 
 //---------------------------------------------------------------------------------------
 
 void vPackSpoof_handleKeyON(void)
 {
-
+	;
 }
 
 //---------------------------------------------------------------------------------------
 
-void vPackSpoof_handleKeyOFF(void)
-{
-	pinMode(PIN_VPIN_OUT_PWM,INPUT); //set VPIN back to high impedance
-}
+void vPackSpoof_handleKeyOFF(void) { pinMode(PIN_VPIN_OUT_PWM,INPUT); } //set VPIN back to high impedance
 
 //---------------------------------------------------------------------------------------
 
-uint8_t vPackSpoof_getSpoofedPackVoltage(void)
-{
-	return latestSpoofedPackVoltage;
-}
+uint8_t vPackSpoof_getSpoofedPackVoltage(void) { return spoofedPackVoltage; }

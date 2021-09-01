@@ -38,7 +38,7 @@ void LTC6804_adax()
 
   LTC68042configure_wakeupIsoSPI(); //Guarantees LTC6804 isoSPI port is awake.
 
-  //send broadcast adax command to LTC6804 stack
+  //send broadcast adax command to LTC6804 pack
   digitalWrite(PIN_SPI_CS,LOW);
   LTC68042configure_spiWrite(4,cmd);
   digitalWrite(PIN_SPI_CS,HIGH);
@@ -66,7 +66,7 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
   data = (uint8_t *) malloc((NUM_RX_BYTES*total_ic)*sizeof(uint8_t));
 
   if (reg == 0)
-  { //Read GPIO voltage registers A-B for every IC in the stack
+  { //Read GPIO voltage registers A-B for every IC in the pack
     for (uint8_t gpio_reg = 1; gpio_reg<3; gpio_reg++) //executes once for each aux voltage register
     {
       data_counter = 0;
@@ -90,9 +90,9 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
       }
     }
   } else {
-    //Read single GPIO voltage register for all ICs in stack
+    //Read single GPIO voltage register for all ICs in pack
     LTC6804_rdaux_reg(reg, total_ic, data, addr_first_ic);
-    for (int current_ic = 0 ; current_ic < total_ic; current_ic++) // executes for every LTC6804 in the stack
+    for (int current_ic = 0 ; current_ic < total_ic; current_ic++) // executes for every LTC6804 in the pack
     {
       //Parse raw GPIO voltage data in aux_codes array
       for (int current_gpio = 0; current_gpio<GPIO_IN_REG; current_gpio++)  // This loop parses the read back data. Loops
@@ -140,7 +140,7 @@ void LTC6804_rdaux_reg(uint8_t reg, //GPIO voltage register to read back (1:A, 2
 
   LTC68042configure_wakeupIsoSPI(); 
 
-  //Send Global Command to LTC6804 stack
+  //Send Global Command to LTC6804 pack
   for (int current_ic = 0; current_ic<total_ic; current_ic++)
   {
     cmd[0] = 0x80 + ( (current_ic + addr_first_ic) << 3); //Setting address

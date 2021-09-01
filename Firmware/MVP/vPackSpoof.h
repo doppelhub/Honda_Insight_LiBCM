@@ -4,7 +4,7 @@
 #ifndef vpackspoof_h
 	#define vpackspoof_h
 
-	void vPackSpoof_updateVoltage(uint8_t actualPackVoltage, uint8_t voltageToSpoof);
+	void vPackSpoof_updateVoltages(void);
 
 	void vPackSpoof_handleKeyOFF(void);
 

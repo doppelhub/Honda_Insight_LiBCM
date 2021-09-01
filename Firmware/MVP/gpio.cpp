@@ -95,7 +95,7 @@ void gpio_setGridCharger_powerLevel(char powerLevel)
 	switch(powerLevel)
 	{
 		case '0': analogWrite(PIN_GRID_PWM, 255); break; //negative logic
-		case 'L': analogWrite(PIN_GRID_PWM, 160); break;
+		case 'L': analogWrite(PIN_GRID_PWM, 160); break; //JTS2doNow: Determine correct values
 		case 'M': analogWrite(PIN_GRID_PWM, 80); break;
 		case 'H': pinMode(PIN_GRID_PWM, INPUT); break; //reduces power consumption
 	}

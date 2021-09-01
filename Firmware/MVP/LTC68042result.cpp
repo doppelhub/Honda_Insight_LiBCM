@@ -10,9 +10,9 @@ uint8_t LTC68042result_errorCount_get       (void                 ) { return iso
 void    LTC68042result_errorCount_set       (uint8_t newErrorCount) { isoSPI_errorCount = newErrorCount; }
 void    LTC68042result_errorCount_increment (void                 ) { isoSPI_errorCount++;               }
 
-uint8_t stackVoltage_actual = 170; //JTS2do: See if MCM happy with 0 volts
-void    LTC68042result_stackVoltage_set (uint8_t voltage) { stackVoltage_actual = voltage; }
-uint8_t LTC68042result_stackVoltage_get (void           ) { return stackVoltage_actual; }
+uint8_t packVoltage_actual = 170; //JTS2do: See if MCM happy with 0 volts
+void    LTC68042result_packVoltage_set (uint8_t voltage) { packVoltage_actual = voltage; }
+uint8_t LTC68042result_packVoltage_get (void           ) { return packVoltage_actual; }
 
 uint16_t minEverCellVoltage_counts = 65535; //since last key event
 void     LTC68042result_minEverCellVoltage_set(uint16_t newMin_counts) { minEverCellVoltage_counts = newMin_counts; }

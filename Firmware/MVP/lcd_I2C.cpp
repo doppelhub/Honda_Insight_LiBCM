@@ -52,7 +52,6 @@ void lcd_I2C_jts::send(uint8_t byte)
   //t= 52 microseconds      4B        13 us/B
   //t= 71 microseconds      9B         8 us/B
   //t=162 microseconds     31B         5 us/B
-  debugLED(4,HIGH);
   Wire.beginTransmission(_i2cLcdAddress);                      //~t=5   microseconds
   Wire.write(byte);
 
@@ -63,8 +62,6 @@ void lcd_I2C_jts::send(uint8_t byte)
   // Wire.write(0x00);
 
   Wire.endTransmission(SEND_RESTART_BIT); //Wire transmits all bytes in buffer
-  debugLED(4,LOW);
-
 }
 
 // Merge the command quartet with the control command (BL EN RW RS)
@@ -88,13 +85,11 @@ void lcd_I2C_jts::sendQuartet(uint8_t data, uint8_t includeDelayAfterWrite)
 // This is the primary method used to send data to display
 void lcd_I2C_jts::sendCmd(uint8_t data) //t=200 microseconds
 {
-  debugLED(3,HIGH);
   sendQuartet( (data & DATA_PORTION), NO_DELAY);
 
   //JTS: Can delay as long as desired (i.e. split interrupt handler here if desired)
 
   sendQuartet( ((data << 4) & DATA_PORTION), ADD_DELAY);
-  debugLED(3,LOW);
 }
 
 ////////////////////////////////////////////////////////////////////////

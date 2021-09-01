@@ -24,6 +24,6 @@
 
 	void BATTSCI_setPackVoltage(uint8_t voltage);
 
-	void BATTSCI_setPackCurrent(int16_t packCurrent);
+	void BATTSCI_setSpoofedCurrent(int16_t packCurrent);
 
 #endif

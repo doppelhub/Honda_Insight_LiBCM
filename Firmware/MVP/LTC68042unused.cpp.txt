@@ -78,10 +78,10 @@ void LTC6804configure_calculate_CFGRn()
 
 
 /*!******************************************************
- \brief Reads configuration registers of a LTC6804 stack
+ \brief Reads configuration registers of a LTC6804 pack
 
 @param[out] uint8_t *r_config: array that the function will write configuration data to. The configuration data for each IC
-is stored in blocks of 8 bytes with the configuration data of the lowest IC on the stack in the first 8 bytes
+is stored in blocks of 8 bytes with the configuration data of the lowest IC on the pack in the first 8 bytes
 of the array, the second IC in the second 8 byte etc. Below is an table illustrating the array organization:
 
 |r_config[0]|r_config[1]|r_config[2]|r_config[3]|r_config[4]|r_config[5]|r_config[6]  |r_config[7] |r_config[8]|r_config[9]|  .....    |
@@ -112,7 +112,7 @@ int8_t LTC6804_rdcfg(uint8_t total_ic, uint8_t r_config[][8], uint8_t addr_first
   //2
   LTC68042configure_wakeupIsoSPI();
   
-  //read configuration of each LTC6804 on the stack
+  //read configuration of each LTC6804 on the pack
   for (int current_ic = 0; current_ic<total_ic; current_ic++)
   {
     cmd[0] = 0x80 + ( (current_ic + addr_first_ic) <<3); //Setting address
@@ -124,7 +124,7 @@ int8_t LTC6804_rdcfg(uint8_t total_ic, uint8_t r_config[][8], uint8_t addr_first
     digitalWrite(PIN_SPI_CS,HIGH);
   }
 
-  for (uint8_t current_ic = 0; current_ic < total_ic; current_ic++) //executes for each LTC6804 in the stack
+  for (uint8_t current_ic = 0; current_ic < total_ic; current_ic++) //executes for each LTC6804 in the pack
   {
     //load configuration data into r_config array
     for (uint8_t current_byte = 0; current_byte < BYTES_IN_REG; current_byte++)
@@ -152,8 +152,8 @@ int8_t LTC6804_rdcfg(uint8_t total_ic, uint8_t r_config[][8], uint8_t addr_first
 //Write each LTC6804's configuration registers
 //written in descending order (last device's configuration is written first)
 
-//uint8_t *config is configuration data array to write.  Contain 6 bytes for each IC in the stack
-//The lowest IC in the stack should be the first 6 byte block in the array. Array format:
+//uint8_t *config is configuration data array to write.  Contain 6 bytes for each IC in the pack
+//The lowest IC in the pack should be the first 6 byte block in the array. Array format:
 // |  config[0]| config[1] |  config[2]|  config[3]|  config[4]|  config[5]| config[6] |  config[7]|  config[8]|  .....    |
 // |-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
 // |IC1 CFGR0  |IC1 CFGR1  |IC1 CFGR2  |IC1 CFGR3  |IC1 CFGR4  |IC1 CFGR5  |IC2 CFGR0  |IC2 CFGR1  | IC2 CFGR2 |  .....    |
@@ -176,7 +176,7 @@ void LTC6804_wrcfg(uint8_t total_ic, uint8_t config[][6], uint8_t addr_first_ic)
 
   //Load the cmd with LTC6804 configuration data
   cmd_index = 4;
-  for (uint8_t current_ic = 0; current_ic < total_ic ; current_ic++)       // executes for each LTC6804 in stack,
+  for (uint8_t current_ic = 0; current_ic < total_ic ; current_ic++)       // executes for each LTC6804 in pack,
   {
     for (uint8_t current_byte = 0; current_byte < BYTES_IN_REG; current_byte++) // executes for each byte in the CFGR register
     {
@@ -194,7 +194,7 @@ void LTC6804_wrcfg(uint8_t total_ic, uint8_t config[][6], uint8_t addr_first_ic)
 
   LTC68042configure_wakeupIsoSPI();
 
-  //Write configuration of each LTC6804 on the stack
+  //Write configuration of each LTC6804 on the pack
   for (int current_ic = 0; current_ic<total_ic; current_ic++)
   {
     cmd[0] = 0x80 + ( (current_ic + addr_first_ic) << 3); //Setting address

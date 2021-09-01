@@ -27,15 +27,13 @@
 //JTS2doNow: Move these elsewhere
 //These variables are reset during key change
 uint16_t loopCount = 64001;
-uint8_t  stackVoltageActual_onScreen = 0;
-uint8_t  stackVoltageSpoofed_onScreen = 0;
+uint8_t  packVoltageActual_onScreen = 0;
+uint8_t  packVoltageSpoofed_onScreen = 0;
 uint8_t  errorCount_onScreen = 0;
 uint16_t  maxEverCellVoltage_onScreen = 0;
 uint16_t  minEverCellVoltage_onScreen = 0;
 
-
 ////////////////////////////////////////////////////////////////////////
-
 
 void lcd_initialize(void)
 {
@@ -54,9 +52,7 @@ void lcd_initialize(void)
 	#endif
 }
 
-
 ////////////////////////////////////////////////////////////////////////
-
 
 //Update loop iteration ("CCCCC") on screen
 bool lcd_printLoopCount(void)
@@ -77,7 +73,6 @@ bool lcd_printLoopCount(void)
 	return didscreenUpdateOccur; 
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 
 bool lcd_printStackVoltage_actual(void)
@@ -85,11 +80,11 @@ bool lcd_printStackVoltage_actual(void)
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
 	#ifdef LCD_4X20_CONNECTED	
-		if( stackVoltageActual_onScreen != LTC68042result_stackVoltage_get() )
+		if( packVoltageActual_onScreen != LTC68042result_packVoltage_get() )
 		{
-			stackVoltageActual_onScreen = LTC68042result_stackVoltage_get();
+			packVoltageActual_onScreen = LTC68042result_packVoltage_get();
 			lcd2.setCursor(11,2);
-			lcd2.print(stackVoltageActual_onScreen);
+			lcd2.print(packVoltageActual_onScreen);
 
 			didscreenUpdateOccur = SCREEN_UPDATED;
 		}
@@ -105,11 +100,11 @@ bool lcd_printStackVoltage_spoofed(void)
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
 	#ifdef LCD_4X20_CONNECTED
-		if( stackVoltageSpoofed_onScreen != vPackSpoof_getSpoofedPackVoltage() )
+		if( packVoltageSpoofed_onScreen != vPackSpoof_getSpoofedPackVoltage() )
 		{
-			stackVoltageSpoofed_onScreen = vPackSpoof_getSpoofedPackVoltage();
+			packVoltageSpoofed_onScreen = vPackSpoof_getSpoofedPackVoltage();
 			lcd2.setCursor(16,2);
-			lcd2.print(stackVoltageSpoofed_onScreen);
+			lcd2.print(packVoltageSpoofed_onScreen);
 		}
 	#endif
 
@@ -137,9 +132,7 @@ bool lcd_printNumErrors(void)
 	return didscreenUpdateOccur;
 }
 
-
 ////////////////////////////////////////////////////////////////////////
-
 
 bool lcd_printCellVoltage_hi(void)
 {
@@ -160,9 +153,7 @@ bool lcd_printCellVoltage_hi(void)
 	return didscreenUpdateOccur;
 }
 
-
 ////////////////////////////////////////////////////////////////////////
-
 
 bool lcd_printCellVoltage_lo(void)
 {
@@ -183,9 +174,7 @@ bool lcd_printCellVoltage_lo(void)
 	return didscreenUpdateOccur;
 }
 
-
 ////////////////////////////////////////////////////////////////////////
-
 
 bool lcd_printCellVoltage_delta(void)
 {
@@ -209,9 +198,7 @@ bool lcd_printCellVoltage_delta(void)
 	return didscreenUpdateOccur;
 }
 
-
 ////////////////////////////////////////////////////////////////////////
-
 
 bool lcd_printMaxEverVoltage()
 { 
@@ -231,9 +218,7 @@ bool lcd_printMaxEverVoltage()
 	return didscreenUpdateOccur;
 }
 
-
 ////////////////////////////////////////////////////////////////////////
-
 
 bool lcd_printMinEverVoltage()
 { 
@@ -253,10 +238,7 @@ bool lcd_printMinEverVoltage()
 	return didscreenUpdateOccur;
 }
 
-
-
 ////////////////////////////////////////////////////////////////////////
-
 
 bool lcd_printPower(void)
 {
@@ -273,14 +255,13 @@ bool lcd_printPower(void)
 			{
 				lcd2.print("+");
 			}
-			lcd2.print( (LTC68042result_stackVoltage_get() * packAmps_onScreen * 0.001), 1 );
+			lcd2.print( (LTC68042result_packVoltage_get() * packAmps_onScreen * 0.001), 1 );
 			didscreenUpdateOccur = SCREEN_UPDATED;
 		}
 	#endif
 
 	return didscreenUpdateOccur;
 }
-
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -305,7 +286,6 @@ bool lcd_updateValue(uint8_t stateToUpdate)
 
 	return didScreenUpdateOccur;
 }	
-
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -355,7 +335,6 @@ void lcd_refresh(void)
 	#endif
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 
 void lcd_printStaticText(void) //screen updates are slow //only call during keyOFF
@@ -372,9 +351,7 @@ void lcd_printStaticText(void) //screen updates are slow //only call during keyO
 	#endif
 }
 
-
 ////////////////////////////////////////////////////////////////////////
-
 
 void lcd_displayOFF(void)
 {
@@ -394,17 +371,15 @@ void lcd_displayOFF(void)
 		lcd2.noDisplay();
 
 		
-		stackVoltageActual_onScreen = 0;
+		packVoltageActual_onScreen = 0;
 		errorCount_onScreen = 0;
 
-		stackVoltageSpoofed_onScreen = 0;
+		packVoltageSpoofed_onScreen = 0;
 		LTC68042result_errorCount_set(0);
 	#endif
 }
 
-
 ////////////////////////////////////////////////////////////////////////
-
 
 void lcd_displayON(void)
 { 
@@ -413,4 +388,11 @@ void lcd_displayON(void)
 		lcd2.backlight();
 		lcd2.display();
 	#endif
+}
+
+////////////////////////////////////////////////////////////////////////
+
+void lcd_gridChargerWarning(void)
+{
+	//JTS2doNow: display warning if grid charger plugged in and key is on
 }

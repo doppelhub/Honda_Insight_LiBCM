@@ -30,11 +30,11 @@ void debugUSB_printLatest_data(void)
 		Serial.print(F("\nI:"                                                            ));
 		Serial.print(String( adc_getLatestBatteryCurrent_amps()                          ));
 		Serial.print(F(       "A("                                                       ));
-		Serial.print(String( latest_batteryCurrentSpoofed_amps                           ));
+		Serial.print(String( adc_getLatestSpoofedCurrent_amps()                          ));
 		Serial.print(F(            "A)("                                                 ));
 		Serial.print(String( adc_getLatestBatteryCurrent_counts()                        ));
 		Serial.print(F(                   "d), Vp:"                                      ));
-		Serial.print(String( LTC68042result_stackVoltage_get()                           ));
+		Serial.print(String( LTC68042result_packVoltage_get()                           ));
 		Serial.print(F(                             "V("                                 ));
 		Serial.print(String( vPackSpoof_getSpoofedPackVoltage()                          ));
 		Serial.print(F(                                   "), VcH:"                      ));

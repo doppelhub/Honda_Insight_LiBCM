@@ -31,12 +31,9 @@ bool gridCharger_didStateChange(void)
 void gridCharger_handleUnplugEvent(void)
 {
   Serial.print(F("Unplugged"));
-  analogWrite(PIN_FAN_PWM,0);     //turn onboard fans off
-  digitalWrite(PIN_GRID_EN,0);    //turn grid charger off
-  Serial.print(F("\nGrid Charger Disabled"));
+  gpio_setFanSpeed('0');
+  gpio_turnGridCharger_off();
   lcd_displayOFF();
-  LED(4,LOW);
-  //JTS2doNow: Turn 
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -45,8 +42,8 @@ void gridCharger_handlePluginEvent(void)
 {
   Serial.print(F("Plugged In"));
   lcd_displayON();
-  LED(4,HIGH);
-  //JTS2doNow: Turn LiBCM fans on
+  gpio_turnGridCharger_on(); //set charger initial condition //gridCharger_balanceCells() will immediately disable if full.
+  gpio_setFanSpeed('M'); 
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -58,12 +55,7 @@ void gridCharger_handler(void)
   if( gridCharger_didStateChange() == YES )
   {
     Serial.print(F("\nGrid Charger: "));
-    if (gridCharger_getSampledState() == PLUGGED_IN)
-    {
-      gridCharger_handlePluginEvent();
-      gpio_turnGridCharger_on(); //force charger on if(GRID_CHARGER_CELL_VMAX - VCELL_HYSTERESIS) < VCELL < GRID_CHARGER_CELL_VMAX)
-      gpio_setFanSpeed('M'); 
-    }
+    if (gridCharger_getSampledState() == PLUGGED_IN) { gridCharger_handlePluginEvent(); }
     if (gridCharger_getSampledState() == UNPLUGGED ) { gridCharger_handleUnplugEvent(); }
   }
 
@@ -72,13 +64,23 @@ void gridCharger_handler(void)
 
 //////////////////////////////////////////////////////////////////////////////////
 
-//To prevent overchanging, do not call outside gridCharger_handler()!
 void gridCharger_balanceCells(void)
 {
   if(gridCharger_getSampledState() == PLUGGED_IN) 
   {
+    LTC68042cell_nextVoltages(); 
+
+    //at least one cell is severely overcharged
+    if( LTC68042result_hiCellVoltage_get() > (GRID_CHARGER_CELL_VMAX + VCELL_HYSTERESIS) )
+    {
+      gpio_turnGridCharger_off();
+      gpio_setFanSpeed('H'); //cool pack and discharge
+      gpio_setGridCharger_powerLevel('0');
+      //JTS2doLater: display Warning on LCD
+    }
+
     //at least one cell is full
-    if( (LTC68042result_hiCellVoltage_get() > GRID_CHARGER_CELL_VMAX) )
+    else if( (LTC68042result_hiCellVoltage_get() > GRID_CHARGER_CELL_VMAX) )
     {
       gpio_turnGridCharger_off();
       gpio_setFanSpeed('L');

@@ -7,6 +7,8 @@
 
 #include "libcm.h"
 
+int16_t packCurrent_spoofed = 0;
+
 uint8_t adc_packVoltage_VpinIn(void) //returns pack voltage (in volts)
 {
 	//Derivation:
@@ -57,14 +59,38 @@ int16_t adc_measureBatteryCurrent_amps(void)
 
 }
 
-//non-blocking
-int16_t adc_getLatestBatteryCurrent_amps(void)
+/////////////////////////////////////////////////////////////////////
+
+int16_t adc_getLatestBatteryCurrent_amps(void) { return latest_battCurrent_amps; } //non-blocking
+
+/////////////////////////////////////////////////////////////////////
+
+int16_t adc_getLatestBatteryCurrent_counts(void) { return latest_battCurrent_counts; } //non-blocking
+
+/////////////////////////////////////////////////////////////////////
+
+int16_t adc_getLatestSpoofedCurrent_amps(void) { return packCurrent_spoofed; }
+
+/////////////////////////////////////////////////////////////////////
+
+void adc_updateBatteryCurrent(void)
 {
-	return latest_battCurrent_amps;
+	#if   defined(SET_CURRENT_HACK_60)
+		packCurrent_spoofed = (int16_t)(adc_measureBatteryCurrent_amps() * 0.62); //160% current hack = tell MCM 62% actual
+	#elif defined(SET_CURRENT_HACK_40) 
+		packCurrent_spoofed = (int16_t)(adc_measureBatteryCurrent_amps() * 0.70); //140% current hack = tell MCM 70% actual
+	#elif defined(SET_CURRENT_HACK_20)
+		packCurrent_spoofed = (int16_t)(adc_measureBatteryCurrent_amps() * 0.83); //120% current hack = tell MCM 83% actual
+	#elif defined(SET_CURRENT_HACK_00)
+		packCurrent_spoofed = adc_measureBatteryCurrent_amps();
+	#else
+		#error (SET_CURRENT_HACK_xx value not selected in config.c)
+	#endif
+
+	BATTSCI_setSpoofedCurrent(packCurrent_spoofed);
 }
 
-//non-blocking
-int16_t adc_getLatestBatteryCurrent_counts(void)
-{
-	return latest_battCurrent_counts;
-}
+
+
+
+

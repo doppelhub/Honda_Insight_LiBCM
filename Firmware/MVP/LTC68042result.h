@@ -8,8 +8,8 @@
 	void    LTC68042result_errorCount_set       (uint8_t newErrorCount);
 	void    LTC68042result_errorCount_increment (void                 );
 
-	void    LTC68042result_stackVoltage_set (uint8_t voltage);
-	uint8_t LTC68042result_stackVoltage_get (void           );
+	void    LTC68042result_packVoltage_set (uint8_t voltage);
+	uint8_t LTC68042result_packVoltage_get (void           );
 
 	void     LTC68042result_minEverCellVoltage_set(uint16_t newMin_counts);
 	uint16_t LTC68042result_minEverCellVoltage_get(void                  );
@@ -24,10 +24,4 @@
 	uint16_t LTC68042result_hiCellVoltage_get(void                 );
 #endif
 
-// void printCellVoltage_all();
-
-// void LTC6804_printCellVoltage_max_min(void);
-
-// uint8_t LTC6804results_getStackVoltage(void);
-
-// void LTC68042result_setStackVoltage( uint8_t stackVoltage_volts );
+// void printCellVoltage_all(); //JTS2doLater: Add back
