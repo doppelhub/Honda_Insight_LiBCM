@@ -38,7 +38,7 @@ void loop()
 
     	adc_updateBatteryCurrent();
 
-  		vPackSpoof_updateVoltages();
+  		vPackSpoof_setVoltage( debugUSB_getSpoofedVoltage() );
 
 		debugUSB_printLatest_data();
 

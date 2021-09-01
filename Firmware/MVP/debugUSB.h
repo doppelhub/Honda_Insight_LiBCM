@@ -7,4 +7,6 @@
 	void debugUSB_batteryCurrentSpoofed_amps(uint8_t current_amps);
 
 	void debugUSB_printLatest_data(void);
+
+	uint8_t debugUSB_getSpoofedVoltage(void);
 #endif

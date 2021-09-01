@@ -49,9 +49,9 @@ void spoofVoltage_VPINout(void)
 
 //---------------------------------------------------------------------------------------
 
-void vPackSpoof_updateVoltages(void)
+void vPackSpoof_setVoltage(uint8_t newSpoofedVoltage)
 {
-	spoofedPackVoltage = (uint8_t)(LTC68042result_packVoltage_get() * 0.94); //t=20 microseconds
+	spoofedPackVoltage = newSpoofedVoltage; //t=20 microseconds
 
 	spoofVoltage_VPINout();
 	spoofVoltageMCMe();
