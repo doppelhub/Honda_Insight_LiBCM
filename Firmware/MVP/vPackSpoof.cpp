@@ -40,11 +40,9 @@ void spoofVoltage_VPINout(void)
 
 	//JTS2doNow: Figure out maths to map VPIN_OUT to VPIN_IN
 
-	uint8_t VPIN_in_volts = adc_packVoltage_VpinIn();
-
 	//uint8_t VPIN_out_PWM = VPIN_uint8_t vpinPWM = actualPackVoltage - ()
 
-	analogWrite(PIN_VPIN_OUT_PWM, spoofedPackVoltage);	
+	analogWrite(PIN_VPIN_OUT_PWM, adc_packVoltage_VpinIn());	
 		//Derivation: Vpack (volts) ~= 0:5v PWM 8b value (counts)
 		//Example: when pack voltage is 184 volts, send analogWrite(VPIN_OUT, 184)
 }
