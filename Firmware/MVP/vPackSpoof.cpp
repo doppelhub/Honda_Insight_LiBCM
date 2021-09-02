@@ -65,6 +65,7 @@ void spoofVoltage_VPINout(void)
 
 void vPackSpoof_setVoltage(uint8_t newSpoofedVoltage)
 {
+	//JTS2doNow: For now, make spoofed voltage proportional to actual voltage.
 	spoofedPackVoltage = newSpoofedVoltage; //t=20 microseconds
 
 	spoofVoltage_VPINout();

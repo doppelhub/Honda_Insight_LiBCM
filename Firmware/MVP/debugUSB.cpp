@@ -16,28 +16,29 @@ void debugUSB_printLatest_data(void)
 	{
 		previousMillis = millis();
 
+		//comma delimiter to simplify data analysis 
 		//Complete string should be less than 64 characters (to prevent filling buffer)
 	    //               ****************************************************************
-	  //Serial.print(F("\n140(100)A, 170(156)V, 3.79/3.77V, e/p:255/255, 28.5kW"         ));
+	  //Serial.print(F("\n140,100,A, 170,156,V, 3.79,3.77,V, e,255 p,255, 28.5,kW"       ));
 		Serial.print(F("\n"                                                              ));
 		Serial.print(String( adc_getLatestBatteryCurrent_amps()                          ));
-		Serial.print(F(     "("                                                          ));
+		Serial.print(F(     ","                                                          ));
 		Serial.print(String( adc_getLatestSpoofedCurrent_amps()                          ));
-		Serial.print(F(         ")A, "                                                   ));
+		Serial.print(F(         ",A, "                                                   ));
 		Serial.print(String( LTC68042result_packVoltage_get()                            ));
-		Serial.print(F(                "("                                               ));
+		Serial.print(F(                ","                                               ));
 		Serial.print(String( vPackSpoof_getSpoofedPackVoltage()                          ));
-		Serial.print(F(                    ")V, "                                        ));
+		Serial.print(F(                    ",V, "                                        ));
 		Serial.print(String( (LTC68042result_hiCellVoltage_get() * 0.0001), 3)            );
-		Serial.print(F(                            "/"                                   ));
+		Serial.print(F(                            ","                                   ));
 		Serial.print(String( (LTC68042result_loCellVoltage_get() * 0.0001), 3)            );
-		Serial.print(F(                                 "V, e/p:"                        ));
+		Serial.print(F(                                 ",V, e,"                         ));
 		Serial.print(String( vPackSpoof_getPWMcounts_MCMe()                              ));
-		Serial.print(F(                                           "/"                    ));
+		Serial.print(F(                                           "p,"                   ));
 		Serial.print(String( vPackSpoof_getPWMcounts_VPIN()                              ));		
-		Serial.print(F(                                               ", "               ));
-		Serial.print(String( (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001), 3 )); //JTS2doLater: do power calc elsewhere
-		Serial.print(F(                                                     "kW"           ));		 
+		Serial.print(F(                                                ", "              ));
+		Serial.print(String( (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001), 1 )); //JTS2doLater: do power calc elsewhere
+		Serial.print(F(                                                      ",kW"       ));		 
 	}
 }
 

@@ -31,7 +31,6 @@ void     LTC68042result_hiCellVoltage_set(uint16_t newHi_counts) { hiCellVoltage
 uint16_t LTC68042result_hiCellVoltage_get(void                 ) { return hiCellVoltage_counts; }
          
 //JTS2doNow: Incorporate with existing variable buffers in debugUSB.c & lcd.c
-
     // #ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
     //   #warning (Printing all cell voltages to USB severely reduces Superloop rate)
     //   printCellVoltage_all();
@@ -47,7 +46,7 @@ uint16_t LTC68042result_hiCellVoltage_get(void                 ) { return hiCell
     //     Serial.print( (current_ic + FIRST_IC_ADDR) ,DEC);
     //     for (int i=0; i<(CELLS_PER_IC); i++)
     //     {
-    //       const uint8_t NUM_DECIMAL_PLACES = 4; //JTS2doNow: change back to 4 digits
+    //       const uint8_t NUM_DECIMAL_PLACES = 4;
     //       Serial.print(F(" C"));
     //       Serial.print(i+1,DEC); //Note: cell voltages always reported back C1:C12 (not C13:C24)
     //       Serial.print(':');
@@ -56,10 +55,3 @@ uint16_t LTC68042result_hiCellVoltage_get(void                 ) { return hiCell
     //     Serial.print('\n');
     //   }
     // }
-
-    // debugUSB_cellHI_counts(highCellVoltage);
-    // debugUSB_cellLO_counts(lowCellVoltage);
-
-    // LTC6804_printCellVoltage_max_min(); //JTS2doNow: only calculate max/min after all cell voltages read.
-
-    //    Serial.print(F("\nerr:LTC"));

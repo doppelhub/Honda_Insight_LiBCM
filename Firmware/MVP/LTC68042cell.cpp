@@ -95,7 +95,7 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
 
 	do //repeats until PECs match (i.e. no data transmission errors) 
 	{
-		uint8_t *returnedData; //JTS2doNow: change to standard empty array
+		uint8_t *returnedData; //JTS2doLater: change to standard empty array
 		returnedData = (uint8_t *) malloc( NUM_RX_BYTES * sizeof(uint8_t) );
 
 		//Read single cell voltage register (QTY3 cell voltages) from specified IC

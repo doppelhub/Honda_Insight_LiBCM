@@ -102,8 +102,7 @@ void BATTSCI_sendFrames()
       frameSum_87 += BATTSCI_writeByte( (spoofedVoltageToSend >> 1) );                      //Half Vbatt (e.g. 0x40 = d64 = 128 V)
 
       //JTS2doNow: This should look at max/min cell voltage, not pack voltage
-      //JTS2doLater: Change SoC setpoints to different voltages
-      //JTS2doLater: Need to add hysteresis (or maybe current-based cell voltage shift)
+      //JTS2doLater: Need to add current-based cell voltage adjustment, to account for cell ESR
       //             pseudocode: spoofedVoltageToSend = packVoltageActual + batteryCurrent_toBATTSCI * VoffsetPerAmp
       if (spoofedVoltageToSend > 180) {                                                      
         // No regen 80%

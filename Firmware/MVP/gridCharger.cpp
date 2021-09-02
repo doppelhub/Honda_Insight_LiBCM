@@ -59,6 +59,8 @@ void gridCharger_handler(void)
     if (gridCharger_getSampledState() == UNPLUGGED ) { gridCharger_handleUnplugEvent(); }
   }
 
+  lcd_refresh();
+
   gridCharger_balanceCells();
 }
 

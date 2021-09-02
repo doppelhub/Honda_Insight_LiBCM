@@ -24,7 +24,6 @@
   lcd_I2C_jts lcd2(0x27);
 #endif
 
-//JTS2doNow: Move these elsewhere
 //These variables are reset during key change
 uint16_t loopCount = 64001;
 uint8_t  packVoltageActual_onScreen = 0;
@@ -331,7 +330,7 @@ void lcd_refresh(void)
 			lcdUpdate_state = LCDUPDATE_NO_UPDATE; //disable screen updates until SCREEN_UPDATE_RATE_MILLIS time has passed
 		}
 
-		loopCount++; //JTS2doNow: Figure out best stop for this
+		loopCount++; //JTS2doLater: Figure out best spot for this
 	#endif
 }
 

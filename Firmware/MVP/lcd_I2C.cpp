@@ -11,7 +11,7 @@
 
 */
 
-//JTS2doNow: Determine if LCD is connected (using NACK/ACK 9th bit)
+//JTS2doLater: Determine if LCD is connected (using NACK/ACK 9th bit)
 
 #include "Arduino.h"
 #include "Wire.h"
@@ -41,7 +41,7 @@ void lcd_I2C_jts::setRowOffsets(int row1, int row2, int row3, int row4) {
 ////////////////////////////////////////////////////////////////////////
 //Core commands used to send data over I2C bus
 
-//JTS2doNow: Can we add dummy bytes between real bytes, to allow I2C interrupt handler to handle entire "sendCMD()"?
+//JTS2doLater: Can we add dummy bytes between real bytes, to allow I2C interrupt handler to handle entire "sendCMD()"?
 
 //4x20 display I2C SCL is running at 100 kHz (100 kHz max)
 

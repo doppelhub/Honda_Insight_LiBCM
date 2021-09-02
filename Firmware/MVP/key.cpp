@@ -49,7 +49,7 @@ void key_handleKeyEvent_off(void)
 void key_handleKeyEvent_on(void)
 {
 	Serial.print(F("ON"));
-	//vPackSpoof_handleKeyON(); //JTS2doNow: Figure out keyON VPIN spoofing
+	//vPackSpoof_handleKeyON();
 	BATTSCI_enable();
 	METSCI_enable();
 	gpio_setFanSpeed_OEM('L');
