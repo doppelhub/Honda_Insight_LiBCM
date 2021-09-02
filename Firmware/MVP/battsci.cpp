@@ -78,6 +78,14 @@ void BATTSCI_setSpoofedCurrent(int16_t spoofedCurrent) //JTS2doLater spoofed pac
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+uint8_t BATTSCI_calculateChecksum( uint8_t frameSum )
+{
+  uint8_t twosComplement = (~frameSum) + 1;
+  return (twosComplement & 0x7F);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void BATTSCI_sendFrames()
 { //t=80 microseconds max
   static uint8_t frame2send = 0x87;
@@ -92,6 +100,16 @@ void BATTSCI_sendFrames()
 
     //Convert battery current (unit: amps) into BATTSCI format (unit: 50 mA per count)
     int16_t batteryCurrent_toBATTSCI = 2048 - spoofedCurrentToSend*20;
+
+    //Add ESR offset to max cell voltage
+    //Derivation:
+    //        vCellWithESR_counts = Vcell_Now                          - Icell_Now                              * ESR
+    //        vCellWithESR_counts = Vcell_Now                          - Icell_Now                              * 0.0002
+    //        vCellWithESR_counts = Vcell_counts                       - Icell_amps                             * 2              
+    uint16_t  vCellWithESR_counts = LTC68042result_hiCellVoltage_get() - (adc_getLatestBatteryCurrent_amps() << 1);
+
+    Serial.print(", vComp_cnts:");
+    Serial.print(String(vCellWithESR_counts));
 
     if(frame2send == 0x87)
     {
@@ -154,12 +172,4 @@ void BATTSCI_sendFrames()
       frame2send = 0x87;
     }
   }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-uint8_t BATTSCI_calculateChecksum( uint8_t frameSum )
-{
-  uint8_t twosComplement = (~frameSum) + 1;
-  return (twosComplement & 0x7F);
 }

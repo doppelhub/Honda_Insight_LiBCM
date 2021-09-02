@@ -38,7 +38,7 @@ void debugUSB_printLatest_data(void)
 		Serial.print(String( vPackSpoof_getPWMcounts_VPIN()                              ));		
 		Serial.print(F(                                                ", "              ));
 		Serial.print(String( (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001), 1 )); //JTS2doLater: do power calc elsewhere
-		Serial.print(F(                                                      ",kW"       ));		 
+		Serial.print(F(                                                      ",kW"       ));	 
 	}
 }
 
@@ -64,7 +64,7 @@ uint8_t debugUSB_getSpoofedVoltage(void)
 		{			
 			uint8_t userInteger = Serial.parseInt();
 			if(byteRead == 's') { userEntry_spoofedVoltage = userInteger; }
-			Serial.print("\nUser typed: ");
+			Serial.print(" User typed: ");
 			Serial.print(String(userEntry_spoofedVoltage)); 
 		}
 	}

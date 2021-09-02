@@ -13,14 +13,8 @@
 	void BATTSCI_enable();
 
 	void BATTSCI_disable();
-
-	uint8_t BATTSCI_bytesAvailableForWrite();
-
-	uint8_t BATTSCI_writeByte(uint8_t data);
 	
 	void BATTSCI_sendFrames();
-
-	uint8_t BATTSCI_calculateChecksum( uint8_t frameSum );
 
 	void BATTSCI_setPackVoltage(uint8_t voltage);
 
