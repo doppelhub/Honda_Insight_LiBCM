@@ -108,40 +108,40 @@ void BATTSCI_sendFrames()
     //        vCellWithESR_counts = Vcell_counts                       - Icell_amps                             * 2              
     uint16_t  vCellWithESR_counts = LTC68042result_hiCellVoltage_get() - (adc_getLatestBatteryCurrent_amps() << 1);
 
-    Serial.print(", vComp_cnts:");
-    Serial.print(String(vCellWithESR_counts));
-
     if(frame2send == 0x87)
     {
       //Place 0x87 frame into serial send buffer
       uint8_t frameSum_87 = 0; //this will overflow, which is ok for CRC
-      frameSum_87 += BATTSCI_writeByte( 0x87 );                                          //Never changes
-      frameSum_87 += BATTSCI_writeByte( 0x40 );                                          //Never changes
-      frameSum_87 += BATTSCI_writeByte( (spoofedVoltageToSend >> 1) );                      //Half Vbatt (e.g. 0x40 = d64 = 128 V)
+      frameSum_87 += BATTSCI_writeByte( 0x87 );                                           //Never changes
+      frameSum_87 += BATTSCI_writeByte( 0x40 );                                           //Never changes
+      frameSum_87 += BATTSCI_writeByte( (spoofedVoltageToSend >> 1) );                    //Half Vbatt (e.g. 0x40 = d64 = 128 V)
 
-      //JTS2doNow: This should look at max/min cell voltage, not pack voltage
-      //JTS2doLater: Need to add current-based cell voltage adjustment, to account for cell ESR
-      //             pseudocode: spoofedVoltageToSend = packVoltageActual + batteryCurrent_toBATTSCI * VoffsetPerAmp
-      if (spoofedVoltageToSend > 180) {                                                      
-        // No regen 80%
+      //JTS2doNow: Add math to also test minimum cell voltage
+
+      // Battery is full. Disable Regen.   
+      if        (vCellWithESR_counts >= 40500) { //40500 = 4.0500 volts                                                    
         frameSum_87 += BATTSCI_writeByte( 0x16 );                                         //Battery SoC (upper byte)
-        frameSum_87 += BATTSCI_writeByte( 0x20 );                                         //Battery SoC (lower byte)
-      } else if (spoofedVoltageToSend > 160) {                                               
-        // Regen and Assist but no BG Regen 72%
+        frameSum_87 += BATTSCI_writeByte( 0x20 ); //80% SoC                               //Battery SoC (lower byte)
+
+      // Regen & Assist, no background charge   
+      } else if (vCellWithESR_counts >= 37000) { //37000 = 3.6250 volts                                               
         frameSum_87 += BATTSCI_writeByte( 0x15 );                                         //Battery SoC (upper byte)
-        frameSum_87 += BATTSCI_writeByte( 0x50 );                                         //Battery SoC (lower byte)
-      } else if (spoofedVoltageToSend >= 150) {                                              
-        // Regen and Assist with BG Regen 60%
+        frameSum_87 += BATTSCI_writeByte( 0x50 ); //72% SoC                               //Battery SoC (lower byte)
+ 
+      // Regen & Assist, with background charge 
+      } else if (vCellWithESR_counts >= 36000) { //34170 = 3.4170 volts                                            
         frameSum_87 += BATTSCI_writeByte( 0x14 );                                         //Battery SoC (upper byte)
-        frameSum_87 += BATTSCI_writeByte( 0x58 );                                         //Battery SoC (lower byte)
-      } else if (spoofedVoltageToSend >= 144) {                                              
-        // Regen and Assist with BG Regen 40%
+        frameSum_87 += BATTSCI_writeByte( 0x58 ); //60% SoC                               //Battery SoC (lower byte)
+ 
+      // Regen & Assist, with background charge   
+      } else if (vCellWithESR_counts >= 35000) { //34000 = 3.4000 volts                                              
         frameSum_87 += BATTSCI_writeByte( 0x13 );                                         //Battery SoC (upper byte)
-        frameSum_87 += BATTSCI_writeByte( 0x10 );                                         //Battery SoC (lower byte)
+        frameSum_87 += BATTSCI_writeByte( 0x10 ); //40% SoC                               //Battery SoC (lower byte)
+
+      // Battery is empty. Disable Assist.  
       } else {
-        // No assist 20%
         frameSum_87 += BATTSCI_writeByte( 0x11 );                                         //Battery SoC (upper byte)
-        frameSum_87 += BATTSCI_writeByte( 0x48 );                                         //Battery SoC (lower byte)
+        frameSum_87 += BATTSCI_writeByte( 0x48 ); //20% SoC                               //Battery SoC (lower byte)
       }
 
       frameSum_87 += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F ); //Battery Current (upper byte)
