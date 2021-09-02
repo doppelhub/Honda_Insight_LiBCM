@@ -4,6 +4,10 @@
 #ifndef vpackspoof_h
 	#define vpackspoof_h
 
+	int16_t vPackSpoof_getPWMcounts_MCMe(void);
+
+	int16_t vPackSpoof_getPWMcounts_VPIN(void);
+
 	void vPackSpoof_setVoltage(uint8_t newSpoofedVoltage);
 
 	void vPackSpoof_handleKeyOFF(void);

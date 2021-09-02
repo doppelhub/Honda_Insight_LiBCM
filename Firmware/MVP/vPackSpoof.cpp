@@ -14,45 +14,36 @@
 
 uint8_t spoofedPackVoltage = 0;
 
+
+int16_t pwmCounts_MCMe = 0;
+int16_t pwmCounts_VPIN_out = 0;
+
+//---------------------------------------------------------------------------------------
+
+int16_t vPackSpoof_getPWMcounts_MCMe(void) { return pwmCounts_MCMe; }
+
+//---------------------------------------------------------------------------------------
+
+int16_t vPackSpoof_getPWMcounts_VPIN(void) { return pwmCounts_VPIN_out; }
+
 //---------------------------------------------------------------------------------------
 
 void spoofVoltageMCMe(void)
 {
-	static int16_t test_latestValue = 0;
-	//Derivation - Empirically determined, see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods
-	      //pwmCounts_MCME = (               actualPackVoltage                 * 512) / spoofedPackVoltage         - 551
-	      //pwmCounts_MCME = (               actualPackVoltage                 * 256) / spoofedPackVoltage   * 2   - 551 //prevent 16b overflow
-	      //pwmCounts_MCME = (( ( ((uint16_t)actualPackVoltage               ) * 256) / spoofedPackVoltage)  * 2   - 551 
-	int16_t pwmCounts_MCME = (( ( ((uint16_t)LTC68042result_packVoltage_get()) << 8 ) / spoofedPackVoltage) << 1 ) - 551;
-	// int16_t op1              =    ( ((uint16_t)LTC68042result_packVoltage_get()) << 8 );
-	// int16_t op2              =                                                     op1 / spoofedPackVoltage;
-	// int16_t pwmCounts_MCME   =                                                                          (op2 << 1 ) - 551;
-
-	if( test_latestValue != pwmCounts_MCME)
-	{
-		test_latestValue = pwmCounts_MCME;
-		Serial.print("\nVpack:");
-		Serial.print(String(LTC68042result_packVoltage_get()));
-		
-		Serial.print(", Vspoof:");
-		Serial.print(String(spoofedPackVoltage));
-		
-		// Serial.print(", op1:");
-		// Serial.print(String(op1));
-		
-		// Serial.print(", op2:");
-		// Serial.print(String(op2));
-		
-		Serial.print(", pwm: ");
-		Serial.print(String(test_latestValue));
-	}
+  //Derivation, empirically determined (see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods)
+  //pwmCounts_MCMe = (               actualPackVoltage                 * 512) / spoofedPackVoltage         - 551
+  //pwmCounts_MCMe = (               actualPackVoltage                 * 256) / spoofedPackVoltage   * 2   - 551 //prevent 16b overflow
+  //pwmCounts_MCMe = (( ( ((uint16_t)actualPackVoltage               ) * 256) / spoofedPackVoltage)  * 2   - 551 
+	pwmCounts_MCMe = (( ( ((uint16_t)LTC68042result_packVoltage_get()) << 8 ) / spoofedPackVoltage) << 1 ) - 551;
 
 	//bounds checking
-	if     (pwmCounts_MCME > 255) {pwmCounts_MCME = 255;}
-	else if(pwmCounts_MCME <   0) {pwmCounts_MCME =   0;}
+	if     (pwmCounts_MCMe > 255) {pwmCounts_MCMe = 255;}
+	else if(pwmCounts_MCMe <   0) {pwmCounts_MCMe =   0;}
 
-	analogWrite(PIN_MCME_PWM, (uint8_t)pwmCounts_MCME);
+	analogWrite(PIN_MCME_PWM, (uint8_t)pwmCounts_MCMe);
 }
+
+//---------------------------------------------------------------------------------------
 
 void spoofVoltage_VPINout(void)
 {
@@ -60,14 +51,14 @@ void spoofVoltage_VPINout(void)
 	//      V_DIV_CORRECTION = 100k           / 10k
 	#define V_DIV_CORRECTION 1.1
 
-	int16_t pwmCounts_VPIN_OUT = (adc_packVoltage_VpinIn() * vPackSpoof_getSpoofedPackVoltage() * V_DIV_CORRECTION )
-	                             / LTC68042result_packVoltage_get();
+	pwmCounts_VPIN_out = (adc_packVoltage_VpinIn() * vPackSpoof_getSpoofedPackVoltage() * V_DIV_CORRECTION )
+	                     / LTC68042result_packVoltage_get();
 
 	//bounds checking
-	if     (pwmCounts_VPIN_OUT > 255) {pwmCounts_VPIN_OUT = 255;}
-	else if(pwmCounts_VPIN_OUT <   0) {pwmCounts_VPIN_OUT =   0;}
+	if     (pwmCounts_VPIN_out > 255) {pwmCounts_VPIN_out = 255;}
+	else if(pwmCounts_VPIN_out <   0) {pwmCounts_VPIN_out =   0;}
 
-	analogWrite(PIN_VPIN_OUT_PWM, (uint8_t)pwmCounts_VPIN_OUT);	
+	analogWrite(PIN_VPIN_OUT_PWM, (uint8_t)pwmCounts_VPIN_out);
 }
 
 //---------------------------------------------------------------------------------------
