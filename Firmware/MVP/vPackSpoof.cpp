@@ -18,12 +18,35 @@ uint8_t spoofedPackVoltage = 0;
 
 void spoofVoltageMCMe(void)
 {
+	static int16_t test_latestValue = 0;
 	//Derivation - Empirically determined, see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods
-	      //pwmCounts_MCME = (            actualPackVoltage                 * 512) / spoofedPackVoltage         - 551
-	      //pwmCounts_MCME = (            actualPackVoltage                 * 256) / spoofedPackVoltage   * 2   - 551 //prevent 16b overflow
-	      //pwmCounts_MCME = (  (int16_t)(actualPackVoltage               ) * 256) / spoofedPackVoltage   * 2   - 551 
-	int16_t pwmCounts_MCME = ((((int16_t)(LTC68042result_packVoltage_get()) << 8 ) / spoofedPackVoltage) << 1 ) - 551;
-	  
+	      //pwmCounts_MCME = (               actualPackVoltage                 * 512) / spoofedPackVoltage         - 551
+	      //pwmCounts_MCME = (               actualPackVoltage                 * 256) / spoofedPackVoltage   * 2   - 551 //prevent 16b overflow
+	      //pwmCounts_MCME = (( ( ((uint16_t)actualPackVoltage               ) * 256) / spoofedPackVoltage)  * 2   - 551 
+	int16_t pwmCounts_MCME = (( ( ((uint16_t)LTC68042result_packVoltage_get()) << 8 ) / spoofedPackVoltage) << 1 ) - 551;
+	// int16_t op1              =    ( ((uint16_t)LTC68042result_packVoltage_get()) << 8 );
+	// int16_t op2              =                                                     op1 / spoofedPackVoltage;
+	// int16_t pwmCounts_MCME   =                                                                          (op2 << 1 ) - 551;
+
+	if( test_latestValue != pwmCounts_MCME)
+	{
+		test_latestValue = pwmCounts_MCME;
+		Serial.print("\nVpack:");
+		Serial.print(String(LTC68042result_packVoltage_get()));
+		
+		Serial.print(", Vspoof:");
+		Serial.print(String(spoofedPackVoltage));
+		
+		// Serial.print(", op1:");
+		// Serial.print(String(op1));
+		
+		// Serial.print(", op2:");
+		// Serial.print(String(op2));
+		
+		Serial.print(", pwm: ");
+		Serial.print(String(test_latestValue));
+	}
+
 	//bounds checking
 	if     (pwmCounts_MCME > 255) {pwmCounts_MCME = 255;}
 	else if(pwmCounts_MCME <   0) {pwmCounts_MCME =   0;}
