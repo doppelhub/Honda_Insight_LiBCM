@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.1.6 VPIN"
-  #define BUILD_DATE "2021SEP01"
+	#define FW_VERSION "0.1.7 VPIN"
+  #define BUILD_DATE "2021SEP02"
   #define HW_REVB
 	#define CPU_MAP_MEGA2560
 
@@ -31,6 +31,7 @@
 	//#define LED_DEBUG  //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
 	#define PRINT_USB_DEBUG_TEXT //prints text sent via debugUSB_debugText() //JTS2doLater: NOT IMPLEMENTED YET
+	#define DEBUG_USB_UPDATE_PERIOD_MS 125 //125 = send data every 125 ms
 
 	#define LOOP_RATE_MS 10 // Superloop execution rate: 1/LOOP_RATE_MS (e.g. LOOP_RATE_MS==10 is 100 Hz)
 

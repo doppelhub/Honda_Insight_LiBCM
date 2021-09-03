@@ -8,18 +8,20 @@
 
 #include "libcm.h"
 
+char debugCharacter = '.';
+
 void debugUSB_printLatest_data(void)
 {	//t= 1080 microseconds max
 	static uint32_t previousMillis = 0;
 
-	if( (millis() - previousMillis >= 500) /*&& (Serial.availableForWrite() >= 63)*/ )
+	if( millis() - previousMillis >= DEBUG_USB_UPDATE_PERIOD_MS) //JTS2doNow: && (Serial.availableForWrite() >= 63)
 	{
 		previousMillis = millis();
 
 		//comma delimiter to simplify data analysis 
 		//Complete string should be less than 64 characters (to prevent filling buffer)
 	    //               ****************************************************************
-	  //Serial.print(F("\n140,100,A, 170,156,V, 3.79,3.77,V, e,255 p,255, 28.5,kW"       ));
+	  //Serial.print(F("\n140,100,A, 170,156,V, 3.79,3.77,V, e,255 p,255, 28.5,kW, c"    ));
 		Serial.print(F("\n"                                                              ));
 		Serial.print(String( adc_getLatestBatteryCurrent_amps()                          ));
 		Serial.print(F(     ","                                                          ));
@@ -38,7 +40,9 @@ void debugUSB_printLatest_data(void)
 		Serial.print(String( vPackSpoof_getPWMcounts_VPIN()                              ));		
 		Serial.print(F(                                                ", "              ));
 		Serial.print(String( (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001), 1 )); //JTS2doLater: do power calc elsewhere
-		Serial.print(F(                                                      ",kW"       ));	 
+		Serial.print(F(                                                      ",kW, "     ));
+
+		Serial.print(String( debugCharacter                                              ));	 
 	}
 }
 
@@ -70,4 +74,11 @@ uint8_t debugUSB_getSpoofedVoltage(void)
 	}
 
 	return userEntry_spoofedVoltage;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void debugUSB_sendChar(char characterToSend)
+{
+	debugCharacter = characterToSend;
 }

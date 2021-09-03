@@ -103,10 +103,11 @@ void BATTSCI_sendFrames()
 
     //Add ESR offset to max cell voltage
     //Derivation:
-    //        vCellWithESR_counts = Vcell_Now                          - Icell_Now                              * ESR
-    //        vCellWithESR_counts = Vcell_Now                          - Icell_Now                              * 0.0002
-    //        vCellWithESR_counts = Vcell_counts                       - Icell_amps                             * 2              
-    uint16_t  vCellWithESR_counts = LTC68042result_hiCellVoltage_get() - (adc_getLatestBatteryCurrent_amps() << 1);
+    //       vCellWithESR_counts = Vcell_Now                          + Icell_Now (assist: +, regen: -)      * ESR
+    //       vCellWithESR_counts = Vcell_Now                          + Icell_Now                            * 3.2 mOhm
+    //       vCellWithESR_counts = Vcell_counts                       + Icell_amps                           * 32 
+    uint16_t vCellWithESR_counts = LTC68042result_hiCellVoltage_get() + (adc_getLatestBatteryCurrent_amps() << 4);
+    //<<1=0.2mOhm, <<2=0.4mOhm, <<3=0.8mOhm, <<4=1.6mOhm, <<5=3.2mOhm, <<6=6.4mOhm, <<7=12.8mOhm //uint16_t overflows above here 
 
     if(frame2send == 0x87)
     {
@@ -122,26 +123,31 @@ void BATTSCI_sendFrames()
       if        (vCellWithESR_counts >= 40500) { //40500 = 4.0500 volts                                                    
         frameSum_87 += BATTSCI_writeByte( 0x16 );                                         //Battery SoC (upper byte)
         frameSum_87 += BATTSCI_writeByte( 0x20 ); //80% SoC                               //Battery SoC (lower byte)
+        debugUSB_sendChar('8');
 
       // Regen & Assist, no background charge   
-      } else if (vCellWithESR_counts >= 37000) { //37000 = 3.6250 volts                                               
+      } else if (vCellWithESR_counts >= 37000) { //37000 = 3.7000 volts                                               
         frameSum_87 += BATTSCI_writeByte( 0x15 );                                         //Battery SoC (upper byte)
         frameSum_87 += BATTSCI_writeByte( 0x50 ); //72% SoC                               //Battery SoC (lower byte)
- 
+        debugUSB_sendChar('7');
+
       // Regen & Assist, with background charge 
-      } else if (vCellWithESR_counts >= 36000) { //34170 = 3.4170 volts                                            
+      } else if (vCellWithESR_counts >= 36000) { //34500 = 3.4500 volts                                            
         frameSum_87 += BATTSCI_writeByte( 0x14 );                                         //Battery SoC (upper byte)
         frameSum_87 += BATTSCI_writeByte( 0x58 ); //60% SoC                               //Battery SoC (lower byte)
- 
+        debugUSB_sendChar('6');
+
       // Regen & Assist, with background charge   
-      } else if (vCellWithESR_counts >= 35000) { //34000 = 3.4000 volts                                              
+      } else if (vCellWithESR_counts >= 35000) { //33000 = 3.3000 volts                                              
         frameSum_87 += BATTSCI_writeByte( 0x13 );                                         //Battery SoC (upper byte)
         frameSum_87 += BATTSCI_writeByte( 0x10 ); //40% SoC                               //Battery SoC (lower byte)
+        debugUSB_sendChar('4');
 
       // Battery is empty. Disable Assist.  
       } else {
         frameSum_87 += BATTSCI_writeByte( 0x11 );                                         //Battery SoC (upper byte)
         frameSum_87 += BATTSCI_writeByte( 0x48 ); //20% SoC                               //Battery SoC (lower byte)
+        debugUSB_sendChar('2');
       }
 
       frameSum_87 += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F ); //Battery Current (upper byte)
