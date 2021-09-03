@@ -69,3 +69,8 @@ uint8_t bytesSentFromUser = Serial.available();
 ///////////////////////////////////////////////////////////////////
 Fixed point libraries:
 https://github.com/Pharap/FixedPointsArduino/blob/master/src/FixedPoints/UFixed.h
+
+/////////////
+See how many lines of code exist:
+Search as regex:
+^.*\S+.*$
