@@ -13,6 +13,8 @@ bool gridCharger_getSampledState(void) { return gridChargerState_sampled; }
 
 bool gridCharger_didStateChange(void)
 {
+  gridChargerState_sampled = gpio_isGridChargerPluggedInNow(); //this is the only time LiBCM samples if plugged in
+
   static bool gridChargerState_previous = UNPLUGGED;
 
   bool didGridChargerStateChange = NO;
@@ -50,8 +52,6 @@ void gridCharger_handlePluginEvent(void)
 
 void gridCharger_handler(void)
 {
-  gridChargerState_sampled = gpio_isGridChargerPluggedInNow(); //this is the only time LiBCM samples if plugged in
-
   if( gridCharger_didStateChange() == YES )
   {
     Serial.print(F("\nGrid Charger: "));
@@ -85,7 +85,7 @@ void gridCharger_balanceCells(void)
     else if( (LTC68042result_hiCellVoltage_get() > GRID_CHARGER_CELL_VMAX) )
     {
       gpio_turnGridCharger_off();
-      gpio_setFanSpeed('L');
+      gpio_setFanSpeed('0');
       gpio_setGridCharger_powerLevel('0');
     }
   

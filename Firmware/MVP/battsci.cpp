@@ -117,7 +117,6 @@ void BATTSCI_sendFrames()
       frameSum_87 += BATTSCI_writeByte( 0x40 );                                           //Never changes
       frameSum_87 += BATTSCI_writeByte( (spoofedVoltageToSend >> 1) );                    //Half Vbatt (e.g. 0x40 = d64 = 128 V)
 
-      //JTS2doNow: Add math to also test minimum cell voltage
       if(LTC68042result_loCellVoltage_get() <= 30000 )
       { //at least one cell is severely under-charged.  Disable Assist.
         frameSum_87 += BATTSCI_writeByte( 0x11 );                                         //Battery SoC (upper byte)
@@ -128,7 +127,7 @@ void BATTSCI_sendFrames()
       { //all cells above 3.000 volts
 
         // Battery is full. Disable Regen.   
-        if        (vCellWithESR_counts >= 40000) { //40500 = 4.0000 volts                                                    
+        if        (vCellWithESR_counts >= 39500) { //39500 = 3.9500 volts                                                    
           frameSum_87 += BATTSCI_writeByte( 0x16 );                                         //Battery SoC (upper byte)
           frameSum_87 += BATTSCI_writeByte( 0x20 ); //80% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('8');
@@ -177,7 +176,14 @@ void BATTSCI_sendFrames()
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //Never changes
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //Never changes unless P codes
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //Never changes unless P codes
-      frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //0x00 enable all, 0x20 no regen, 0x10 no assist, 0x30 disables both
+
+      if(      LTC68042result_hiCellVoltage_get() > 42000) {//42000 = 4.2000              //disable assist/regen flags
+        frameSum_AA += BATTSCI_writeByte( 0x20 );                                         //b00100000 disables regen  
+      }else if(LTC68042result_loCellVoltage_get() < 29500) {//29500 = 2.9500 volts
+        frameSum_AA += BATTSCI_writeByte( 0x10 );                                         //b00010000 disables assist
+      } else {
+        frameSum_AA += BATTSCI_writeByte( 0x00 );                                         //enable assist & regen
+      }
       frameSum_AA += BATTSCI_writeByte( 0x40 );                                           //Charge request.  0x20=charge@4bars, 0x00=charge@background
       frameSum_AA += BATTSCI_writeByte( 0x61 );                                           //Never changes
       frameSum_AA += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F ); //Battery Current (upper byte)

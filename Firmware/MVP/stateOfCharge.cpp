@@ -11,4 +11,6 @@ void stateOfCharge_handler(void)
 	//JTS2doLater: add accumulator.
 	//JTS2doLater: turn off LiBCM if voltage too low
 	//JTS2doLater: discharge pack if too full (e.g. run fans)
+
+	//JTS2doNow: turn LiBCM off if any cell drops below 2.75 volts
 }

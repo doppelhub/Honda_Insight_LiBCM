@@ -149,6 +149,8 @@ bool lcd_printCellVoltage_hi(void)
 		}
 	#endif
 
+	//JTS2doNow: flash screen if cellMin less than 3.0 or cellMax > 4.1
+
 	return didscreenUpdateOccur;
 }
 
