@@ -177,13 +177,24 @@ void BATTSCI_sendFrames()
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //Never changes unless P codes
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //Never changes unless P codes
 
-      if(      LTC68042result_hiCellVoltage_get() > 42000) {//42000 = 4.2000              //disable assist/regen flags
-        frameSum_AA += BATTSCI_writeByte( 0x20 );                                         //b00100000 disables regen  
-      }else if(LTC68042result_loCellVoltage_get() < 29500) {//29500 = 2.9500 volts
-        frameSum_AA += BATTSCI_writeByte( 0x10 );                                         //b00010000 disables assist
-      } else {
+      if( (LTC68042result_hiCellVoltage_get() < 42000 ) && (LTC68042result_loCellVoltage_get() > 29500) )
+      { //all cells are within acceptable range
         frameSum_AA += BATTSCI_writeByte( 0x00 );                                         //enable assist & regen
+      
+      } else if( (LTC68042result_hiCellVoltage_get() > 42000 ) && (LTC68042result_loCellVoltage_get() < 29500))
+      { //at least one cell is over-changed AND at least one cell is under-charged
+        //JTS2doLater: set P-code... battery is beyond redeemable.
+        frameSum_AA += BATTSCI_writeByte( 0x30 );                                         //b00110000 disables regen & assist
+
+      } else if(LTC68042result_hiCellVoltage_get() > 42000) //42000 = 4.2000
+      { //at least one cell is overcharged.  disable regen
+        frameSum_AA += BATTSCI_writeByte( 0x20 );                                         //b00100000 disables regen  
+      
+      } else if(LTC68042result_loCellVoltage_get() < 29500) //29500 = 2.9500 volts
+      { //at least one cell is undercharged. disable assist
+        frameSum_AA += BATTSCI_writeByte( 0x10 );                                         //b00010000 disables assist
       }
+
       frameSum_AA += BATTSCI_writeByte( 0x40 );                                           //Charge request.  0x20=charge@4bars, 0x00=charge@background
       frameSum_AA += BATTSCI_writeByte( 0x61 );                                           //Never changes
       frameSum_AA += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F ); //Battery Current (upper byte)
