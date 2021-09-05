@@ -54,3 +54,5 @@ Potential replacement dual CMC+CT transformers with higher working voltage:
 ............................................
 
 "Common mode signals will not wake up the serial interface. The interface is designed to wake up after receiving a large signal single-ended pulse, or a low-amplitude symmetric pulse. The differential signal |SCK(IPA) – CSB(IMA)|, must be at least VWAKE = 200mV for a minimum duration of tDWELL = 240ns to qualify as a wake up signal that powers up the serial interface."
+
+Add SPI-based temperature sensor to each LTC6804? GPIO3/4/5

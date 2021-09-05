@@ -1,0 +1,3 @@
+https://nextion.tech/editor_guide/
+https://nextion.tech/instruction-set/
+https://github.com/itead/ITEADLIB_Arduino_Nextion/tree/master/doc/Documentation

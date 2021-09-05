@@ -1,0 +1,212 @@
+//Stores returned configuration data
+//rx_cfg[n][0] = CFGR0
+//rx_cfg[n][1] = CFGR1
+//rx_cfg[n][2] = CFGR2
+//rx_cfg[n][3] = CFGR3
+//rx_cfg[n][4] = CFGR4
+//rx_cfg[n][5] = CFGR5
+//rx_cfg[n][6] = PEC HIGH
+//rx_cfg[n][7] = PEC LOW
+uint8_t rx_cfg[TOTAL_IC][8];
+
+//Stores configuration data to be written to IC
+//tx_cfg[n][0] = CFGR0
+//tx_cfg[n][1] = CFGR1
+//tx_cfg[n][2] = CFGR2
+//tx_cfg[n][3] = CFGR3
+//tx_cfg[n][4] = CFGR4
+//tx_cfg[n][5] = CFGR5
+uint8_t tx_cfg[TOTAL_IC][6];
+
+
+//---------------------------------------------------------------------------------------
+
+//sets all LTC6804 cell voltage registers to 0xFF
+void LTC6804_clrcell()
+{
+  uint8_t cmd[4];
+  uint16_t cmd_pec;
+
+  //load clrcell command into cmd array
+  cmd[0] = 0x07;
+  cmd[1] = 0x11;
+
+  //calculate PEC
+  cmd_pec = LTC68042configure_calcPEC15(2, cmd);
+  cmd[2] = (uint8_t)(cmd_pec >> 8);
+  cmd[3] = (uint8_t)(cmd_pec );
+
+  LTC68042configure_wakeupIsoSPI(); 
+
+  //4
+  digitalWrite(PIN_SPI_CS,LOW);
+  LTC68042configure_spiWriteRead(cmd,4,0,0);
+  digitalWrite(PIN_SPI_CS,HIGH);
+}
+
+//---------------------------------------------------------------------------------------
+
+//Initializes the configuration array
+//JTS2doLater: Write separate function to control discharge FETs (cell balancing)
+//JTS2doLater: This doesn't need to be a 2D array.  Data identical on all LTC, except DCC12:1.
+//JTS2doLater: Figure out where tx_cfg is actually written to LTC ICs
+//JTS2doLater: Program never actually writes this to LTC ICs
+//resets is LTC watchdog timer expires (i.e. LTC LED turns off after ~2s)
+void LTC6804configure_calculate_CFGRn()
+{
+  for (int i = 0; i<TOTAL_IC; i++)
+  {                        // BIT7    BIT6    BIT5    BIT4    BIT3    BIT2    BIT1   BIT0
+    tx_cfg[i][0] = 0b11110110 ;  //GPIO5   GPIO4   GPIO3   GPIO2   GPIO1   REFON   SWTRD  ADCOPT //Enable GPIO pulldown, REFON
+    tx_cfg[i][1] = 0x00       ;  //VUV[7]  VUV[6]  VUV[5]  VUV[4]  VUV[3]  VUV[2]  VUV[1] VUV[0] //Undervoltage comparison voltage
+    tx_cfg[i][2] = 0x00       ;  //VOV[3]  VOV[2]  VOV[1]  VOV[0]  VUV[11] VUV[10] VUV[9] VUV[8]
+    tx_cfg[i][3] = 0x00       ;  //VOV[11] VOV[10] VOV[9]  VOV[8]  VOV[7]  VOV[6]  VOV[5] VOV[4] //Overvoltage comparison voltage
+    tx_cfg[i][4] = 0x00       ;  //DCC8    DCC7    DCC6    DCC5    DCC4    DCC3    DCC2   DCC1   //Enables discharge on cells 8:1
+    tx_cfg[i][5] = 0x00       ;  //DCTO[3] DCTO[2] DCTO[1] DCTO[0] DCC12   DCC11   DCC10  DCC9   //Discharge timer and cells 12:9
+  }
+}
+//see p51 for more info:
+//DCTO  = set discharge timer
+//DCC   = control cell discharge FET (1=on)
+//VUV   = undervoltage comparison voltage ((VUV+1) * 16 * 100uV)
+//VOV   = over voltage comparison voltage ((VUV  ) * 16 * 100uV)
+//GPIO  = read to get pinState, write to enable/disable pull-down (disabled by default)
+//REFON = keep ADC reference powered whenever IC awake (reduces ADC delay)
+//SWTRD = (read only) is SWTEN (PIN_SOFTWARE_TIMER_ENABLE) high or low (high=SW timer allowed)
+//ADCOPT= sets adc fast/normal/slow LPF cutoff frequency values (0: 27k/7k/26 Hz)(1: 14k/3k/2k Hz)
+            //Note: fast, normal, or slow is configured in ADCV command
+//---------------------------------------------------------------------------------------
+
+
+/*!******************************************************
+ \brief Reads configuration registers of a LTC6804 pack
+
+@param[out] uint8_t *r_config: array that the function will write configuration data to. The configuration data for each IC
+is stored in blocks of 8 bytes with the configuration data of the lowest IC on the pack in the first 8 bytes
+of the array, the second IC in the second 8 byte etc. Below is an table illustrating the array organization:
+
+|r_config[0]|r_config[1]|r_config[2]|r_config[3]|r_config[4]|r_config[5]|r_config[6]  |r_config[7] |r_config[8]|r_config[9]|  .....    |
+|-----------|-----------|-----------|-----------|-----------|-----------|-------------|------------|-----------|-----------|-----------|
+|IC1 CFGR0  |IC1 CFGR1  |IC1 CFGR2  |IC1 CFGR3  |IC1 CFGR4  |IC1 CFGR5  |IC1 PEC High |IC1 PEC Low |IC2 CFGR0  |IC2 CFGR1  |  .....    |
+
+returns
+   0: Data read back has matching PEC
+  -1: Data read back has incorrect PEC
+********************************************************/
+int8_t LTC6804_rdcfg(uint8_t total_ic, uint8_t r_config[][8], uint8_t addr_first_ic)
+{
+  const uint8_t BYTES_IN_REG = 8;
+
+  uint8_t cmd[4];
+  uint8_t *rx_data;
+  int8_t pec_error = 0;
+  uint16_t data_pec;
+  uint16_t received_pec;
+  rx_data = (uint8_t *) malloc((8*total_ic)*sizeof(uint8_t));
+  
+  //Load cmd array with the write configuration command and PEC
+  cmd[0] = 0x00;
+  cmd[1] = 0x02;
+  cmd[2] = 0x2b;
+  cmd[3] = 0x0A;
+
+  //2
+  LTC68042configure_wakeupIsoSPI();
+  
+  //read configuration of each LTC6804 on the pack
+  for (int current_ic = 0; current_ic<total_ic; current_ic++)
+  {
+    cmd[0] = 0x80 + ( (current_ic + addr_first_ic) <<3); //Setting address
+    data_pec = LTC68042configure_calcPEC15(2, cmd);
+    cmd[2] = (uint8_t)(data_pec >> 8);
+    cmd[3] = (uint8_t)(data_pec);
+    digitalWrite(PIN_SPI_CS,LOW);
+    LTC68042configure_spiWriteRead(cmd,4,&rx_data[current_ic*8],8);
+    digitalWrite(PIN_SPI_CS,HIGH);
+  }
+
+  for (uint8_t current_ic = 0; current_ic < total_ic; current_ic++) //executes for each LTC6804 in the pack
+  {
+    //load configuration data into r_config array
+    for (uint8_t current_byte = 0; current_byte < BYTES_IN_REG; current_byte++)
+    {
+      r_config[current_ic][current_byte] = rx_data[current_byte + (current_ic*BYTES_IN_REG)];
+    }
+
+    //calculate PEC of received data and compare against calculated PEC
+    received_pec = (r_config[current_ic][6]<<8) + r_config[current_ic][7];
+    data_pec = LTC68042configure_calcPEC15(6, &r_config[current_ic][0]);
+    if (received_pec != data_pec)
+    {
+      pec_error = 1;
+    }
+  }
+  free(rx_data);
+
+  return(pec_error);
+}
+
+
+//---------------------------------------------------------------------------------------
+
+
+//Write each LTC6804's configuration registers
+//written in descending order (last device's configuration is written first)
+
+//uint8_t *config is configuration data array to write.  Contain 6 bytes for each IC in the pack
+//The lowest IC in the pack should be the first 6 byte block in the array. Array format:
+// |  config[0]| config[1] |  config[2]|  config[3]|  config[4]|  config[5]| config[6] |  config[7]|  config[8]|  .....    |
+// |-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
+// |IC1 CFGR0  |IC1 CFGR1  |IC1 CFGR2  |IC1 CFGR3  |IC1 CFGR4  |IC1 CFGR5  |IC2 CFGR0  |IC2 CFGR1  | IC2 CFGR2 |  .....    |
+
+void LTC6804_wrcfg(uint8_t total_ic, uint8_t config[][6], uint8_t addr_first_ic)
+{
+  const uint8_t BYTES_IN_REG = 6;
+  const uint8_t CMD_LEN = 4+(8*total_ic);
+  uint8_t *cmd;
+  uint16_t temp_pec;
+  uint8_t cmd_index; //command counter
+
+  cmd = (uint8_t *)malloc(CMD_LEN*sizeof(uint8_t));
+
+  //Load cmd array with the write configuration command and PEC
+  cmd[0] = 0x00;
+  cmd[1] = 0x01;
+  cmd[2] = 0x3d; //PEC
+  cmd[3] = 0x6e; //PEC
+
+  //Load the cmd with LTC6804 configuration data
+  cmd_index = 4;
+  for (uint8_t current_ic = 0; current_ic < total_ic ; current_ic++)       // executes for each LTC6804 in pack,
+  {
+    for (uint8_t current_byte = 0; current_byte < BYTES_IN_REG; current_byte++) // executes for each byte in the CFGR register
+    {
+      // i is the byte counter
+
+      cmd[cmd_index] = config[current_ic][current_byte];    //adding the config data to the array to be sent
+      cmd_index = cmd_index + 1;
+    }
+    //Calculate the pec for the LTC6804 configuration data being transmitted
+    temp_pec = (uint16_t)LTC68042configure_calcPEC15(BYTES_IN_REG, &config[current_ic][0]);// calculating the PEC for each board
+    cmd[cmd_index] = (uint8_t)(temp_pec >> 8);
+    cmd[cmd_index + 1] = (uint8_t)temp_pec;
+    cmd_index = cmd_index + 2;
+  }
+
+  LTC68042configure_wakeupIsoSPI();
+
+  //Write configuration of each LTC6804 on the pack
+  for (int current_ic = 0; current_ic<total_ic; current_ic++)
+  {
+    cmd[0] = 0x80 + ( (current_ic + addr_first_ic) << 3); //Setting address
+    temp_pec = LTC68042configure_calcPEC15(2, cmd);
+    cmd[2] = (uint8_t)(temp_pec >> 8);
+    cmd[3] = (uint8_t)(temp_pec);
+    digitalWrite(PIN_SPI_CS,LOW);
+    LTC68042configure_spiWrite(4,cmd);
+    LTC68042configure_spiWrite(8,&cmd[4+(8*current_ic)]);
+    digitalWrite(PIN_SPI_CS,HIGH);
+  }
+  free(cmd);
+}
+
+

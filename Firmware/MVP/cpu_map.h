@@ -1,3 +1,6 @@
+//Copyright 2021(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
+
 //cpu_map.h - CPU and pin mapping configuration file
 //central pin mapping selection file for different processor types
 
@@ -29,7 +32,7 @@
       #define PIN_VPIN_OUT_PWM 4
       #define PIN_SPI_EXT_CS 5
       #define PIN_TEMP_EN 6
-      #define PIN_CONNE_PWM 7
+      #define PIN_MCME_PWM 7
       #define PIN_GRID_PWM 8
       #define PIN_GRID_SENSE 9
       #define PIN_GRID_EN 10
@@ -55,7 +58,7 @@
       #define DEBUG_SDA 20
       #define DEBUG_CLK 21
 
-      //JTS2do: Replace Arduino I/O functions as shown in example code below
+      //JTS2doLater: Replace Arduino I/O functions as shown in example code below
       /*
         #define DIRECTION_DDR     DDRD
         #define DIRECTION_PORT    PORTD

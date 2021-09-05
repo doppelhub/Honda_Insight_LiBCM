@@ -1,12 +1,12 @@
+//Copyright 2021(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
+
 #ifndef metsci_h
   #define metci_h
 
   #define METSCI_BYTES_IN_FRAME 6
   #define RUNNING 1
   #define STOPPED 0
-
-
-
 
   void METSCI_begin();
 

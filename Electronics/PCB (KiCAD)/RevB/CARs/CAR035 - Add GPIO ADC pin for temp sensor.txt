@@ -1,0 +1,3 @@
+Add a thru hole to allow soldering temp sensors to PCB, which are attached directly to each battery.
+
+Find temp sensor

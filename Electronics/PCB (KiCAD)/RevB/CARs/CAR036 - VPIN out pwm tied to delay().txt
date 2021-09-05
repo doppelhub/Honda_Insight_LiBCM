@@ -1,0 +1,4 @@
+VPIN_OUT PWM is tied to Arduino's internal timer, which controls delay(), etc.  Default runs at ~1 kHz, which is a bit slow for VPINout.
+
+Consider changing VPIN_IN LPF to 10k + 100n
+Don't increase tau on VPIN_OUT, because it's already 10 ms... MCM throws an error if it takes too long.
