@@ -6,7 +6,7 @@
 
 	void debugUSB_printLatest_data(void);
 
-	uint8_t debugUSB_getSpoofedVoltage(void);
+	//uint8_t debugUSB_getUserInput(void);
 
 	void debugUSB_sendChar(char characterToSend);
 #endif

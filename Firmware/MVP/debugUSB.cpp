@@ -52,9 +52,9 @@ void debugUSB_printLatest_data(void)
 //s: a single letter 's'
 //NNN: exactly three integer digits between 0 & 255 (e.g. '006', '100', '255')
 //This is not a well-written input handler... follow the above syntax EXACTLY!
-uint8_t debugUSB_getSpoofedVoltage(void)
+uint8_t debugUSB_getUserInput(void)
 {
-	static uint8_t userEntry_spoofedVoltage = 150;
+	static uint8_t userEntry = 150; //initial value (when user hasn't entered value)
 
 	uint8_t bytesSentFromUser = Serial.available();
 	if( bytesSentFromUser >= 4 )
@@ -67,13 +67,13 @@ uint8_t debugUSB_getSpoofedVoltage(void)
 		if( Serial.available() ) //verify there's still data to read
 		{			
 			uint8_t userInteger = Serial.parseInt();
-			if(byteRead == 's') { userEntry_spoofedVoltage = userInteger; }
+			if(byteRead == 's') { userEntry = userInteger; }
 			Serial.print(" User typed: ");
-			Serial.print(String(userEntry_spoofedVoltage)); 
+			Serial.print(String(userEntry)); 
 		}
 	}
 
-	return userEntry_spoofedVoltage;
+	return userEntry;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

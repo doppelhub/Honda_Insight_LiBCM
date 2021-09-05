@@ -51,7 +51,7 @@ void spoofVoltage_VPINout(void)
 	//      V_DIV_CORRECTION = 100k           / 10k
 	#define V_DIV_CORRECTION 1.1
 
-	pwmCounts_VPIN_out = (adc_packVoltage_VpinIn() * vPackSpoof_getSpoofedPackVoltage() * V_DIV_CORRECTION )
+	pwmCounts_VPIN_out = (adc_packVoltage_VpinIn() * spoofedPackVoltage * V_DIV_CORRECTION )
 	                     / LTC68042result_packVoltage_get();
 
 	//bounds checking
@@ -63,10 +63,56 @@ void spoofVoltage_VPINout(void)
 
 //---------------------------------------------------------------------------------------
 
-void vPackSpoof_setVoltage(uint8_t newSpoofedVoltage)
+void spoofVoltage_calculateValue(void)
 {
-	//JTS2doNow: For now, make spoofed voltage proportional to actual voltage.
-	spoofedPackVoltage = newSpoofedVoltage; //t=20 microseconds
+	//Derivation:
+	//Hardware limitation: spoofedPackVoltage(max) must be less than (vPackActual - 12 volts)
+	//Maximum assist occurs when MCM thinks pack is at 120 volts.
+	//Therefore, we want to adjust the pack voltage over that range:
+	//vAdjustRange_mV = (vPackActual_V - 12 - 120) * 1000
+
+	//Since there's ~2x more assist current than regen current, set "0 A" pack voltage to 2/3 the above limits:
+	//vPackTwoThirdPoint_mV = vAdjustRange_mV * 2 / 3 + 120,000
+
+	//Next we linearize the (constant) maximum possible assist+regen current:
+	//TOTAL_CURRENT_RANGE_A = 140 A + 75 A  //215 A
+	
+	//We then calculate the voltage adjustment per amp, across the (variable) spoofed voltage range:
+	//voltageAdjustment_mV_per_A = vAdjustRange_mV / TOTAL_CURRENT_RANGE_A
+
+	//Putting these equations together, we determine the correct pack voltage to spoof
+	//for any given actual pack voltage at any given current:
+	//spoofedVoltage_mV = vPackTwoThirdPoint_mV - actualCurrent_A * voltageAdjustment_mV_per_A
+
+	//Now we need to streamline this equation:
+	//spoofedVoltage_mV = vAdjustRange_mV             * 2 / 3 + 120,000   - actualCurrent_A * vAdjustRange_mV / TOTAL_CURRENT_RANGE_A
+	//spoofedVoltage_mV = ((vPackActual_mV - 132,000) * 2 / 3 + 120,000 ) - actualCurrent_A * ((vPackActual_mV - 132,000) / 215 )
+	//spoofedVoltage_mV = vPackActual_mV            * ( 2 / 3 - actualCurrent_A / 215 ) + 614 * actualCurrent_A + 32,000
+	//spoofedVoltage_V = (vPackActual_mV * (667 - actualCurrent_A / 256 * 1000 )/1000 + 614 * actualCurrent_A + 32,000) / 1000
+	//spoofedVoltage_V = (vPackActual_V * (667 - actualCurrent_A / 256 * 1000 )/1 + 614 * actualCurrent_A + 32,000) / 1000
+
+	//approximate:
+	//spoofedVoltage_V = (vPackActual_V * (667 - actualCurrent_A / 256 * 1024 )/1 + 614 * actualCurrent_A + 32,000) / 1024
+	//spoofedVoltage_V = (vPackActual_V * (667 - actualCurrent_A >> 8 << 10) + 614 * actualCurrent_A + 32,000) >> 10
+	//spoofedVoltage_V = (vPackActual_V * (667 - actualCurrent_A << 2 ) + 614 * actualCurrent_A + 32,000) >> 10
+
+	//prevent uint16_t overflow:
+	//spoofedVoltage_V = (vPackActual_V * (667 - actualCurrent_A << 2 ) / 4 + ( 614 * actualCurrent_A + 32,000) / 4) >> 8
+	//spoofedVoltage_V = ((vPackActual_V * (667 - actualCurrent_A << 2 ) >> 2 ) + 154 * actualCurrent_A + 8,000) >> 8
+	//spoofedVoltage_V = ((vPackActual_V * (167 - actualCurrent_A) + 154 * actualCurrent_A + 8,000) >> 8
+
+	//But our rounding lowered the gain more than we wanted, so fudge the number a bit:
+	//spoofedVoltage_V = ((vPackActual_V * (167 - actualCurrent_A) + 135 * actualCurrent_A + 8,000) >> 8
+
+	spoofedPackVoltage = (uint8_t)((uint16_t)(LTC68042result_packVoltage_get() * ( 167 - adc_getLatestBatteryCurrent_amps() )
+		                    + 135 * adc_getLatestBatteryCurrent_amps() + 8000) >> 8);
+}
+
+//---------------------------------------------------------------------------------------
+
+void vPackSpoof_setVoltage(void)
+{
+	spoofVoltage_calculateValue();
 
 	spoofVoltage_VPINout();
 	spoofVoltageMCMe();
@@ -75,10 +121,7 @@ void vPackSpoof_setVoltage(uint8_t newSpoofedVoltage)
 
 //---------------------------------------------------------------------------------------
 
-void vPackSpoof_handleKeyON(void)
-{
-	;
-}
+void vPackSpoof_handleKeyON(void) { ; }
 
 //---------------------------------------------------------------------------------------
 

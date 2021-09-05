@@ -8,7 +8,7 @@
 
 	int16_t vPackSpoof_getPWMcounts_VPIN(void);
 
-	void vPackSpoof_setVoltage(uint8_t newSpoofedVoltage);
+	void vPackSpoof_setVoltage(void);
 
 	void vPackSpoof_handleKeyOFF(void);
 
