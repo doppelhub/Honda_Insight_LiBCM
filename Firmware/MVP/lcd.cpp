@@ -186,7 +186,7 @@ bool lcd_printCellVoltage_lo(void)
 		static bool isBacklightOn = true;
 
 		if( (LTC68042result_loCellVoltage_get() < 31500) || (isBacklightOn == false) )
-		{ //at least one cell overcharged	
+		{ //at least one cell undercharged	
 			if ( isBacklightOn == true ) {
 				lcd2.noBacklight();
 				isBacklightOn = false;
