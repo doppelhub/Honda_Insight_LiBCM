@@ -59,8 +59,6 @@ void gridCharger_handler(void)
     if (gridCharger_getSampledState() == UNPLUGGED ) { gridCharger_handleUnplugEvent(); }
   }
 
-  lcd_refresh();
-
   gridCharger_balanceCells();
 }
 
@@ -70,6 +68,7 @@ void gridCharger_balanceCells(void)
 {
   if(gridCharger_getSampledState() == PLUGGED_IN) 
   {
+    lcd_refresh();
     LTC68042cell_nextVoltages(); 
 
     //at least one cell is severely overcharged

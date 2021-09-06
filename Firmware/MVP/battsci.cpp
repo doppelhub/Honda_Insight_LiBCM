@@ -19,7 +19,7 @@ int16_t spoofedCurrentToSend = 0; //JTS2doLater spoofed pack current can probabl
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_begin()
+void BATTSCI_begin(void)
 {
   pinMode(PIN_BATTSCI_DE, OUTPUT);
   digitalWrite(PIN_BATTSCI_DE,LOW);
@@ -33,7 +33,7 @@ void BATTSCI_begin()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_enable()
+void BATTSCI_enable(void)
 {
   digitalWrite(PIN_BATTSCI_DE,HIGH);
   BATTSCI_state = RUNNING;
@@ -41,7 +41,7 @@ void BATTSCI_enable()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_disable()
+void BATTSCI_disable(void)
 {
   digitalWrite(PIN_BATTSCI_DE,LOW);
   BATTSCI_state = STOPPED;
@@ -49,7 +49,7 @@ void BATTSCI_disable()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t BATTSCI_bytesAvailableForWrite()
+uint8_t BATTSCI_bytesAvailableForWrite(void)
 {
   return Serial2.availableForWrite();
 }
@@ -177,6 +177,7 @@ void BATTSCI_sendFrames()
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //Never changes unless P codes
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //Never changes unless P codes
 
+      //JTS2doNow: change to bitwise, with temp variable.
       if( (LTC68042result_hiCellVoltage_get() < 42000 ) && (LTC68042result_loCellVoltage_get() > 29500) )
       { //all cells are within acceptable range
         frameSum_AA += BATTSCI_writeByte( 0x00 );                                         //enable assist & regen

@@ -147,9 +147,21 @@ bool lcd_printCellVoltage_hi(void)
 			
 			didscreenUpdateOccur = SCREEN_UPDATED;
 		}
-	#endif
+	
+		static bool isBacklightOn = true;
 
-	//JTS2doNow: flash screen if cellMin less than 3.0 or cellMax > 4.1
+		if( (LTC68042result_hiCellVoltage_get() > 41500) || (isBacklightOn == false) )
+		{ //at least one cell overcharged	
+			
+			if ( isBacklightOn == true ) {
+				lcd2.noBacklight();
+				isBacklightOn = false;
+			} else {
+				lcd2.backlight();
+				isBacklightOn = true;
+			}
+		}
+	#endif
 
 	return didscreenUpdateOccur;
 }
@@ -170,6 +182,19 @@ bool lcd_printCellVoltage_lo(void)
 
 			didscreenUpdateOccur = SCREEN_UPDATED;
 		}	
+
+		static bool isBacklightOn = true;
+
+		if( (LTC68042result_loCellVoltage_get() < 31500) || (isBacklightOn == false) )
+		{ //at least one cell overcharged	
+			if ( isBacklightOn == true ) {
+				lcd2.noBacklight();
+				isBacklightOn = false;
+			} else {
+				lcd2.backlight();
+				isBacklightOn = true;
+			}
+		}
 	#endif
 
 	return didscreenUpdateOccur;
