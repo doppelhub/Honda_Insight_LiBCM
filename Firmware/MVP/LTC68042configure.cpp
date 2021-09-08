@@ -61,6 +61,8 @@ void LTC6804configure_keyOn_configurationRegisterValues()
 
 void LTC6804_wrcfg(uint8_t total_ic, uint8_t addr_first_ic)
 {
+  LTC68042configure_wakeupCore();
+
   const uint8_t BYTES_IN_REG = 6;
   const uint8_t CMD_LEN = 4+(8*total_ic);
   uint8_t *cmd;

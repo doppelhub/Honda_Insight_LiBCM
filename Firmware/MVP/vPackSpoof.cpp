@@ -14,7 +14,6 @@
 
 uint8_t spoofedPackVoltage = 0;
 
-
 int16_t pwmCounts_MCMe = 0;
 int16_t pwmCounts_VPIN_out = 0;
 
@@ -106,6 +105,7 @@ void spoofVoltage_calculateValue(void)
 
 	spoofedPackVoltage = (uint8_t)((uint16_t)(LTC68042result_packVoltage_get() * ( 167 - adc_getLatestBatteryCurrent_amps() )
 		                    + 135 * adc_getLatestBatteryCurrent_amps() + 8000) >> 8);
+	//JTS2doNow: bound result to 120 <= spoofedPackVoltage <= 200 ?
 }
 
 //---------------------------------------------------------------------------------------
