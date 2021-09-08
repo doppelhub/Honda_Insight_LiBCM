@@ -5,7 +5,6 @@
 
 #include "libcm.h"
 
-//JTS2doLater: Combine LED calls into single function pointer
 void debugLED(uint8_t LED_number, bool illuminated)
 {
 	#ifdef LED_DEBUG

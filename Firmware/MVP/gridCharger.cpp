@@ -2,7 +2,7 @@
 //github.com/doppelhub/Honda_Insight_LiBCM
 #include "libcm.h"
 
-//updates when gridCharger_handler() called (prevents mid-loop state changes from affecting loop logic)
+//updated by gridCharger_handler() (prevents mid-loop state changes from affecting loop logic)
 bool gridChargerState_sampled = PLUGGED_IN;
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -36,6 +36,7 @@ void gridCharger_handleUnplugEvent(void)
   gpio_setFanSpeed('0');
   gpio_turnGridCharger_off();
   lcd_displayOFF();
+  gpio_setGridCharger_powerLevel('H'); //reduces power consumption
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -50,6 +51,55 @@ void gridCharger_handlePluginEvent(void)
 
 //////////////////////////////////////////////////////////////////////////////////
 
+//called when (at least one cell is full) && (no cell is severely overcharged)
+void gridCharger_balanceCells(void)
+{
+  ;
+  //JTS2doNow: Implement balancing
+  //if min cell voltage greater than 3.8 volts, check each voltage.
+  //If a particular cell voltage is more than 1 mV higher than minimum voltage:
+  //turn fans on high
+  //enable discharge resistor
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
+void gridCharger_chargePack(void)
+{
+  lcd_refresh();
+  LTC68042cell_nextVoltages(); 
+  debugUSB_printLatest_data();
+
+  //at least one cell is severely overcharged
+  if( LTC68042result_hiCellVoltage_get() > (GRID_CHARGER_CELL_VMAX + VCELL_HYSTERESIS) )
+  {
+    gpio_turnGridCharger_off();
+    gpio_setFanSpeed('H'); //cool pack and discharge
+    gpio_setGridCharger_powerLevel('0');
+    //JTS2doLater: display Warning on LCD
+  }
+
+  //at least one cell is full
+  else if( (LTC68042result_hiCellVoltage_get() > GRID_CHARGER_CELL_VMAX) )
+  {
+    gpio_turnGridCharger_off();
+    gpio_setFanSpeed('0');
+    gpio_setGridCharger_powerLevel('0');
+    gridCharger_balanceCells();
+  }
+
+  //grid charger plugged in and all cells less than full
+  else if( LTC68042result_hiCellVoltage_get() <= (GRID_CHARGER_CELL_VMAX - VCELL_HYSTERESIS) )
+  {
+    gpio_turnGridCharger_on();
+    gpio_setFanSpeed('M');
+    gpio_setGridCharger_powerLevel('H');
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
 void gridCharger_handler(void)
 {
   if( gridCharger_didStateChange() == YES )
@@ -59,51 +109,5 @@ void gridCharger_handler(void)
     if (gridCharger_getSampledState() == UNPLUGGED ) { gridCharger_handleUnplugEvent(); }
   }
 
-  gridCharger_balanceCells();
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-
-void gridCharger_balanceCells(void)
-{
-  if(gridCharger_getSampledState() == PLUGGED_IN) 
-  {
-    lcd_refresh();
-    LTC68042cell_nextVoltages(); 
-
-    //at least one cell is severely overcharged
-    if( LTC68042result_hiCellVoltage_get() > (GRID_CHARGER_CELL_VMAX + VCELL_HYSTERESIS) )
-    {
-      gpio_turnGridCharger_off();
-      gpio_setFanSpeed('H'); //cool pack and discharge
-      gpio_setGridCharger_powerLevel('0');
-      //JTS2doLater: display Warning on LCD
-    }
-
-    //at least one cell is full
-    else if( (LTC68042result_hiCellVoltage_get() > GRID_CHARGER_CELL_VMAX) )
-    {
-      gpio_turnGridCharger_off();
-      gpio_setFanSpeed('0');
-      gpio_setGridCharger_powerLevel('0');
-    }
-  
-    //grid charger plugged in and all cells less than full
-    //note: when first plugged in, grid charger won't turn on if cells almost full
-    else if( LTC68042result_hiCellVoltage_get() <= (GRID_CHARGER_CELL_VMAX - VCELL_HYSTERESIS) )
-    {
-      //JTS2doLater: add balancing
-      gpio_turnGridCharger_on();
-      gpio_setFanSpeed('M');
-      gpio_setGridCharger_powerLevel('H');
-    }
-  }
-
-  //grid charger not plugged in
-  else
-  {
-    gpio_turnGridCharger_off();
-    gpio_setGridCharger_powerLevel('H'); //reduces power consumption
-    gpio_setFanSpeed('0');
-  }
+  if(gridCharger_getSampledState() == PLUGGED_IN) { gridCharger_chargePack(); }
 }

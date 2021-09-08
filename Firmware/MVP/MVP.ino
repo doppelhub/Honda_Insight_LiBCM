@@ -30,7 +30,7 @@ void loop()
 	if( key_getSampledState() == KEYON )
 	{
 		if( gpio_isGridChargerPluggedInNow() == PLUGGED_IN ) { lcd_gridChargerWarning(); } //grid charging not allowed when keyON
-		else { BATTSCI_sendFrames(); } //BATTSCI data only sent if grid charger unplugged (to force P-code if car tethered)
+		else { BATTSCI_sendFrames(); } //BATTSCI data only sent if grid charger unplugged (forces P-code if car tethered)
 
 	 	LTC68042cell_nextVoltages(); //round-robin handler measures QTY3 cell voltages per call
 
@@ -48,7 +48,7 @@ void loop()
 	blinkLED2(); //Heartbeat
 
 	LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left //if off, exceeding LOOP_RATE_MS
-	while( (millis() - previousMillis) < LOOP_RATE_MS ) { ; } //wait here to start next loop
+	while( (millis() - previousMillis) < LOOP_RATE_MS ) { ; } //wait here to start next loop //JTS2doLater: Determine Behavior after overflow (50 days)
 	LED(4,LOW);
 
 	previousMillis = millis(); //placed at end to prevent delay at keyON event

@@ -22,6 +22,10 @@
 
 	void     LTC68042result_hiCellVoltage_set(uint16_t newHi_counts);
 	uint16_t LTC68042result_hiCellVoltage_get(void                 );
+
+	void     LTC68042result_specificCellVoltage_set(uint8_t icNumber, uint8_t cellNumber, uint16_t cellVoltage);
+	uint16_t LTC68042result_specificCellVoltage_get (uint8_t icNumber, uint8_t cellNumber);
+
 #endif
 
 // void printCellVoltage_all(); //JTS2doLater: Add back

@@ -10,14 +10,49 @@
 
 char debugCharacter = '.';
 
-void debugUSB_printLatest_data(void)
-{	//t= 1080 microseconds max
-	static uint32_t previousMillis = 0;
+/////////////////////////////////////////////////////////////////////////////////////////////
 
-	if( millis() - previousMillis >= DEBUG_USB_UPDATE_PERIOD_MS) //JTS2doNow: && (Serial.availableForWrite() >= 63)
+#ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
+	//print all cell voltages from one IC
+	//t=2.4 milliseconds worst case
+	void debugUSB_printOneICsCellVoltages(uint8_t icToPrint)
 	{
-		previousMillis = millis();
+		//puts QTY64 bytes into the USB serial buffer, which can take up to QTY64 bytes
+		//Adding any more characters to this string will prevent Serial.print from returning (until the buffer isn't full)
+		Serial.print(F("\nIC"));
+		Serial.print(String(icToPrint));
+		for(int cellToPrint = 0; cellToPrint < CELLS_PER_IC; cellToPrint++)
+		{
+			Serial.print(',');
+			Serial.print( String( LTC68042result_specificCellVoltage_get(icToPrint,cellToPrint) * 0.0001, 2) );
+		}
 
+		if((++icToPrint) >= TOTAL_IC) { icToPrint = 0; }
+	}
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void debugUSB_printLatest_data(void)
+{	
+	static uint32_t previousMillisDebug = 0;
+
+	#ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
+		static uint32_t previousMillisCellVoltages = 0;
+		static uint8_t icCellVoltagesToPrint = 0;
+	#endif
+
+	debugLED(1,ON);
+
+	if( millis() - previousMillisDebug >= DEBUG_USB_UPDATE_PERIOD_MS) //JTS2doNow: && (Serial.availableForWrite() >= 63)
+	{
+		previousMillisDebug = millis();
+
+		#ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
+			previousMillisCellVoltages = millis(); //prevent cell voltage printing at same time as debug packet
+		#endif
+
+		//t= 1080 microseconds max
 		//comma delimiter to simplify data analysis 
 		//Complete string should be less than 64 characters (to prevent filling buffer)
 	    //               ****************************************************************
@@ -42,8 +77,23 @@ void debugUSB_printLatest_data(void)
 		Serial.print(String( (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001), 1 )); //JTS2doLater: do power calc elsewhere
 		Serial.print(F(                                                      ",kW, "     ));
 
-		Serial.print(String( debugCharacter                                              ));	 
+		Serial.print(String( debugCharacter                                              ));
+
+		#ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
+			icCellVoltagesToPrint = 0;
+		#endif
+
 	}
+	#ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
+		else if( (millis() - previousMillisCellVoltages >= (DEBUG_USB_UPDATE_PERIOD_MS / (TOTAL_IC + 1) ) )
+			     && (icCellVoltagesToPrint < TOTAL_IC) ) //print all cell data 
+		{	 
+			previousMillisCellVoltages = millis();
+			debugUSB_printOneICsCellVoltages(icCellVoltagesToPrint++);
+		}
+	#endif
+
+	debugLED(1,OFF);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

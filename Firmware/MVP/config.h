@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.2.1"
-    #define BUILD_DATE "2021SEP05"
+	#define FW_VERSION "0.2.2"
+    #define BUILD_DATE "2021SEP07"
     #define HW_REVB
 	#define CPU_MAP_MEGA2560
 
@@ -24,14 +24,14 @@
 		//#define I2C_LCD            //use "TwiLiquidCrystal.h"
 		#define LCD_JTS            //use "lcd_I2C.h" (modified version ) 
 	
-	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Print all cell voltages to USB Serial Monitor (slow) 
+	#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Print all cell voltages to USB Serial Monitor
 
 	//choose which functions control the LEDs
 	#define LED_NORMAL //enable "     LED()" functions (see debug.c)
 	//#define LED_DEBUG  //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
 	#define PRINT_USB_DEBUG_TEXT //prints text sent via debugUSB_debugText() //JTS2doLater: NOT IMPLEMENTED YET
-	#define DEBUG_USB_UPDATE_PERIOD_MS 125 //125 = send data every 125 ms
+	#define DEBUG_USB_UPDATE_PERIOD_MS 250 //125 = send data every 125 ms
 
 	#define LOOP_RATE_MS 10 // Superloop execution rate: 1/LOOP_RATE_MS (e.g. LOOP_RATE_MS==10 is 100 Hz)
 

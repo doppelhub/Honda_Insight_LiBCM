@@ -168,6 +168,8 @@ void processAllCellVoltages(void)
 			//check for new maxEver/minEver cells (if any)
 			if (cellUnderTest > LTC68042result_maxEverCellVoltage_get() ) {LTC68042result_maxEverCellVoltage_set(cellUnderTest); }
 			if (cellUnderTest < LTC68042result_minEverCellVoltage_get() ) {LTC68042result_minEverCellVoltage_set(cellUnderTest); }
+
+			LTC68042result_specificCellVoltage_set(chip, cell, cellUnderTest);
 		}
 	}
 

@@ -49,13 +49,13 @@ void key_handleKeyEvent_off(void)
 void key_handleKeyEvent_on(void)
 {
 	Serial.print(F("ON"));
-	//vPackSpoof_handleKeyON();
 	BATTSCI_enable();
 	METSCI_enable();
 	gpio_setFanSpeed_OEM('L');
 	gpio_turnCurrentSensor_on();
 	lcd_displayON();
-	//JTS2doLater: if(gpio_isGridChargerPluggedInNow() == YES) { while(keyON){;} } // cause P-code (to alert user)
+	LTC68042result_maxEverCellVoltage_set(0    ); //reset maxEver cell voltage
+	LTC68042result_minEverCellVoltage_set(65535); //reset minEver cell voltage
 	LED(1,HIGH);	
 }
 
