@@ -56,7 +56,9 @@ void key_handleKeyEvent_on(void)
 	lcd_displayON();
 	LTC68042result_maxEverCellVoltage_set(0    ); //reset maxEver cell voltage
 	LTC68042result_minEverCellVoltage_set(65535); //reset minEver cell voltage
-	LED(1,HIGH);	
+	LED(1,HIGH);
+	LTC6804configure_keyOn_configurationRegisterValues(); //test
+	LTC6804_wrcfg(TOTAL_IC, FIRST_IC_ADDR); //test
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
