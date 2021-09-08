@@ -143,8 +143,8 @@
 
 	void LTC68042configure_spiWriteRead(uint8_t *TxData, uint8_t TXlen, uint8_t *rx_data, uint8_t RXlen);
 
-	void LTC6804_wrcfg(uint8_t total_ic, uint8_t addr_first_ic);
-
-	void LTC6804configure_keyOn_configurationRegisterValues();
+	void LTC68042configure_cellBalancing_disable();
 	
+	void LTC68042configure_cellBalancing_setCells(uint8_t icAddress, uint16_t cellBitmap);
+
 #endif

@@ -40,7 +40,7 @@ void loop()
 
   		vPackSpoof_setVoltage();
 
-		debugUSB_printLatest_data();
+		debugUSB_printLatest_data_keyOn();
 
 		lcd_refresh();
 	}

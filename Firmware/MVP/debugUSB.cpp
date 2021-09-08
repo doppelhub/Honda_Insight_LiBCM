@@ -12,45 +12,85 @@ char debugCharacter = '.';
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
-	//print all cell voltages from one IC
-	//t=2.4 milliseconds worst case
-	void debugUSB_printOneICsCellVoltages(uint8_t icToPrint)
+//print all cell voltages from one IC
+//t=2.4 milliseconds worst case
+void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces)
+{
+	//puts QTY64 bytes into the USB serial buffer, which can take up to QTY64 bytes
+	//Adding any more characters to this string will prevent Serial.print from returning (until the buffer isn't full)
+	Serial.print(F("\nIC"));
+	Serial.print(String(icToPrint));
+	for(int cellToPrint = 0; cellToPrint < CELLS_PER_IC; cellToPrint++)
 	{
-		//puts QTY64 bytes into the USB serial buffer, which can take up to QTY64 bytes
-		//Adding any more characters to this string will prevent Serial.print from returning (until the buffer isn't full)
-		Serial.print(F("\nIC"));
-		Serial.print(String(icToPrint));
-		for(int cellToPrint = 0; cellToPrint < CELLS_PER_IC; cellToPrint++)
-		{
-			Serial.print(',');
-			Serial.print( String( LTC68042result_specificCellVoltage_get(icToPrint,cellToPrint) * 0.0001, 2) );
-		}
-
-		if((++icToPrint) >= TOTAL_IC) { icToPrint = 0; }
+		Serial.print(',');
+		Serial.print( String( LTC68042result_specificCellVoltage_get(icToPrint,cellToPrint) * 0.0001, decimalPlaces) );
 	}
-#endif
+
+	if((++icToPrint) >= TOTAL_IC) { icToPrint = 0; }
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-void debugUSB_printLatest_data(void)
+uint8_t cellBitmaps[TOTAL_IC] = {0};
+
+void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap)
+{
+	cellBitmaps[icNumber] = cellBitmap;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void debugUSB_printCellBalanceStatus()
+{
+	Serial.print("\nBalance:");
+	for(uint8_t ii = 0; ii < TOTAL_IC; ii++)
+	{
+	    Serial.print(String(cellBitmaps[ii], HEX));
+	   	Serial.print(',');
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+//This function can print more than 63 characters in a single call
+void debugUSB_printLatest_data_gridCharger(void)
 {	
 	static uint32_t previousMillisDebug = 0;
+	static uint32_t previousMillisCellVoltages = 0;
+	static uint8_t icCellVoltagesToPrint = 0;
 
-	#ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
-		static uint32_t previousMillisCellVoltages = 0;
-		static uint8_t icCellVoltagesToPrint = 0;
-	#endif
+	if( millis() - previousMillisDebug >= DEBUG_USB_UPDATE_PERIOD_MS) //JTS2doNow: && (Serial.availableForWrite() >= 63)
+	{
+		previousMillisDebug = millis();
+		previousMillisCellVoltages = millis(); //prevent cell voltage printing at same time as debug packet
+		icCellVoltagesToPrint = 0;
+
+		debugUSB_printCellBalanceStatus();
+	}
+	else if( (millis() - previousMillisCellVoltages >= (DEBUG_USB_UPDATE_PERIOD_MS / (TOTAL_IC + 1) ) )
+		     && (icCellVoltagesToPrint < TOTAL_IC) ) //print all cell data 
+	{	 
+		previousMillisCellVoltages = millis();
+		debugUSB_printOneICsCellVoltages(icCellVoltagesToPrint++, FOUR_DECIMAL_PLACES);
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+//This function MUST NOT PRINT more than 63 characters in a single call (that's the maximum Serial buffer size)
+void debugUSB_printLatest_data_keyOn(void)
+{	
+	static uint32_t previousMillisDebug = 0;
+	static uint32_t previousMillisCellVoltages = 0;
+	static uint8_t icCellVoltagesToPrint = 0;
 
 	debugLED(1,ON);
 
 	if( millis() - previousMillisDebug >= DEBUG_USB_UPDATE_PERIOD_MS) //JTS2doNow: && (Serial.availableForWrite() >= 63)
 	{
 		previousMillisDebug = millis();
-
-		#ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
-			previousMillisCellVoltages = millis(); //prevent cell voltage printing at same time as debug packet
-		#endif
+		previousMillisCellVoltages = millis(); //prevent cell voltage printing at same time as debug packet
 
 		//t= 1080 microseconds max
 		//comma delimiter to simplify data analysis 
@@ -79,19 +119,14 @@ void debugUSB_printLatest_data(void)
 
 		Serial.print(String( debugCharacter                                              ));
 
-		#ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
-			icCellVoltagesToPrint = 0;
-		#endif
-
+		icCellVoltagesToPrint = 0;
 	}
-	#ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
-		else if( (millis() - previousMillisCellVoltages >= (DEBUG_USB_UPDATE_PERIOD_MS / (TOTAL_IC + 1) ) )
-			     && (icCellVoltagesToPrint < TOTAL_IC) ) //print all cell data 
-		{	 
-			previousMillisCellVoltages = millis();
-			debugUSB_printOneICsCellVoltages(icCellVoltagesToPrint++);
-		}
-	#endif
+	else if( (millis() - previousMillisCellVoltages >= (DEBUG_USB_UPDATE_PERIOD_MS / (TOTAL_IC + 1) ) )
+		     && (icCellVoltagesToPrint < TOTAL_IC) ) //print all cell data 
+	{	 
+		previousMillisCellVoltages = millis();
+		debugUSB_printOneICsCellVoltages(icCellVoltagesToPrint++, TWO_DECIMAL_PLACES);
+	}
 
 	debugLED(1,OFF);
 }

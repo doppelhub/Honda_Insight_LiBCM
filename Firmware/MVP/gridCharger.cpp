@@ -51,25 +51,51 @@ void gridCharger_handlePluginEvent(void)
 
 //////////////////////////////////////////////////////////////////////////////////
 
-//called when (at least one cell is full) && (no cell is severely overcharged)
+//JTS2doNow: Think this through to make sure it won't over-discharge cells
+//only call when:
+//grid charger is plugged in
+//minimum cell voltage above safe minimum 
+//no cell is severely overcharged
 void gridCharger_balanceCells(void)
 {
-  ;
   //JTS2doNow: Implement balancing
-  //if min cell voltage greater than 3.8 volts, check each voltage.
-  //If a particular cell voltage is more than 1 mV higher than minimum voltage:
-  //turn fans on high
-  //enable discharge resistor
+   
+  uint16_t cellsToDischarge[TOTAL_IC] = {0};
 
+  bool isAtLeastOneCellUnbalanced = false;
+
+  if(LTC68042result_loCellVoltage_get() > 37500) //JTS2doLater: Figure out final minimum voltage
+  { //all cells above minimum balancing voltage
+    for(uint8_t ic = 0; ic < TOTAL_IC; ic++)
+    {
+      for (uint8_t cell = 0; cell < CELLS_PER_IC; cell++)
+      {
+        if(LTC68042result_specificCellVoltage_get(ic, cell) > (LTC68042result_loCellVoltage_get() + ONE_MILLIVOLT_COUNTS) )
+        { //this particular cell's voltage is more than one mV above the lowest cell
+          cellsToDischarge[ic] |= (1 << cell);
+          isAtLeastOneCellUnbalanced = true;
+        }
+      }
+
+    debugUSB_setCellBalanceStatus(ic, cellsToDischarge[ic]);
+    LTC68042configure_cellBalancing_setCells( (ic + FIRST_IC_ADDR), cellsToDischarge[ic] );
+    }
+  }
+
+  if(isAtLeastOneCellUnbalanced == true) { gpio_setFanSpeed('H'); }
+  else                                   { gpio_setFanSpeed('0'); }
+
+  
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Think this through
 void gridCharger_chargePack(void)
 {
   lcd_refresh();
   LTC68042cell_nextVoltages(); 
-  debugUSB_printLatest_data();
+  debugUSB_printLatest_data_gridCharger();
 
   //at least one cell is severely overcharged
   if( LTC68042result_hiCellVoltage_get() > (GRID_CHARGER_CELL_VMAX + VCELL_HYSTERESIS) )
@@ -84,9 +110,8 @@ void gridCharger_chargePack(void)
   else if( (LTC68042result_hiCellVoltage_get() > GRID_CHARGER_CELL_VMAX) )
   {
     gpio_turnGridCharger_off();
-    gpio_setFanSpeed('0');
+    gpio_setFanSpeed('0'); //set inside balanceCells()
     gpio_setGridCharger_powerLevel('0');
-    gridCharger_balanceCells();
   }
 
   //grid charger plugged in and all cells less than full
@@ -96,6 +121,15 @@ void gridCharger_chargePack(void)
     gpio_setFanSpeed('M');
     gpio_setGridCharger_powerLevel('H');
   }
+
+  //grid charger plugged in and all cells almost full
+  else if( (LTC68042result_hiCellVoltage_get() <= GRID_CHARGER_CELL_VMAX)
+         && LTC68042result_loCellVoltage_get() >= MIN_DISCHARGE_VOLTAGE_COUNTS )
+  {
+    //gpio_setFanSpeed('0'); //set inside balanceCells()
+    gridCharger_balanceCells();
+  }
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////
