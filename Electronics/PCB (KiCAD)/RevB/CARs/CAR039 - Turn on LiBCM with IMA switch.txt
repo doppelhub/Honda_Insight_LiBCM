@@ -1,0 +1,2 @@
+Add (100 nF + 20 Ohm) from +12V_LiBCM to buck enable circuit.  This sends a pulse onto the enable line when the IMA switch first turns on.
+

@@ -1,0 +1,2 @@
+Add pullups to I2C DAT/CLK lines.  Also add LPF to prevent data glitch.
+

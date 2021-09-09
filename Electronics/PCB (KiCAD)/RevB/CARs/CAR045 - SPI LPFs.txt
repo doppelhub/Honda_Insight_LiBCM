@@ -1,0 +1,20 @@
+Test results:
+//-added LPFs to SPI MOSI/CLK (220 Ohm + 10 nF) -> Tau = 2.2 us | Result: rise time too slow
+//-added LPFs to SPI MOSI/CLK (041 Ohm + 10 nF) -> Tau = 0.4 us | Result: rise time borderline
+//-added LPFs to SPI MOSI/CLK (020 Ohm + 10 nF) -> Tau = 0.2 us | Result: rise time acceptable
+//MISO is harder due to LTC6820's open drain output. 
+//-R81 to 1k7, LPF is (20 Ohms +  10 nF) -> Tau = 200 ns | Result: rising edge (pullup) doesn't source current fast enough
+//-R81 to 1k0, LPF is (20 Ohms + 250 pF) -> Tau = 005 ns | Result: looks good on scope.
+//A more robust method is to buffer MISO near LTC6820 (e.g. opamp).
+-All LPFs (MISO/MOSI/CLK changed to (1 kOhm + 20 pF) -> Tau = 20 ns
+
+Overall SPI deadbugging result after test drive: Absolutely no improvement to the error rate.  If anything it's slightly worse (possibly because I slowed the clock down, hence more opportunity for periodic aggressor to corrupt data).
+
+Future SPI changes:
+-Increase SPI clock rate to minimize crossover with periodic aggressor signal:
+//SPI_CLOCK_DIV16: SPI CLK/MOSI look great.  MISO rising edge too slow... however, no CRC errors sitting on bench.
+//SPI_CLOCK_DIV32: SPI CLK/MOSI/MISO look great.
+SPI_CLOCK_DIV64: SPI CLK/MOSI/MISO look great.
+
+Conclusion:
+Change SPI to 20ish pF with 20 Ohm resistor... that'll let us add LPF if needed

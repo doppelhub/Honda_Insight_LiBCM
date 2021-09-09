@@ -1,0 +1,11 @@
+When 12->5 buck off and grid charger disconnected, LiBCM pulls 134 uA from HVDC (24 mW).
+
+However, when the grid charger's HVDC output is connected to screw terminals, LiBCM now pulls 1533 uA (276 mW).  Therefore, grid charger is sinking 252 mW 24/7.
+
+Implications:
+When the HVDC battery gets really low, LiBCM will turn itself off.  However, the grid charger will continue to pull power.  Assuming LiBCM turns itself off when the pack gets below 1000 mAh remaining (3.5 volts/cell), that's 168 Wh remaining to 0% SoC.  With these parameters, the pack will empty from 20% to 0% SoC in:
+-RevB_LiBCM + grid charger in  609 hours (25 days).
+-RevB_LiBCM (only)         in 7000 hours (292 days).  
+
+Conclusions:
+Need to add an optically isolated FET/switch to only connect grid charger when it's plugged in and charging.  That's going to be a tight fit!  Maybe get rid of grid charger PWM control (but I like it).
