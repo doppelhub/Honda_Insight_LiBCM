@@ -60,11 +60,11 @@ void gridCharger_balanceCells(void)
 {
   //JTS2doNow: Implement balancing
    
-  uint16_t cellsToDischarge[TOTAL_IC] = {0};
+  uint16_t cellsToDischarge[TOTAL_IC] = {0}; //each uint16's QTY12 LSBs correspond to each cell 
 
   bool isAtLeastOneCellUnbalanced = false;
 
-  if(LTC68042result_loCellVoltage_get() > 37500) //JTS2doLater: Figure out final minimum voltage
+  if(LTC68042result_loCellVoltage_get() > 37500) //JTS2doLater: Figure out final minimum voltage //redundant?
   { //all cells above minimum balancing voltage
     for(uint8_t ic = 0; ic < TOTAL_IC; ic++)
     {
@@ -124,7 +124,7 @@ void gridCharger_chargePack(void)
 
   //grid charger plugged in and all cells almost full
   else if( (LTC68042result_hiCellVoltage_get() <= GRID_CHARGER_CELL_VMAX)
-         && LTC68042result_loCellVoltage_get() >= MIN_DISCHARGE_VOLTAGE_COUNTS )
+         && LTC68042result_loCellVoltage_get() >= MIN_DISCHARGE_VOLTAGE_COUNTS ) //redundant?
   {
     //gpio_setFanSpeed('0'); //set inside balanceCells()
     gridCharger_balanceCells();
