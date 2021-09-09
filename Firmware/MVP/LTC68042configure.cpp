@@ -81,7 +81,7 @@ void LTC68042configure_cellBalancing_setCells(uint8_t icAddress, uint16_t cellBi
 
 //---------------------------------------------------------------------------------------
 
-//Turn off discharge FETs, turn reference on and configure ADC LPF to 3 kHz
+//Turn off discharge FETs, turn reference on and configure ADC LPF to '2 kHz mode' (1.7 kHz LPF)
 //configuration register data resets if LTC watchdog timer expires (~2000 milliseconds)
 void LTC68042configure_cellBalancing_disable()
 {                                              // BIT7    BIT6    BIT5    BIT4    BIT3    BIT2    BIT1   BIT0                

@@ -70,7 +70,7 @@ void gridCharger_balanceCells(void)
     {
       for (uint8_t cell = 0; cell < CELLS_PER_IC; cell++)
       {
-        if(LTC68042result_specificCellVoltage_get(ic, cell) > (LTC68042result_loCellVoltage_get() + ONE_MILLIVOLT_COUNTS) )
+        if(LTC68042result_specificCellVoltage_get(ic, cell) > (LTC68042result_loCellVoltage_get() + BALANCE_TO_WITHIN_COUNTS) )
         { //this particular cell's voltage is more than one mV above the lowest cell
           cellsToDischarge[ic] |= (1 << cell);
           isAtLeastOneCellUnbalanced = true;

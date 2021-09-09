@@ -7,7 +7,7 @@
     #define PLUGGED_IN true
     #define UNPLUGGED  false
 
-    #define ONE_MILLIVOLT_COUNTS 10
+    #define BALANCE_TO_WITHIN_COUNTS 10 // '20' = 2 mV
 
     #define MIN_DISCHARGE_VOLTAGE_COUNTS 36000
 

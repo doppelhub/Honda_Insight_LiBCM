@@ -60,7 +60,7 @@ void debugUSB_printLatest_data_gridCharger(void)
 	static uint32_t previousMillisCellVoltages = 0;
 	static uint8_t icCellVoltagesToPrint = 0;
 
-	if( millis() - previousMillisDebug >= DEBUG_USB_UPDATE_PERIOD_MS) //JTS2doNow: && (Serial.availableForWrite() >= 63)
+	if( millis() - previousMillisDebug >= DEBUG_USB_UPDATE_PERIOD_MS)
 	{
 		previousMillisDebug = millis();
 		previousMillisCellVoltages = millis(); //prevent cell voltage printing at same time as debug packet
