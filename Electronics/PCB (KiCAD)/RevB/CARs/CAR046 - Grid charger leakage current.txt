@@ -9,3 +9,14 @@ When the HVDC battery gets really low, LiBCM will turn itself off.  However, the
 
 Conclusions:
 Need to add an optically isolated FET/switch to only connect grid charger when it's plugged in and charging.  That's going to be a tight fit!  Maybe get rid of grid charger PWM control (but I like it).
+
+Solution:
+Just add a diode... who cares about a 0.7 volt drop?  That's 280 mW while charging. Done.
+Existing diode's breakdown voltage is too low.  Same with existing NPNs and FETs.
+
+Ideal part:
+3191-GS2MA-F1-0000HFTR-ND (600 nA 200 volts) DO-214AC
+
+Backup:
+SA2M-E3/5ATGICT-ND (1 uA leakage @ 200 volts)
+GS2JFL-TPMSCT-ND 1 uA @ 200 v
