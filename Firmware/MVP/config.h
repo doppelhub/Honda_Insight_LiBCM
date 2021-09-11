@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.2.3"
-    #define BUILD_DATE "2021SEP08"
+	#define FW_VERSION "0.2.4"
+    #define BUILD_DATE "2021SEP10"
     #define HW_REVB
 	#define CPU_MAP_MEGA2560
 
@@ -25,8 +25,8 @@
 		#define LCD_JTS            //use "lcd_I2C.h" (modified version ) 
 
 	//choose which functions control the LEDs
-	//#define LED_NORMAL //enable "     LED()" functions (see debug.c)
-	#define LED_DEBUG  //enable "debugLED()" functions (FYI: blinkLED functions won't work)
+	#define LED_NORMAL //enable "     LED()" functions (see debug.c)
+	//#define LED_DEBUG  //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
 	#define PRINT_USB_DEBUG_TEXT //prints text sent via debugUSB_debugText() //JTS2doLater: NOT IMPLEMENTED YET
 	#define DEBUG_USB_UPDATE_PERIOD_MS 250 //125 = send data every 125 ms
