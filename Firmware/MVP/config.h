@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.2.4"
-    #define BUILD_DATE "2021SEP10"
+	#define FW_VERSION "0.2.5"
+    #define BUILD_DATE "2021SEP13"
     #define HW_REVB
 	#define CPU_MAP_MEGA2560
 
@@ -18,18 +18,23 @@
 		#define SET_CURRENT_HACK_40 //+40%
 		//#define SET_CURRENT_HACK_60 //+60%
 
+	//choose ONE of the following:
+		//#define VOLTAGE_SPOOFING_DISABLE          //closest to OEM IMA behavior
+		//#define VOLTAGE_SPOOFING_ASSIST_ONLY      //only spoof voltage during assist
+		#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN //always spoof voltage (enables stronger regen)
+
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
 	//Choose which I2C LCD driver to use for 4x20 display:
 		//#define I2C_LIQUID_CRYSTAL //use "LiquidCrystal_I2C.h"
 		//#define I2C_LCD            //use "TwiLiquidCrystal.h"
 		#define LCD_JTS            //use "lcd_I2C.h" (modified version ) 
-
+	
 	//choose which functions control the LEDs
 	#define LED_NORMAL //enable "     LED()" functions (see debug.c)
 	//#define LED_DEBUG  //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
 	#define PRINT_USB_DEBUG_TEXT //prints text sent via debugUSB_debugText() //JTS2doLater: NOT IMPLEMENTED YET
-	#define DEBUG_USB_UPDATE_PERIOD_MS 250 //125 = send data every 125 ms
+	#define DEBUG_USB_UPDATE_PERIOD_MS 250 //250 = send data every 250 ms
 
 	#define LOOP_RATE_MS 10 // Superloop execution rate: 1/LOOP_RATE_MS (e.g. LOOP_RATE_MS==10 is 100 Hz)
 
