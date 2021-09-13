@@ -5,6 +5,7 @@ Fixed, see printed schematic (to be rolled into RevC)
 ...
 
 Potential replacement single CMC+CT transformers with higher working voltage:
+-SM91502AL
 -1840-1033-2-ND
 -118-SM91508AL-ETR-ND
 
@@ -34,3 +35,8 @@ Future isoSPI changes:
 -RC snubber on IP/IM at each LTC6804 (see figure 48b)
 -switch to single transformers (deadbug duals close to each IC).
 -remove ground planes under transformers
+
+...
+
+Change C77 and related to 100 pF... LTC6811-2 recommends 10 nF!
+LTC6811-2 p82 recommends 402 Ohm + 15 pF snubber at each LTC6811's IPA/IMA lines.

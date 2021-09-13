@@ -1,0 +1,2 @@
+Change LTC6804 solder stencil, to reduce pin shorts
+See recommended layout in manual, page72.

@@ -106,6 +106,8 @@ void spoofVoltage_calculateValue(void)
 	spoofedPackVoltage = (uint8_t)((uint16_t)(LTC68042result_packVoltage_get() * ( 167 - adc_getLatestBatteryCurrent_amps() )
 		                    + 135 * adc_getLatestBatteryCurrent_amps() + 8000) >> 8);
 	//JTS2doNow: bound result to 120 <= spoofedPackVoltage <= 200 ?
+
+	//JTS2doNow: add simple multiplier (e.g. 0.94) for those that don't like voltage hacking
 }
 
 //---------------------------------------------------------------------------------------

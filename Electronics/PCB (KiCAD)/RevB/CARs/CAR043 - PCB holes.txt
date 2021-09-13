@@ -1,1 +1,2 @@
 Add holes so ribbon connectors can be zip tied in place
+Add GPIO/holes to allow soldering other wires onto LiBCM
