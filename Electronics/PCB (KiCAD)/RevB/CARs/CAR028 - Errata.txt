@@ -13,3 +13,15 @@ Consider removing constant 5 volt load (or not, it's FET controlled)
 Cover LTC6804s & LTC6820 with conformal coating after FVT
 
 Make cable from 3+ to 2- 20 mm longer (no aid assembly)
+
+Remove "42S" notes from page 2 of schematic.
+Add "54S" notes to page 2
+
+Add note:
+Since cell 18+ (on J13) is connected to cell 19- (on J16), small portion of assist/regen current can flow through this trace.  This causes lower than actual C18 & C19 voltage readings during heave assist, and higher than actual C18 & C19 voltage readings during regen.  Based on my testing:
+-  -52 A regen  causes C18 & C19 to be ~50 mV higher than all other cells
+- +129 A assist causes C18 & C19 to be ~90 mV  lower than all other cells
+
+This is approximately a 1 mV error per regen/assist amp.  
+
+Ideally we'd use an 18S LTC part for 18S packs... and a 12S LTC part for 12S packs.  I don't see a way to fix this 

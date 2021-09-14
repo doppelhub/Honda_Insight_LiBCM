@@ -70,6 +70,11 @@ void spoofVoltage_calculateValue(void)
 		//For those that don't want voltage spoofing, spoof maximum possible pack voltage
 		spoofedPackVoltage = LTC68042result_packVoltage_get() - 12;
 
+
+	#elif defined	VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY
+		if( adc_getLatestBatteryCurrent_amps > 40 ) { spoofedPackVoltage = 120; } //more than 40 amps assist
+		else { spoofedPackVoltage = LTC68042result_packVoltage_get() - 12; } //less than 40 amps assist or any regen
+
 	//////////////////////////////////////////////////////////////////////////
 
 	#elif defined VOLTAGE_SPOOFING_ASSIST_AND_REGEN
@@ -116,7 +121,7 @@ void spoofVoltage_calculateValue(void)
 		
 	//////////////////////////////////////////////////////////////////////////
 
-	#elif defined	VOLTAGE_SPOOFING_ASSIST_ONLY
+	#elif defined	VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE
 		//Maximum assist occurs when MCM thinks pack is at 120 volts.
 		//Therefore, we want to adjust the pack voltage over that range
 		//vAdjustRange_mV = (vPackActual_V - 12 - 120) * 1000
@@ -127,7 +132,7 @@ void spoofVoltage_calculateValue(void)
 		//Next we linearize the (constant) maximum possible assist current:
 		//TOTAL_CURRENT_RANGE_A = 140 A
 		//However, we want to adjust the pack voltage over a much smaller range, so we choose:
-		//TOTAL_CURRENT_RANGE_A = 64 A
+		//TOTAL_CURRENT_RANGE_A = 128 A
 		//This will spoof 120 volts at 64 A assist
 		//We'll need to bound values to: 120 < vSpoof < (vActual - 12)
 
@@ -139,22 +144,22 @@ void spoofVoltage_calculateValue(void)
 		//spoofedVoltage_mV = vPackHighestPosible_mV             - actualCurrent_A * voltageAdjustment_mv_per_A
 
 		//Now we need to streamline this equation:
-		//spoofedVoltage_mV = vAdjustRange_mV          + 120,000   - actualCurrent_A * (vAdjustRange_mV             ) / TOTAL_CURRENT_RANGE_A
-		//spoofedVoltage_mV = vPackActual_mV - 132,000 + 120,000   - actualCurrent_A * (vPackActual_mV     - 132,000) / 64
-		//spoofedVoltage_V  = vPackActual_V  - 132     + 120       - actualCurrent_A * (vPackActual_V      - 132    ) / 64
-		//spoofedVoltage_V  = vPackActual_V  - 12                  - actualCurrent_A * (vPackActual_V/64   - 132/64 )
+		//spoofedVoltage_mV = vAdjustRange_mV          + 120,000  -  actualCurrent_A * (vAdjustRange_mV               ) / TOTAL_CURRENT_RANGE_A
+		//spoofedVoltage_mV = vPackActual_mV - 132,000 + 120,000  -  actualCurrent_A * (vPackActual_mV      - 132,000 ) / 128
+		//spoofedVoltage_V  = vPackActual_V  - 132     + 120      -  actualCurrent_A * (vPackActual_V       - 132     ) / 128
+		//spoofedVoltage_V  = vPackActual_V  - 12                 -  actualCurrent_A * (vPackActual_V/128   - 132/128 )
 
 		//approximate:
-		//spoofedVoltage_V =  vPackActual_V  - 12                  - actualCurrent_A * (vPackActual_V  / 64  -  2   )
-		//spoofedVoltage_V =  vPackActual_V  - 12                  - actualCurrent_A * (vPackActual_V  >> 6  -  2   )
-		//spoofedVoltage_V =  vPackActual_V  - 12                  - actualCurrent_A * (vPackActual_V  >> 6) +  actualCurrent_A  * 2
-		//spoofedVoltage_V =  vPackActual_V  - 12                 -((actualCurrent_A *  vPackActual_V) >> 6) + (actualCurrent_A << 1)
+		//spoofedVoltage_V =  vPackActual_V  - 12                 -  actualCurrent_A * (vPackActual_V  / 128 -  1   )
+		//spoofedVoltage_V =  vPackActual_V  - 12                 -  actualCurrent_A * (vPackActual_V  >> 7  -  1   )
+		//spoofedVoltage_V =  vPackActual_V  - 12                 -  actualCurrent_A * (vPackActual_V  >> 7) + actualCurrent_A
+		//spoofedVoltage_V =  vPackActual_V  - 12                 -((actualCurrent_A *  vPackActual_V) >> 7) + actualCurrent_A
 
 		//rearrange terms:
-		//spoofedVoltage_V = vPackActual_V - 12 + (actualCurrent_A << 2) -((actualCurrent_A * vPackActual_V) >> 6)
+		//spoofedVoltage_V = vPackActual_V - 12 + actualCurrent_A -((actualCurrent_A * vPackActual_V) >> 7)
 
-		spoofedPackVoltage = (uint8_t)((int16_t)LTC68042result_packVoltage_get() - 12 + ((int16_t)adc_getLatestBatteryCurrent_amps() << 1 )
-	  	                    - ( ( (int16_t)adc_getLatestBatteryCurrent_amps() * (int16_t)LTC68042result_packVoltage_get() ) >> 6 ) );
+		spoofedPackVoltage = (uint8_t)((int16_t)LTC68042result_packVoltage_get() - 12 + (int16_t)adc_getLatestBatteryCurrent_amps()
+	  	                    - ( ( (int16_t)adc_getLatestBatteryCurrent_amps() * (int16_t)LTC68042result_packVoltage_get() ) >> 7 ) );
 
 	//////////////////////////////////////////////////////////////////////////
 	

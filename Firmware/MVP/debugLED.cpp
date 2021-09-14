@@ -15,6 +15,9 @@ void debugLED(uint8_t LED_number, bool illuminated)
 			case 3: digitalWrite(PIN_LED3,illuminated); break;
 			case 4: digitalWrite(PIN_LED4,illuminated); break;
 		}
+	#else
+		LED_number  +=0; //prevent "unused parameter" compiler warning
+		illuminated +=0; //prevent "unused parameter" compiler warning
 	#endif
 }
 
@@ -29,6 +32,9 @@ void LED(uint8_t LED_number, bool illuminated)
 			case 3: digitalWrite(PIN_LED3,illuminated); break;
 			case 4: digitalWrite(PIN_LED4,illuminated); break;
 		}
+	#else
+		LED_number  +=0; //prevent "unused parameter" compiler warning
+		illuminated +=0; //prevent "unused parameter" compiler warning
 	#endif
 }
 

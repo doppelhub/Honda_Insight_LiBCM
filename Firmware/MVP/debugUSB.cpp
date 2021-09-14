@@ -68,6 +68,7 @@ void debugUSB_printLatest_data_gridCharger(void)
 
 		debugUSB_printCellBalanceStatus();
 	}
+
 	else if( (millis() - previousMillisCellVoltages >= (DEBUG_USB_UPDATE_PERIOD_MS / (TOTAL_IC + 1) ) )
 		     && (icCellVoltagesToPrint < TOTAL_IC) ) //print all cell data 
 	{	 
@@ -121,12 +122,18 @@ void debugUSB_printLatest_data_keyOn(void)
 
 		icCellVoltagesToPrint = 0;
 	}
-	else if( (millis() - previousMillisCellVoltages >= (DEBUG_USB_UPDATE_PERIOD_MS / (TOTAL_IC + 1) ) )
-		     && (icCellVoltagesToPrint < TOTAL_IC) ) //print all cell data 
-	{	 
-		previousMillisCellVoltages = millis();
-		debugUSB_printOneICsCellVoltages(icCellVoltagesToPrint++, TWO_DECIMAL_PLACES);
-	}
+
+	#ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
+		else if( (millis() - previousMillisCellVoltages >= (DEBUG_USB_UPDATE_PERIOD_MS / (TOTAL_IC + 1) ) )
+			     && (icCellVoltagesToPrint < TOTAL_IC) ) //print all cell data 
+		{	 
+			previousMillisCellVoltages = millis();
+			debugUSB_printOneICsCellVoltages(icCellVoltagesToPrint++, TWO_DECIMAL_PLACES);
+		}
+	#else
+		previousMillisCellVoltages += 0; //prevent "unused variable" compiler warning
+		icCellVoltagesToPrint += 0; //prevent "unused variable" compiler warning
+	#endif
 
 	debugLED(1,OFF);
 }
