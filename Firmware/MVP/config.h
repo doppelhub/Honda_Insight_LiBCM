@@ -7,7 +7,7 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.2.6"
+	#define FW_VERSION "0.2.7"
     #define BUILD_DATE "2021SEP13"
     #define HW_REVB
 	#define CPU_MAP_MEGA2560
@@ -22,7 +22,7 @@
 		//#define VOLTAGE_SPOOFING_DISABLE              //closest to OEM IMA behavior
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE //only spoof during assist, using variable voltage
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //only spoof during assist, using either 120 volts or (vPackActual-12)
-		#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN //always spoof voltage (enables stronger regen)
+		#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //always spoof voltage (enables stronger regen)
 
 	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to display all cell voltages
 

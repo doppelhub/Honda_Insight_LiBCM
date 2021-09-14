@@ -71,8 +71,8 @@ void spoofVoltage_calculateValue(void)
 		spoofedPackVoltage = LTC68042result_packVoltage_get() - 12;
 
 
-	#elif defined	VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY
-		if( adc_getLatestBatteryCurrent_amps > 40 ) { spoofedPackVoltage = 120; } //more than 40 amps assist
+	#elif defined VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY
+		if( adc_getLatestBatteryCurrent_amps() > 40 ) { spoofedPackVoltage = 125; } //more than 40 amps assist
 		else { spoofedPackVoltage = LTC68042result_packVoltage_get() - 12; } //less than 40 amps assist or any regen
 
 	//////////////////////////////////////////////////////////////////////////
@@ -175,7 +175,7 @@ void spoofVoltage_calculateValue(void)
 		spoofedPackVoltage = LTC68042result_packVoltage_get() - 12;
 	} 
 
-	else if( (spoofedPackVoltage < 120) && (LTC68042result_packVoltage_get() > 144) )
+	else if( (spoofedPackVoltage < 120) && (LTC68042result_packVoltage_get() > 140) )
 	{ 
 		spoofedPackVoltage = 120;
 	}
