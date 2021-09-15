@@ -20,8 +20,7 @@ stk500boot.o: stk500boot.c \
  /usr/local/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h \
  /usr/local/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay_basic.h \
  /usr/local/Cellar/avr-gcc@9/9.3.0_3/avr/include/math.h \
- /usr/local/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdlib.h command.h \
- avr_cpunames.h
+ /usr/local/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdlib.h command.h
 
 /usr/local/Cellar/avr-gcc@9/9.3.0_3/avr/include/inttypes.h:
 
@@ -68,5 +67,3 @@ stk500boot.o: stk500boot.c \
 /usr/local/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdlib.h:
 
 command.h:
-
-avr_cpunames.h:
