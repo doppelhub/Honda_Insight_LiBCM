@@ -29,14 +29,10 @@ LICENSE:
 #ifndef EEWE
 	#define EEWE    1
 #endif
+
 #ifndef EEMWE
 	#define EEMWE   2
 #endif
-
-//MEGA2560 onboard LED
-#define PROGLED_PORT	PORTB
-#define PROGLED_DDR		DDRB
-#define PROGLED_PIN		PINB7
 
 #ifndef F_CPU
 	#define F_CPU 16000000UL
@@ -196,8 +192,6 @@ uint32_t count = 0;
 
 //*****************************************************************************
 
-//This starts the main user program
-//for watch dog timer startup
 void (*app_start)(void) = 0x0000;
 
 //*****************************************************************************
@@ -235,14 +229,22 @@ int main(void)
 	WDTCSR	|=	_BV(WDCE) | _BV(WDE);
 	WDTCSR	=	0;
 	__asm__ __volatile__ ("sei");
-	// check if WDT generated the reset, if so, go straight to app
-	if ( (mcuStatusReg & _BV(WDRF)) || (PINB & 0b10000000) ) //JTS PINB7 high when key is on
-	{
-		app_start(); //jump directly to main firmware
+
+	// check if WDT generated the reset
+	if ( mcuStatusReg & _BV(WDRF) ) { app_start(); }
+
+	// check if keyON (PINB7 == HIGH)
+	if ( (PINB & (1<<PINB7)) != 0 )
+	{	//jump directly to main firmware
+		asm volatile(
+		"clr	r30		\n\t"
+		"clr	r31		\n\t"
+		"ijmp	\n\t"
+		);
 	}
 
 	//************************************************************************
-	//If we get here, then the bootloader starts and runs until timeout
+	//If we get here, then the bootloader delay starts and runs until timeout
 
 	boot_timer	=	0;
 	boot_state	=	0;
@@ -604,7 +606,7 @@ int main(void)
 	UART_STATUS_REG	&=	0xfd;
 	boot_rww_enable();				// enable application section
 
-	asm volatile(
+	asm volatile( //jump to user code
 			"clr	r30		\n\t"
 			"clr	r31		\n\t"
 			"ijmp	\n\t"
