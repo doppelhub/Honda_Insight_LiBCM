@@ -14,3 +14,19 @@ void stateOfCharge_handler(void)
 
 	//JTS2doNow: turn LiBCM off if any cell drops below 2.75 volts
 }
+
+/*
+
+-coulombCount
+	-Runs once per second
+	Subtract "zero amp" ADC constant
+	Accumulate with latest sample.
+	32b allows full assist for 18 hours without overflowing when sampled once per second.
+
+-Save SoC(RAM) to EEPROM
+-If value in RAM is more than 10% different from EEPROM value, update EEPROM.
+-Also store if key recently turned off (keyState_previous == on && keyState_now == off)
+-EEPROM writes require 3.3. ms blocking time (interrupts must be disabled)
+	-Example EEPROM code p24 MEGA2560 manual
+
+*/

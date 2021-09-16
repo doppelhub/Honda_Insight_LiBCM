@@ -54,5 +54,7 @@ void loop()
 	//JTS2doLater: Feed watchdog
 	LED(4,LOW);
 
+	//JTS2doLater: Check for Serial Input from user
+
 	previousMillis = millis(); //placed at end to prevent delay at keyON event
 }
