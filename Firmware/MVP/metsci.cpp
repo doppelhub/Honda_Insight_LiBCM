@@ -169,7 +169,6 @@ void METSCI_disable()
   digitalWrite(PIN_METSCI_REn,HIGH);
   //JTS2doLater: Verify we're in low power state
 
-
   METSCI_state = STOPPED;
 }
 

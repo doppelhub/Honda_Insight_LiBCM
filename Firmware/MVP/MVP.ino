@@ -20,7 +20,7 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
   	
   	//JTS2doLater: Configure watchdog
 
-	Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION "," BUILD_DATE "\n\n"));
+	Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION ", " BUILD_DATE "\n"));
 }
 
 void loop()

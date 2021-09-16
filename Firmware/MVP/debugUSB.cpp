@@ -86,8 +86,6 @@ void debugUSB_printLatest_data_keyOn(void)
 	static uint32_t previousMillisCellVoltages = 0;
 	static uint8_t icCellVoltagesToPrint = 0;
 
-	debugLED(1,ON);
-
 	if( millis() - previousMillisDebug >= DEBUG_USB_UPDATE_PERIOD_MS) //JTS2doNow: && (Serial.availableForWrite() >= 63)
 	{
 		previousMillisDebug = millis();
@@ -134,8 +132,6 @@ void debugUSB_printLatest_data_keyOn(void)
 		previousMillisCellVoltages += 0; //prevent "unused variable" compiler warning
 		icCellVoltagesToPrint += 0; //prevent "unused variable" compiler warning
 	#endif
-
-	debugLED(1,OFF);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

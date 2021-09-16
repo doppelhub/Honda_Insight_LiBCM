@@ -5,29 +5,8 @@
 
 #include "libcm.h"
 
-//updates when key_stateChangeHandler() called (prevents mid-loop state changes from affecting loop logic)
-bool keyState_sampled = ON;
-
-////////////////////////////////////////////////////////////////////////////////////
-
-bool key_getSampledState(void) { return keyState_sampled; }
-
-////////////////////////////////////////////////////////////////////////////////////
-
-bool key_didStateChange(void)
-{
-	static bool keyState_previous = KEYON; //initially KEYON to force keyOff cleanup to occur when LiBCM first powered up
-
-	bool didKeyStateChange = NO;
-
-	if(key_getSampledState() != keyState_previous)
-	{
-		didKeyStateChange = YES;
-		keyState_previous = key_getSampledState();
-	}
-
-	return didKeyStateChange;
-}
+uint8_t keyState_sampled  = KEYSTATE_UNINITIALIZED; //updated by key_didStateChange() to prevent mid-loop state changes
+uint8_t keyState_previous = KEYSTATE_UNINITIALIZED;
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -63,14 +42,50 @@ void key_handleKeyEvent_on(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+bool key_didStateChange(void)
+{
+	bool didKeyStateChange = NO;
+
+	keyState_sampled = gpio_keyStateNow(); //after startup, this is the only time LiBCM samples actual key state
+
+	if( (keyState_sampled == KEYOFF) && (keyState_previous == KEYON) ) 
+	{	//key state just changed from 'ON' to 'OFF'.
+		//don't immediately handle keyOFF event, in case this is due to noise.
+		//if the key is still off the next time thru the loop, then we'll handle keyOFF event
+		keyState_previous = KEYOFF_JUSTOCCURRED;
+	}
+	else if( (keyState_sampled == KEYON) && (keyState_previous == KEYOFF_JUSTOCCURRED) )
+	{	//key is now 'ON', but last time was 'OFF', and the time before that it was 'ON'
+		//therefore the previous 'OFF' reading was noise... the key was actually ON all along
+		//no need to do anything.
+		;
+	}
+
+	else if(keyState_sampled != keyState_previous)
+	{
+		didKeyStateChange = YES;
+		keyState_previous = keyState_sampled;
+	}
+	return didKeyStateChange;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
 void key_stateChangeHandler(void)
 {
-	keyState_sampled = gpio_keyStateNow(); //this is the only time LiBCM samples actual key state
-
 	if( key_didStateChange() == YES )
 	{
 		Serial.print(F("\nKey:"));
-		if( key_getSampledState() == KEYON ) { key_handleKeyEvent_on() ; }
-		if( key_getSampledState() == KEYOFF) { key_handleKeyEvent_off(); }
+		if( keyState_sampled == KEYON ) { key_handleKeyEvent_on() ; }
+		if( keyState_sampled == KEYOFF) { key_handleKeyEvent_off(); }
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+//only called outside this file
+uint8_t key_getSampledState(void) 
+{ 
+	if(keyState_previous == KEYOFF_JUSTOCCURRED) { return KEYON;            } //prevent noise from accidentally turning LiBCM off
+	else                                         { return keyState_sampled; }
 }
