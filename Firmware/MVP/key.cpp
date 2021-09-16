@@ -42,6 +42,7 @@ void key_handleKeyEvent_off(void)
     LTC6804configure_handleKeyOff();
     lcd_displayOFF();
     vPackSpoof_handleKeyOFF();
+    //JTS2doLater: store keyOff time, so LiBCM can turn itself off (e.g. after an hour)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

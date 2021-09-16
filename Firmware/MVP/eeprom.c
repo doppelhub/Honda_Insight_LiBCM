@@ -1,3 +1,5 @@
+//JTS2doLater: eeprom.c isn't wrapped into MVP yet 
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 

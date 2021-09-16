@@ -17,7 +17,9 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 	LTC68042configure_initialize();
 
 	if( gpio_keyStateNow() == KEYON ){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while keyON (e.g. while driving)
-  
+  	
+  	//JTS2doLater: Configure watchdog
+
 	Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION "," BUILD_DATE "\n\n"));
 }
 
@@ -49,6 +51,7 @@ void loop()
 
 	LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left //if off, exceeding LOOP_RATE_MS
 	while( (millis() - previousMillis) < LOOP_RATE_MS ) { ; } //wait here to start next loop //JTS2doLater: Determine Behavior after overflow (50 days)
+	//JTS2doLater: Feed watchdog
 	LED(4,LOW);
 
 	previousMillis = millis(); //placed at end to prevent delay at keyON event
