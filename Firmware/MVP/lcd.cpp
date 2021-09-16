@@ -386,6 +386,7 @@ void lcd_displayOFF(void)
 		lcd2.setCursor(0,0);
 		lcd2.print("LiBCM v" + String(FW_VERSION) );
 		delay(1000); //allow time for operator to read firmware version
+		//JTS2doLater: refresh screen during keyON (will need to send one instruction per loop)
 
 		Wire.end();
 		delay(50);

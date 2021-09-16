@@ -48,7 +48,7 @@ bool key_didStateChange(void)
 
 	keyState_sampled = gpio_keyStateNow(); //after startup, this is the only time LiBCM samples actual key state
 
-	if( (keyState_sampled == KEYOFF) && (keyState_previous == KEYON) ) 
+	if( (keyState_sampled == KEYOFF) && ((keyState_previous == KEYON) || (keyState_previous == KEYSTATE_UNINITIALIZED)) ) 
 	{	//key state just changed from 'ON' to 'OFF'.
 		//don't immediately handle keyOFF event, in case this is due to noise.
 		//if the key is still off the next time thru the loop, then we'll handle keyOFF event
