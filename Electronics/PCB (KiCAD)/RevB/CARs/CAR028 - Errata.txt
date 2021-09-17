@@ -25,3 +25,5 @@ Since cell 18+ (on J13) is connected to cell 19- (on J16), small portion of assi
 This is approximately a 1 mV error per regen/assist amp.  
 
 Ideally we'd use an 18S LTC part for 18S packs... and a 12S LTC part for 12S packs.  I don't see a way to fix this 
+
+Move LiDisplay connector to top of PCB (so it can be plugged in after-the-fact.
