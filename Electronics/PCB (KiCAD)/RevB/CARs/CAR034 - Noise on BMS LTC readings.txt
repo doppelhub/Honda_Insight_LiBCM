@@ -5,3 +5,8 @@ Manual says R > 100 Ohms begins to cause voltage error, which can either be char
 Datasheet says cell-to-cell-to-cell capacitor architecture makes actual LPF cutoff "about an order of magnitude higher than calculations would predict."
 
 Consider adding new 100 Ohm component (replaces 120).  Where 120 ohms needed (e.g. LTC1487 termination), use 100+20.
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Changed values

@@ -28,3 +28,8 @@ Let's see if this works if we leave R65 at 220 Ohms, and replace D16 with 82 Ohm
 ...
 
 As expected, (only) replacing D16 with 82 Ohm resistor allows V_CE to hit zero volts.  Going with this.
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution: 
+Remove D16 LED.  Total series resistance (R65+D16) should be 302 Ohms (100+100+100).

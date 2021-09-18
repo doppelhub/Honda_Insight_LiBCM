@@ -1,0 +1,12 @@
+Since cell 18+ (on J13) is connected to cell 19- (on J16), small portion of assist/regen current can flow through this trace.  This causes lower than actual C18 & C19 voltage readings during heave assist, and higher than actual C18 & C19 voltage readings during regen.  Based on my testing:
+-  -52 A regen  causes C18 & C19 to be ~50 mV higher than all other cells
+- +129 A assist causes C18 & C19 to be ~90 mV  lower than all other cells
+
+This is approximately a 1 mV error per regen/assist amp. We could add a correction voltage in firmware (to just these cells), but based on the data I saw that could cause more harm than good.  I think the real answer is to just count coulombs, and then only look at cell voltages at low/no current... we'd still have "cell is way low, way high" overrides, but the actual cell voltage won't be that important once we know the pack amperage and count coulombs.
+
+I don't see a way to fix this as long as we're using 18S packs with 12S chips.  Ideally we'd move the 18S packs to LTC6813... but that part is unobtanium.
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Do nothing.

@@ -23,12 +23,29 @@ So if we program both LTC1487s to be in "low power mode":
  pinMode(4,OUTPUT);
  digitalWrite(4,HIGH);
 
-...then the relay won't turn on, but we still get voltage leaking into BATTSCI/METSCI rails.  The pullup (R43/R45) and pulldown (R44/R46) resistors (all 1k) tied to the BATTSCI/METSCI lines should inject some current (e.g. 5 volts / 1 k = 5 mA per bus).  This doesn't appear to be enough current to turn the MCM on (enough to energize the fans, at least).
+...then the relay won't turn on, but we still get voltage leaking into BATTSCI/METSCI rails.  The pullup (R43/R45) and pulldown (R44/R46) resistors (all 1k) tied to the BATTSCI/METSCI lines should inject some current (e.g. 5 volts / 1 k = 5 mA per bus).  This doesn't appear to be enough current to turn the MCM on (enough to energize the fans, at least).  However, it does place a constant 15 mW load - consumed inside the MCM? - on the lithium pack whenever LiBCM's 5 volt rail is on AND the key is off.  
+
+Considering LiBCM pulls 825 mW while running full tilt (with key off), that's less than 2% of that power consumption.
+
+One solution would be to disconnect the +5V rail from METSCI2 & BATTSCI2 with a high-side FET... but that adds quite a few parts.  Need to verify this actually removes the above-mentioned drain prior to adding those parts.  Test:
+15 mW is ~3.9 mA thru a 1k resistor (R43).  So we should see 1.1 volts across R43 when the BCM IMA harness connector is plugged in.  
+
+Instead, we're actually seeing 2.36 volts across R43, along with 2.33 volts across R44 (from METSCI1 to ground).  This is due to R40, which - along with R44 & R43 - creates an always-on 2k12 series resistance from +5V to GND.  R40 has 281 mV across it.  Note that BATTSCI's identical circuit has identical voltage measurements across identical parts.
+
+That's 11 mW consumed by these three resistors whenever +5V is on... BATTSCI has an identical load, so in total there's a constant 22 mW load from these biasing resistors whenever +5V is on.
 
 ...
 
-So it makes sense then that the pull up/down resistors inject some current (at 2.5 volts no load) into the MCM.  Probably no good way to fix this.
+So it makes sense then that the pull up/down resistors inject some current (at 2.5 volts no load) into the MCM.
 
 However, we can fix the "fans turn on when Mega unprogrammed" issue by adding a weak pulldown to METSCI_DE.  I've added a 71.5k pulldown to METSCI_DE on the beta boards I've shipped (#004/005/007).
 
 For RevC, need to add pulldown to METSCI_DE & BATTSCI_DE.  
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Add high impedance pulldown to METSCI_DE & BATTSCI_DE (e.g. 71.5k).
+Add DNP pulldowns to METSCI_REn & BATTSCI_REn.
+Add high-side disable FETs between +5V and R43/R45.  Can reuse existing I_SENSOR_EN signal to control.
+In case there's trouble with high-side driver, add DNP between +5V & +5V_Switched

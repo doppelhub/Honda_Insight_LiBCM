@@ -17,3 +17,8 @@ R32 wasn't soldered properly.  Thus, 12V_IGNITION never reached 5V_ENABLE.  Easy
 
 ...
 Verified fixed on RevB
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+No change needed.

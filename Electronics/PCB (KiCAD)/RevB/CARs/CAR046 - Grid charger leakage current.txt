@@ -15,8 +15,10 @@ Just add a diode... who cares about a 0.7 volt drop?  That's 280 mW while chargi
 Existing diode's breakdown voltage is too low.  Same with existing NPNs and FETs.
 
 Ideal part:
-3191-GS2MA-F1-0000HFTR-ND (600 nA 200 volts) DO-214AC
+3191-GS2MA-F1-0000HFTR-ND (600 nA 200 volts) DO-214AC (cannot find this part anymore!)
 
 Backup:
-SA2M-E3/5ATGICT-ND (1 uA leakage @ 200 volts)
+SA2M-E3/5ATGICT-ND (1 uA leakage @ 200 volts) (ordered a bunch)
 GS2JFL-TPMSCT-ND 1 uA @ 200 v
+
+/////////////////////////////////////////////////////////////////////////////////

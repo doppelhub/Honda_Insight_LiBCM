@@ -2,7 +2,7 @@ Change R82 to cheaper resistor (7xkOhm)
 
 P&P: C151 won't place if small tip installed on left nozzle.  X travel limit.
 Solution: Make C151 larger cap (68 nF), and place 22 nF on C152
-Note: I've already made this change to the P&P file
+Note: I've already made this change to the P&P file (need to change on schematic)
 
 D5 'diode' silkcreen is backwards... need to flip silkscreen symbol 180 degrees.
 
@@ -26,4 +26,8 @@ This is approximately a 1 mV error per regen/assist amp.
 
 Ideally we'd use an 18S LTC part for 18S packs... and a 12S LTC part for 12S packs.  I don't see a way to fix this 
 
-Move LiDisplay connector to top of PCB (so it can be plugged in after-the-fact.
+Move LiDisplay connector to top of PCB (so it can be plugged in after-the-fact.  2057-CDR-04-GR-ND
+
+Can we remove fan diodes?
+
+/////////////////////////////////////////////////////////////////////////////////

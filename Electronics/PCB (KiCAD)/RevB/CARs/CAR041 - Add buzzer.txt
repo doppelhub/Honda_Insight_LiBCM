@@ -1,2 +1,5 @@
-Add pullups to I2C DAT/CLK lines.  Also add LPF to prevent data glitch.
+Add a buzzer
 
+/////////////////////////////////////////////////////////////////////////////////
+
+433-1028-ND

@@ -1,1 +1,13 @@
 Probably a firmware fix... but when LiBCM has turned itself off - or use has turned off IMA switch - BATTSCI isn't sent fast enough, which causes MCM to throw a P-code.
+
+Fix:
+Required several firmware changes:
+-CEL fuses set to 0b10, which boots 4 ms after PoReset
+-bootloader bails immediately if keyON is high (i.e. key is on)
+-firmware initializes display on keyOFF (because 4x20 display timing requirements suck).
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+
+It's not specifically required (because LiBCM can now boot fast enough (with the above changes)), but I'm going to a DNP 100 nF + 20 Ohm from +12V_LiBCM to buck enable circuit.    This sends a pulse onto the enable line when the IMA switch first turns on.

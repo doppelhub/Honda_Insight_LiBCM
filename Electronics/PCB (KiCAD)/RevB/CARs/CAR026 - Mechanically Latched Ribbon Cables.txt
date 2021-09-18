@@ -1,5 +1,44 @@
 Mario suggests using a mechanically latched connector.
 It's just a part change... will consider during beta testing.
 
-Possible latching connector:
+Possible latching ribbon connector:
 609-3070-ND
+
+Possible latching PCB housings:
+https://www.digikey.com/en/products/detail/cnc-tech/3010-20-001-12-00/3441617
+https://www.digikey.com/en/products/detail/amphenol-icc-fci/71918-120LF/1002070
+609-6190-ND
+
+Another possibility is to add holes at connector top/bottom, and then zip tie them in place.
+
+...
+
+Since ribbon headers mostly have the same footprint, there's no need to solve this before ordering the RevC PCB.  I'm going to order a few different connectors and see what works.
+
+18S:
+Seated connector height important, so it makes sense to get a low profile latching ribbon connector (because latching board connectors are quite a bit taller):
+609-3070-ND
+
+Could also use a latching right angle board connector:
+609-86130202113345E1LF-ND (ordered a bunch)
+
+
+...
+
+12S:
+Ideally we'd do the same as 18S, but can't find any latching ribbon connectors in stock (e.g. 609-3563-ND).
+Latching board connectors:	
+HRL14H-ND (ordered a bunch, but EOL)
+609-5970-ND
+2057-MHR-14-HUAL-ND
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+
+Ordered right angle latching connectors.  Solves two problems (the other being the lack of vertical height).
+
+12S: HRL14H-ND​
+18S: ​609-86130202113345E1LF-ND​
+
+Need to move J13 down so it doesn't xfere with fan mounting bolt

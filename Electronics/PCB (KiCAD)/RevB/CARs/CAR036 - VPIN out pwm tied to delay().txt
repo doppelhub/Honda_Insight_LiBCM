@@ -2,3 +2,7 @@ VPIN_OUT PWM is tied to Arduino's internal timer, which controls delay(), etc.  
 
 Consider changing VPIN_IN LPF to 10k + 100n
 Don't increase tau on VPIN_OUT, because it's already 10 ms... MCM throws an error if it takes too long.
+
+Consider swapping mega P12 with mega P4, so VPIN_OUT can use MEGA P12 PWM.
+
+/////////////////////////////////////////////////////////////////////////////////

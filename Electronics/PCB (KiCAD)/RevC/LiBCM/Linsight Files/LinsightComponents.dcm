@@ -1,0 +1,29 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP ATMEGA1280-A-NoFill
+D TQFP100, 128k Flash, 8k SRAM, 4k EEPROM, JTAG
+K AVR 8bit Microcontroller MegaAVR
+F http://www.atmel.com/Images/Atmel-2549-8-bit-AVR-Microcontroller-ATmega640-1280-1281-2560-2561_datasheet.pdf
+$ENDCMP
+#
+$CMP GND_ENG
+K POWER, PWR
+$ENDCMP
+#
+$CMP GND_ISO_A
+K POWER, PWR
+$ENDCMP
+#
+$CMP GND_ISO_B
+K POWER, PWR
+$ENDCMP
+#
+$CMP GND_ISO_C
+K POWER, PWR
+$ENDCMP
+#
+$CMP GND_SEAT
+K POWER, PWR
+$ENDCMP
+#
+#End Doc Library

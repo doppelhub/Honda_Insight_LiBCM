@@ -11,3 +11,7 @@ Consider removing 120 (100+20), and adding 100, so that we don't violate LTC6804
 20p becomes 100p
 
 flyback diode
+
+Replace 3k3 with some new value
+
+/////////////////////////////////////////////////////////////////////////////////

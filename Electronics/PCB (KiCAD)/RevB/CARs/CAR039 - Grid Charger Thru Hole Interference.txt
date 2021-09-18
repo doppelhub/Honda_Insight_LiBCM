@@ -1,0 +1,6 @@
+Move grid charger harness holes down so they don't hit the IMA bay's top plastic rib.
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Move grid charger holes down as far as possible.

@@ -40,3 +40,8 @@ Future isoSPI changes:
 
 Change C77 and related to 100 pF... LTC6811-2 recommends 10 nF!
 LTC6811-2 p82 recommends 402 Ohm + 15 pF snubber at each LTC6811's IPA/IMA lines.
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Implemented component changes per empirical test results (error rate is now 0).

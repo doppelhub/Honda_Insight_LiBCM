@@ -1,7 +1,5 @@
 Each time MCM samples ConnE voltage (1 S/s), the load placed on the spoofed MCM ConnE circuit causes that high impedance source to droop 50 volts (as viewed with differential probe on scope).
 
-However, this probably isn't the largest contributor to the voltage error, as measured by MCM.  Peter points out that the MCM has a 100 kOhm pulldown resistor (presumably to HVDC-).  Given this information, it makes sense that the spoofing circuit on LiBCM PCB drops the voltage, since it places 10 kOhm series resistors between HVDC+ & HVDC.
-
 Therefore, when the battery is at 178 volts... the OBDIIC&C reads 163 volts.  Need to look into more.  MCM doesn't seem to care that the voltage is off by 15 volts (between BATTSCI reporting 178 & MCM'E' measuring 163.
 
 If needed, we can use lower resistance (but higher power) voltage divider.  
@@ -74,3 +72,10 @@ P1648(64) (BATTSCI data bad)
 I think the issue is that as I connect the lambda gen, the HVDC-ST circuit is detecting a fault.  I was able to get P1648(64) several times in a row while attempting the transfer.
 
 So can't test to see how far off MCM'E' can be.  But certainly at 40 volts the MCM cares.
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Increasing the capacitance and lowering the resistance didn't appreciably change the behavior.  Characterized it instead... seems to be the same across all vehicles.  If there is a solution, I didn't come up with it.
+
+No further action take on RevC design.

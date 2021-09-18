@@ -18,3 +18,5 @@ SPI_CLOCK_DIV64: SPI CLK/MOSI/MISO look great.
 
 Conclusion:
 Change SPI to 20ish pF with 20 Ohm resistor... that'll let us add LPF if needed
+
+/////////////////////////////////////////////////////////////////////////////////
