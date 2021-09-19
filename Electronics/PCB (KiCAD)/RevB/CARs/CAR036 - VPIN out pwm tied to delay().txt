@@ -6,3 +6,7 @@ Don't increase tau on VPIN_OUT, because it's already 10 ms... MCM throws an erro
 Consider swapping mega P12 with mega P4, so VPIN_OUT can use MEGA P12 PWM.
 
 /////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+VPIN_OUT_PWM now connects to MEGA P12
+VPIN_IN_NOISY LPF is (768 Ohms + 1 uF) 

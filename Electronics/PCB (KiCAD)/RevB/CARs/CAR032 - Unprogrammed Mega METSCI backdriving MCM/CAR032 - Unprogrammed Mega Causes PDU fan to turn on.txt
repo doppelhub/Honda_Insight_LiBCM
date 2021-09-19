@@ -46,6 +46,4 @@ For RevC, need to add pulldown to METSCI_DE & BATTSCI_DE.
 
 Solution:
 Add high impedance pulldown to METSCI_DE & BATTSCI_DE (e.g. 71.5k).
-Add DNP pulldowns to METSCI_REn & BATTSCI_REn.
 Add high-side disable FETs between +5V and R43/R45.  Can reuse existing I_SENSOR_EN signal to control.
-In case there's trouble with high-side driver, add DNP between +5V & +5V_Switched

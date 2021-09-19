@@ -1,8 +1,4 @@
-Add a thru hole to allow soldering temp sensors to PCB, which are attached directly to each battery.
-
-Find temp sensor
-
-/////////////////////////////////////////////////////////////////////////////////
+Add temp sensors that are attached directly to each battery.
 
 Bolt-on sensor that plugs into headers on LiBCM PCB
 900-2138651635-ND
@@ -19,3 +15,10 @@ Also add standard 0.1" thru hole connector (e.g. underneath this connector... is
 Finally, need to add an extra HVDC isolation around wire... it needs to be able to fit around either the ring terminal (dimensions unspecified) or the Molex connector (4.12x4.5 mm)... or else we'll need to remove the terminals from their housings, and then reinsert them (fun fun).
 
 Trying this extra shielding out: P1056CL005-ND
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Temp sensor: 900-2138651635-ND
+Need to add wire holes thru PCB
+Add SMT connector: WM26831CT-ND

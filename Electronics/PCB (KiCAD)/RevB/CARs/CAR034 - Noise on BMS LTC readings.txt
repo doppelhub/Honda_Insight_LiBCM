@@ -9,4 +9,4 @@ Consider adding new 100 Ohm component (replaces 120).  Where 120 ohms needed (e.
 /////////////////////////////////////////////////////////////////////////////////
 
 Solution:
-Changed values
+Changed LPF to (100 nF + 100 Ohm)

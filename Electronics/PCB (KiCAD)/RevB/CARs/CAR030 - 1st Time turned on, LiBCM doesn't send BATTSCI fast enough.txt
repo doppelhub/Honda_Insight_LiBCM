@@ -10,4 +10,4 @@ Required several firmware changes:
 
 Solution:
 
-It's not specifically required (because LiBCM can now boot fast enough (with the above changes)), but I'm going to a DNP 100 nF + 20 Ohm from +12V_LiBCM to buck enable circuit.    This sends a pulse onto the enable line when the IMA switch first turns on.
+It's not specifically required (because LiBCM can now boot fast enough (with the above changes)), but I'm going to add a DNP 100 nF + 20 Ohm from +12V_LiBCM to buck enable circuit.    This sends a pulse onto the enable line when the IMA switch first turns on.

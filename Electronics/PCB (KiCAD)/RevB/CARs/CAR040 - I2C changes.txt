@@ -1,3 +1,7 @@
 Add pullups to I2C DAT/CLK lines.  Also add LPF to prevent data glitch.
 
 /////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Added pullups to I2C
+Added LPF to I2C

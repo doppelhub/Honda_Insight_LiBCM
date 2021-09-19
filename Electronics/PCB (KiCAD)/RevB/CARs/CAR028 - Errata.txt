@@ -6,16 +6,9 @@ Note: I've already made this change to the P&P file (need to change on schematic
 
 D5 'diode' silkcreen is backwards... need to flip silkscreen symbol 180 degrees.
 
-D16 replaced with 82R0 (see CAR029)
-
 Consider removing constant 5 volt load (or not, it's FET controlled)
 
 Cover LTC6804s & LTC6820 with conformal coating after FVT
-
-Make cable from 3+ to 2- 20 mm longer (no aid assembly)
-
-Remove "42S" notes from page 2 of schematic.
-Add "54S" notes to page 2
 
 Add note:
 Since cell 18+ (on J13) is connected to cell 19- (on J16), small portion of assist/regen current can flow through this trace.  This causes lower than actual C18 & C19 voltage readings during heave assist, and higher than actual C18 & C19 voltage readings during regen.  Based on my testing:
@@ -26,8 +19,10 @@ This is approximately a 1 mV error per regen/assist amp.
 
 Ideally we'd use an 18S LTC part for 18S packs... and a 12S LTC part for 12S packs.  I don't see a way to fix this 
 
-Move LiDisplay connector to top of PCB (so it can be plugged in after-the-fact.  2057-CDR-04-GR-ND
-
-Can we remove fan diodes?
-
 /////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+-R82 changed to 7k32
+-Swapped C151 & C152
+-Rotated D5 silkscreen
+-DNP'd constant 5 volt load resistors

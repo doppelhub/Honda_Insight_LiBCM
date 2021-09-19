@@ -20,3 +20,9 @@ Conclusion:
 Change SPI to 20ish pF with 20 Ohm resistor... that'll let us add LPF if needed
 
 /////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+LPF Fc=16 MHz:
+(100 Ohm + 100 pF)
+
+Removed SPI from BCM Connector.  Added 0.1" SIP instead

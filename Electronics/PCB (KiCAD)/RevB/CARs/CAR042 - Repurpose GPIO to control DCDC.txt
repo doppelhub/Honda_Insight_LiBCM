@@ -1,3 +1,6 @@
 Add a thru hole to allow soldering the DCDC GRN/BLK wire to GPIO1.  This will allow LiBCM to enable to DCDC converter n seconds after the key turns on.
 
 /////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Reused existing PCB holes... reorganized pin order to allow a 4-terminal insert (with two unpopulated GPIO holes).

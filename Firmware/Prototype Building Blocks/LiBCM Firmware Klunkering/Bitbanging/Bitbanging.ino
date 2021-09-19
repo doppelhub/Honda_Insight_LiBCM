@@ -87,7 +87,7 @@ void setup() {
   //TCCR0B = (TCCR0B & B11111000) | B00000010; // for PWM frequency of  7813 Hz D04 & D13
   //TCCR0B = (TCCR0B & B11111000) | B00000011; // for PWM frequency of   977 Hz D04 & D13 (DEFAULT)
   
-  TCCR1B = (TCCR1B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D11 & D12
+  m = (TCCR1B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D11 & D12
   //TCCR2B = (TCCR2B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D09 & D10
   //TCCR3B = (TCCR3B & B11111000) | B00000001; // for PWM frequency of 31372 Hz D02 & D03 & D05
   

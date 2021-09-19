@@ -1,0 +1,7 @@
+Move LiDisplay connector to top of PCB (so it can be plugged in after-the-fact.
+2057-CDR-04-GR-ND
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+2057-CDR-04-GR-ND

@@ -5,3 +5,7 @@ Add LPF to opamp output, to filter noise sent to MEGA2560 ADC.  10k+100n should 
 Also note that input resistance isn't identical on opamp inputs.
 
 /////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Added Differential capacitor
+Added LPF

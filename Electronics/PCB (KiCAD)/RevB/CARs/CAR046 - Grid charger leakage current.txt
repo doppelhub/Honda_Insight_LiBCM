@@ -22,3 +22,6 @@ SA2M-E3/5ATGICT-ND (1 uA leakage @ 200 volts) (ordered a bunch)
 GS2JFL-TPMSCT-ND 1 uA @ 200 v
 
 /////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Added diode to grid charger
