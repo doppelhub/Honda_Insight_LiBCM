@@ -112,6 +112,7 @@ bool lcd_printStackVoltage_spoofed(void)
 
 ////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Reset errorCount to 0 if greater than 99 counts
 //only call this function when an error occurs
 bool lcd_printNumErrors(void)
 {
@@ -363,6 +364,7 @@ void lcd_refresh(void)
 
 ////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Add pack amps and temperature
 void lcd_printStaticText(void) //screen updates are slow //only call during keyOFF
 {
 	#ifdef LCD_4X20_CONNECTED

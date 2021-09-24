@@ -30,3 +30,5 @@ void stateOfCharge_handler(void)
 	-Example EEPROM code p24 MEGA2560 manual
 
 */
+
+//JTS2doLater: Disable regen & grid charger if any cell drops below some minimum 'safe' voltage
