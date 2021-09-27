@@ -134,19 +134,19 @@ void BATTSCI_sendFrames()
           //JTS2doNow: Change SoC to 81%
 
         // Regen & Assist, no background charge   
-        } else if (vCellWithESR_counts >= 37000) { //37000 = 3.7000 volts                                               
+        } else if (vCellWithESR_counts >= 36000) { //36000 = 3.6000 volts                                               
           frameSum_87 += BATTSCI_writeByte( 0x15 );                                         //Battery SoC (upper byte)
           frameSum_87 += BATTSCI_writeByte( 0x50 ); //72% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('7');
 
         // Regen & Assist, with background charge 
-        } else if (vCellWithESR_counts >= 36000) { //34500 = 3.4500 volts                                            
+        } else if (vCellWithESR_counts >= 34500) { //34500 = 3.4500 volts                                            
           frameSum_87 += BATTSCI_writeByte( 0x14 );                                         //Battery SoC (upper byte)
           frameSum_87 += BATTSCI_writeByte( 0x58 ); //60% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('6');
 
         // Regen & Assist, with background charge   
-        } else if (vCellWithESR_counts >= 35000) { //33000 = 3.3000 volts                                              
+        } else if (vCellWithESR_counts >= 33000) { //33000 = 3.3000 volts                                              
           frameSum_87 += BATTSCI_writeByte( 0x13 );                                         //Battery SoC (upper byte)
           frameSum_87 += BATTSCI_writeByte( 0x10 ); //40% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('4');
