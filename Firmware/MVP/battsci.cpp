@@ -126,32 +126,32 @@ void BATTSCI_sendFrames()
       else
       { //all cells above 3.000 volts
 
-        // Battery is full. Disable Regen.   
+        // Battery is full. Disable Regen above this number.  
         if        (vCellWithESR_counts >= 39500) { //39500 = 3.9500 volts                                                    
           frameSum_87 += BATTSCI_writeByte( 0x16 );                                         //Battery SoC (upper byte)
           frameSum_87 += BATTSCI_writeByte( 0x20 ); //80% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('8');
           //JTS2doNow: Change SoC to 81%
 
-        // Regen & Assist, no background charge   
-        } else if (vCellWithESR_counts >= 37500) { //37500 = 3.7500 volts                                               
+        // Regen & Assist, no background charge above this number
+        } else if (vCellWithESR_counts >= 36000) { //36000 = 3.6000 volts                                               
           frameSum_87 += BATTSCI_writeByte( 0x15 );                                         //Battery SoC (upper byte)
           frameSum_87 += BATTSCI_writeByte( 0x50 ); //72% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('7');
 
-        // Regen & Assist, with background charge 
+        // Regen & Assist, with background charge above this number.
         } else if (vCellWithESR_counts >= 34500) { //34500 = 3.4500 volts                                            
           frameSum_87 += BATTSCI_writeByte( 0x14 );                                         //Battery SoC (upper byte)
           frameSum_87 += BATTSCI_writeByte( 0x58 ); //60% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('6');
 
-        // Regen & Assist, with background charge   
+        // Regen & Assist, with background charge above this number.
         } else if (vCellWithESR_counts >= 33000) { //33000 = 3.3000 volts                                              
           frameSum_87 += BATTSCI_writeByte( 0x13 );                                         //Battery SoC (upper byte)
           frameSum_87 += BATTSCI_writeByte( 0x10 ); //40% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('4');
 
-        // Battery is empty. Disable Assist.  
+        // Battery is empty. Disable Assist.
         } else {
           frameSum_87 += BATTSCI_writeByte( 0x11 );                                         //Battery SoC (upper byte)
           frameSum_87 += BATTSCI_writeByte( 0x48 ); //20% SoC                               //Battery SoC (lower byte)
