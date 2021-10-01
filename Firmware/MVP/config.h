@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.3.2N"
-    #define BUILD_DATE "2021SEP27"
+	#define FW_VERSION "0.3.2N TEST
+    #define BUILD_DATE "2021OCT01"
     #define HW_REVB
 	#define CPU_MAP_MEGA2560
 
@@ -30,8 +30,8 @@
 	//Choose which I2C LCD driver to use for 4x20 display:
 		//#define I2C_LIQUID_CRYSTAL //use "LiquidCrystal_I2C.h"
 		//#define I2C_LCD            //use "TwiLiquidCrystal.h"
-		#define LCD_JTS            //use "lcd_I2C.h" (modified version ) 
-	
+		#define LCD_JTS            //use "lcd_I2C.h" (modified version )
+
 	//choose which functions control the LEDs
 	#define LED_NORMAL //enable "     LED()" functions (see debug.c)
 	//#define LED_DEBUG  //enable "debugLED()" functions (FYI: blinkLED functions won't work)
