@@ -17,6 +17,13 @@ uint8_t BATTSCI_state = STOPPED;
 uint8_t spoofedVoltageToSend = 0;
 int16_t spoofedCurrentToSend = 0; //JTS2doLater spoofed pack current can probably be int8_t (+127 A)
 
+byte SoC_Bytes[] = {0x11, 0x48};
+uint8_t calculatedSoC = 20;
+
+uint8_t tempSoC = 19;
+void    tempSoC_set(uint8_t newSoC) { tempSoC = newSoC; }
+uint8_t tempSoC_get(void                 ) { return tempSoC; }
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void BATTSCI_begin(void)
@@ -86,6 +93,98 @@ uint8_t BATTSCI_calculateChecksum( uint8_t frameSum )
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void BATTSCI_evaluateSoCBytes() {
+  switch(calculatedSoC)
+  {
+    // Wrapping for 2nd byte seems to happen at 0x00 (000) and 0x7F (127)
+    case 80: SoC_Bytes[0] = 0x16; SoC_Bytes[1] = 0x20; break;
+    case 79: SoC_Bytes[0] = 0x16; SoC_Bytes[1] = 0x16; break;
+    case 78: SoC_Bytes[0] = 0x16; SoC_Bytes[1] = 0x0C; break;
+    case 77: SoC_Bytes[0] = 0x16; SoC_Bytes[1] = 0x02; break;
+    case 76: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x78; break;
+    case 75: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x6E; break;
+    case 74: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x64; break;
+    case 73: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x5A; break;
+    case 72: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x50; break;
+    case 71: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x46; break;
+    case 70: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x3C; break;
+
+    case 69: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x32; break;
+    case 68: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x28; break;
+    case 67: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x1E; break;
+    case 66: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x14; break;
+    case 65: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x0A; break;
+    case 64: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x00; break;
+    case 63: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x76; break;
+    case 62: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x6C; break;
+    case 61: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x62; break;
+    case 60: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x58; break;
+
+    case 59: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x4E; break;
+    case 58: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x44; break;
+    case 57: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x3A; break;
+    case 56: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x30; break;
+    case 55: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x26; break;
+    case 54: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x1C; break;
+    case 53: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x12; break;
+    case 52: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x08; break;
+    case 51: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x7E; break;
+    case 50: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x74; break;
+
+    case 49: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x6A; break;
+    case 48: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x60; break;
+    case 47: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x56; break;
+    case 46: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x4C; break;
+    case 45: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x42; break;
+    case 44: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x38; break;
+    case 43: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x2E; break;
+    case 42: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x24; break;
+    case 41: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x1A; break;
+    case 40: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x10; break;
+
+    case 39: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x06; break;
+    case 38: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x7C; break;
+    case 37: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x72; break;
+    case 36: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x68; break;
+    case 35: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x5E; break;
+    case 34: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x54; break;
+    case 33: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x4A; break;
+    case 32: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x40; break;
+    case 31: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x36; break;
+    case 30: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x2C; break;
+
+    case 29: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x22; break;
+    case 28: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x18; break;
+    case 27: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x0E; break;
+    case 26: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x04; break;
+    case 25: SoC_Bytes[0] = 0x11; SoC_Bytes[1] = 0x7A; break;
+    case 24: SoC_Bytes[0] = 0x11; SoC_Bytes[1] = 0x70; break;
+    case 23: SoC_Bytes[0] = 0x11; SoC_Bytes[1] = 0x66; break;
+    case 22: SoC_Bytes[0] = 0x11; SoC_Bytes[1] = 0x5C; break;
+    case 21: SoC_Bytes[0] = 0x11; SoC_Bytes[1] = 0x52; break;
+    case 20: SoC_Bytes[0] = 0x11; SoC_Bytes[1] = 0x48; break;
+
+    default: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x58; break; // Default to 60 if there's an issue for some reason
+  }
+}
+
+void BATTSCI_calculateSoC(uint16_t voltage)
+{
+  if (voltage >= 39500) {   // No Regen Allowed
+    calculatedSoC = 80;
+  } else if (voltage >= 36000) {  // No BG Regen Allowed
+    uint8_t tempSoCPercent = map(voltage, 36000, 39499, 72, 79);
+    calculatedSoC = tempSoCPercent;
+  } else if ((voltage < 36000) && (voltage > 33400)) {  // BG Regen Allowed
+    uint8_t tempSoCPercent = map(voltage, 33500, 35999, 21, 71);
+    calculatedSoC = tempSoCPercent;
+  } else if (voltage <= 33400) {  // No Assist Allowed
+    calculatedSoC = 20;
+  }
+  tempSoC_set(calculatedSoC);
+  BATTSCI_evaluateSoCBytes();
+}
+
 void BATTSCI_sendFrames()
 { //t=80 microseconds max
   static uint8_t frame2send = 0x87;
@@ -105,9 +204,9 @@ void BATTSCI_sendFrames()
     //Derivation:
     //       vCellWithESR_counts = Vcell_Now                          + Icell_Now (assist: +, regen: -)      * ESR
     //       vCellWithESR_counts = Vcell_Now                          + Icell_Now                            * 1.6 mOhm
-    //       vCellWithESR_counts = Vcell_counts                       + Icell_amps                           * 16 
+    //       vCellWithESR_counts = Vcell_counts                       + Icell_amps                           * 16
     uint16_t vCellWithESR_counts = LTC68042result_hiCellVoltage_get() + (adc_getLatestBatteryCurrent_amps() << 4);
-    //<<1=0.2mOhm, <<2=0.4mOhm, <<3=0.8mOhm, <<4=1.6mOhm, <<5=3.2mOhm, <<6=6.4mOhm, <<7=12.8mOhm //uint16_t overflows above here 
+    //<<1=0.2mOhm, <<2=0.4mOhm, <<3=0.8mOhm, <<4=1.6mOhm, <<5=3.2mOhm, <<6=6.4mOhm, <<7=12.8mOhm //uint16_t overflows above here
 
     if(frame2send == 0x87)
     {
@@ -125,36 +224,36 @@ void BATTSCI_sendFrames()
       }
       else
       { //all cells above 3.000 volts
-
-        // Battery is full. Disable Regen above this number.  
-        if        (vCellWithESR_counts >= 39500) { //39500 = 3.9500 volts                                                    
-          frameSum_87 += BATTSCI_writeByte( 0x16 );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( 0x20 ); //80% SoC                               //Battery SoC (lower byte)
+        BATTSCI_calculateSoC(vCellWithESR_counts);
+        // Battery is full. Disable Regen above this number.
+        if        (vCellWithESR_counts >= 39500) { //39500 = 3.9500 volts
+          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                         //Battery SoC (upper byte)
+          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[1] ); //80% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('8');
           //JTS2doNow: Change SoC to 81%
 
-        // Regen & Assist, no background charge above this number
-        } else if (vCellWithESR_counts >= 36000) { //36000 = 3.6000 volts                                               
-          frameSum_87 += BATTSCI_writeByte( 0x15 );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( 0x50 ); //72% SoC                               //Battery SoC (lower byte)
+        // Regen & Assist, no background charge above this number.
+        } else if (vCellWithESR_counts >= 36000) { //36000 = 3.6000 volts
+          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                         //Battery SoC (upper byte)
+          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[1] ); //72% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('7');
 
         // Regen & Assist, with background charge above this number.
-        } else if (vCellWithESR_counts >= 34500) { //34500 = 3.4500 volts                                            
-          frameSum_87 += BATTSCI_writeByte( 0x14 );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( 0x58 ); //60% SoC                               //Battery SoC (lower byte)
+        } else if (vCellWithESR_counts >= 34500) { //34500 = 3.4500 volts
+          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                         //Battery SoC (upper byte)
+          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[1] ); //60% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('6');
 
         // Regen & Assist, with background charge above this number.
-        } else if (vCellWithESR_counts >= 33000) { //33000 = 3.3000 volts                                              
-          frameSum_87 += BATTSCI_writeByte( 0x13 );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( 0x10 ); //40% SoC                               //Battery SoC (lower byte)
+      } else if (vCellWithESR_counts >= 33500) { //33500 = 3.3500 volts
+          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                         //Battery SoC (upper byte)
+          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[1] ); //40% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('4');
 
         // Battery is empty. Disable Assist.
         } else {
-          frameSum_87 += BATTSCI_writeByte( 0x11 );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( 0x48 ); //20% SoC                               //Battery SoC (lower byte)
+          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                         //Battery SoC (upper byte)
+          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[1] ); //20% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('2');
         }
       }
@@ -182,7 +281,7 @@ void BATTSCI_sendFrames()
       if( (LTC68042result_hiCellVoltage_get() < 42000 ) && (LTC68042result_loCellVoltage_get() > 29500) )
       { //all cells are within acceptable range
         frameSum_AA += BATTSCI_writeByte( 0x00 );                                         //enable assist & regen
-      
+
       } else if( (LTC68042result_hiCellVoltage_get() > 42000 ) && (LTC68042result_loCellVoltage_get() < 29500))
       { //at least one cell is over-changed AND at least one cell is under-charged
         //JTS2doLater: set P-code... battery is beyond redeemable.
@@ -190,8 +289,8 @@ void BATTSCI_sendFrames()
 
       } else if(LTC68042result_hiCellVoltage_get() > 42000) //42000 = 4.2000
       { //at least one cell is overcharged.  disable regen
-        frameSum_AA += BATTSCI_writeByte( 0x20 );                                         //b00100000 disables regen  
-      
+        frameSum_AA += BATTSCI_writeByte( 0x20 );                                         //b00100000 disables regen
+
       } else if(LTC68042result_loCellVoltage_get() < 29500) //29500 = 2.9500 volts
       { //at least one cell is undercharged. disable assist
         frameSum_AA += BATTSCI_writeByte( 0x10 );                                         //b00010000 disables assist

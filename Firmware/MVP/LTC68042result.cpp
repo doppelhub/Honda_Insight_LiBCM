@@ -38,7 +38,7 @@ uint16_t LTC68042result_hiCellVoltage_get(void                 ) { return hiCell
 //  Example: cellVoltages_counts[0][ 1] is IC_1 cell_02
 //  Example: cellVoltages_counts[3][11] is IC_4 cell_12
 uint16_t cellVoltagesCompleteFrame_counts[TOTAL_IC][CELLS_PER_IC];
-         
+
 void LTC68042result_specificCellVoltage_set(uint8_t icNumber, uint8_t cellNumber, uint16_t cellVoltage)
 {
     cellVoltagesCompleteFrame_counts[icNumber][cellNumber] = cellVoltage;

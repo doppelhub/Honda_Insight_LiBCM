@@ -13,11 +13,14 @@
 	void BATTSCI_enable();
 
 	void BATTSCI_disable();
-	
+
 	void BATTSCI_sendFrames();
 
 	void BATTSCI_setPackVoltage(uint8_t voltage);
 
 	void BATTSCI_setSpoofedCurrent(int16_t packCurrent);
+
+	void    tempSoC_set(uint8_t newSoC);
+	uint8_t tempSoC_get(void                 );
 
 #endif
