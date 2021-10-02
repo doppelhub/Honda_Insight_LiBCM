@@ -24,7 +24,7 @@ uint8_t tempSoC = 19; // This variable and everything that uses it is only for L
 void    tempSoC_set(uint8_t newSoC) { tempSoC = newSoC; }
 uint8_t tempSoC_get(void                 ) { return tempSoC; }
 
-uint8_t SoCHysteresisCounter = 0;
+uint8_t SoCHysteresisCounter = 51;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
