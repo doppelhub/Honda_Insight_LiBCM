@@ -20,9 +20,11 @@ int16_t spoofedCurrentToSend = 0; //JTS2doLater spoofed pack current can probabl
 byte SoC_Bytes[] = {0x11, 0x48};
 uint8_t calculatedSoC = 20;
 
-uint8_t tempSoC = 19;
+uint8_t tempSoC = 19; // This variable and everything that uses it is only for LCD debug, and can be removed once that's no longer needed.
 void    tempSoC_set(uint8_t newSoC) { tempSoC = newSoC; }
 uint8_t tempSoC_get(void                 ) { return tempSoC; }
+
+uint8_t SoCHysteresisCounter = 0;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -170,15 +172,24 @@ void BATTSCI_evaluateSoCBytes() {
 
 void BATTSCI_calculateSoC(uint16_t voltage)
 {
-  if (voltage >= 39500) {   // No Regen Allowed
-    calculatedSoC = 80;
+  // NM:  The only Magic Number we're using here is 72% SoC.
+  // 72% achieves the following behaviour in both 2000-2004 and 2005-2006 model Insights:
+  // Assist Enabled, Regen Enabled, Background Regen Disabled
+  // Later we can change the profile to not be based around 72, but that would require a new ECM_YEAR variable in config.h
+
+  if (voltage >= 39000) {  // No Regen Allowed
+    uint8_t tempSoCPercent = map(voltage, 39000, 42000, 77, 80);
+    calculatedSoC = tempSoCPercent;
   } else if (voltage >= 36000) {  // No BG Regen Allowed
-    uint8_t tempSoCPercent = map(voltage, 36000, 39499, 72, 79);
+    uint8_t tempSoCPercent = map(voltage, 36000, 38999, 72, 76);
     calculatedSoC = tempSoCPercent;
-  } else if ((voltage < 36000) && (voltage > 33400)) {  // BG Regen Allowed
-    uint8_t tempSoCPercent = map(voltage, 33500, 35999, 21, 71);
+  } else if ((voltage < 36000) && (voltage > 33500)) {  // BG Regen Allowed
+    uint8_t tempSoCPercent = map(voltage, 33501, 35999, 31, 71);
     calculatedSoC = tempSoCPercent;
-  } else if (voltage <= 33400) {  // No Assist Allowed
+  } else if ((voltage <= 33500) && (voltage > 32500)) {  // BG Regen Allowed, SoC very low.
+    uint8_t tempSoCPercent = map(voltage, 32501, 33500, 21, 30);
+    calculatedSoC = tempSoCPercent;
+  } else if (voltage <= 32500) {  // No Assist Allowed
     calculatedSoC = 20;
   }
   tempSoC_set(calculatedSoC);
@@ -208,6 +219,8 @@ void BATTSCI_sendFrames()
     uint16_t vCellWithESR_counts = LTC68042result_hiCellVoltage_get() + (adc_getLatestBatteryCurrent_amps() << 4);
     //<<1=0.2mOhm, <<2=0.4mOhm, <<3=0.8mOhm, <<4=1.6mOhm, <<5=3.2mOhm, <<6=6.4mOhm, <<7=12.8mOhm //uint16_t overflows above here
 
+    SoCHysteresisCounter += 1;
+
     if(frame2send == 0x87)
     {
       //Place 0x87 frame into serial send buffer
@@ -224,36 +237,26 @@ void BATTSCI_sendFrames()
       }
       else
       { //all cells above 3.000 volts
-        BATTSCI_calculateSoC(vCellWithESR_counts);
-        // Battery is full. Disable Regen above this number.
+
+        // NM:  Updating SoC only every so often.  The OEM SoC gauge doesn't seem to function when the SoC fluctuates too quickly.
+        // A different hysteresis methodology could be employed; this is just a beta implementation.
+        if (SoCHysteresisCounter >= 50) {
+          BATTSCI_calculateSoC(vCellWithESR_counts);
+          SoCHysteresisCounter = 0;
+        }
+
+        frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                 //Battery SoC (upper byte)
+        frameSum_87 += BATTSCI_writeByte( SoC_Bytes[1] );                                 //Battery SoC (lower byte)
+
         if        (vCellWithESR_counts >= 39500) { //39500 = 3.9500 volts
-          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[1] ); //80% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('8');
-          //JTS2doNow: Change SoC to 81%
-
-        // Regen & Assist, no background charge above this number.
         } else if (vCellWithESR_counts >= 36000) { //36000 = 3.6000 volts
-          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[1] ); //72% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('7');
-
-        // Regen & Assist, with background charge above this number.
         } else if (vCellWithESR_counts >= 34500) { //34500 = 3.4500 volts
-          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[1] ); //60% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('6');
-
-        // Regen & Assist, with background charge above this number.
-      } else if (vCellWithESR_counts >= 33500) { //33500 = 3.3500 volts
-          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[1] ); //40% SoC                               //Battery SoC (lower byte)
+        } else if (vCellWithESR_counts >= 33500) { //33500 = 3.3500 volts
           debugUSB_sendChar('4');
-
-        // Battery is empty. Disable Assist.
         } else {
-          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( SoC_Bytes[1] ); //20% SoC                               //Battery SoC (lower byte)
           debugUSB_sendChar('2');
         }
       }
