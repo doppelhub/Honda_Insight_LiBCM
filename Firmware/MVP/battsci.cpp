@@ -249,7 +249,7 @@ void BATTSCI_sendFrames()
           SoCHysteresisVoltage = vCellWithESR_counts;
         }
 
-        // Average vCellWithESR_counts over 50 iterations
+        // Average vCellWithESR_counts over 50 iterations.
         // Adding the pre-divided numbers so we don't go past 65535.
         SoCHysteresisVoltage /= 2;
         SoCHysteresisVoltage += (vCellWithESR_counts / 2);
