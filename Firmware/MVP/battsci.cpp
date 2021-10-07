@@ -25,7 +25,7 @@ void    tempSoC_set(uint8_t newSoC) { tempSoC = newSoC; }
 uint8_t tempSoC_get(void                 ) { return tempSoC; }
 
 uint8_t SoCHysteresisCounter = 51;
-uint16_t SoCHysteresisVoltage = 35000;
+uint16_t SoCHysteresisVoltage = 0;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -101,6 +101,7 @@ void BATTSCI_evaluateSoCBytes() {
   {
     // Wrapping for 2nd byte seems to happen at 0x00 (000) and 0x7F (127)
     case 80: SoC_Bytes[0] = 0x16; SoC_Bytes[1] = 0x20; break;
+
     case 79: SoC_Bytes[0] = 0x16; SoC_Bytes[1] = 0x16; break;
     case 78: SoC_Bytes[0] = 0x16; SoC_Bytes[1] = 0x0C; break;
     case 77: SoC_Bytes[0] = 0x16; SoC_Bytes[1] = 0x02; break;
@@ -242,11 +243,20 @@ void BATTSCI_sendFrames()
         // NM:  Updating SoC only every so often.  The OEM SoC gauge doesn't seem to function when the SoC fluctuates too quickly.
         // A different hysteresis methodology could be employed; this is just a beta implementation.
 
-        SoCHysteresisVoltage += vCellWithESR_counts;
-        SoCHysteresisVoltage /= 2;
+        // At startup initialize this variable by setting it to whatever vCellWithESR_counts is.
+        // This should only run once.
+        if (SoCHysteresisVoltage <= 1) {
+          SoCHysteresisVoltage = vCellWithESR_counts;
+        }
 
+        // Average vCellWithESR_counts over 50 iterations
+        // Adding the pre-divided numbers so we don't go past 65535.
+        SoCHysteresisVoltage /= 2;
+        SoCHysteresisVoltage += (vCellWithESR_counts / 2);
+
+        // On 50th iteration we take that average and use it to compute an SoC value to send to MCM.
         if (SoCHysteresisCounter >= 50) {
-          BATTSCI_calculateSoC(vCellWithESR_counts);
+          BATTSCI_calculateSoC(SoCHysteresisVoltage);
           SoCHysteresisCounter = 0;
           SoCHysteresisVoltage = vCellWithESR_counts;
         }
