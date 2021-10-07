@@ -17,7 +17,7 @@ uint8_t BATTSCI_state = STOPPED;
 uint8_t spoofedVoltageToSend = 0;
 int16_t spoofedCurrentToSend = 0; //JTS2doLater spoofed pack current can probably be int8_t (+127 A)
 
-byte SoC_Bytes[] = {0x11, 0x48};
+byte SoC_Bytes[] = {0x11, 0x48};  // SoC Bytes to send to MCM.  Index 0 is the upper byte and index 1 is the lower byte.  Default = 72%.
 uint8_t calculatedSoC = 20;
 
 uint8_t tempSoC = 19; // This variable and everything that uses it is only for LCD debug, and can be removed once that's no longer needed.
@@ -25,6 +25,7 @@ void    tempSoC_set(uint8_t newSoC) { tempSoC = newSoC; }
 uint8_t tempSoC_get(void                 ) { return tempSoC; }
 
 uint8_t SoCHysteresisCounter = 51;
+uint16_t SoCHysteresisVoltage = 35000;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -231,8 +232,8 @@ void BATTSCI_sendFrames()
 
       if(LTC68042result_loCellVoltage_get() <= 30000 )
       { //at least one cell is severely under-charged.  Disable Assist.
-        frameSum_87 += BATTSCI_writeByte( 0x11 );                                         //Battery SoC (upper byte)
-        frameSum_87 += BATTSCI_writeByte( 0x48 ); //20% SoC                               //Battery SoC (lower byte)
+        SoC_Bytes[0] = 0x11;
+        SoC_Bytes[1] = 0x48;
         debugUSB_sendChar('1');
       }
       else
@@ -240,9 +241,14 @@ void BATTSCI_sendFrames()
 
         // NM:  Updating SoC only every so often.  The OEM SoC gauge doesn't seem to function when the SoC fluctuates too quickly.
         // A different hysteresis methodology could be employed; this is just a beta implementation.
+
+        SoCHysteresisVoltage += vCellWithESR_counts;
+        SoCHysteresisVoltage /= 2;
+
         if (SoCHysteresisCounter >= 50) {
           BATTSCI_calculateSoC(vCellWithESR_counts);
           SoCHysteresisCounter = 0;
+          SoCHysteresisVoltage = vCellWithESR_counts;
         }
 
         frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                 //Battery SoC (upper byte)
