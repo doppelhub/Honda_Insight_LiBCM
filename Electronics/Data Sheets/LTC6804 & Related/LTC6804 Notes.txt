@@ -1,0 +1,25 @@
+ltc6804 notes
+
+When REFUP==1, 12-cell ADC measurement+cal tcycle= 2480 microseconds max (normal mode)
+When REFUP==1,  2-cell ADC measurement+cal tcycle= 430 microseconds max (normal mode)
+Doesn't make sense to switch to 2-cells per loop, as the voltages no longer sampled simultaneously. 
+
+open wire detection:
+
+
+current/power consumption.  Note wasteful LDO has up to 45 volt drop (@4.17 volts/cell), hence it consumes much more power than LTC itself.
+Number format: {maxCurrent_uA}(P_LTC_mW)[P_LDO_mW]
+
+Core pulls:
+When sleeping:               {6 uA}(  0.0 mW)[  0.3 mW]
+When standby & REFUP == 0: {650 uA}(  3.3 mW)[ 29.3 mW]
+When REFUP active:         {750 uA}(  3.8 mW)[ 33.8 mW]
+When actively measuring: {12300 uA}( 61.5 mW)[553.5 mW]
+
+isoSPI adds additional current:
+ready:  {5800 uA}(29.0 mW)[261.0 mW]
+active: {7300 uA}(36.5 mW)[328.5 mW]
+
+Therefore, worst case power is: {19600 uA}( 98.0 mW)[882.0 mW]
+Since measurement duty is ~50%, the average LDO power is ~600 mW.
+ 
