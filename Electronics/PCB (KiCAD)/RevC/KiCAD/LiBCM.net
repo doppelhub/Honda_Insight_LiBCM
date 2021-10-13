@@ -1,7 +1,7 @@
 (export (version D)
   (design
     (source "/Volumes/HighSierraNVMe/Users/master/Documents/GitHub/Honda_Insight_LiBCM/Electronics/PCB (KiCAD)/RevC/KiCAD/LiBCM.sch")
-    (date "Wednesday, September 29, 2021 at 04:34:07 PM")
+    (date "Wednesday, October 13, 2021 at 05:49:11 PM")
     (tool "Eeschema (5.1.9-0-10_14)")
     (sheet (number 1) (name /) (tstamps /)
       (title_block
@@ -914,7 +914,7 @@
       (sheetpath (names /) (tstamps /))
       (tstamp 61A33DD7))
     (comp (ref C145)
-      (value 22u)
+      (value 2u)
       (footprint Capacitor_SMD:C_1210_3225Metric)
       (libsource (lib LiBCM-rescue) (part C) (description ""))
       (sheetpath (names /) (tstamps /))
