@@ -1,0 +1,8 @@
+RevC Assembly Notes:
+R130 should be 1206
+R353 silkscreen
+'2uF' too small (get 1205 in final value)
+Move middle (rear) temp connector so it doesn't hit ribbon cable's locking tab
+Move beeper and Cherry switch up ~1mm
+Figure out how C59:C60 pinout should be (front/rear/flipped/etc)
+
