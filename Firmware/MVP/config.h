@@ -28,7 +28,7 @@
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //only spoof during assist, using either 120 volts or (vPackActual-12)
 		#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //always spoof voltage (enables stronger regen)
 
-	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to display all cell voltages
+	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to print all cell voltages while driving //Grid charger always prints all cell voltages
 
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
 	//Choose which I2C LCD driver to use for 4x20 display:
