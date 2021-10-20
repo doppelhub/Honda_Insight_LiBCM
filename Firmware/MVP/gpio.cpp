@@ -19,8 +19,8 @@ void gpio_begin(void)
 	digitalWrite(PIN_HMI_EN,HIGH);
 
 	//Enable BCM current sensor & constant 5V load
-	pinMode(PIN_I_SENSOR_EN,OUTPUT);
-	digitalWrite(PIN_I_SENSOR_EN,LOW);
+	pinMode(PIN_SENSOR_EN,OUTPUT);
+	digitalWrite(PIN_SENSOR_EN,LOW);
 
 	pinMode(PIN_LED1,OUTPUT);
 	pinMode(PIN_LED2,OUTPUT);
@@ -35,17 +35,15 @@ void gpio_begin(void)
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
-	TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz (pins D11 & D12)
-  	
-  	//TCCR0B = (TCCR0B & B11111000) | B00000001; // set F_PWM to 62500.00 Hz (D04 & D13) //This hoses delay()!
-    //TCCR0B = (TCCR0B & B11111000) | B00000011; // set F_PWM to   976.56 Hz (D04 & D13) //default
+	TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D11(fan) & D12()
+	TCCR3B = (TCCR3B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D2() & D3() & D5(VPIN_OUT on RevC)
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////
 
 
-bool gpio_keyStateNow(void) { return digitalRead(PIN_KEY_ON); }
+bool gpio_keyStateNow(void) { return digitalRead(PIN_IGNITION_SENSE); }
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -76,8 +74,8 @@ void gpio_setFanSpeed(char speed)
 ////////////////////////////////////////////////////////////////////////////////////
 
 //power current sensor & constant 5V load
-void gpio_turnCurrentSensor_on( void) { digitalWrite(PIN_I_SENSOR_EN, HIGH); }
-void gpio_turnCurrentSensor_off(void) { digitalWrite(PIN_I_SENSOR_EN,  LOW); }
+void gpio_turnCurrentSensor_on( void) { digitalWrite(PIN_SENSOR_EN, HIGH); }
+void gpio_turnCurrentSensor_off(void) { digitalWrite(PIN_SENSOR_EN,  LOW); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 

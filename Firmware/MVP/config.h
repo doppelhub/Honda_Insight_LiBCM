@@ -7,10 +7,14 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.3.1"
-    #define BUILD_DATE "2021SEP16"
-    #define HW_REVB
+	#define FW_VERSION "0.3.2"
+    #define BUILD_DATE "2021OCT19"
+    
 	#define CPU_MAP_MEGA2560
+
+    //chose ONE of the following:
+    	#define HW_REVB
+    	//#define HW_REVC
 
 	//choose ONE of the following:
 		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
