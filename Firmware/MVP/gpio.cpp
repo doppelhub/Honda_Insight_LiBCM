@@ -37,6 +37,7 @@ void gpio_begin(void)
 
 	TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D11(fan) & D12()
 	TCCR3B = (TCCR3B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D2() & D3() & D5(VPIN_OUT on RevC)
+	//TCCR5B is set in Buzzer functions
 }
 
 
@@ -101,12 +102,39 @@ void gpio_setGridCharger_powerLevel(char powerLevel)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+//Buzzer present in RevC+ hardware
+void gpio_turnBuzzer_on_highFreq(void)
+{
+	TCCR5B = (TCCR5B & B11111000) | B00000010; // set F_PWM to  3921.16 Hz //pins D44(GPIO3) & D45(BUZZER) & D46()
+	analogWrite(PIN_BUZZER_PWM, 127 );
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void gpio_turnBuzzer_on_lowFreq(void)
+{
+	TCCR5B = (TCCR5B & B11111000) | B00000011; // set F_PWM to   490.20 Hz //pins D44(GPIO3) & D45(BUZZER) & D46()
+	analogWrite(PIN_BUZZER_PWM, 127 );
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void gpio_turnBuzzer_off(void) { analogWrite(PIN_BUZZER_PWM,0); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
 
-////////////////////////////////////////////////////////////////////////////////////
+#ifdef HW_REVB
+	//features unique to RevB
+#else
+	//RevC+ supports the following
+	bool gpio_isCoverInstalled(void)
+	{
+		if(digitalRead(PIN_COVER_SWITCH) == 1 ) {return  true;}
+		else                                    {return false;}
+	}
 
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////
 

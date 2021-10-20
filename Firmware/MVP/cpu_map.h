@@ -40,6 +40,7 @@
       #define PIN_SENSOR_EN 12
       #define PIN_IGNITION_SENSE 13
       #define PIN_SPI_CS SS
+      #define PIN_BUZZER_PWM 45 //RevB doesn't have a buzzer.  Added so that buzzer turns on if you try to load RevB fiwmare onto RevC+ hardware
       #define PIN_GPIO1 48
       #define PIN_USER_SW 49
 

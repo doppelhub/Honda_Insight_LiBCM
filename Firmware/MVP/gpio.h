@@ -18,4 +18,10 @@
 
 	void gpio_setGridCharger_powerLevel(char powerLevel);
 
+	void gpio_turnBuzzer_on_highFreq(void);
+	void gpio_turnBuzzer_on_lowFreq(void);
+	void gpio_turnBuzzer_off(void);
+
+	bool gpio_isCoverInstalled(void);
+
 #endif

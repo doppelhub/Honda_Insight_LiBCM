@@ -142,7 +142,7 @@ void debugUSB_printLatest_data_keyOn(void)
 //This is not a well-written input handler... follow the above syntax EXACTLY!
 uint8_t debugUSB_getUserInput(void)
 {
-	static uint8_t userEntry = 150; //initial value (when user hasn't entered value)
+	static uint8_t userEntry = 0; //initial value (when user hasn't entered value)
 
 	uint8_t bytesSentFromUser = Serial.available();
 	if( bytesSentFromUser >= 4 )
