@@ -17,14 +17,18 @@ uint8_t BATTSCI_state = STOPPED;
 uint8_t spoofedVoltageToSend = 0;
 int16_t spoofedCurrentToSend = 0; //JTS2doLater spoofed pack current can probably be int8_t (+127 A)
 
-byte SoC_Bytes[] = {0x11, 0x48};  // SoC Bytes to send to MCM.  Index 0 is the upper byte and index 1 is the lower byte.  Default = 72%.
+byte SoC_Bytes[] = {0x16, 0x20};  // SoC Bytes to send to MCM.  Index 0 is the upper byte and index 1 is the lower byte.
 uint8_t calculatedSoC = 20;
+uint8_t oldCalculatedSoC = 20;
+
+bool initializeSoC = true;
 
 uint8_t tempSoC = 19; // This variable and everything that uses it is only for LCD debug, and can be removed once that's no longer needed.
 void    tempSoC_set(uint8_t newSoC) { tempSoC = newSoC; }
 uint8_t tempSoC_get(void                 ) { return tempSoC; }
 
-uint8_t SoCHysteresisCounter = 51;
+uint8_t SoCHysteresisIncrementFrequency = 10; // How many iterations between SoC updates to MCM?
+uint8_t SoCHysteresisCounter = 0;
 uint16_t SoCHysteresisVoltage = 0;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -96,8 +100,8 @@ uint8_t BATTSCI_calculateChecksum( uint8_t frameSum )
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_evaluateSoCBytes() {
-  switch(calculatedSoC)
+void BATTSCI_evaluateSoCBytes(uint8_t evalSoC) {
+  switch(evalSoC)
   {
     // Wrapping for 2nd byte seems to happen at 0x00 (000) and 0x7F (127)
     case 80: SoC_Bytes[0] = 0x16; SoC_Bytes[1] = 0x20; break;
@@ -179,23 +183,42 @@ void BATTSCI_calculateSoC(uint16_t voltage)
   // Assist Enabled, Regen Enabled, Background Regen Disabled
   // Later we can change the profile to not be based around 72, but that would require a new ECM_YEAR variable in config.h
 
-  if (voltage >= 39000) {  // No Regen Allowed
+  if (voltage >= 39500) {  // No Regen Allowed
     uint8_t tempSoCPercent = map(voltage, 39000, 42000, 77, 80);
     calculatedSoC = tempSoCPercent;
-  } else if (voltage >= 36000) {  // No BG Regen Allowed
-    uint8_t tempSoCPercent = map(voltage, 36000, 38999, 72, 76);
+  } else if (voltage >= 37000) {  // No BG Regen Allowed
+    uint8_t tempSoCPercent = map(voltage, 37000, 38999, 72, 76);
     calculatedSoC = tempSoCPercent;
-  } else if ((voltage < 36000) && (voltage > 33500)) {  // BG Regen Allowed
-    uint8_t tempSoCPercent = map(voltage, 33501, 35999, 31, 71);
+  } else if ((voltage < 37000) && (voltage > 33500)) {  // BG Regen Allowed
+    uint8_t tempSoCPercent = map(voltage, 33501, 36999, 31, 71);
     calculatedSoC = tempSoCPercent;
   } else if ((voltage <= 33500) && (voltage > 32500)) {  // BG Regen Allowed, SoC very low.
     uint8_t tempSoCPercent = map(voltage, 32501, 33500, 21, 30);
     calculatedSoC = tempSoCPercent;
   } else if (voltage <= 32500) {  // No Assist Allowed
     calculatedSoC = 20;
+    oldCalculatedSoC = 20;  // Make sure SoC doesn't immediately spike back up
   }
+
+  // On first run we set oldCalculatedSoC and calculatedSoC to the same value.
+  if (initializeSoC) {
+    oldCalculatedSoC = calculatedSoC;
+    initializeSoC = false;
+  }
+
+  // Modify calculatedSoC in place to be an increment of oldCalculatedSoC
+  // This way every n iterations where n is
+  if (calculatedSoC > oldCalculatedSoC) {
+    calculatedSoC = (oldCalculatedSoC + 1);
+  } else if (calculatedSoC < oldCalculatedSoC) {
+    calculatedSoC = (oldCalculatedSoC - 1);
+  }
+
   tempSoC_set(calculatedSoC);
-  BATTSCI_evaluateSoCBytes();
+  BATTSCI_evaluateSoCBytes(calculatedSoC);
+
+  // Set oldCalculatedSoC to the incremented calculatedSoC
+  oldCalculatedSoC = calculatedSoC;
 }
 
 void BATTSCI_sendFrames()
@@ -235,6 +258,10 @@ void BATTSCI_sendFrames()
       { //at least one cell is severely under-charged.  Disable Assist.
         SoC_Bytes[0] = 0x11;
         SoC_Bytes[1] = 0x48;
+
+        // Make sure SoC doesn't immediately spike back up
+        calculatedSoC = 20;
+        oldCalculatedSoC = 20;
         debugUSB_sendChar('1');
       }
       else
@@ -254,10 +281,10 @@ void BATTSCI_sendFrames()
         SoCHysteresisVoltage /= 2;
         SoCHysteresisVoltage += (vCellWithESR_counts / 2);
 
-        // On 50th iteration we take that average and use it to compute an SoC value to send to MCM.
-        if (SoCHysteresisCounter >= 50) {
+        // After we have SoCHysteresisIncrementFrequency iterations we calculate SoC and if needed increment it up or down
+        if (SoCHysteresisCounter >= (SoCHysteresisIncrementFrequency + 200)) {
           BATTSCI_calculateSoC(SoCHysteresisVoltage);
-          SoCHysteresisCounter = 0;
+          SoCHysteresisCounter = 200;
           SoCHysteresisVoltage = vCellWithESR_counts;
         }
 
