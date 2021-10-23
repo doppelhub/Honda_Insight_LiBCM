@@ -33,4 +33,4 @@ C171: 100pF
 R334: 20 Ohms
 R067: 100k||100n (piggyback)
 C170: DNP
-(R056+0R57): 17.32k||100nF (simples mechanical equivalent: 100nF from C170 to R66)
+(R056+0R57): 17.32k||100nF (simplest mechanical equivalent: 100nF from C170 to R66)

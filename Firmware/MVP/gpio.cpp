@@ -65,10 +65,11 @@ void gpio_setFanSpeed(char speed)
 {
 	switch(speed)
 	{
-		case '0': pinMode(PIN_FAN_PWM, INPUT); break; //high impedance
-		case 'L': analogWrite(PIN_FAN_PWM, 5); break; //JTS2doLater: why are these values so low?
-		case 'M': analogWrite(PIN_FAN_PWM, 40); break;
-		case 'H': analogWrite(PIN_FAN_PWM, 255); break;
+		case '0': pinMode(PIN_FAN_PWM, INPUT);     break; //high impedance
+		case 'L': analogWrite(PIN_FAN_PWM, 30);    break;
+		case 'M': analogWrite(PIN_FAN_PWM, 75);    break;
+		case 'H': analogWrite(PIN_FAN_PWM, 255);   break;
+		default : analogWrite(PIN_FAN_PWM, speed); break;
 	}
 }
 

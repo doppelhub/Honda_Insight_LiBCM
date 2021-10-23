@@ -32,7 +32,7 @@ void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t cellBitmaps[TOTAL_IC] = {0};
+uint16_t cellBitmaps[TOTAL_IC] = {0};
 
 void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap)
 {

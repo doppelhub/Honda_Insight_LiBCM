@@ -15,4 +15,11 @@
 
     void gridCharger_handler(void);
 
+    #define CELLSTATE_OVERCHARGED   4
+    #define CELLSTATE_ONECELLFULL   3
+    #define CELLSTATE_NOCELLSFULL   2
+    #define CELLSTATE_BALANCING     1
+    #define CELLSTATE_UNINITIALIZED 0
+
+
 #endif

@@ -55,7 +55,7 @@ Features to add later:
 #define QUERY_ISCOVERINSTALLED_SWITCH
 
 //Define realtime commands that are immediately picked off from the serial stream.
-//These characters are not passsed to the serial parser, and are executed immediately.
+//These characters are not passed to the serial parser, and are executed immediately.
 #define CMD_RESET '|'
 #define CMD_STATUS_REPORT
 

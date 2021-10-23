@@ -156,9 +156,11 @@ bool lcd_printCellVoltage_hi(void)
 			
 			if ( isBacklightOn == true ) {
 				lcd2.noBacklight();
+				gpio_turnBuzzer_on_lowFreq();
 				isBacklightOn = false;
 			} else {
 				lcd2.backlight();
+				gpio_turnBuzzer_off();
 				isBacklightOn = true;
 			}
 		}
