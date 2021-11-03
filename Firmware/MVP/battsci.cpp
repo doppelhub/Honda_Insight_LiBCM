@@ -27,7 +27,7 @@ uint8_t tempSoC = 19; // This variable and everything that uses it is only for L
 void    tempSoC_set(uint8_t newSoC) { tempSoC = newSoC; }
 uint8_t tempSoC_get(void                 ) { return tempSoC; }
 
-uint8_t SoCHysteresisIncrementFrequency = 10; // How many iterations between SoC updates to MCM?
+uint8_t SoCHysteresisIncrementFrequency = 50; // How many iterations between SoC updates to MCM?
 uint8_t SoCHysteresisCounter = 0;
 uint16_t SoCHysteresisVoltage = 0;
 
@@ -262,6 +262,8 @@ void BATTSCI_sendFrames()
         // Make sure SoC doesn't immediately spike back up
         calculatedSoC = 20;
         oldCalculatedSoC = 20;
+        SoCHysteresisCounter = 0;  // Setting this to 0 keeps SoC at 20% for extra loops so the IMA has extra time to be charged.
+
         debugUSB_sendChar('1');
       }
       else
