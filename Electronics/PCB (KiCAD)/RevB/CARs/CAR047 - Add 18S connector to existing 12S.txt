@@ -2,3 +2,6 @@ Make it easier to plug in 54S pack.
 Consider replacing last LTC6804 with a 6 cell version?
 
 /////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Did not add 18S footprint

@@ -9,8 +9,12 @@
 
 	#define FW_VERSION "0.3.4N"
     #define BUILD_DATE "2021NOV03"
-    #define HW_REVB
+
 	#define CPU_MAP_MEGA2560
+
+    //chose ONE of the following:
+    	#define HW_REVB
+    	//#define HW_REVC
 
 	//choose ONE of the following:
 		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
@@ -24,7 +28,7 @@
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //only spoof during assist, using either 120 volts or (vPackActual-12)
 		#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //always spoof voltage (enables stronger regen)
 
-	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to display all cell voltages
+	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to print all cell voltages while driving //Grid charger always prints all cell voltages
 
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
 	//Choose which I2C LCD driver to use for 4x20 display:
@@ -51,7 +55,7 @@ Features to add later:
 #define QUERY_ISCOVERINSTALLED_SWITCH
 
 //Define realtime commands that are immediately picked off from the serial stream.
-//These characters are not passsed to the serial parser, and are executed immediately.
+//These characters are not passed to the serial parser, and are executed immediately.
 #define CMD_RESET '|'
 #define CMD_STATUS_REPORT
 

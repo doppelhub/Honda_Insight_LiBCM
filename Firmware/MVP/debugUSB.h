@@ -10,7 +10,7 @@
 	void debugUSB_printLatest_data_keyOn(void);
 	void debugUSB_printLatest_data_gridCharger(void);
 
-	//uint8_t debugUSB_getUserInput(void);
+	uint8_t debugUSB_getUserInput(void);
 
 	void debugUSB_sendChar(char characterToSend);
 

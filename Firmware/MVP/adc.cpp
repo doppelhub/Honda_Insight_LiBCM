@@ -35,7 +35,7 @@ int16_t adc_measureBatteryCurrent_amps(void)
 	#define NUM_ADCSAMPLES_2_TO_THE_N  6 //Valid values: 0,1,2,3, 4, 5, 6 //2^N = NUM_ADCSAMPLES_PER_RESULT
 	#define NUM_ADCSAMPLES_PER_CALL    4 //Must be divisible into NUM_ADCSAMPLES_PER_RESULT!
 	
-	static uint8_t adcSamplesTaken = 0; //number of samples
+	static uint8_t adcSamplesTaken = 0; //samples acquired since last oversampled result
 	static uint16_t adcAccumulator = 0; //raw 10b ADC results
 
 	for(int ii=0; ii<NUM_ADCSAMPLES_PER_CALL; ii++)
@@ -46,13 +46,24 @@ int16_t adc_measureBatteryCurrent_amps(void)
 
 	if(adcSamplesTaken == NUM_ADCSAMPLES_PER_RESULT)
 	{
-		latest_battCurrent_counts = (int16_t)( (adcAccumulator >> NUM_ADCSAMPLES_2_TO_THE_N) ); //Shift must match:
+		latest_battCurrent_counts = (int16_t)( (adcAccumulator >> NUM_ADCSAMPLES_2_TO_THE_N) ); //Shift must match
 		adcAccumulator = 0;
 		adcSamplesTaken = 0;
 
 		//convert current sensor result into approximate amperage for MCM & user-display
 		//don't use this result for current accumulation... it's not accurate enough (FYI: SoC accumulates raw ADC result)
-		latest_battCurrent_amps = ( (latest_battCurrent_counts * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
+		//Regardless of I2V resistance (R50||R53||R516), 0A (regen/assist) is 1.621 volts (332 counts with 10b ADC)
+		//As current increases, ADC result increase.
+		//Actual VCC voltage doesn't matter, since ADC reference is also VCC (e.g. ADC result @ 0A is always 332 counts)
+		#ifdef HW_REVB
+			latest_battCurrent_amps = ( (latest_battCurrent_counts * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
+		
+		#elif defined HW_REVC
+			//see SPICE simulation for complete derivation
+			//@-70A regen,  ADC result is 009 counts
+			//@140A assist, ADC result is 979 counts
+			latest_battCurrent_amps = ( (latest_battCurrent_counts * 14) >> 6) -73; //Accurate to within 1.2 amps of actual value
+		#endif
 	}
 
 	return latest_battCurrent_amps;

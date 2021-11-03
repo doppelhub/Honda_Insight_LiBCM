@@ -57,21 +57,19 @@ void gridCharger_handlePluginEvent(void)
 //minimum cell voltage above safe minimum 
 //no cell is severely overcharged
 void gridCharger_balanceCells(void)
-{
-  //JTS2doNow: Implement balancing
-   
+{   
   uint16_t cellsToDischarge[TOTAL_IC] = {0}; //each uint16's QTY12 LSBs correspond to each cell 
 
   bool isAtLeastOneCellUnbalanced = false;
 
-  if(LTC68042result_loCellVoltage_get() > 37500) //JTS2doLater: Figure out final minimum voltage //redundant?
+  if(LTC68042result_loCellVoltage_get() > 32000) //32000 = 3.2000 volts //prevent lowest cell overdischarge (in a severely unbalanced pack)
   { //all cells above minimum balancing voltage
     for(uint8_t ic = 0; ic < TOTAL_IC; ic++)
     {
       for (uint8_t cell = 0; cell < CELLS_PER_IC; cell++)
       {
         if(LTC68042result_specificCellVoltage_get(ic, cell) > (LTC68042result_loCellVoltage_get() + BALANCE_TO_WITHIN_COUNTS) )
-        { //this particular cell's voltage is more than one mV above the lowest cell
+        { //this particular cell's voltage is higher than the lowest cell's voltage
           cellsToDischarge[ic] |= (1 << cell);
           isAtLeastOneCellUnbalanced = true;
         }
@@ -81,11 +79,13 @@ void gridCharger_balanceCells(void)
     LTC68042configure_cellBalancing_setCells( (ic + FIRST_IC_ADDR), cellsToDischarge[ic] );
     }
   }
+  else
+  {
+    Serial.println(F("Cells too unbalanced to safely grid charge."));
+  }
 
-  if(isAtLeastOneCellUnbalanced == true) { gpio_setFanSpeed('H'); }
-  else                                   { gpio_setFanSpeed('0'); }
-
-  
+  if(isAtLeastOneCellUnbalanced == true) { gpio_setFanSpeed('H'); } //full blast to cool discharge resistors
+  else                                   { gpio_setFanSpeed('0'); } //pack is balanced
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -93,6 +93,10 @@ void gridCharger_balanceCells(void)
 //JTS2doNow: Think this through
 void gridCharger_chargePack(void)
 {
+  static uint8_t cellState = CELLSTATE_UNINITIALIZED;
+  static uint8_t cellStatePrevious = CELLSTATE_UNINITIALIZED;
+  cellStatePrevious = cellState;
+
   lcd_refresh();
   LTC68042cell_nextVoltages(); 
   debugUSB_printLatest_data_gridCharger();
@@ -100,15 +104,18 @@ void gridCharger_chargePack(void)
   //at least one cell is severely overcharged
   if( LTC68042result_hiCellVoltage_get() > (GRID_CHARGER_CELL_VMAX + VCELL_HYSTERESIS) )
   {
+    cellState = CELLSTATE_OVERCHARGED;
     gpio_turnGridCharger_off();
     gpio_setFanSpeed('H'); //cool pack and discharge
     gpio_setGridCharger_powerLevel('0');
     //JTS2doLater: display Warning on LCD
+    gpio_turnBuzzer_on_highFreq();
   }
 
   //at least one cell is full
   else if( (LTC68042result_hiCellVoltage_get() > GRID_CHARGER_CELL_VMAX) )
   {
+    cellState = CELLSTATE_ONECELLFULL;
     gpio_turnGridCharger_off();
     gpio_setFanSpeed('0'); //set inside balanceCells()
     gpio_setGridCharger_powerLevel('0');
@@ -117,17 +124,32 @@ void gridCharger_chargePack(void)
   //grid charger plugged in and all cells less than full
   else if( LTC68042result_hiCellVoltage_get() <= (GRID_CHARGER_CELL_VMAX - VCELL_HYSTERESIS) )
   {
+    cellState = CELLSTATE_NOCELLSFULL;
     gpio_turnGridCharger_on();
     gpio_setFanSpeed('M');
     gpio_setGridCharger_powerLevel('H');
   }
 
   //grid charger plugged in and all cells almost full
-  else if( (LTC68042result_hiCellVoltage_get() <= GRID_CHARGER_CELL_VMAX)
-         && LTC68042result_loCellVoltage_get() >= MIN_DISCHARGE_VOLTAGE_COUNTS ) //redundant?
+  else if( (LTC68042result_hiCellVoltage_get() <= GRID_CHARGER_CELL_VMAX) )
   {
+    cellState = CELLSTATE_BALANCING;
     //gpio_setFanSpeed('0'); //set inside balanceCells()
     gridCharger_balanceCells();
+  }
+
+  if (cellStatePrevious != cellState)
+  {
+    //state has changed
+    Serial.print(" grid:");
+    switch (cellState)
+    {
+      case CELLSTATE_UNINITIALIZED: Serial.print(F("init")       ); break;
+      case CELLSTATE_BALANCING:     Serial.print(F("balancing")  ); break;
+      case CELLSTATE_OVERCHARGED:   Serial.print(F("overcharged")); break;
+      case CELLSTATE_ONECELLFULL:   Serial.print(F("oneCellFull")); break;
+      case CELLSTATE_NOCELLSFULL:   Serial.print(F("charging")   ); break;
+    }
   }
 
 }
