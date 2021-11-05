@@ -115,7 +115,7 @@ void LTC68042configure_cellBalancing_disable()
 void LTC68042configure_initialize()
 {
   spi_enable(SPI_CLOCK_DIV64); //JTS2doLater: See how fast we can use SPI without transmission errors
-  //LTC6804configure_calculate_CFGRn();        //JTS2doNow: Doesn't actually send configuration to LTC ICs.
+  //LTC6804configure_calculate_CFGRn();
   Serial.print(F("\nLTC6804 BEGIN"));
 }
 

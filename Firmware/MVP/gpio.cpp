@@ -16,11 +16,11 @@ void gpio_begin(void)
 
 	//turn on lcd display
 	pinMode(PIN_HMI_EN,OUTPUT);
-	digitalWrite(PIN_HMI_EN,HIGH);
+	gpio_turnHMI_on();
 
-	//Enable BCM current sensor & constant 5V load
+	//Controls BCM current sensor, constant 5V load, and BATTSCI/METSCI biasing
 	pinMode(PIN_SENSOR_EN,OUTPUT);
-	digitalWrite(PIN_SENSOR_EN,LOW);
+	gpio_turnPowerSensors_off();
 
 	pinMode(PIN_LED1,OUTPUT);
 	pinMode(PIN_LED2,OUTPUT);
@@ -75,9 +75,14 @@ void gpio_setFanSpeed(char speed)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//power current sensor & constant 5V load
-void gpio_turnCurrentSensor_on( void) { digitalWrite(PIN_SENSOR_EN, HIGH); }
-void gpio_turnCurrentSensor_off(void) { digitalWrite(PIN_SENSOR_EN,  LOW); }
+//powers OEM current sensor, METSCI/BATTSCI power rail, and constant 5V load
+void gpio_turnPowerSensors_on( void) { digitalWrite(PIN_SENSOR_EN, HIGH); }
+void gpio_turnPowerSensors_off(void) { digitalWrite(PIN_SENSOR_EN,  LOW); }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void gpio_turnHMI_on( void) { digitalWrite(PIN_HMI_EN, HIGH); }
+void gpio_turnHMI_off(void) { digitalWrite(PIN_HMI_EN,  LOW); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -139,6 +144,8 @@ void gpio_turnBuzzer_off(void) { analogWrite(PIN_BUZZER_PWM,0); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+void gpio_turnTemperatureSensors_on( void) {digitalWrite(PIN_TEMP_EN,HIGH); }
+void gpio_turnTemperatureSensors_off(void) {digitalWrite(PIN_TEMP_EN,LOW ); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 

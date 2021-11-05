@@ -101,7 +101,10 @@ void adc_updateBatteryCurrent(void)
 	BATTSCI_setSpoofedCurrent(packCurrent_spoofed);
 }
 
+/////////////////////////////////////////////////////////////////////
 
-
-
+uint16_t adc_getTemperature(uint8_t tempToMeasure)
+{
+	return analogRead(tempToMeasure);
+}
 

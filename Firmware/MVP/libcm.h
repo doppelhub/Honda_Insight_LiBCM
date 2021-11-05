@@ -28,6 +28,7 @@
   #include "LT_SPI.h"
   #include "battsci.h"
   #include "metsci.h"
+  #include "LiDisplay.h"
   #include "adc.h"
   #include "vPackSpoof.h"
   #include "lcd.h"
