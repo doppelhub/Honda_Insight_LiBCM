@@ -187,8 +187,10 @@ void processAllCellVoltages(void)
 //raw cell voltages are stored in file-scoped "cellVoltages_counts[][]"" array
 //latest results are stored in "LTC68042_result.c"
 //Example with QTY48 cells:
-//        -the first sixteen calls ( (48 cells) / (3 cells per call) = 16 calls ) read back QTY48 cell voltages.
-//        -The next (seventeenth) call will perform all pack voltage math and store in LTC68042_result.c  
+//	-the absolute first call starts a conversion.
+//	After that, the behavior is as follows:  
+//	-the next sixteen calls ( (48 cells) / (3 cells per call) = 16 calls ) read back QTY48 cell voltages.
+//  -The seventeenth call performs all pack voltage math and stores valid results in LTC68042_result.c  
 void LTC68042cell_nextVoltages(void)
 {
 	LTC68042configure_wakeupCore(); //non-blocking if LTC ICs already on

@@ -76,6 +76,20 @@ void loop()
 
 		/////////////////////////////////////////////////////////////////////
 
+		//Test MCMe isolated voltage divider
+		Serial.print(F("\n\nTesting MCMe (LED should blink)"));
+		serialUSB_waitForEmptyBuffer();
+
+		for(int ii=0; ii<5; ii++)
+		{
+			spoofVoltageMCMe_setSpecificPWM(0); //LED should be full brightness
+			delay(200);
+			spoofVoltageMCMe_setSpecificPWM(255); //LED should be dim
+			delay(200);
+		}
+
+		/////////////////////////////////////////////////////////////////////
+
 		//test LiDisplay loopback
 		Serial.print(F("\nLiDisplay loopback test: "));
 		serialUSB_waitForEmptyBuffer();
@@ -149,6 +163,8 @@ void loop()
 		Serial.print(F("\nBay3 temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_BAY3)));
 		Serial.print('\n');
 
+		//JTS2do: add pass/fail bounding 
+
 		/////////////////////////////////////////////////////////////////////
 
 		//test current sensor, both OEM fan speeds, and onboard fans
@@ -156,6 +172,7 @@ void loop()
 		serialUSB_waitForEmptyBuffer();
 
 		//Lambda Gen is set to 3A, but is open-drained thru OEM fan drive FETs
+		//JTS2do: Add bounding
 		Serial.print(F("\n\nTesting current sensor @ 0A: "));
 		serialUSB_waitForEmptyBuffer();
 		{
@@ -187,24 +204,7 @@ void loop()
 
 		//test that current sensor turns off
 		gpio_turnPowerSensors_off();
-
-
-		//verify ~2.5 volts with current sensor turned off
-
-
-		/////////////////////////////////////////////////////////////////////
-
-		//Test MCMe isolated voltage divider
-		Serial.print(F("\n\nTesting MCMe (LED should blink)"));
-		serialUSB_waitForEmptyBuffer();
-
-				for(int ii=0; ii<5; ii++)
-		{
-			spoofVoltageMCMe_setSpecificPWM(0); //LED should be full brightness
-			delay(200);
-			spoofVoltageMCMe_setSpecificPWM(255); //LED should be dim
-			delay(200);
-		}
+		//JTS2do: verify ~2.5 volts with current sensor turned off
 
 		/////////////////////////////////////////////////////////////////////
 
@@ -258,13 +258,13 @@ void loop()
 			else { Serial.print("FAIL!!!!!!!!!!!!!!!!"); didTestFail = true; }
 		}
 
-		gpio_turnGridCharger_off();
+		gpio_turnGridCharger_off(); //JTS2do: Verify state
 
 		/////////////////////////////////////////////////////////////////////
 
 		//Test GRID_PWM & 12V_KEYON
-		//GRID_PWM is open-collectoring 12V_KEYON
-		//12V_KEYON is tied to onboard +12V thru a 470 Ohm resistor
+		//GRID_PWM is open-collectored to 12V_KEYON
+		//12V_KEYON is pulled up to onboard +12V
 		Serial.print(F("\nTesting 12V_KEYON state is ON: "));
 		serialUSB_waitForEmptyBuffer();
 		{
@@ -279,7 +279,7 @@ void loop()
 		{
 			gpio_setGridCharger_powerLevel('0'); //open drain is shorted (negative logic)
 			delay(100);
-			if( gpio_keyStateNow() == false ) { Serial.print("pass"); } //key appears off
+			if( gpio_keyStateNow() == false ) { Serial.print("pass"); } //GRID_PWM's open collector is pulling to 0V
 			else { Serial.print("FAIL!!!!!!!!!!"); didTestFail = true; }
 		}
 		//Don't add any code here
@@ -294,8 +294,79 @@ void loop()
 
 		/////////////////////////////////////////////////////////////////////
 
+		LTC68042result_errorCount_set(0);
 
-	 	//LTC68042cell_nextVoltages(); //round-robin handler measures QTY3 cell voltages per call
+		//tell LTC6804 to keep discharge FETS on during conversion
+		//JTS2do
+
+		//Give LTC6804s time to settle (due to high impedance test LED string)
+		LTC68042configure_wakeupCore();
+		delay(500);
+
+		//start cell conversion with all discharge FETs off
+		LTC68042cell_nextVoltages(); //Initial call starts first conversion, then returns
+
+		//read back all cell voltages
+		for(int ii=0; ii<16; ii++) { LTC68042cell_nextVoltages(); } //reads QTY3 cells per call
+
+		//validate data and store in 
+		LTC68042cell_nextVoltages(); //17th call stores all cell results in LTC6804result array  
+
+		//display all cell voltages
+		for(uint8_t ii=0; ii<TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages( (FIRST_IC_ADDR+ii), 3); }
+
+		Serial.print(F("\nLTC6804 - verify no shorts: "));
+		serialUSB_waitForEmptyBuffer();
+		{
+			//verify all cells above minimum LED voltage (~2 volts)
+			if( LTC68042result_loCellVoltage_get() > 18000 ) { Serial.print("pass"); } //all cells are above 1.8 volts
+			else { Serial.print("FAIL!!!!!!!!!!!!!!!!"); didTestFail = true; } //at least one cell is low
+		}
+
+		// //On each IC, short three cells at a time, then verify voltage is zero
+		// for(uint8_t shortCellsOnCVR = 0; shortCellsOnCVR < 4; shortCellsOnCVR++) //cycle through Cell Voltage Registers A/B/C/D
+		// {
+		// 	uint16_t cellDischargeBitmap = 0;
+		// 	switch(shortCellsOnCVR)
+		// 	{
+		// 		case 0: cellDischargeBitmap = 0b0000000000000111; break; //short cells on CVR A
+		// 		case 1: cellDischargeBitmap = 0b0000000000111000; break; //short cells on CVR B
+		// 		case 2: cellDischargeBitmap = 0b0000000111000000; break; //short cells on CVR C
+		// 		case 3: cellDischargeBitmap = 0b0000111000000000; break; //short cells on CVR D
+		// 	}
+			
+		// 	//short discharge FETs on above CVR on all LTC6804 ICs
+		// 	for(uint8_t ii=0; ii<TOTAL_IC; ii++)
+		// 	{
+		// 		LTC68042configure_cellBalancing_setCells( (FIRST_IC_ADDR + ii), cellDischargeBitmap);
+		// 	}
+		// 	delay(10); //wait for LPF
+
+		// 	for(uint8_t ii=0; ii<34; ii++)
+		// 	{
+		// 		LTC68042cell_nextVoltages(); //first 17 calls retrieves stale data (obtained previously) //next 17 calls retrieves latest data
+		// 	}
+
+		// 	//display all cell voltages
+		// 	for(uint8_t ii=0; ii<TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages( (FIRST_IC_ADDR+ii), 3); }
+
+		// 	//verify shorted cells are now less than say 0.1 volt
+		// 	//JTS2do
+		// 	//LTC68042result_specificCellVoltage_get()
+		// }
+
+		// //disable all discharge FETs
+		// LTC68042configure_cellBalancing_disable();
+
+		//see if any isoSPI errors occurred
+		Serial.print(F("\nLTC6804 - isoSPI error count: "));
+		Serial.print(String(LTC68042result_errorCount_get()));
+		Serial.print(F(", "));
+		serialUSB_waitForEmptyBuffer();
+		{
+			if( LTC68042result_errorCount_get() == 0 ) { Serial.print("pass"); }
+			else { Serial.print("FAIL!!!!!!!!!!!!!"); didTestFail = true; } //at least one isoSPI error occurred
+		}
 
 
 		/////////////////////////////////////////////////////////////////////

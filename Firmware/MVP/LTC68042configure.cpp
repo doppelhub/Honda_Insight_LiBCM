@@ -71,7 +71,7 @@ void LTC68042configure_writeConfigurationRegisters(uint8_t icAddress)
 void LTC68042configure_cellBalancing_setCells(uint8_t icAddress, uint16_t cellBitmap)
 {
   //Each bit in cellBitmap corresponds to a cell's DCCn discharge bit
-  //Example: cellBitmap = 0b0000 1000 0000 0011 will enable discharge on cells 12,2,1 //cells are one-indexed
+  //Example: cellBitmap = 0b0000 1000 0000 0011 will enable discharge on cells 12,2,1 //LSB is cell01
   //Example: cellBitmap = 0b0000 1111 1111 1111 will enable discharge on all cells
   configurationRegisterData[4] = (uint8_t)(cellBitmap); //LSByte
   configurationRegisterData[5] = (( (uint8_t)(cellBitmap >> 8) ) & 0b00001111); //MSByte's lower nibble
