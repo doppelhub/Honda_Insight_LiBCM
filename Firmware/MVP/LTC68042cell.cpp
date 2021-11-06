@@ -23,8 +23,8 @@ void startCellConversion()
 
   //JTS2doLater: Replace magic numbers with #define
   //Cell Voltage conversion command.
-  uint8_t ADCV[2] = { ((MD_FILTERED & 0x02 ) >> 1) + 0x02,  //set bit 9 true
-                      ((MD_FILTERED & 0x01 ) << 7) + 0x60 + (DCP_DISABLED<<4) + CELL_CH_ALL }; 
+  uint8_t ADCV[2] = { ((MD_FILTERED & 0x02 ) >> 1) + 0x02,  //set bit 9 true //
+                      ((MD_FILTERED & 0x01 ) << 7) + 0x60 + (IS_DISCHARGE_ALLOWED_DURING_CONVERSION<<4) + CELL_CH_ALL }; 
 
   //Load 'ADCV' command into cmd array
   cmd[0] = ADCV[0];
@@ -187,8 +187,10 @@ void processAllCellVoltages(void)
 //raw cell voltages are stored in file-scoped "cellVoltages_counts[][]"" array
 //latest results are stored in "LTC68042_result.c"
 //Example with QTY48 cells:
-//        -the first sixteen calls ( (48 cells) / (3 cells per call) = 16 calls ) read back QTY48 cell voltages.
-//        -The next (seventeenth) call will perform all pack voltage math and store in LTC68042_result.c  
+//	-the absolute first call starts a conversion.
+//	After that, the behavior is as follows:  
+//	-the next sixteen calls ( (48 cells) / (3 cells per call) = 16 calls ) read back QTY48 cell voltages.
+//  -The seventeenth call performs all pack voltage math and stores valid results in LTC68042_result.c  
 void LTC68042cell_nextVoltages(void)
 {
 	LTC68042configure_wakeupCore(); //non-blocking if LTC ICs already on

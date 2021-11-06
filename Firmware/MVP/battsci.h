@@ -20,4 +20,6 @@
 
 	void BATTSCI_setSpoofedCurrent(int16_t packCurrent);
 
+	uint8_t BATTSCI_writeByte(uint8_t data);
+
 #endif

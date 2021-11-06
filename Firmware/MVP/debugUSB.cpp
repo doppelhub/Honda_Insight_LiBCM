@@ -13,6 +13,7 @@ char debugCharacter = '.';
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 //print all cell voltages from one IC
+//Regardless of actual physical address (e.g. first ic address is 2), the zeroth array element is the first IC's data  
 //t=2.4 milliseconds worst case
 void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces)
 {
@@ -41,7 +42,7 @@ void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-void debugUSB_printCellBalanceStatus()
+void debugUSB_printCellBalanceStatus(void)
 {
 	Serial.print("\nBalance:");
 	for(uint8_t ii = 0; ii < TOTAL_IC; ii++)

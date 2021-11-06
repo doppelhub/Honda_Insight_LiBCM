@@ -28,6 +28,7 @@
   #include "LT_SPI.h"
   #include "battsci.h"
   #include "metsci.h"
+  #include "LiDisplay.h"
   #include "adc.h"
   #include "vPackSpoof.h"
   #include "lcd.h"
@@ -36,5 +37,6 @@
   #include "LTC68042cell.h"
   #include "LTC68042gpio.h"
   #include "LTC68042result.h"
+  #include "BringupTester.h"
 
 #endif

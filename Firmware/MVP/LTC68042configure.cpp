@@ -70,9 +70,9 @@ void LTC68042configure_writeConfigurationRegisters(uint8_t icAddress)
 
 void LTC68042configure_cellBalancing_setCells(uint8_t icAddress, uint16_t cellBitmap)
 {
-  //Each bit in cellBitmap corresponds to a cell's DCCn discharge bit
-  //Example: cellBitmap = 0b0000 1000 0000 0011 will enable discharge on cells 12,2,1 //cells are one-indexed
-  //Example: cellBitmap = 0b0000 1111 1111 1111 will enable discharge on all cells
+  //Each bit in cellBitmap corresponds to a specific cell's DCCn discharge bit
+  //Example: cellBitmap = 0b0000 1000 0000 0011 enables discharge on cells 12, 2, and 1 //LSB is cell01
+  //Example: cellBitmap = 0b0000 1111 1111 1111 enables discharge on all cells
   configurationRegisterData[4] = (uint8_t)(cellBitmap); //LSByte
   configurationRegisterData[5] = (( (uint8_t)(cellBitmap >> 8) ) & 0b00001111); //MSByte's lower nibble
 
@@ -115,7 +115,7 @@ void LTC68042configure_cellBalancing_disable()
 void LTC68042configure_initialize()
 {
   spi_enable(SPI_CLOCK_DIV64); //JTS2doLater: See how fast we can use SPI without transmission errors
-  //LTC6804configure_calculate_CFGRn();        //JTS2doNow: Doesn't actually send configuration to LTC ICs.
+  //LTC6804configure_calculate_CFGRn();
   Serial.print(F("\nLTC6804 BEGIN"));
 }
 

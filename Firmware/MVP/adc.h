@@ -15,6 +15,9 @@
 	void adc_updateBatteryCurrent(void);
 
 	int16_t adc_getLatestSpoofedCurrent_amps(void);
+
+	uint16_t adc_getTemperature(uint8_t tempToMeasure);
+
 #endif
 
 /*

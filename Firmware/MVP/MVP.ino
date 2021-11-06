@@ -13,6 +13,7 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 	Serial.begin(115200); //USB
 	METSCI_begin();
 	BATTSCI_begin();
+	LiDisplay_begin();
 
 	LTC68042configure_initialize();
 
@@ -22,6 +23,10 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 
 	#ifdef HW_REVB
 	  	gpio_turnBuzzer_on_lowFreq(); //enable buzzer if RevB firmware loaded onto RevC+ hardware (RevB hardware doesn't have a buzzer)
+	#endif
+
+	#ifdef RUN_BRINGUP_TESTER
+	  	bringupTester_run(); //this function never returns
 	#endif
 
 	Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION ", " BUILD_DATE "\n"));

@@ -44,6 +44,13 @@ void spoofVoltageMCMe(void)
 
 //---------------------------------------------------------------------------------------
 
+void spoofVoltageMCMe_setSpecificPWM(uint8_t valuePWM)
+{ //used for troubleshooting
+	analogWrite(PIN_MCME_PWM, valuePWM);
+}
+
+//---------------------------------------------------------------------------------------
+
 void spoofVoltage_VPINout(void)
 {
 	//      V_DIV_CORRECTION = RESISTANCE_MCM / RESISTANCE_R34
@@ -59,6 +66,7 @@ void spoofVoltage_VPINout(void)
 
 	analogWrite(PIN_VPIN_OUT_PWM, (uint8_t)pwmCounts_VPIN_out);
 }
+
 
 //---------------------------------------------------------------------------------------
 
