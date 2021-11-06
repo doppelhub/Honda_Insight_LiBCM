@@ -24,7 +24,7 @@ void startCellConversion()
   //JTS2doLater: Replace magic numbers with #define
   //Cell Voltage conversion command.
   uint8_t ADCV[2] = { ((MD_FILTERED & 0x02 ) >> 1) + 0x02,  //set bit 9 true
-                      ((MD_FILTERED & 0x01 ) << 7) + 0x60 + (DCP_DISABLED<<4) + CELL_CH_ALL }; 
+                      ((MD_FILTERED & 0x01 ) << 7) + 0x60 + (IS_DCP_ALLOWED<<4) + CELL_CH_ALL }; 
 
   //Load 'ADCV' command into cmd array
   cmd[0] = ADCV[0];
