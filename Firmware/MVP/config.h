@@ -47,6 +47,8 @@
 
 	#define GRID_CHARGER_CELL_VMAX 39000 // Vcell = (GRID_CHARGER_CELL_VMAX * 0.0001 V) //cells charged to this voltage
 
+	//#define RUN_BRINGUP_TESTER //test PCB (requires external hardware)
+
 #endif
 
 /*

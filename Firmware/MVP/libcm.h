@@ -37,5 +37,6 @@
   #include "LTC68042cell.h"
   #include "LTC68042gpio.h"
   #include "LTC68042result.h"
+  #include "BringupTester.h"
 
 #endif
