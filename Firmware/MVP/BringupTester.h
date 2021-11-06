@@ -6,4 +6,8 @@
 
 	void bringupTester_run(void);
 
+	#define TEST_TYPE_UNDEFINED      0
+	#define TEST_TYPE_THERMAL_IMAGER 1
+	#define TEST_TYPE_GAUNTLET       2
+
 #endif

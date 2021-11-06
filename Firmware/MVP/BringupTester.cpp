@@ -14,10 +14,11 @@ void bringupTester_run(void)
 	#ifdef RUN_BRINGUP_TESTER
 		while(1) //this function never returns
 		{
+			uint8_t testToRun = TEST_TYPE_UNDEFINED;
+			bool didTestFail = false;
+
 			if( gpio_isCoverInstalled() == true ) //wait for user to push button
 			{
-				bool didTestFail = false;
-
 				Serial.print(F("\nRunning LiBCM Bringup Tester\n"));
 
 				/////////////////////////////////////////////////////////////////////
@@ -31,6 +32,55 @@ void bringupTester_run(void)
 
 				/////////////////////////////////////////////////////////////////////
 
+				//verify LTC6804s working with no short circuits
+				Serial.print(F("\nLTC6804 - verify isoSPI: "));
+				serialUSB_waitForEmptyBuffer();
+				
+				LTC68042result_errorCount_set(0);
+
+				//Give LTC6804s time to settle (due to high impedance test LED string)
+				LTC68042configure_wakeupCore();
+				delay(100);
+
+				//start cell conversion, read back all cell voltages, validate, and store in array
+				for(int ii=0; ii<100; ii++) { LTC68042cell_nextVoltages(); delay(10); } //generate a bunch of isoSPI traffic to check for errors
+
+				Serial.print(F("\nLTC6804 - isoSPI error count: "));
+				Serial.print(String(LTC68042result_errorCount_get()));
+				Serial.print(F(", "));
+			
+				if( LTC68042result_errorCount_get() == 0 ) { Serial.print("pass"); }
+				else { Serial.print("FAIL!!!!!!!!!!!!!"); didTestFail = true; } //at least one isoSPI error occurred
+
+				//display all cell voltages
+				for(uint8_t ii=0; ii<TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages( ii, 3); }
+
+				Serial.print("\nmax cell: ");
+				Serial.print(String(LTC68042result_hiCellVoltage_get()));
+				Serial.print("\nmin cell: ");
+				Serial.print(String(LTC68042result_loCellVoltage_get()));	
+		
+				Serial.print(F("\nLTC6804 - verify no shorts: "));
+				serialUSB_waitForEmptyBuffer();
+				//verify all cells are plugged in
+				if( (LTC68042result_loCellVoltage_get() > 15000) && /* verify all cells above 1.5000 volts */
+				    (LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get() < 1000) && /* verify cells reasonably balanced*/
+				    (LTC68042result_hiCellVoltage_get() < 41000) ) //default returned data is 65535 (if no data sent)
+				{
+					Serial.print("pass");
+					if( LTC68042result_hiCellVoltage_get() > 30000 ) { testToRun = TEST_TYPE_THERMAL_IMAGER; }
+					else                                             { testToRun = TEST_TYPE_GAUNTLET;       }
+
+				} else {
+					Serial.print("FAIL!!!!!!!!!!!!!!!! (check BMS leads & supply)");
+					didTestFail = true;
+				}
+			}
+
+			/////////////////////////////////////////////////////////////////////
+
+			if(testToRun == TEST_TYPE_GAUNTLET)
+			{	
 				//test LEDs/display
 
 				Serial.print(F("\nTesting LED1/2/3/4"));
@@ -161,10 +211,8 @@ void bringupTester_run(void)
 				/////////////////////////////////////////////////////////////////////
 
 				//test current sensor, both OEM fan speeds, and onboard fans
-				Serial.print(F("\n\nTesting Current Sensor"));
-				serialUSB_waitForEmptyBuffer();
 
-				//Lambda Gen is set to 3A, but is open-drained thru OEM fan drive FETs
+				//Lambda Gen is set to 2V@3A, but is open-drained thru QTY3 fan drive FETs (in parallel, tested one at a time)
 				//JTS2do: Add bounding
 				Serial.print(F("\n\nTesting current sensor @ 0A: "));
 				serialUSB_waitForEmptyBuffer();
@@ -184,13 +232,15 @@ void bringupTester_run(void)
 					gpio_setFanSpeed_OEM('H'); //Lambda Gen is set to 3A, but is open-drained thru OEM fan drive FETs
 					delay(500);
 					result = analogRead(PIN_BATTCURRENT);
-					Serial.print(String(result));			
+					Serial.print(String(result));
+					Serial.print(F(", "));		
 
 					gpio_setFanSpeed('H'); //Lambda Gen is set to 3A, but is open-drained thru onboard fan drive FETs
 					delay(500);
 					result = analogRead(PIN_BATTCURRENT);
 					Serial.print(String(result));		
 
+					//ensure all FETs are off (so they don't overheat)
 					gpio_setFanSpeed('0');
 					gpio_setFanSpeed_OEM('0');
 				}
@@ -287,60 +337,6 @@ void bringupTester_run(void)
 
 				/////////////////////////////////////////////////////////////////////
 
-				LTC68042result_errorCount_set(0);
-
-				//tell LTC6804 to keep discharge FETS on during conversion
-				//JTS2do
-
-				//Give LTC6804s time to settle (due to high impedance test LED string)
-				LTC68042configure_wakeupCore();
-				delay(500);
-
-				//start cell conversion with all discharge FETs off
-				LTC68042cell_nextVoltages(); //Initial call starts first conversion, then returns
-				delay(10);
-
-				//read back all cell voltages, validate, and store in array
-				for(int ii=0; ii<100; ii++) { LTC68042cell_nextVoltages(); delay(10); } //generate a bunch of isoSPI traffic to check for errors
-
-				//display all cell voltages
-				for(uint8_t ii=0; ii<TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages( ii, 3); }
-
-				Serial.print(F("\nLTC6804 - verify no shorts: "));
-				serialUSB_waitForEmptyBuffer();
-				{
-					//verify all cells above minimum LED voltage (~2 volts)
-					if( (LTC68042result_loCellVoltage_get() > 15000) && /* verify all cells above 1.5000 volts */
-					    (LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get() < 500) && /* verify cells reasonably balanced*/
-					    (LTC68042result_hiCellVoltage_get() < 40000) ) //default returned data is 65535 (if no data sent)
-					{
-						Serial.print("pass");
-					}
-					else
-					{
-						Serial.print("FAIL!!!!!!!!!!!!!!!!");
-						didTestFail = true; 
-					}
-					Serial.print("\nmax cell: ");
-					Serial.print(String(LTC68042result_hiCellVoltage_get()));
-					Serial.print("\nmin cell: ");
-					Serial.print(String(LTC68042result_loCellVoltage_get()));					
-				}
-
-				/////////////////////////////////////////////////////////////////////
-
-				//see if any isoSPI errors occurred
-				Serial.print(F("\nLTC6804 - isoSPI error count: "));
-				Serial.print(String(LTC68042result_errorCount_get()));
-				Serial.print(F(", "));
-				serialUSB_waitForEmptyBuffer();
-				{
-					if( LTC68042result_errorCount_get() == 0 ) { Serial.print("pass"); }
-					else { Serial.print("FAIL!!!!!!!!!!!!!"); didTestFail = true; } //at least one isoSPI error occurred
-				}
-
-				/////////////////////////////////////////////////////////////////////
-
 				//test buzzer high frequency
 				gpio_turnBuzzer_on_highFreq();
 
@@ -348,16 +344,28 @@ void bringupTester_run(void)
 				else {	          Serial.print("\n\nUnit FAILED!!!!!!!!!!!\n\n"); delay(999); }
 				gpio_turnBuzzer_off();
 
-				/////////////////////////////////////////////////////////////////////
+			}
 
-				//(manuallY) verify discharge FETs working (with thermal imager)
+			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+			if(testToRun == TEST_TYPE_THERMAL_IMAGER)
+			{
+				//(manually) verify discharge FETs working (with thermal imager)
 
 				//JTS note: The LTC6804 cannot enable discharge resistors with high impedance spoofed BMS voltage (i.e. from series LED chain).
 				//This is due to -2.5V PFET gate threshold voltage & also LTC6804 "Discharge Switch On-Resistance vs Cell Voltage" (p14).
 				//Therefore, to test discharge resistors, run test again with actual batteries plugged in, then use thermal imager.
 				
 				LTC68042configure_wakeupCore();
-				delay(200);
+				delay(1);
+
+				for(uint8_t ii=0; ii<3; ii++)
+				{
+					gpio_turnBuzzer_on_highFreq();
+					delay(100);
+					gpio_turnBuzzer_off();
+					delay(100);
+				}
 
 				//activate LTC6804 discharge FETs
 				for(uint8_t ii=0; ii<TOTAL_IC; ii++)
@@ -380,8 +388,8 @@ void bringupTester_run(void)
 					LTC68042configure_cellBalancing_disable(); //disable all discharge FETs
 					delay(1800); //wait for cool down
 				}
-
 			}
+			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			blinkLED2(); //Heartbeat
 		}
