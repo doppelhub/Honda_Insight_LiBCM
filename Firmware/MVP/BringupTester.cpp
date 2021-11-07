@@ -1,6 +1,8 @@
 //Copyright 2021(c) John Sullivan
 //Tests PCB (using custom external hardware)
 
+//Not used when deployed in vehicle
+
 #include "libcm.h"
 
 void serialUSB_waitForEmptyBuffer(void)
@@ -8,7 +10,7 @@ void serialUSB_waitForEmptyBuffer(void)
 	while(Serial.availableForWrite() != 63) { ; } //do nothing
 }
 
-//the 'quality' of this code is... poor.  Not written to be good/fast/etc... just to work
+//the 'quality' of this code is... poor.  Not written to be good/fast/etc... just to test each PCB after assembly
 void bringupTester_run(void)
 {
 	#ifdef RUN_BRINGUP_TESTER
@@ -32,22 +34,22 @@ void bringupTester_run(void)
 
 				/////////////////////////////////////////////////////////////////////
 
-				//verify LTC6804s working with no short circuits
-				Serial.print(F("\nLTC6804 - verify isoSPI: "));
+				//verify LTC6804s
+				Serial.print(F("\nTesting LTC6804s"));
 				serialUSB_waitForEmptyBuffer();
-				
+
 				LTC68042result_errorCount_set(0);
 
 				//Give LTC6804s time to settle (due to high impedance test LED string)
 				LTC68042configure_wakeupCore();
-				delay(100);
+				delay(50);
 
 				//start cell conversion, read back all cell voltages, validate, and store in array
-				for(int ii=0; ii<100; ii++) { LTC68042cell_nextVoltages(); delay(10); } //generate a bunch of isoSPI traffic to check for errors
+				for(int ii=0; ii<100; ii++) { LTC68042cell_nextVoltages(); delay(5); } //generate a bunch of isoSPI traffic to check for errors
 
-				Serial.print(F("\nLTC6804 - isoSPI error count: "));
+				Serial.print(F("\nLTC6804 - isoSPI error count is "));
 				Serial.print(String(LTC68042result_errorCount_get()));
-				Serial.print(F(", "));
+				Serial.print(F(": "));
 			
 				if( LTC68042result_errorCount_get() == 0 ) { Serial.print("pass"); }
 				else { Serial.print("FAIL!!!!!!!!!!!!!"); didTestFail = true; } //at least one isoSPI error occurred
@@ -60,16 +62,16 @@ void bringupTester_run(void)
 				Serial.print("\nmin cell: ");
 				Serial.print(String(LTC68042result_loCellVoltage_get()));	
 		
-				Serial.print(F("\nLTC6804 - verify no shorts: "));
+				Serial.print(F("\n\nLTC6804 - verify no shorts: "));
 				serialUSB_waitForEmptyBuffer();
-				//verify all cells are plugged in
+				//verify all cells are in range
 				if( (LTC68042result_loCellVoltage_get() > 15000) && /* verify all cells above 1.5000 volts */
 				    (LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get() < 1000) && /* verify cells reasonably balanced*/
 				    (LTC68042result_hiCellVoltage_get() < 41000) ) //default returned data is 65535 (if no data sent)
 				{
 					Serial.print("pass");
-					if( LTC68042result_hiCellVoltage_get() > 30000 ) { testToRun = TEST_TYPE_THERMAL_IMAGER; }
-					else                                             { testToRun = TEST_TYPE_GAUNTLET;       }
+					if( LTC68042result_hiCellVoltage_get() > 30000 ) { testToRun = TEST_TYPE_THERMAL_IMAGER; } //lithium batteries connected
+					else                                             { testToRun = TEST_TYPE_GAUNTLET;       } //LED BMS board connected
 
 				} else {
 					Serial.print("FAIL!!!!!!!!!!!!!!!! (check BMS leads & supply)");
@@ -77,12 +79,13 @@ void bringupTester_run(void)
 				}
 			}
 
-			/////////////////////////////////////////////////////////////////////
+			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			if(testToRun == TEST_TYPE_GAUNTLET)
 			{	
-				//test LEDs/display
+				/////////////////////////////////////////////////////////////////////
 
+				//test LEDs/display
 				Serial.print(F("\nTesting LED1/2/3/4"));
 				serialUSB_waitForEmptyBuffer();
 				LED(1,HIGH);
@@ -102,7 +105,7 @@ void bringupTester_run(void)
 				lcd_displayON();
 
 				//test if 4x20 screen dims when 5V buck turned off (USB powers at lower voltage)
-				for(int ii=0; ii<5; ii++)
+				for(int ii=0; ii<6; ii++)
 				{
 					digitalWrite(PIN_TURNOFFLiBCM,HIGH); //4x20 screen should dim
 					delay(200);
@@ -123,7 +126,7 @@ void bringupTester_run(void)
 				Serial.print(F("\n\nTesting MCMe (LED should blink)"));
 				serialUSB_waitForEmptyBuffer();
 
-				for(int ii=0; ii<5; ii++)
+				for(int ii=0; ii<6; ii++)
 				{
 					spoofVoltageMCMe_setSpecificPWM(0); //LED should be full brightness
 					delay(200);
@@ -154,7 +157,7 @@ void bringupTester_run(void)
 				serialUSB_waitForEmptyBuffer();
 				{
 					gpio_turnPowerSensors_on();
-					delay(20);
+					delay(10);
 				}
 
 				Serial.print(F("\nBATTSCI -> METSCI loopback test: "));
@@ -178,76 +181,166 @@ void bringupTester_run(void)
 
 				/////////////////////////////////////////////////////////////////////
 
-				Serial.print(F("\n\nMeasuring temp with sensors disabled (should be ~5V)"));
+				//measure unpowered temperature sensors
+
+				gpio_turnTemperatureSensors_off(); //they should already be off
+
+				//OEM sensors
+				{
+					uint16_t tempYEL = adc_getTemperature(PIN_TEMP_YEL);
+					uint16_t tempGRN = adc_getTemperature(PIN_TEMP_GRN);
+					uint16_t tempWHT = adc_getTemperature(PIN_TEMP_WHT);
+					uint16_t tempBLU = adc_getTemperature(PIN_TEMP_BLU);
+					Serial.print(F("\nUnpowered YEL/GRN/WHT/BLU temp sensors are "));
+					Serial.print( String(tempYEL) + '/');
+					Serial.print( String(tempGRN) + '/');
+					Serial.print( String(tempWHT) + '/');
+					Serial.print( String(tempBLU) + ": ");
+
+					if((tempYEL > 950) && (tempGRN > 950) && (tempWHT > 950) && (tempBLU > 950)) { Serial.print("pass"); }
+					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+				}
+
+				//lithium module sensors
+				{
+					uint16_t tempBAY1 = adc_getTemperature(PIN_TEMP_BAY1);
+					uint16_t tempBAY2 = adc_getTemperature(PIN_TEMP_BAY2);
+					uint16_t tempBAY3 = adc_getTemperature(PIN_TEMP_BAY3);
+					Serial.print(F("\nUnpowered BAY1/BAY2/BAY3 temp sensors are "));
+					Serial.print( String(tempBAY1) + '/');
+					Serial.print( String(tempBAY2) + '/');
+					Serial.print( String(tempBAY3) + ": ");
+
+					if((tempBAY1 > 950) && (tempBAY2 > 950) && (tempBAY3 > 950)) { Serial.print("pass"); }
+					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+				}
+
+				/////////////////////////////////////////////////////////////////////
+
+				//measure powered temperature sensors
+				Serial.print(F("\n\nTurning temp sensors on"));
 				serialUSB_waitForEmptyBuffer();
 
-				gpio_turnTemperatureSensors_off();
-				delay(250); //wait for temp sensor LPF
-
-				Serial.print(F("\nYEL  temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_YEL)));
-				Serial.print(F("\nGRN  temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_GRN)));
-				Serial.print(F("\nWHT  temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_WHT)));
-				Serial.print(F("\nBLU  temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_BLU)));
-				Serial.print(F("\nBay1 temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_BAY1)));
-				Serial.print(F("\nBay2 temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_BAY2)));
-				Serial.print(F("\nBay3 temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_BAY3)));
-
-				Serial.print(F("\n\nMeasuring temp with sensors enabled. Should be ~2.5V (~512 counts)"));
-				serialUSB_waitForEmptyBuffer();
 				gpio_turnTemperatureSensors_on();
 				delay(250); //wait for temp sensor LPF
 				
-				Serial.print(F("\nYEL  temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_YEL)));
-				Serial.print(F("\nGRN  temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_GRN)));
-				Serial.print(F("\nWHT  temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_WHT)));
-				Serial.print(F("\nBLU  temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_BLU)));
-				Serial.print(F("\nBay1 temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_BAY1)));
-				Serial.print(F("\nBay2 temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_BAY2)));
-				Serial.print(F("\nBay3 temp is: ")); Serial.print(String(adc_getTemperature(PIN_TEMP_BAY3)));
-				Serial.print('\n');
+				//OEM sensors
+				{
+					uint16_t tempYEL = adc_getTemperature(PIN_TEMP_YEL);
+					uint16_t tempGRN = adc_getTemperature(PIN_TEMP_GRN);
+					uint16_t tempWHT = adc_getTemperature(PIN_TEMP_WHT);
+					uint16_t tempBLU = adc_getTemperature(PIN_TEMP_BLU);
+					Serial.print(F("\n  Powered YEL/GRN/WHT/BLU temp sensors are "));
+					Serial.print( String(tempYEL) + '/');
+					Serial.print( String(tempGRN) + '/');
+					Serial.print( String(tempWHT) + '/');
+					Serial.print( String(tempBLU) + ": ");
 
-				//JTS2do: add pass/fail bounding 
+					if((tempYEL > 462) && (tempYEL < 562) &&
+					   (tempGRN > 462) && (tempGRN < 562) &&
+					   (tempWHT > 462) && (tempWHT < 562) &&
+					   (tempBLU > 462) && (tempBLU < 562)) { Serial.print("pass"); }
+					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+				}
+
+				//lithium module sensors
+				{
+					uint16_t tempBAY1 = adc_getTemperature(PIN_TEMP_BAY1);
+					uint16_t tempBAY2 = adc_getTemperature(PIN_TEMP_BAY2);
+					uint16_t tempBAY3 = adc_getTemperature(PIN_TEMP_BAY3);
+					Serial.print(F("\n  Powered BAY1/BAY2/BAY3 temp sensors are "));
+					Serial.print( String(tempBAY1) + '/');
+					Serial.print( String(tempBAY2) + '/');
+					Serial.print( String(tempBAY3) + ": ");
+
+					if((tempBAY1 > 462) && (tempBAY1 < 562) &&
+					   (tempBAY2 > 462) && (tempBAY2 < 562) &&
+					   (tempBAY3 > 462) && (tempBAY3 < 562)) { Serial.print("pass"); }
+					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+				}
+
+				gpio_turnTemperatureSensors_off();
 
 				/////////////////////////////////////////////////////////////////////
 
 				//test current sensor, both OEM fan speeds, and onboard fans
-
-				//Lambda Gen is set to 2V@3A, but is open-drained thru QTY3 fan drive FETs (in parallel, tested one at a time)
-				//JTS2do: Add bounding
-				Serial.print(F("\n\nTesting current sensor @ 0A: "));
+				//Lambda Gen is set to 2V@3A, and is open-drained thru QTY3 fan drive FETs (in parallel, tested one at a time)
+				//current sensor has QTY19 turns, so 3A is seen as 57 amps assist.
+	
+				Serial.print(F("\n\nCurrent sensor 10b result @ 0A is "));
 				serialUSB_waitForEmptyBuffer();
 				{
-					gpio_setFanSpeed_OEM('0'); 
-					delay(100);
-					uint16_t result = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
-					Serial.print(String(result));
-					Serial.print(F(", "));
+					gpio_setFanSpeed_OEM('0'); //turn all FETs off (0A thru sensor)
+					gpio_setFanSpeed('0');     //turn all FETs off (0A thru sensor)
+					delay(10);
 
-					gpio_setFanSpeed_OEM('L'); 
-					delay(500);
-					result = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' // 54
-					Serial.print(String(result));
-					Serial.print(F(", "));
-
-					gpio_setFanSpeed_OEM('H'); //Lambda Gen is set to 3A, but is open-drained thru OEM fan drive FETs
-					delay(500);
-					result = analogRead(PIN_BATTCURRENT);
-					Serial.print(String(result));
-					Serial.print(F(", "));		
-
-					gpio_setFanSpeed('H'); //Lambda Gen is set to 3A, but is open-drained thru onboard fan drive FETs
-					delay(500);
-					result = analogRead(PIN_BATTCURRENT);
-					Serial.print(String(result));		
-
-					//ensure all FETs are off (so they don't overheat)
-					gpio_setFanSpeed('0');
-					gpio_setFanSpeed_OEM('0');
+					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
+					Serial.print(String(resultADC));
+					Serial.print(F(" counts: "));
+					if((resultADC > 329) && (resultADC < 332)) { Serial.print("pass"); }
+					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
 				}
 
-				//test that current sensor turns off
-				gpio_turnPowerSensors_off();
-				//JTS2do: verify ~2.5 volts with current sensor turned off
+				Serial.print(F("\nCurrent sensor 10b result @ 3A through OEM_FAN_L is "));
+				serialUSB_waitForEmptyBuffer();
+				{
+					gpio_setFanSpeed_OEM('L'); //test OEM fan low speed relay
+					gpio_setFanSpeed('0');
+					delay(500); //JTS2do: How long to wait?
+
+					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
+					Serial.print(String(resultADC));
+					Serial.print(F(" counts: "));
+					if((resultADC > 592) && (resultADC < 598)) { Serial.print("pass"); }
+					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+				}
+
+				Serial.print(F("\nCurrent sensor 10b result @ 3A through OEM_FAN_H is "));
+				serialUSB_waitForEmptyBuffer();
+				{
+					gpio_setFanSpeed_OEM('H'); //test OEM fan low speed relay
+					gpio_setFanSpeed('0');
+					delay(500); //JTS2do: How long to wait?
+
+					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
+					Serial.print(String(resultADC));
+					Serial.print(F(" counts: "));
+					if((resultADC > 592) && (resultADC < 598)) { Serial.print("pass"); }
+					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+				}
+
+				Serial.print(F("\nCurrent sensor 10b result @ 3A through onboard fans is "));
+				serialUSB_waitForEmptyBuffer();
+				{
+					gpio_setFanSpeed_OEM('0'); //test OEM fan low speed relay
+					gpio_setFanSpeed('H');
+					delay(500); //JTS2do: How long to wait?
+
+					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
+					Serial.print(String(resultADC));
+					Serial.print(F(" counts: "));
+					if((resultADC > 592) && (resultADC < 598)) { Serial.print("pass"); }
+					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+				}
+
+				//test that OEM current sensor turns off correctly
+				Serial.print(F("\nTurning current sensor off: "));
+				serialUSB_waitForEmptyBuffer();
+				{
+					gpio_turnPowerSensors_off();
+					delay(500); //JTS2do: how long?
+
+					gpio_setFanSpeed('H'); //should already be here
+					delay(100);
+
+					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
+					if((resultADC > 329) && (resultADC < 332)) { Serial.print("pass"); }
+					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+				}
+
+				//turn all FETs off (so they don't overheat)
+				gpio_setFanSpeed('0');
+				gpio_setFanSpeed_OEM('0');
 
 				/////////////////////////////////////////////////////////////////////
 
@@ -282,7 +375,7 @@ void bringupTester_run(void)
 
 				/////////////////////////////////////////////////////////////////////
 
-				//Test Grid Charger IGBT & sense
+				//Test Grid Charger IGBT & GRID_SENSE
 				Serial.print(F("\n\nTesting if grid IGBT is off: "));
 				serialUSB_waitForEmptyBuffer();
 				{
@@ -301,7 +394,7 @@ void bringupTester_run(void)
 					else { Serial.print("FAIL!!!!!!!!!!!!!!!!"); didTestFail = true; }
 				}
 
-				gpio_turnGridCharger_off(); //JTS2do: Verify state
+				gpio_turnGridCharger_off();
 
 				/////////////////////////////////////////////////////////////////////
 
@@ -356,6 +449,8 @@ void bringupTester_run(void)
 				//This is due to -2.5V PFET gate threshold voltage & also LTC6804 "Discharge Switch On-Resistance vs Cell Voltage" (p14).
 				//Therefore, to test discharge resistors, run test again with actual batteries plugged in, then use thermal imager.
 				
+				//JTS2do: Solder together a 75 Ohm test board - similar to existing LED test board - so that the above is no longer an issue.
+
 				LTC68042configure_wakeupCore();
 				delay(1);
 
