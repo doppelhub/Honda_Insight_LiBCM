@@ -24,10 +24,6 @@ uint8_t oldCalculatedSoC = 20;
 
 bool initializeSoC = true;
 
-uint8_t tempSoC = 19; // This variable and everything that uses it is only for LCD debug, and can be removed once that's no longer needed.
-void    tempSoC_set(uint8_t newSoC) { tempSoC = newSoC; }
-uint8_t tempSoC_get(void                 ) { return tempSoC; }
-
 uint8_t SoCHysteresisIncrementFrequency = 50; // How many iterations between SoC updates to MCM?
 uint8_t SoCHysteresisCounter = 0;
 uint16_t SoCHysteresisVoltage = 0;
@@ -225,7 +221,6 @@ void BATTSCI_calculateSoC(uint16_t voltage)
     calculatedSoC = (oldCalculatedSoC - 1);
   }
 
-  tempSoC_set(calculatedSoC);
   BATTSCI_evaluateSoCBytes(calculatedSoC);
 
   // Set oldCalculatedSoC to the incremented calculatedSoC
