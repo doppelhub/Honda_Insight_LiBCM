@@ -18,6 +18,7 @@ uint8_t spoofedVoltageToSend = 0;
 int16_t spoofedCurrentToSend = 0; //JTS2doLater spoofed pack current can probably be int8_t (+127 A)
 
 byte SoC_Bytes[] = {0x16, 0x20};  // SoC Bytes to send to MCM.  Index 0 is the upper byte and index 1 is the lower byte.
+byte temperature_Byte = 0x3A;  // Temperature Byte to send to MCM.  0x3A is +28 Degrees C.
 uint8_t calculatedSoC = 20;
 uint8_t oldCalculatedSoC = 20;
 
@@ -183,21 +184,31 @@ void BATTSCI_calculateSoC(uint16_t voltage)
   // Assist Enabled, Regen Enabled, Background Regen Disabled
   // Later we can change the profile to not be based around 72, but that would require a new ECM_YEAR variable in config.h
 
-  if (voltage >= 39500) {  // No Regen Allowed
+  if (voltage >= 39500) {
+    // No Regen Allowed
     uint8_t tempSoCPercent = map(voltage, 39000, 42000, 77, 80);
     calculatedSoC = tempSoCPercent;
-  } else if (voltage >= 37000) {  // No BG Regen Allowed
+    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
+  } else if (voltage >= 37000) {
+    // No BG Regen Allowed
     uint8_t tempSoCPercent = map(voltage, 37000, 38999, 72, 76);
     calculatedSoC = tempSoCPercent;
-  } else if ((voltage < 37000) && (voltage > 33500)) {  // BG Regen Allowed
-    uint8_t tempSoCPercent = map(voltage, 33501, 36999, 31, 71);
+    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
+  } else if ((voltage < 37000) && (voltage > 33500)) {
+    // BG Regen Allowed
+    uint8_t tempSoCPercent = map(voltage, 34001, 36999, 36, 71);
     calculatedSoC = tempSoCPercent;
-  } else if ((voltage <= 33500) && (voltage > 32500)) {  // BG Regen Allowed, SoC very low.
-    uint8_t tempSoCPercent = map(voltage, 32501, 33500, 21, 30);
+    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
+  } else if ((voltage <= 34000) && (voltage > 32500)) {
+    // BG Regen Allowed, SoC very low.
+    uint8_t tempSoCPercent = map(voltage, 32501, 34000, 21, 35);
     calculatedSoC = tempSoCPercent;
-  } else if (voltage <= 32500) {  // No Assist Allowed
+    temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
+  } else if (voltage <= 32500) {
+    // No Assist Allowed
     calculatedSoC = 20;
-    oldCalculatedSoC = 20;  // Make sure SoC doesn't immediately spike back up
+    oldCalculatedSoC = 20;        // Make sure SoC doesn't immediately spike back up
+    temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
   }
 
   // On first run we set oldCalculatedSoC and calculatedSoC to the same value.
@@ -267,7 +278,7 @@ void BATTSCI_sendFrames()
         debugUSB_sendChar('1');
       }
       else
-      { //all cells above 3.000 volts
+      { // all cells above 3.000 volts
 
         // NM:  Updating SoC only every so often.  The OEM SoC gauge doesn't seem to function when the SoC fluctuates too quickly.
         // A different hysteresis methodology could be employed; this is just a beta implementation.
@@ -309,12 +320,18 @@ void BATTSCI_sendFrames()
       frameSum_87 += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F ); //Battery Current (upper byte)
       frameSum_87 += BATTSCI_writeByte(  lowByte(batteryCurrent_toBATTSCI     ) & 0x7F ); //Battery Current (lower byte)
       frameSum_87 += BATTSCI_writeByte( 0x32 );                                           //Almost always 0x32
-      frameSum_87 += BATTSCI_writeByte( 0x3A );                                           //max temp: degC*2 (e.g. 0x3A = 58d = 29 degC
-      frameSum_87 += BATTSCI_writeByte( 0x3A );                                           //min temp: degC*2 (e.g. 0x3A = 58d = 29 degC
+      frameSum_87 += BATTSCI_writeByte( temperature_Byte );                                           //max temp: degC*2 (e.g. 0x3A = 58d = 28 degC
+      frameSum_87 += BATTSCI_writeByte( temperature_Byte );                                           //min temp: degC*2 (e.g. 0x3A = 58d = 28 degC
       frameSum_87 += BATTSCI_writeByte( METSCI_getPacketB3() );                           //MCM's sanity check that BCM isn't getting behind
                      BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_87) );         //Send Checksum. sum(byte0:byte11) should equal 0
       frame2send = 0xAA;
     }
+
+    // 0x26 = 08 Deg C
+    // 0x30 = 18 Deg C
+    // 0x31 = 19 Deg C
+
+
     else if( frame2send == 0xAA )
     {
       //Place 0xAA frame into serial send buffer
