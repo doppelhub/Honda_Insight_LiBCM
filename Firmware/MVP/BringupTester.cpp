@@ -222,7 +222,7 @@ void bringupTester_run(void)
 				serialUSB_waitForEmptyBuffer();
 
 				gpio_turnTemperatureSensors_on();
-				delay(250); //wait for temp sensor LPF
+				delay(500); //wait for temp sensor LPF
 				
 				//OEM sensors
 				{
@@ -291,7 +291,7 @@ void bringupTester_run(void)
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
 					Serial.print(String(resultADC));
 					Serial.print(F(" counts: "));
-					if((resultADC > 592) && (resultADC < 598)) { Serial.print("pass"); }
+					if((resultADC > 585) && (resultADC < 605)) { Serial.print("pass"); }
 					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
 				}
 
@@ -305,7 +305,7 @@ void bringupTester_run(void)
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
 					Serial.print(String(resultADC));
 					Serial.print(F(" counts: "));
-					if((resultADC > 592) && (resultADC < 598)) { Serial.print("pass"); }
+					if((resultADC > 585) && (resultADC < 605)) { Serial.print("pass"); }
 					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
 				}
 
@@ -319,7 +319,7 @@ void bringupTester_run(void)
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
 					Serial.print(String(resultADC));
 					Serial.print(F(" counts: "));
-					if((resultADC > 592) && (resultADC < 598)) { Serial.print("pass"); }
+					if((resultADC > 585) && (resultADC < 605)) { Serial.print("pass"); }
 					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
 				}
 
