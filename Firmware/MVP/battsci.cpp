@@ -30,7 +30,7 @@ void    tempSoC_set(uint16_t newSoC) { tempSoC = newSoC; }
 uint16_t tempSoC_get(void                 ) { return tempSoC; }
 
 uint8_t SoCHysteresisIncrementFrequency = 10; // How many iterations between SoC updates to MCM?
-uint8_t SoCHysteresisCounter = 0;
+uint8_t SoCHysteresisCounter = 150;
 uint16_t SoCHysteresisVoltage = 0;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -207,10 +207,10 @@ void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
 
   // SAW  605  989  349  733 093  477 861  477 0221 605
 
-  tempSoC_set(evalSoC);
 
   SoC_MathBytes[0] = 0x00;
   SoC_MathBytes[1] = 0x00;
+  evalSoC += 0x48;
 
   do {
     SoC_MathBytes[0] += 0x01;
@@ -220,9 +220,11 @@ void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
 
   SoC_MathBytes[1] = evalSoC;
   SoC_MathBytes[0] += 0x11;
-  SoC_MathBytes[1] += 0x48;
+
 
   SoC_Bytes[0] = SoC_MathBytes[0]; SoC_Bytes[1] = SoC_MathBytes[1];
+
+  tempSoC_set(SoC_Bytes[1]);
 
 }
 
@@ -284,8 +286,8 @@ void BATTSCI_calculateSoC(uint16_t voltage)
     temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
   } else if (voltage <= 32500) {
     // No Assist Allowed
-    calculatedSoC = 20;
-    oldCalculatedSoC = 20;        // Make sure SoC doesn't immediately spike back up
+    calculatedSoC = 0;
+    oldCalculatedSoC = 0;        // Make sure SoC doesn't immediately spike back up
     temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
   }
 
@@ -293,6 +295,7 @@ void BATTSCI_calculateSoC(uint16_t voltage)
   if (initializeSoC) {
     oldCalculatedSoC = calculatedSoC;
     initializeSoC = false;
+    BATTSCI_evaluateSoCBytes(calculatedSoC);
   }
 
   static int16_t packAmps = 0;
@@ -305,14 +308,14 @@ void BATTSCI_calculateSoC(uint16_t voltage)
   // packAmps is - if Amps are going IN and voltage is going UP
   // This should prevent SoC being changed during Auto Stop
   if (calculatedSoC > oldCalculatedSoC) {
-    if (packAmps < -1000) {
+    if (packAmps <= 0 ) { // -1000
       calculatedSoC = (oldCalculatedSoC + 1);
       BATTSCI_evaluateSoCBytes(calculatedSoC);
       // Set oldCalculatedSoC to the incremented calculatedSoC
       oldCalculatedSoC = calculatedSoC;
     }
   } else if (calculatedSoC < oldCalculatedSoC) {
-    if (packAmps > 1000) {
+    if (packAmps >= 0 ) { // 1000
       calculatedSoC = (oldCalculatedSoC - 1);
       BATTSCI_evaluateSoCBytes(calculatedSoC);
       // Set oldCalculatedSoC to the incremented calculatedSoC
@@ -360,8 +363,8 @@ void BATTSCI_sendFrames()
         SoC_Bytes[1] = 0x48;
 
         // Make sure SoC doesn't immediately spike back up
-        calculatedSoC = 20;
-        oldCalculatedSoC = 20;
+        calculatedSoC = 0;
+        oldCalculatedSoC = 0;
         temperature_Byte = 0x30;
         SoCHysteresisCounter = 0;  // Setting this to 0 keeps SoC at 20% for extra loops so the IMA has extra time to be charged.
 
