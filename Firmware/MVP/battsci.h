@@ -20,4 +20,7 @@
 
 	void BATTSCI_setSpoofedCurrent(int16_t packCurrent);
 
+	void tempSoC_set(uint16_t newSoC);
+	uint16_t tempSoC_get(void                 );
+
 #endif

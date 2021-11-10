@@ -280,9 +280,12 @@ bool lcd_printPower(void)
 			lcd2.setCursor(15,3);
 			if(packAmps_onScreen >=0 )
 			{
-				lcd2.print("+");
+				//lcd2.print("+");
 			}
-			lcd2.print( (LTC68042result_packVoltage_get() * packAmps_onScreen * 0.001), 1 );
+
+			//lcd2.print( (LTC68042result_packVoltage_get() * packAmps_onScreen * 0.001), 1 );
+      uint16_t tempSoC = tempSoC_get();
+      lcd2.print(tempSoC,1);
       didscreenUpdateOccur = SCREEN_UPDATED;
 		}
 	#endif
@@ -375,7 +378,8 @@ void lcd_printStaticText(void) //screen updates are slow //only call during keyO
 		lcd2.setCursor(0,0);  lcd2.print("hi:h.hhh (max:H.HHH)"); //row0, (3,0)=h.hhh, (14,0)=H.HHH
 		lcd2.setCursor(0,1);  lcd2.print("lo:l.lll (min:L.LLL)"); //row1, (3,1)=l.lll, (14,1)=L.LLL
 		lcd2.setCursor(0,2);  lcd2.print("d:d.ddd, V:VVV (SSS)"); //row2, (2,2)=d.ddd, (11,2)=VVV  , (16,2)=SSS
-		lcd2.setCursor(0,3);  lcd2.print("E:0 /CCCCC, kW:+WW.0"); //row3, (2,3)=    0, (5,3)=CCCCC , (16,3)=WW.0
+		//lcd2.setCursor(0,3);  lcd2.print("E:0 /CCCCC, kW:+WW.0"); //row3, (2,3)=    0, (5,3)=CCCCC , (16,3)=WW.0
+    lcd2.setCursor(0,3);  lcd2.print("E:0 /CCCCC, SoC "); //row3, (2,3)=    0, (5,3)=CCCCC , (16,3)=WW.0
 	#endif
 }
 

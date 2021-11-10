@@ -18,13 +18,18 @@ uint8_t spoofedVoltageToSend = 0;
 int16_t spoofedCurrentToSend = 0; //JTS2doLater spoofed pack current can probably be int8_t (+127 A)
 
 byte SoC_Bytes[] = {0x16, 0x20};  // SoC Bytes to send to MCM.  Index 0 is the upper byte and index 1 is the lower byte.
+byte SoC_MathBytes[] = {0x00, 0x00};
 byte temperature_Byte = 0x3A;  // Temperature Byte to send to MCM.  0x3A is +28 Degrees C.
-uint8_t calculatedSoC = 20;
-uint8_t oldCalculatedSoC = 20;
+uint16_t calculatedSoC = 20;
+uint16_t oldCalculatedSoC = 20;
 
 bool initializeSoC = true;
 
-uint8_t SoCHysteresisIncrementFrequency = 50; // How many iterations between SoC updates to MCM?
+uint16_t tempSoC = 19; // This variable and everything that uses it is only for LCD debug, and can be removed once that's no longer needed.
+void    tempSoC_set(uint16_t newSoC) { tempSoC = newSoC; }
+uint16_t tempSoC_get(void                 ) { return tempSoC; }
+
+uint8_t SoCHysteresisIncrementFrequency = 10; // How many iterations between SoC updates to MCM?
 uint8_t SoCHysteresisCounter = 0;
 uint16_t SoCHysteresisVoltage = 0;
 
@@ -97,7 +102,9 @@ uint8_t BATTSCI_calculateChecksum( uint8_t frameSum )
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_evaluateSoCBytes(uint8_t evalSoC) {
+void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
+
+  /*
   switch(evalSoC)
   {
     // Wrapping for 2nd byte seems to happen at 0x00 (000) and 0x7F (127)
@@ -169,8 +176,54 @@ void BATTSCI_evaluateSoCBytes(uint8_t evalSoC) {
     case 21: SoC_Bytes[0] = 0x11; SoC_Bytes[1] = 0x52; break;
     case 20: SoC_Bytes[0] = 0x11; SoC_Bytes[1] = 0x48; break;
 
+    // 35% in decimal is 18 94
+    // 20% in decimal is 17 72
+    // In decimal difference between 35% and 20% is 15, or in .1 steps it's 150.
+    // In hex 150 is 96
+    // 35% in hex is 12 5E
+    // 20% in hex is 11 48
+    // 48 + 96 = DE
+    // DE > 80
+    // DE - 80 = 5E
+    // 11 + 01 = 12
+
+    // So take desired decimal range
+    // 20.1 to 35.0 for example
+    // Decimal steps is 149
+
+    // SoC_MathBytes[0] = 0x00;
+    // SoC_MathBytes[1] = 0x00;
+
+    // map decimal range
+    // add base
+
+    // So let's say we get 34% which is 140 steps above 20
+
+
     default: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x58; break; // Default to 60 if there's an issue for some reason
   }
+  */
+
+
+  // SAW  605  989  349  733 093  477 861  477 0221 605
+
+  tempSoC_set(evalSoC);
+
+  SoC_MathBytes[0] = 0x00;
+  SoC_MathBytes[1] = 0x00;
+
+  do {
+    SoC_MathBytes[0] += 0x01;
+    evalSoC -= 128;
+  }
+  while (evalSoC > 128);
+
+  SoC_MathBytes[1] = evalSoC;
+  SoC_MathBytes[0] += 0x11;
+  SoC_MathBytes[1] += 0x48;
+
+  SoC_Bytes[0] = SoC_MathBytes[0]; SoC_Bytes[1] = SoC_MathBytes[1];
+
 }
 
 void BATTSCI_calculateSoC(uint16_t voltage)
@@ -180,6 +233,7 @@ void BATTSCI_calculateSoC(uint16_t voltage)
   // Assist Enabled, Regen Enabled, Background Regen Disabled
   // Later we can change the profile to not be based around 72, but that would require a new ECM_YEAR variable in config.h
 
+  /*
   if (voltage >= 39500) {
     // No Regen Allowed
     uint8_t tempSoCPercent = map(voltage, 39000, 42000, 77, 80);
@@ -206,6 +260,34 @@ void BATTSCI_calculateSoC(uint16_t voltage)
     oldCalculatedSoC = 20;        // Make sure SoC doesn't immediately spike back up
     temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
   }
+  */
+
+  if (voltage >= 39500) {
+    // No Regen Allowed
+    uint16_t tempSoCPercent = map(voltage, 39000, 42000, 541, 600);
+    calculatedSoC = tempSoCPercent;
+    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
+  } else if (voltage >= 37000) {
+    // No BG Regen Allowed
+    uint16_t tempSoCPercent = map(voltage, 37000, 38999, 501, 540);
+    calculatedSoC = tempSoCPercent;
+    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
+  } else if ((voltage < 37000) && (voltage > 33500)) {
+    // BG Regen Allowed
+    uint16_t tempSoCPercent = map(voltage, 34001, 36999, 151, 500);
+    calculatedSoC = tempSoCPercent;
+    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
+  } else if ((voltage <= 34000) && (voltage > 32500)) {
+    // BG Regen Allowed, SoC very low.
+    uint16_t tempSoCPercent = map(voltage, 32501, 34000, 1, 150);
+    calculatedSoC = tempSoCPercent;
+    temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
+  } else if (voltage <= 32500) {
+    // No Assist Allowed
+    calculatedSoC = 20;
+    oldCalculatedSoC = 20;        // Make sure SoC doesn't immediately spike back up
+    temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
+  }
 
   // On first run we set oldCalculatedSoC and calculatedSoC to the same value.
   if (initializeSoC) {
@@ -213,18 +295,30 @@ void BATTSCI_calculateSoC(uint16_t voltage)
     initializeSoC = false;
   }
 
+  static int16_t packAmps = 0;
+  packAmps = adc_getLatestBatteryCurrent_amps();
+
+
   // Modify calculatedSoC in place to be an increment of oldCalculatedSoC
-  // This way every n iterations where n is
+  // packAmps is being checked so that we only increment SoC if we have current < -1 Amp or decremented if we have > +1 Amp
+  // packAmps is + if Amps are going OUT and voltage is going DOWN
+  // packAmps is - if Amps are going IN and voltage is going UP
+  // This should prevent SoC being changed during Auto Stop
   if (calculatedSoC > oldCalculatedSoC) {
-    calculatedSoC = (oldCalculatedSoC + 1);
+    if (packAmps < -1000) {
+      calculatedSoC = (oldCalculatedSoC + 1);
+      BATTSCI_evaluateSoCBytes(calculatedSoC);
+      // Set oldCalculatedSoC to the incremented calculatedSoC
+      oldCalculatedSoC = calculatedSoC;
+    }
   } else if (calculatedSoC < oldCalculatedSoC) {
-    calculatedSoC = (oldCalculatedSoC - 1);
+    if (packAmps > 1000) {
+      calculatedSoC = (oldCalculatedSoC - 1);
+      BATTSCI_evaluateSoCBytes(calculatedSoC);
+      // Set oldCalculatedSoC to the incremented calculatedSoC
+      oldCalculatedSoC = calculatedSoC;
+    }
   }
-
-  BATTSCI_evaluateSoCBytes(calculatedSoC);
-
-  // Set oldCalculatedSoC to the incremented calculatedSoC
-  oldCalculatedSoC = calculatedSoC;
 }
 
 void BATTSCI_sendFrames()
@@ -268,6 +362,7 @@ void BATTSCI_sendFrames()
         // Make sure SoC doesn't immediately spike back up
         calculatedSoC = 20;
         oldCalculatedSoC = 20;
+        temperature_Byte = 0x30;
         SoCHysteresisCounter = 0;  // Setting this to 0 keeps SoC at 20% for extra loops so the IMA has extra time to be charged.
 
         debugUSB_sendChar('1');
@@ -315,8 +410,8 @@ void BATTSCI_sendFrames()
       frameSum_87 += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F ); //Battery Current (upper byte)
       frameSum_87 += BATTSCI_writeByte(  lowByte(batteryCurrent_toBATTSCI     ) & 0x7F ); //Battery Current (lower byte)
       frameSum_87 += BATTSCI_writeByte( 0x32 );                                           //Almost always 0x32
-      frameSum_87 += BATTSCI_writeByte( temperature_Byte );                                           //max temp: degC*2 (e.g. 0x3A = 58d = 28 degC
-      frameSum_87 += BATTSCI_writeByte( temperature_Byte );                                           //min temp: degC*2 (e.g. 0x3A = 58d = 28 degC
+      frameSum_87 += BATTSCI_writeByte( temperature_Byte );                               //max temp: degC*2 (e.g. 0x3A = 58d = 28 degC
+      frameSum_87 += BATTSCI_writeByte( temperature_Byte );                               //min temp: degC*2 (e.g. 0x3A = 58d = 28 degC
       frameSum_87 += BATTSCI_writeByte( METSCI_getPacketB3() );                           //MCM's sanity check that BCM isn't getting behind
                      BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_87) );         //Send Checksum. sum(byte0:byte11) should equal 0
       frame2send = 0xAA;
