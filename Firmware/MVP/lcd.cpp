@@ -286,6 +286,7 @@ bool lcd_printPower(void)
 			//lcd2.print( (LTC68042result_packVoltage_get() * packAmps_onScreen * 0.001), 1 );
       uint16_t tempSoC = tempSoC_get();
       lcd2.print(tempSoC,1);
+      lcd2.print("  ");
       didscreenUpdateOccur = SCREEN_UPDATED;
 		}
 	#endif

@@ -15,21 +15,21 @@
 uint8_t BATTSCI_state = STOPPED;
 
 uint8_t spoofedVoltageToSend = 0;
-int16_t spoofedCurrentToSend = 0; //JTS2doLater spoofed pack current can probably be int8_t (+127 A)
+int16_t spoofedCurrentToSend = 0;     //JTS2doLater spoofed pack current can probably be int8_t (+127 A)
 
-byte SoC_Bytes[] = {0x16, 0x20};  // SoC Bytes to send to MCM.  Index 0 is the upper byte and index 1 is the lower byte.
-byte SoC_MathBytes[] = {0x00, 0x00};
-byte temperature_Byte = 0x3A;  // Temperature Byte to send to MCM.  0x3A is +28 Degrees C.
+byte SoC_Bytes[] = {0x16, 0x20};      // SoC Bytes to send to MCM.  Index 0 is the upper byte and index 1 is the lower byte.
+byte SoC_MathBytes[] = {0x00, 0x00};  // Math operations are done on this variable before we send SoC_Bytes to the MCM.
+byte temperature_Byte = 0x3A;         // Temperature Byte to send to MCM.  0x3A is +28 Degrees C.
 uint16_t calculatedSoC = 20;
 uint16_t oldCalculatedSoC = 20;
 
 bool initializeSoC = true;
 
 uint16_t tempSoC = 19; // This variable and everything that uses it is only for LCD debug, and can be removed once that's no longer needed.
-void    tempSoC_set(uint16_t newSoC) { tempSoC = newSoC; }
-uint16_t tempSoC_get(void                 ) { return tempSoC; }
+void    tempSoC_set(uint16_t newSoC) { tempSoC = newSoC; }      // Remove when tempSoC is removed.
+uint16_t tempSoC_get(void                 ) { return tempSoC; } // Remove when tempSoC is removed.
 
-uint8_t SoCHysteresisIncrementFrequency = 10; // How many iterations between SoC updates to MCM?
+uint8_t SoCHysteresisIncrementFrequency = 5; // How many iterations between SoC updates to MCM?
 uint8_t SoCHysteresisCounter = 150;
 uint16_t SoCHysteresisVoltage = 0;
 
@@ -104,109 +104,28 @@ uint8_t BATTSCI_calculateChecksum( uint8_t frameSum )
 
 void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
 
-  /*
-  switch(evalSoC)
-  {
-    // Wrapping for 2nd byte seems to happen at 0x00 (000) and 0x7F (127)
-    case 80: SoC_Bytes[0] = 0x16; SoC_Bytes[1] = 0x20; break;
+  //  BCM sends two bytes in a row for SoC values.
+  //  First is the upper byte, second is the lower byte.
+  //  Upper byte increments every time the lower byte hits 128.
+  //  Lower byte valid values therefore are 0x00 --> 0x7F inclusive.
 
-    case 79: SoC_Bytes[0] = 0x16; SoC_Bytes[1] = 0x16; break;
-    case 78: SoC_Bytes[0] = 0x16; SoC_Bytes[1] = 0x0C; break;
-    case 77: SoC_Bytes[0] = 0x16; SoC_Bytes[1] = 0x02; break;
-    case 76: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x78; break;
-    case 75: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x6E; break;
-    case 74: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x64; break;
-    case 73: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x5A; break;
-    case 72: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x50; break;
-    case 71: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x46; break;
-    case 70: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x3C; break;
+  //  80% = 0x16 0x20 -- No Regen, Assist allowed
+  //  72% = 0x15 0x50 -- Regen allowed, Assist allowed
+  //  60% = 0x14 0x58 -- Regen allowed, Assist allowed, Background Regen allowed
+  //  40% = 0x13 0x10 -- Regen allowed, Assist allowed, Background Regen more aggressive
+  //  25% = 0x11 0x7A -- Regen allowed, Assist barely allowed, Background Regen very aggressive
+  //  20% = 0x11 0x48 -- Regen allowed, No Assist, Regen running even during idle
 
-    case 69: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x32; break;
-    case 68: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x28; break;
-    case 67: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x1E; break;
-    case 66: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x14; break;
-    case 65: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x0A; break;
-    case 64: SoC_Bytes[0] = 0x15; SoC_Bytes[1] = 0x00; break;
-    case 63: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x76; break;
-    case 62: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x6C; break;
-    case 61: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x62; break;
-    case 60: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x58; break;
+  // MCM can read and accept values outside this window, like 19% SoC or 82% SoC, but we don't need to use those.
 
-    case 59: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x4E; break;
-    case 58: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x44; break;
-    case 57: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x3A; break;
-    case 56: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x30; break;
-    case 55: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x26; break;
-    case 54: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x1C; break;
-    case 53: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x12; break;
-    case 52: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x08; break;
-    case 51: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x7E; break;
-    case 50: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x74; break;
+  /**
+    BATTSCI_evaluateSoCBytes evaluates what bytes LiBCM will send to the MCM to set the SoC, depending on the SoC we gave it
 
-    case 49: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x6A; break;
-    case 48: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x60; break;
-    case 47: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x56; break;
-    case 46: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x4C; break;
-    case 45: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x42; break;
-    case 44: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x38; break;
-    case 43: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x2E; break;
-    case 42: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x24; break;
-    case 41: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x1A; break;
-    case 40: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x10; break;
-
-    case 39: SoC_Bytes[0] = 0x13; SoC_Bytes[1] = 0x06; break;
-    case 38: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x7C; break;
-    case 37: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x72; break;
-    case 36: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x68; break;
-    case 35: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x5E; break;
-    case 34: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x54; break;
-    case 33: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x4A; break;
-    case 32: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x40; break;
-    case 31: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x36; break;
-    case 30: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x2C; break;
-
-    case 29: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x22; break;
-    case 28: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x18; break;
-    case 27: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x0E; break;
-    case 26: SoC_Bytes[0] = 0x12; SoC_Bytes[1] = 0x04; break;
-    case 25: SoC_Bytes[0] = 0x11; SoC_Bytes[1] = 0x7A; break;
-    case 24: SoC_Bytes[0] = 0x11; SoC_Bytes[1] = 0x70; break;
-    case 23: SoC_Bytes[0] = 0x11; SoC_Bytes[1] = 0x66; break;
-    case 22: SoC_Bytes[0] = 0x11; SoC_Bytes[1] = 0x5C; break;
-    case 21: SoC_Bytes[0] = 0x11; SoC_Bytes[1] = 0x52; break;
-    case 20: SoC_Bytes[0] = 0x11; SoC_Bytes[1] = 0x48; break;
-
-    // 35% in decimal is 18 94
-    // 20% in decimal is 17 72
-    // In decimal difference between 35% and 20% is 15, or in .1 steps it's 150.
-    // In hex 150 is 96
-    // 35% in hex is 12 5E
-    // 20% in hex is 11 48
-    // 48 + 96 = DE
-    // DE > 80
-    // DE - 80 = 5E
-    // 11 + 01 = 12
-
-    // So take desired decimal range
-    // 20.1 to 35.0 for example
-    // Decimal steps is 149
-
-    // SoC_MathBytes[0] = 0x00;
-    // SoC_MathBytes[1] = 0x00;
-
-    // map decimal range
-    // add base
-
-    // So let's say we get 34% which is 140 steps above 20
-
-
-    default: SoC_Bytes[0] = 0x14; SoC_Bytes[1] = 0x58; break; // Default to 60 if there's an issue for some reason
-  }
+    @param      evalSoC     Integer value of SoC 0.1% increments between 20% and 80%.
+                            This should be between 0 and 600.
+                            Out of bounds values will still work, but may cause unexpected results.
+    @return                 This function does not return anything.  It modifies SoC_Bytes[] in place.
   */
-
-
-  // SAW  605  989  349  733 093  477 861  477 0221 605
-
 
   SoC_MathBytes[0] = 0x00;
   SoC_MathBytes[1] = 0x00;
@@ -235,60 +154,49 @@ void BATTSCI_calculateSoC(uint16_t voltage)
   // Assist Enabled, Regen Enabled, Background Regen Disabled
   // Later we can change the profile to not be based around 72, but that would require a new ECM_YEAR variable in config.h
 
-  /*
-  if (voltage >= 39500) {
-    // No Regen Allowed
-    uint8_t tempSoCPercent = map(voltage, 39000, 42000, 77, 80);
-    calculatedSoC = tempSoCPercent;
-    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
-  } else if (voltage >= 37000) {
-    // No BG Regen Allowed
-    uint8_t tempSoCPercent = map(voltage, 37000, 38999, 72, 76);
-    calculatedSoC = tempSoCPercent;
-    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
-  } else if ((voltage < 37000) && (voltage > 33500)) {
-    // BG Regen Allowed
-    uint8_t tempSoCPercent = map(voltage, 34001, 36999, 36, 71);
-    calculatedSoC = tempSoCPercent;
-    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
-  } else if ((voltage <= 34000) && (voltage > 32500)) {
-    // BG Regen Allowed, SoC very low.
-    uint8_t tempSoCPercent = map(voltage, 32501, 34000, 21, 35);
-    calculatedSoC = tempSoCPercent;
-    temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
-  } else if (voltage <= 32500) {
-    // No Assist Allowed
-    calculatedSoC = 20;
-    oldCalculatedSoC = 20;        // Make sure SoC doesn't immediately spike back up
-    temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
-  }
+  /**
+    BATTSCI_calculateSoC calculates what SoC we want to send the MCM, in order to govern the MCM's behaviour.
+    The MCM changes how the car uses assist and regen depending on the SoC number we send to it.
+
+    @param      voltage     Integer value of lowest cell voltage, in 0.0001V increments.
+    @return                 This function does not return anything.
+
+    To Do:  Change this function to use LiBCM's internally calculated SoC value instead of using lowest cell voltage.
+    To Do:  Determine what SoC value stops all regen.  We know 80% stops all regen, but the threshold might be lower, like 78%.
+    to Do:  For maintainability, we should probably put the temperature_Byte manipulation into a separate function.
   */
 
-  if (voltage >= 39500) {
+  if (voltage >= 40700) {
+    // No Regen Allowed, voltage too high, set SoC high to enforce a cooldown period (while SoC drops) before regen is allowed again.
+    uint16_t tempSoCPercent = 620;
+    oldCalculatedSoC = 620;       // Make sure SoC doesn't immediately spike back down
+    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
+  } else if (voltage >= 40000) {
     // No Regen Allowed
-    uint16_t tempSoCPercent = map(voltage, 39000, 42000, 541, 600);
+    uint16_t tempSoCPercent = map(voltage, 40000, 40700, 571, 600);
     calculatedSoC = tempSoCPercent;
     temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
-  } else if (voltage >= 37000) {
+  } else if (voltage >= 37250) {
     // No BG Regen Allowed
-    uint16_t tempSoCPercent = map(voltage, 37000, 38999, 501, 540);
+    uint16_t tempSoCPercent = map(voltage, 37250, 39999, 501, 570);
     calculatedSoC = tempSoCPercent;
     temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
-  } else if ((voltage < 37000) && (voltage > 33500)) {
+  } else if ((voltage < 37250) && (voltage > 36000)) {
     // BG Regen Allowed
-    uint16_t tempSoCPercent = map(voltage, 34001, 36999, 151, 500);
+    uint16_t tempSoCPercent = map(voltage, 36001, 37249, 151, 500);
     calculatedSoC = tempSoCPercent;
     temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
-  } else if ((voltage <= 34000) && (voltage > 32500)) {
+  } else if ((voltage <= 36000) && (voltage > 34500)) {
     // BG Regen Allowed, SoC very low.
-    uint16_t tempSoCPercent = map(voltage, 32501, 34000, 1, 150);
+    uint16_t tempSoCPercent = map(voltage, 34501, 36000, 1, 150);
     calculatedSoC = tempSoCPercent;
     temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
-  } else if (voltage <= 32500) {
+  } else if (voltage <= 34500) {
     // No Assist Allowed
     calculatedSoC = 0;
-    oldCalculatedSoC = 0;        // Make sure SoC doesn't immediately spike back up
+    oldCalculatedSoC = 0;         // Make sure SoC doesn't immediately spike back up
     temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
+    BATTSCI_evaluateSoCBytes(calculatedSoC);
   }
 
   // On first run we set oldCalculatedSoC and calculatedSoC to the same value.
@@ -298,28 +206,27 @@ void BATTSCI_calculateSoC(uint16_t voltage)
     BATTSCI_evaluateSoCBytes(calculatedSoC);
   }
 
-  static int16_t packAmps = 0;
-  packAmps = adc_getLatestBatteryCurrent_amps();
+  static int16_t packMilliAmps = 0;
+  packMilliAmps = adc_getLatestBatteryCurrent_amps();
 
 
   // Modify calculatedSoC in place to be an increment of oldCalculatedSoC
-  // packAmps is being checked so that we only increment SoC if we have current < -1 Amp or decremented if we have > +1 Amp
-  // packAmps is + if Amps are going OUT and voltage is going DOWN
-  // packAmps is - if Amps are going IN and voltage is going UP
-  // This should prevent SoC being changed during Auto Stop
+  // packMilliAmps is being checked so that we only increment SoC if we have current < -0.01 Amps or decremented if we have > +0.01 Amps
+  // packMilliAmps is + if Amps are going OUT and voltage is going DOWN
+  // packMilliAmps is - if Amps are going IN and voltage is going UP
+  // This should prevent SoC being changed during Auto Stop due to low cell voltage hysteresis.
+  // To Do: We may be able to remove these checks once we are calculating an LiBCM SoC using coulomb counting.
   if (calculatedSoC > oldCalculatedSoC) {
-    if (packAmps <= 0 ) { // -1000
+    if (packMilliAmps <= -10 ) {
       calculatedSoC = (oldCalculatedSoC + 1);
-      BATTSCI_evaluateSoCBytes(calculatedSoC);
-      // Set oldCalculatedSoC to the incremented calculatedSoC
-      oldCalculatedSoC = calculatedSoC;
+      BATTSCI_evaluateSoCBytes(calculatedSoC);  // Update SoC_Bytes[] value to send to MCM
+      oldCalculatedSoC = calculatedSoC;         // Set oldCalculatedSoC to the incremented calculatedSoC
     }
   } else if (calculatedSoC < oldCalculatedSoC) {
-    if (packAmps >= 0 ) { // 1000
+    if (packMilliAmps >= 10 ) {
       calculatedSoC = (oldCalculatedSoC - 1);
-      BATTSCI_evaluateSoCBytes(calculatedSoC);
-      // Set oldCalculatedSoC to the incremented calculatedSoC
-      oldCalculatedSoC = calculatedSoC;
+      BATTSCI_evaluateSoCBytes(calculatedSoC);  // Update SoC_Bytes[] value to send to MCM
+      oldCalculatedSoC = calculatedSoC;         // Set oldCalculatedSoC to the incremented calculatedSoC
     }
   }
 }
@@ -358,7 +265,8 @@ void BATTSCI_sendFrames()
       frameSum_87 += BATTSCI_writeByte( (spoofedVoltageToSend >> 1) );                    //Half Vbatt (e.g. 0x40 = d64 = 128 V)
 
       if(LTC68042result_loCellVoltage_get() <= 30000 )
-      { //at least one cell is severely under-charged.  Disable Assist.
+      {
+        //at least one cell is severely under-charged.  Disable Assist.
         SoC_Bytes[0] = 0x11;
         SoC_Bytes[1] = 0x48;
 
@@ -375,6 +283,7 @@ void BATTSCI_sendFrames()
 
         // NM:  Updating SoC only every so often.  The OEM SoC gauge doesn't seem to function when the SoC fluctuates too quickly.
         // A different hysteresis methodology could be employed; this is just a beta implementation.
+        // To Do: Modify or delete all of the voltage hysteresis calculations once we have an internal LiBCM SoC.
 
         // At startup initialize this variable by setting it to whatever vCellWithESR_counts is.
         // This should only run once.
@@ -382,12 +291,13 @@ void BATTSCI_sendFrames()
           SoCHysteresisVoltage = vCellWithESR_counts;
         }
 
-        // Average vCellWithESR_counts over 50 iterations.
+        // Average vCellWithESR_counts over SoCHysteresisIncrementFrequency iterations.
         // Adding the pre-divided numbers so we don't go past 65535.
         SoCHysteresisVoltage /= 2;
         SoCHysteresisVoltage += (vCellWithESR_counts / 2);
 
-        // After we have SoCHysteresisIncrementFrequency iterations we calculate SoC and if needed increment it up or down
+        // After SoCHysteresisIncrementFrequency iterations have elapsed we calculate SoC and if needed increment it up or down
+        // The loop begins at 200 so if we need to we can force an SoC value to be held longer, such as if we need to do a positive or negative recal.
         if (SoCHysteresisCounter >= (SoCHysteresisIncrementFrequency + 200)) {
           BATTSCI_calculateSoC(SoCHysteresisVoltage);
           SoCHysteresisCounter = 200;
