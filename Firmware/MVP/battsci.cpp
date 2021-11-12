@@ -127,23 +127,23 @@ void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
     @return                 This function does not return anything.  It modifies SoC_Bytes[] in place.
   */
 
+  tempSoC_set(evalSoC + 200);   // Delete this line when no longer needed.  Sends user-readable SoC to LCD.
+
   SoC_MathBytes[0] = 0x00;
   SoC_MathBytes[1] = 0x00;
-  evalSoC += 0x48;
+  evalSoC += 0x48;              // MCM 2nd-byte SoC is 0x48 when SoC is 20%.  20% is our reference, so we need to add this first.
 
   do {
     SoC_MathBytes[0] += 0x01;
-    evalSoC -= 128;
+    evalSoC -= 128;             // MCM 2nd-byte SoC CANNOT exceed 0x7F so we need to subtract 128 from it over and over until 2nd-byte is < 0x80
   }
   while (evalSoC > 128);
 
   SoC_MathBytes[1] = evalSoC;
-  SoC_MathBytes[0] += 0x11;
+  SoC_MathBytes[0] += 0x11;     // MCM 1st-byte SoC is 0x11 when SoC is 20% so we need to add 0x11.
 
-
-  SoC_Bytes[0] = SoC_MathBytes[0]; SoC_Bytes[1] = SoC_MathBytes[1];
-
-  tempSoC_set(SoC_Bytes[1]);
+  SoC_Bytes[0] = SoC_MathBytes[0];
+  SoC_Bytes[1] = SoC_MathBytes[1];
 
 }
 
