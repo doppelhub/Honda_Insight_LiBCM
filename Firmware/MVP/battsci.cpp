@@ -127,7 +127,7 @@ void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
     @return                 This function does not return anything.  It modifies SoC_Bytes[] in place.
   */
 
-  tempSoC_set(evalSoC + 200);   // Delete this line when no longer needed.  Sends user-readable SoC to LCD.
+
 
   SoC_MathBytes[0] = 0x00;
   SoC_MathBytes[1] = 0x00;
@@ -205,6 +205,8 @@ void BATTSCI_calculateSoC(uint16_t voltage)
     initializeSoC = false;
     BATTSCI_evaluateSoCBytes(calculatedSoC);
   }
+
+  tempSoC_set(calculatedSoC + 200);   // Delete this line when no longer needed.  Sends user-readable SoC to LCD.
 
   static int16_t packMilliAmps = 0;
   packMilliAmps = adc_getLatestBatteryCurrent_amps();

@@ -8,7 +8,7 @@
 	#include "libcm.h"  //For Arduino IDE compatibility
 
 	#define FW_VERSION "0.3.2N TEST 11"
-    #define BUILD_DATE "2021OCT01"
+    #define BUILD_DATE "2021NOV12"
     #define HW_REVB
 	#define CPU_MAP_MEGA2560
 
@@ -41,7 +41,7 @@
 
 	#define LOOP_RATE_MS 10 // Superloop execution rate: 1/LOOP_RATE_MS (e.g. LOOP_RATE_MS==10 is 100 Hz)
 
-	#define GRID_CHARGER_CELL_VMAX 39500 // Vcell = (GRID_CHARGER_CELL_VMAX * 0.0001 V) //cells charged to this voltage
+	#define GRID_CHARGER_CELL_VMAX 40000 // Vcell = (GRID_CHARGER_CELL_VMAX * 0.0001 V) //cells charged to this voltage
 
 #endif
 
