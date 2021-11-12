@@ -28,6 +28,7 @@
 		#define ADC_NUMSAMPLES_PER_RESULT  8 //Valid values: 1,2,4,8,16,32,64 //MUST ALSO CHANGE next line!
 		#define ADC_NUMSAMPLES_2_TO_THE_N  3 //Valid values: 0,1,2,3, 4, 5, 6 //2^N = ADC_NUMSAMPLES_PER_RESULT
 		#define ADC_NUMSAMPLES_PER_CALL    2 //Must be divisible into ADC_NUMSAMPLES_PER_RESULT!
+		#define ADC_NUMLOOPS_PER_RESULT (ADC_NUMSAMPLES_PER_RESULT / ADC_NUMSAMPLES_PER_CALL) //division constants are handled by pre-processor
 	#endif
 
 	#define ADC_NOMINAL_0A_COUNTS 330 //ADC returns ~330 counts when no current flows through sensor

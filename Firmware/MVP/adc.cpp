@@ -64,7 +64,7 @@ int16_t adc_measureBatteryCurrent_amps(void)
 		if(latest_battCurrent_counts <    0) { latest_battCurrent_counts =    0; }
 		if(latest_battCurrent_counts > 1023) { latest_battCurrent_counts = 1023; }
 
-		//SoC_integrateCharge_adcCounts(latest_battCurrent_counts);
+		SoC_integrateCharge_adcCounts(latest_battCurrent_counts);
 
 		//convert current sensor result into approximate amperage for MCM & user-display
 		#ifdef HW_REVB
