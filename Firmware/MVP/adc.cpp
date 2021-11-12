@@ -7,16 +7,6 @@
 
 #include "libcm.h"
 
-#ifdef HW_REVB
-	#define NUM_ADCSAMPLES_PER_RESULT 64 //Valid values: 1,2,4,8,16,32,64 //MUST ALSO CHANGE next line!
-	#define NUM_ADCSAMPLES_2_TO_THE_N  6 //Valid values: 0,1,2,3, 4, 5, 6 //2^N = NUM_ADCSAMPLES_PER_RESULT
-	#define NUM_ADCSAMPLES_PER_CALL    4 //Must be divisible into NUM_ADCSAMPLES_PER_RESULT!
-#elif defined HW_REVC
-	#define NUM_ADCSAMPLES_PER_RESULT  8 //Valid values: 1,2,4,8,16,32,64 //MUST ALSO CHANGE next line!
-	#define NUM_ADCSAMPLES_2_TO_THE_N  3 //Valid values: 0,1,2,3, 4, 5, 6 //2^N = NUM_ADCSAMPLES_PER_RESULT
-	#define NUM_ADCSAMPLES_PER_CALL    2 //Must be divisible into NUM_ADCSAMPLES_PER_RESULT!
-#endif
-
 int16_t packCurrent_spoofed = 0;
 int8_t calibratedCurrentSensorOffset = 0; //calibrated each time key turns off
 
@@ -54,16 +44,16 @@ int16_t adc_measureBatteryCurrent_amps(void)
 	//As current increases, ADC result increases.
 
 	//gather discrete samples
-	for(int ii=0; ii<NUM_ADCSAMPLES_PER_CALL; ii++)
+	for(int ii=0; ii<ADC_NUMSAMPLES_PER_CALL; ii++)
 	{
 		adcAccumulator += analogRead(PIN_BATTCURRENT);
 		adcSamplesTaken++;
 	}
 
 	//process oversampled data
-	if(adcSamplesTaken == NUM_ADCSAMPLES_PER_RESULT)
+	if(adcSamplesTaken == ADC_NUMSAMPLES_PER_RESULT)
 	{
-		int16_t latest_battCurrent_counts_raw = (int16_t)(adcAccumulator >> NUM_ADCSAMPLES_2_TO_THE_N); //Average the oversampled data
+		int16_t latest_battCurrent_counts_raw = (int16_t)(adcAccumulator >> ADC_NUMSAMPLES_2_TO_THE_N); //Average the oversampled data
 		latest_battCurrent_counts = latest_battCurrent_counts_raw - calibratedCurrentSensorOffset; //subtract offset error
 
 		//reset oversampler for next measurement
@@ -132,7 +122,7 @@ void adc_calibrateBatteryCurrentSensorOffset(void)
 	uint16_t maxResult_counts =     0;
 
 	//gather current sensor samples
-	for(uint8_t ii=0; ii<NUM_ADCSAMPLES_PER_RESULT; ii++) 
+	for(uint8_t ii=0; ii<ADC_NUMSAMPLES_PER_RESULT; ii++) 
 	{
 		uint16_t adcResult = analogRead(PIN_BATTCURRENT);
 		adcAccumulator += adcResult;
@@ -146,7 +136,7 @@ void adc_calibrateBatteryCurrentSensorOffset(void)
 		 (maxResult_counts < (NOMINAL_0A_ADC_RESULT + 8)) && /* verify hardware offset tolerance isn't too high */
 		 (minResult_counts > (NOMINAL_0A_ADC_RESULT - 8)) )  /* verify hardware offset tolerance isn't too low  */ 
 	{
-		uint16_t adcZeroCrossing_counts = (adcAccumulator >> NUM_ADCSAMPLES_2_TO_THE_N);
+		uint16_t adcZeroCrossing_counts = (adcAccumulator >> ADC_NUMSAMPLES_2_TO_THE_N);
 		calibratedCurrentSensorOffset = adcZeroCrossing_counts - NOMINAL_0A_ADC_RESULT;
 		Serial.print(F("\nCurrent Sensor 0A set to (counts): "));
 		Serial.print(String(adcZeroCrossing_counts));
