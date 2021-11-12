@@ -7,7 +7,20 @@
 
 #include "libcm.h"
 
+#ifdef HW_REVB
+	#define NUM_ADCSAMPLES_PER_RESULT 64 //Valid values: 1,2,4,8,16,32,64 //MUST ALSO CHANGE next line!
+	#define NUM_ADCSAMPLES_2_TO_THE_N  6 //Valid values: 0,1,2,3, 4, 5, 6 //2^N = NUM_ADCSAMPLES_PER_RESULT
+	#define NUM_ADCSAMPLES_PER_CALL    4 //Must be divisible into NUM_ADCSAMPLES_PER_RESULT!
+#elif defined HW_REVC
+	#define NUM_ADCSAMPLES_PER_RESULT  8 //Valid values: 1,2,4,8,16,32,64 //MUST ALSO CHANGE next line!
+	#define NUM_ADCSAMPLES_2_TO_THE_N  3 //Valid values: 0,1,2,3, 4, 5, 6 //2^N = NUM_ADCSAMPLES_PER_RESULT
+	#define NUM_ADCSAMPLES_PER_CALL    2 //Must be divisible into NUM_ADCSAMPLES_PER_RESULT!
+#endif
+
 int16_t packCurrent_spoofed = 0;
+int8_t calibratedCurrentSensorOffset = 0; //calibrated each time key turns off
+
+/////////////////////////////////////////////////////////////////////
 
 uint8_t adc_packVoltage_VpinIn(void) //returns pack voltage (in volts)
 {
@@ -25,49 +38,55 @@ uint8_t adc_packVoltage_VpinIn(void) //returns pack voltage (in volts)
 
 /////////////////////////////////////////////////////////////////////
 
-int16_t latest_battCurrent_amps = 0;
-int16_t latest_battCurrent_counts = 0;
+int16_t  latest_battCurrent_amps = 0;
+int16_t  latest_battCurrent_counts = 0; //calibrated 10b result //0A is exactly 330 counts (i.e. NOMINAL_0A_ADC_RESULT)
 
-//sample ADC and returns battery
+//sample ADC and return average battery current
+//To prevent overflow, raw ADC result must not exceed 1191 counts (i.e. don't use an ADC with more than 10b!!)
+//Returned current value is not accurate enough for coulomb counting (use stateOfCharge functions for that)
 int16_t adc_measureBatteryCurrent_amps(void)
 {
-	#define NUM_ADCSAMPLES_PER_RESULT 64 //Valid values: 1,2,4,8,16,32,64 //MUST ALSO CHANGE next line!
-	#define NUM_ADCSAMPLES_2_TO_THE_N  6 //Valid values: 0,1,2,3, 4, 5, 6 //2^N = NUM_ADCSAMPLES_PER_RESULT
-	#define NUM_ADCSAMPLES_PER_CALL    4 //Must be divisible into NUM_ADCSAMPLES_PER_RESULT!
-	
 	static uint8_t adcSamplesTaken = 0; //samples acquired since last oversampled result
-	static uint16_t adcAccumulator = 0; //raw 10b ADC results
+	static uint16_t adcAccumulator = 0; //raw 10b ADC results (accumulated)
 
+	//Regardless of I2V resistance value, 0A (no regen or assist) is ~1.611 volts when VREF is 5V, which is 330 counts.
+	//Actual VCC voltage doesn't matter, since ADC reference is also VCC.
+	//As current increases, ADC result increases.
+
+	//gather discrete samples
 	for(int ii=0; ii<NUM_ADCSAMPLES_PER_CALL; ii++)
 	{
 		adcAccumulator += analogRead(PIN_BATTCURRENT);
 		adcSamplesTaken++;
 	}
 
+	//process oversampled data
 	if(adcSamplesTaken == NUM_ADCSAMPLES_PER_RESULT)
 	{
-		latest_battCurrent_counts = (int16_t)( (adcAccumulator >> NUM_ADCSAMPLES_2_TO_THE_N) ); //Shift must match
+		int16_t latest_battCurrent_counts_raw = (int16_t)(adcAccumulator >> NUM_ADCSAMPLES_2_TO_THE_N); //Average the oversampled data
+		latest_battCurrent_counts = latest_battCurrent_counts_raw - calibratedCurrentSensorOffset; //subtract offset error
+
+		//reset oversampler for next measurement
 		adcAccumulator = 0;
 		adcSamplesTaken = 0;
+		
+		//bound averaged ADC result to 10b unsigned
+		if(latest_battCurrent_counts <    0) { latest_battCurrent_counts =    0; }
+		if(latest_battCurrent_counts > 1023) { latest_battCurrent_counts = 1023; }
 
 		//convert current sensor result into approximate amperage for MCM & user-display
-		//don't use this result for current accumulation... it's not accurate enough (FYI: SoC accumulates raw ADC result)
-		//Regardless of I2V resistance (R50||R53||R516), 0A (regen/assist) is 1.621 volts (332 counts with 10b ADC)
-		//As current increases, ADC result increase.
-		//Actual VCC voltage doesn't matter, since ADC reference is also VCC (e.g. ADC result @ 0A is always 332 counts)
 		#ifdef HW_REVB
-			latest_battCurrent_amps = ( (latest_battCurrent_counts * 13) >> 6) - 67; //Accurate to within 3.7 amps of actual value
-		
+			//The approximation equation below is accurate to within 3.7 amps of actual value
+			latest_battCurrent_amps = ((int16_t)((((uint16_t)latest_battCurrent_counts) * 13) >> 6)) - 67;
 		#elif defined HW_REVC
 			//see SPICE simulation for complete derivation
-			//@-70A regen,  ADC result is 009 counts
-			//@140A assist, ADC result is 979 counts
-			latest_battCurrent_amps = ( (latest_battCurrent_counts * 14) >> 6) -73; //Accurate to within 1.2 amps of actual value
+			//see "RevC/V&V/OEM Current Sensor.ods" for measured results
+			//The approximation equation below is accurate to within 1.0 amps of actual value
+			latest_battCurrent_amps = ((int16_t)((((uint16_t)latest_battCurrent_counts) * 55) >> 8)) - 71;
 		#endif
 	}
 
 	return latest_battCurrent_amps;
-
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -103,8 +122,49 @@ void adc_updateBatteryCurrent(void)
 
 /////////////////////////////////////////////////////////////////////
 
+//only call this function when no current is flowing through the sensor (e.g. when key is off)
+void adc_calibrateBatteryCurrentSensorOffset(void)
+{
+	#define NOMINAL_0A_ADC_RESULT 330
+
+	uint16_t adcAccumulator   =     0;
+	uint16_t minResult_counts = 65535;
+	uint16_t maxResult_counts =     0;
+
+	//gather current sensor samples
+	for(uint8_t ii=0; ii<NUM_ADCSAMPLES_PER_RESULT; ii++) 
+	{
+		uint16_t adcResult = analogRead(PIN_BATTCURRENT);
+		adcAccumulator += adcResult;
+		
+		if(adcResult < minResult_counts) { minResult_counts = adcResult; } //store max ADC result
+		if(adcResult > maxResult_counts) { maxResult_counts = adcResult; } //store min ADC result
+	}
+
+	//verify returned values are in the right ballpark
+	if( ((maxResult_counts - minResult_counts) < 2)       && /* verify all returned values are within 1 count */
+		 (maxResult_counts < (NOMINAL_0A_ADC_RESULT + 8)) && /* verify hardware offset tolerance isn't too high */
+		 (minResult_counts > (NOMINAL_0A_ADC_RESULT - 8)) )  /* verify hardware offset tolerance isn't too low  */ 
+	{
+		uint16_t adcZeroCrossing_counts = (adcAccumulator >> NUM_ADCSAMPLES_2_TO_THE_N);
+		calibratedCurrentSensorOffset = adcZeroCrossing_counts - NOMINAL_0A_ADC_RESULT;
+		Serial.print(F("\nCurrent Sensor 0A set to (counts): "));
+		Serial.print(String(adcZeroCrossing_counts));
+	} 
+	else
+	{
+		Serial.print(F("\nCurrent Sensor Offset exceeds limit. Using last valid offset. MAX:"));
+		Serial.print(String(maxResult_counts));
+		Serial.print(F(", MIN:"));
+		Serial.print(String(minResult_counts));
+	}
+}
+
+/////////////////////////////////////////////////////////////////////
+
 uint16_t adc_getTemperature(uint8_t tempToMeasure)
 {
 	return analogRead(tempToMeasure);
 }
 
+/////////////////////////////////////////////////////////////////////

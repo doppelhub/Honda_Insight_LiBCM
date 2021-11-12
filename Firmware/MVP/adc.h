@@ -18,6 +18,8 @@
 
 	uint16_t adc_getTemperature(uint8_t tempToMeasure);
 
+	void adc_calibrateBatteryCurrentSensorOffset(void);
+
 #endif
 
 /*

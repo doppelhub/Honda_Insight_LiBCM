@@ -223,7 +223,10 @@ void METSCI_processLatestFrame(void)
   
     while( (METSCI_readByte() != 0xE6) )  //Ensure the first byte is 0xE6
     {
-      Serial.print( F("\nMETSCI buffer sync") ); //throw away data until the next frame starts (0xE6 byte) 
+      //throw away data until the next frame starts (0xE6 byte)
+      if(resyncAttempt == 0) { Serial.print( F("\nMETSCI buffer sync") ); } 
+      else                   { Serial.print('.'); }
+
       resyncAttempt++;
       if( resyncAttempt > (METSCI_BYTES_IN_FRAME << 2) )
       {

@@ -17,6 +17,8 @@ void key_handleKeyEvent_off(void)
     BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
     METSCI_disable();
     gpio_setFanSpeed_OEM('0');
+    gpio_setFanSpeed('0');
+    adc_calibrateBatteryCurrentSensorOffset();
     gpio_turnPowerSensors_off();
     LTC6804configure_handleKeyOff();
     lcd_displayOFF();
@@ -62,7 +64,6 @@ bool key_didStateChange(void)
 		//no need to do anything.
 		;
 	}
-
 	else if(keyState_sampled != keyState_previous)
 	{
 		didKeyStateChange = YES;

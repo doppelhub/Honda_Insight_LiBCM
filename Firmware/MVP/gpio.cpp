@@ -20,7 +20,7 @@ void gpio_begin(void)
 
 	//Controls BCM current sensor, constant 5V load, and BATTSCI/METSCI biasing
 	pinMode(PIN_SENSOR_EN,OUTPUT);
-	gpio_turnPowerSensors_off();
+	gpio_turnPowerSensors_on(); //if the key is off when LiBCM first powers up, the keyOff handler will turn the sensors back off
 
 	pinMode(PIN_LED1,OUTPUT);
 	pinMode(PIN_LED2,OUTPUT);

@@ -18,7 +18,7 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 	LTC68042configure_initialize();
 
 	if( gpio_keyStateNow() == KEYON ){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while keyON (e.g. while driving)
-  	
+
   	//JTS2doLater: Configure watchdog
 
 	#ifdef HW_REVB

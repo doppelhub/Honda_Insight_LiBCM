@@ -277,7 +277,7 @@ void bringupTester_run(void)
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
 					Serial.print(String(resultADC));
 					Serial.print(F(" counts: "));
-					if((resultADC > 326) && (resultADC < 336)) { Serial.print("pass"); }
+					if((resultADC > 328) && (resultADC < 336)) { Serial.print("pass"); }
 					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
 				}
 
@@ -334,7 +334,7 @@ void bringupTester_run(void)
 					delay(100);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
-					if((resultADC > 326) && (resultADC < 336)) { Serial.print("pass"); }
+					if((resultADC > 328) && (resultADC < 336)) { Serial.print("pass"); }
 					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
 				}
 
