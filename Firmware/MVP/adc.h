@@ -31,6 +31,7 @@
 	#endif
 
 	#define ADC_NOMINAL_0A_COUNTS 330 //ADC returns ~330 counts when no current flows through sensor
+	#define ADC_MILLIAMPS_PER_COUNT 215 //Derivation here: ~/Electronics/PCB (KiCAD)/RevC/V&V/OEM Current Sensor.ods
 
 #endif
 

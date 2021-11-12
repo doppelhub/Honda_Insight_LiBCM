@@ -53,7 +53,7 @@ int16_t adc_measureBatteryCurrent_amps(void)
 	//process oversampled data
 	if(adcSamplesTaken == ADC_NUMSAMPLES_PER_RESULT)
 	{
-		int16_t latest_battCurrent_counts_raw = (int16_t)(adcAccumulator >> ADC_NUMSAMPLES_2_TO_THE_N); //Average the oversampled data
+		int16_t latest_battCurrent_counts_raw = (int16_t)(adcAccumulator >> ADC_NUMSAMPLES_2_TO_THE_N); //Average the oversampled data to a 10b result
 		latest_battCurrent_counts = latest_battCurrent_counts_raw - calibratedCurrentSensorOffset; //subtract offset error
 
 		//reset oversampler for next measurement
@@ -63,6 +63,8 @@ int16_t adc_measureBatteryCurrent_amps(void)
 		//bound averaged ADC result to 10b unsigned
 		if(latest_battCurrent_counts <    0) { latest_battCurrent_counts =    0; }
 		if(latest_battCurrent_counts > 1023) { latest_battCurrent_counts = 1023; }
+
+		//SoC_integrateCharge_adcCounts(latest_battCurrent_counts);
 
 		//convert current sensor result into approximate amperage for MCM & user-display
 		#ifdef HW_REVB

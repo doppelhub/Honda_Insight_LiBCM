@@ -43,7 +43,7 @@
 	#define PRINT_USB_DEBUG_TEXT //prints text sent via debugUSB_debugText() //JTS2doLater: NOT IMPLEMENTED YET
 	#define DEBUG_USB_UPDATE_PERIOD_MS 250 //250 = send data every 250 ms
 
-	#define LOOP_RATE_MS 10 // Superloop execution rate: 1/LOOP_RATE_MS (e.g. LOOP_RATE_MS==10 is 100 Hz)
+	#define LOOP_RATE_MILLISECONDS 10 // Superloop execution rate: 1/LOOP_RATE_MILLISECONDS (e.g. LOOP_RATE_MILLISECONDS==10 is 100 Hz)
 
 	#define GRID_CHARGER_CELL_VMAX 39000 // Vcell = (GRID_CHARGER_CELL_VMAX * 0.0001 V) //cells charged to this voltage
 

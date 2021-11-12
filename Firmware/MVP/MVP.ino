@@ -58,8 +58,8 @@ void loop()
 
 	blinkLED2(); //Heartbeat
 
-	LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left //if off, exceeding LOOP_RATE_MS
-	while( (millis() - previousMillis) < LOOP_RATE_MS ) { ; } //wait here to start next loop //JTS2doLater: Determine Behavior after overflow (50 days)
+	LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left //if off, exceeding LOOP_RATE_MILLISECONDS
+	while( (millis() - previousMillis) < LOOP_RATE_MILLISECONDS ) { ; } //wait here to start next loop //JTS2doLater: Determine Behavior after overflow (50 days)
 	//JTS2doLater: Feed watchdog
 	LED(4,LOW);
 
