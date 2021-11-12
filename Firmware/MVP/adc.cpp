@@ -29,7 +29,7 @@ uint8_t adc_packVoltage_VpinIn(void) //returns pack voltage (in volts)
 /////////////////////////////////////////////////////////////////////
 
 int16_t  latest_battCurrent_amps = 0;
-int16_t  latest_battCurrent_counts = 0; //calibrated 10b result //0A is exactly 330 counts (i.e. NOMINAL_0A_ADC_RESULT)
+int16_t  latest_battCurrent_counts = 0; //calibrated 10b result //0A is exactly 330 counts (i.e. ADC_NOMINAL_0A_COUNTS)
 
 //sample ADC and return average battery current
 //To prevent overflow, raw ADC result must not exceed 1191 counts (i.e. don't use an ADC with more than 10b!!)
@@ -115,8 +115,6 @@ void adc_updateBatteryCurrent(void)
 //only call this function when no current is flowing through the sensor (e.g. when key is off)
 void adc_calibrateBatteryCurrentSensorOffset(void)
 {
-	#define NOMINAL_0A_ADC_RESULT 330
-
 	uint16_t adcAccumulator   =     0;
 	uint16_t minResult_counts = 65535;
 	uint16_t maxResult_counts =     0;
@@ -133,11 +131,11 @@ void adc_calibrateBatteryCurrentSensorOffset(void)
 
 	//verify returned values are in the right ballpark
 	if( ((maxResult_counts - minResult_counts) < 2)       && /* verify all returned values are within 1 count */
-		 (maxResult_counts < (NOMINAL_0A_ADC_RESULT + 8)) && /* verify hardware offset tolerance isn't too high */
-		 (minResult_counts > (NOMINAL_0A_ADC_RESULT - 8)) )  /* verify hardware offset tolerance isn't too low  */ 
+		 (maxResult_counts < (ADC_NOMINAL_0A_COUNTS + 8)) && /* verify hardware offset tolerance isn't too high */
+		 (minResult_counts > (ADC_NOMINAL_0A_COUNTS - 8)) )  /* verify hardware offset tolerance isn't too low  */ 
 	{
 		uint16_t adcZeroCrossing_counts = (adcAccumulator >> ADC_NUMSAMPLES_2_TO_THE_N);
-		calibratedCurrentSensorOffset = adcZeroCrossing_counts - NOMINAL_0A_ADC_RESULT;
+		calibratedCurrentSensorOffset = adcZeroCrossing_counts - ADC_NOMINAL_0A_COUNTS;
 		Serial.print(F("\nCurrent Sensor 0A set to (counts): "));
 		Serial.print(String(adcZeroCrossing_counts));
 	} 

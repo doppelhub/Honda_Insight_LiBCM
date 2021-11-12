@@ -30,6 +30,8 @@
 		#define ADC_NUMSAMPLES_PER_CALL    2 //Must be divisible into ADC_NUMSAMPLES_PER_RESULT!
 	#endif
 
+	#define ADC_NOMINAL_0A_COUNTS 330 //ADC returns ~330 counts when no current flows through sensor
+
 #endif
 
 /*
