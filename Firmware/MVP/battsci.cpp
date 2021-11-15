@@ -167,12 +167,12 @@ void BATTSCI_calculateSoC(uint16_t voltage)
     temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
   } else if (voltage >= 40000) {
     // No Regen Allowed
-    uint16_t tempSoCPercent = map(voltage, 40000, 40700, 571, 600);
+    uint16_t tempSoCPercent = map(voltage, 40000, 40700, 600, 619);
     calculatedSoC = tempSoCPercent;
     temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
   } else if (voltage >= 37250) {
     // No BG Regen Allowed
-    uint16_t tempSoCPercent = map(voltage, 37250, 39999, 501, 570);
+    uint16_t tempSoCPercent = map(voltage, 37250, 39999, 501, 599);
     calculatedSoC = tempSoCPercent;
     temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
   } else if ((voltage < 37250) && (voltage > 36000)) {
@@ -204,19 +204,19 @@ void BATTSCI_calculateSoC(uint16_t voltage)
   packMilliAmps = adc_getLatestBatteryCurrent_amps();
 
   // Modify calculatedSoC in place to be an increment of oldCalculatedSoC
-  // packMilliAmps is being checked so that we only increment SoC if we have current < -0.001 Amps or decremented if we have > +0.001 Amps
+  // packMilliAmps is being checked so that we only increment SoC if we have current < -0.01 Amps or decremented if we have > +0.01 Amps
   // packMilliAmps is + if Amps are going OUT and voltage is going DOWN
   // packMilliAmps is - if Amps are going IN and voltage is going UP
   // This should prevent SoC being changed during Auto Stop due to low cell voltage hysteresis.
   // To Do: We may be able to remove these checks once we are calculating an LiBCM SoC using coulomb counting.
   if (calculatedSoC > oldCalculatedSoC) {
-    if (packMilliAmps <= -1 ) {
+    if (packMilliAmps <= -10 ) {
       calculatedSoC = (oldCalculatedSoC + 1);
       BATTSCI_evaluateSoCBytes(calculatedSoC);  // Update SoC_Bytes[] value to send to MCM
       oldCalculatedSoC = calculatedSoC;         // Set oldCalculatedSoC to the incremented calculatedSoC
     }
   } else if (calculatedSoC < oldCalculatedSoC) {
-    if (packMilliAmps >= 1 ) {
+    if (packMilliAmps >= 10 ) {
       calculatedSoC = (oldCalculatedSoC - 1);
       BATTSCI_evaluateSoCBytes(calculatedSoC);  // Update SoC_Bytes[] value to send to MCM
       oldCalculatedSoC = calculatedSoC;         // Set oldCalculatedSoC to the incremented calculatedSoC
