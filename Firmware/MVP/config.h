@@ -7,16 +7,20 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.3.2N TEST 11"
-    #define BUILD_DATE "2021NOV12"
-    #define HW_REVB
+	#define FW_VERSION "0.3.8"
+    #define BUILD_DATE "2021NOV14"
+
 	#define CPU_MAP_MEGA2560
+
+    //chose ONE of the following:
+    	//#define HW_REVB
+    	#define HW_REVC
 
 	//choose ONE of the following:
 		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
 		//#define SET_CURRENT_HACK_20 //+20%
 		#define SET_CURRENT_HACK_40 //+40%
-		//#define SET_CURRENT_HACK_60 //+60%
+		//#define SET_CURRENT_HACK_60 //+60% //Note: LiBCM can only measure between 71 A regen & 147 A assist //higher current values will (safely) rail the ADC
 
 	//choose ONE of the following:
 		//#define VOLTAGE_SPOOFING_DISABLE              //closest to OEM IMA behavior
@@ -24,7 +28,7 @@
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //only spoof during assist, using either 120 volts or (vPackActual-12)
 		#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //always spoof voltage (enables stronger regen)
 
-	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to display all cell voltages
+	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to print all cell voltages while driving //Grid charger always prints all cell voltages
 
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
 	//Choose which I2C LCD driver to use for 4x20 display:
@@ -39,9 +43,11 @@
 	#define PRINT_USB_DEBUG_TEXT //prints text sent via debugUSB_debugText() //JTS2doLater: NOT IMPLEMENTED YET
 	#define DEBUG_USB_UPDATE_PERIOD_MS 250 //250 = send data every 250 ms
 
-	#define LOOP_RATE_MS 10 // Superloop execution rate: 1/LOOP_RATE_MS (e.g. LOOP_RATE_MS==10 is 100 Hz)
+	#define LOOP_RATE_MILLISECONDS 10 // Superloop execution rate: 1/LOOP_RATE_MILLISECONDS (e.g. LOOP_RATE_MILLISECONDS==10 is 100 Hz)
 
 	#define GRID_CHARGER_CELL_VMAX 40000 // Vcell = (GRID_CHARGER_CELL_VMAX * 0.0001 V) //cells charged to this voltage
+
+	//#define RUN_BRINGUP_TESTER //test PCB (requires external hardware that you don't have)
 
 #endif
 
@@ -51,7 +57,7 @@ Features to add later:
 #define QUERY_ISCOVERINSTALLED_SWITCH
 
 //Define realtime commands that are immediately picked off from the serial stream.
-//These characters are not passsed to the serial parser, and are executed immediately.
+//These characters are not passed to the serial parser, and are executed immediately.
 #define CMD_RESET '|'
 #define CMD_STATUS_REPORT
 

@@ -15,4 +15,6 @@
 	void vPackSpoof_handleKeyON(void);
 
 	uint8_t vPackSpoof_getSpoofedPackVoltage(void);
+
+	void spoofVoltageMCMe_setSpecificPWM(uint8_t valuePWM);
 #endif

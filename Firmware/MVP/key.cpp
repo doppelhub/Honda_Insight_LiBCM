@@ -17,10 +17,13 @@ void key_handleKeyEvent_off(void)
     BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
     METSCI_disable();
     gpio_setFanSpeed_OEM('0');
-    gpio_turnCurrentSensor_off();
+    gpio_setFanSpeed('0');
+    adc_calibrateBatteryCurrentSensorOffset();
+    gpio_turnPowerSensors_off();
     LTC6804configure_handleKeyOff();
     lcd_displayOFF();
     vPackSpoof_handleKeyOFF();
+    gpio_turnHMI_off();
     //JTS2doLater: store keyOff time, so LiBCM can turn itself off (e.g. after an hour)
 }
 
@@ -32,11 +35,12 @@ void key_handleKeyEvent_on(void)
 	BATTSCI_enable();
 	METSCI_enable();
 	gpio_setFanSpeed_OEM('L');
-	gpio_turnCurrentSensor_on();
+	gpio_turnPowerSensors_on();
 	lcd_displayON();
 	LTC68042result_maxEverCellVoltage_set(0    ); //reset maxEver cell voltage
 	LTC68042result_minEverCellVoltage_set(65535); //reset minEver cell voltage
 	LTC68042configure_cellBalancing_disable();
+	gpio_turnHMI_on();
 	LED(1,HIGH);
 }
 
@@ -60,7 +64,6 @@ bool key_didStateChange(void)
 		//no need to do anything.
 		;
 	}
-
 	else if(keyState_sampled != keyState_previous)
 	{
 		didKeyStateChange = YES;

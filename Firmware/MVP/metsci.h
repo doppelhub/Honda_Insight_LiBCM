@@ -21,7 +21,7 @@
 
   uint8_t METSCI_readByte();
 
-  uint8_t METSCI_bytesAvailable();
+  uint8_t METSCI_bytesAvailableToRead();
 
   void METSCI_processLatestFrame(void);
 

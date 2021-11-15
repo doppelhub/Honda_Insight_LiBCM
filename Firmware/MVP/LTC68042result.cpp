@@ -10,7 +10,7 @@ uint8_t LTC68042result_errorCount_get       (void                 ) { return iso
 void    LTC68042result_errorCount_set       (uint8_t newErrorCount) { isoSPI_errorCount = newErrorCount; }
 void    LTC68042result_errorCount_increment (void                 ) { isoSPI_errorCount++;               }
 
-uint8_t packVoltage_actual = 170; //JTS2do: See if MCM happy with 0 volts
+uint8_t packVoltage_actual = 170;
 void    LTC68042result_packVoltage_set (uint8_t voltage) { packVoltage_actual = voltage; }
 uint8_t LTC68042result_packVoltage_get (void           ) { return packVoltage_actual; }
 

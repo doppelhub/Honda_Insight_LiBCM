@@ -1,0 +1,36 @@
+C170 (100 nF capacitor on opamp inverting input) causes opamp to ring.  My goal in adding C170 was to impedance match the inputs (to better reject noise from +5V)... but this slows inverting input down too much, causing opamp to ring (i.e. it becomes an oscillator).
+
+One thought would be to increase C22 (equivalent non-inverting capacitance) from 100 nF to 1 uF... thus making C17 10% of C22.  This would still filter noise from +5V, but would make inverting input 10x faster, and thus (probably) still reduce noise without ringing.
+
+Result: Nope... still rings like crazy with 
+
+...
+
+With C170 removed, opamp output noise is primarily 14 mVpp @ 30 kHz.  That's not terrible... which is around half an IMA amp of error.  We average this out in firmware (i.e. by oversampling), but ideally the signal itself would be stable from the getgo.
+
+Result: This is essentially as per RevB, plus the additional output LPF (R334+C171).  Works.
+
+...
+
+Moving C170 to the other side of R66 would reject noise from +5V, without affecting opamp feedback (because the voltage divider R54/R55/R56/R57 already outputs a DC load to R66.
+
+Result: SPICE shows this working well
+
+...
+
+Another option is to add 100 nF in parallel to R67 (to integrate the opamp output).
+
+Result: SPICE shows this working well
+
+...
+
+Another option is to reduce capacitance values to 100 pF (C22/C170/parallel_to_R67), so opamp can generally respond faster.
+
+...
+
+Solution:
+C171: 100pF
+R334: 20 Ohms
+R067: 100k||100n (piggyback)
+C170: DNP
+(R056+0R57): 17.32k||100nF (simplest mechanical equivalent: 100nF from C170 to R66)

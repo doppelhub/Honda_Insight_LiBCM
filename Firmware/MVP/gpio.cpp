@@ -16,11 +16,11 @@ void gpio_begin(void)
 
 	//turn on lcd display
 	pinMode(PIN_HMI_EN,OUTPUT);
-	digitalWrite(PIN_HMI_EN,HIGH);
+	gpio_turnHMI_on();
 
-	//Enable BCM current sensor & constant 5V load
-	pinMode(PIN_I_SENSOR_EN,OUTPUT);
-	digitalWrite(PIN_I_SENSOR_EN,LOW);
+	//Controls BCM current sensor, constant 5V load, and BATTSCI/METSCI biasing
+	pinMode(PIN_SENSOR_EN,OUTPUT);
+	gpio_turnPowerSensors_on(); //if the key is off when LiBCM first powers up, the keyOff handler will turn the sensors back off
 
 	pinMode(PIN_LED1,OUTPUT);
 	pinMode(PIN_LED2,OUTPUT);
@@ -35,17 +35,16 @@ void gpio_begin(void)
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
-	TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz (pins D11 & D12)
-  	
-  	//TCCR0B = (TCCR0B & B11111000) | B00000001; // set F_PWM to 62500.00 Hz (D04 & D13) //This hoses delay()!
-    //TCCR0B = (TCCR0B & B11111000) | B00000011; // set F_PWM to   976.56 Hz (D04 & D13) //default
+	TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D11(fan) & D12()
+	TCCR3B = (TCCR3B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D2() & D3() & D5(VPIN_OUT on RevC)
+	//TCCR5B is set in Buzzer functions
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////
 
 
-bool gpio_keyStateNow(void) { return digitalRead(PIN_KEY_ON); }
+bool gpio_keyStateNow(void) { return digitalRead(PIN_IGNITION_SENSE); }
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -66,18 +65,24 @@ void gpio_setFanSpeed(char speed)
 {
 	switch(speed)
 	{
-		case '0': pinMode(PIN_FAN_PWM, INPUT); break; //high impedance
-		case 'L': analogWrite(PIN_FAN_PWM, 5); break; //JTS2doLater: why are these values so low?
-		case 'M': analogWrite(PIN_FAN_PWM, 40); break;
-		case 'H': analogWrite(PIN_FAN_PWM, 255); break;
+		case '0': pinMode(PIN_FAN_PWM, INPUT);     break; //high impedance
+		case 'L': analogWrite(PIN_FAN_PWM, 30);    break;
+		case 'M': analogWrite(PIN_FAN_PWM, 75);    break;
+		case 'H': analogWrite(PIN_FAN_PWM, 255);   break;
+		default : analogWrite(PIN_FAN_PWM, speed); break;
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//power current sensor & constant 5V load
-void gpio_turnCurrentSensor_on( void) { digitalWrite(PIN_I_SENSOR_EN, HIGH); }
-void gpio_turnCurrentSensor_off(void) { digitalWrite(PIN_I_SENSOR_EN,  LOW); }
+//powers OEM current sensor, METSCI/BATTSCI power rail, and constant 5V load
+void gpio_turnPowerSensors_on( void) { digitalWrite(PIN_SENSOR_EN, HIGH); }
+void gpio_turnPowerSensors_off(void) { digitalWrite(PIN_SENSOR_EN,  LOW); }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void gpio_turnHMI_on( void) { digitalWrite(PIN_HMI_EN, HIGH); }
+void gpio_turnHMI_off(void) { digitalWrite(PIN_HMI_EN,  LOW); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -103,15 +108,44 @@ void gpio_setGridCharger_powerLevel(char powerLevel)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+//Buzzer present in RevC+ hardware
+void gpio_turnBuzzer_on_highFreq(void)
+{
+	TCCR5B = (TCCR5B & B11111000) | B00000010; // set F_PWM to  3921.16 Hz //pins D44(GPIO3) & D45(BUZZER) & D46()
+	analogWrite(PIN_BUZZER_PWM, 127 );
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void gpio_turnBuzzer_on_lowFreq(void)
+{
+	TCCR5B = (TCCR5B & B11111000) | B00000011; // set F_PWM to   490.20 Hz //pins D44(GPIO3) & D45(BUZZER) & D46()
+	analogWrite(PIN_BUZZER_PWM, 127 );
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void gpio_turnBuzzer_off(void) { analogWrite(PIN_BUZZER_PWM,0); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
 
+#ifdef HW_REVB
+	//features unique to RevB
+#else
+	//RevC+ supports the following
+	bool gpio_isCoverInstalled(void)
+	{
+		if(digitalRead(PIN_COVER_SWITCH) == 1 ) {return  true;}
+		else                                    {return false;}
+	}
+
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////////
 
-
-////////////////////////////////////////////////////////////////////////////////////
-
+void gpio_turnTemperatureSensors_on( void) {digitalWrite(PIN_TEMP_EN,HIGH); }
+void gpio_turnTemperatureSensors_off(void) {digitalWrite(PIN_TEMP_EN,LOW ); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 

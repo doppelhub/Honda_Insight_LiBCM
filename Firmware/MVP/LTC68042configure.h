@@ -4,7 +4,12 @@
 #ifndef LTC68042configure_h
 	#define LTC68042configure_h
 
-	#define TOTAL_IC       4 //number of ICs in the isoSPI network
+	#ifdef RUN_BRINGUP_TESTER
+		#define TOTAL_IC   5 //number of ICs in the isoSPI network
+	#else
+		#define TOTAL_IC   4 //number of ICs in the isoSPI network
+	#endif
+
 	#define FIRST_IC_ADDR  2 //lowest address.  All additional IC addresses must be sequential
 	#define CELLS_PER_IC  12 //Each LTC6804 measures QTY12 cells
 
@@ -72,6 +77,11 @@
 	#define DCP_DISABLED 0
 	#define DCP_ENABLED 1
 
+	#ifdef RUN_BRINGUP_TESTER
+		#define IS_DISCHARGE_ALLOWED_DURING_CONVERSION DCP_ENABLED
+	#else
+		#define IS_DISCHARGE_ALLOWED_DURING_CONVERSION DCP_DISABLED
+	#endif
 
 	static const unsigned int crc15Table[256] = {
 	  0x0,    0xc599, 0xceab, 0xb32,  0xd8cf, 0x1d56, 0x1664, 0xd3fd,

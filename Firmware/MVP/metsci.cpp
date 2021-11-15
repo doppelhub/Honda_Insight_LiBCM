@@ -181,7 +181,7 @@ uint8_t METSCI_readByte()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t METSCI_bytesAvailable()
+uint8_t METSCI_bytesAvailableToRead()
 {
   return Serial3.available();
 }
@@ -194,7 +194,7 @@ uint8_t METSCI_bytesAvailable()
 void METSCI_processLatestFrame(void)
 {
   //Check if we have more than one complete frame in queue (which indicates we've somehow fallen behind)
-  while( METSCI_bytesAvailable() > (METSCI_BYTES_IN_FRAME << 1) ) //True if two or more full frames are stored in serial ring buffer
+  while( METSCI_bytesAvailableToRead() > (METSCI_BYTES_IN_FRAME << 1) ) //True if two or more full frames are stored in serial ring buffer
   {
     Serial.print(F("\nMETSCI stale.  Discarding frame: "));
     for(int ii=0; ii < METSCI_BYTES_IN_FRAME; ii++) //delete oldest frame
@@ -216,14 +216,17 @@ void METSCI_processLatestFrame(void)
     return;
   }
 
-  if( METSCI_bytesAvailable() > METSCI_BYTES_IN_FRAME )  //Verify a full frame exists in the buffer
+  if( METSCI_bytesAvailableToRead() > METSCI_BYTES_IN_FRAME )  //Verify a full frame exists in the buffer
   {
     uint8_t packetType, packetData, packetCRC;
     uint8_t resyncAttempt = 0; //prevents endless loop by bailing after N tries
   
     while( (METSCI_readByte() != 0xE6) )  //Ensure the first byte is 0xE6
     {
-      Serial.print( F("\nMETSCI buffer sync") ); //throw away data until the next frame starts (0xE6 byte) 
+      //throw away data until the next frame starts (0xE6 byte)
+      if(resyncAttempt == 0) { Serial.print( F("\nMETSCI buffer sync") ); } 
+      else                   { Serial.print('.'); }
+
       resyncAttempt++;
       if( resyncAttempt > (METSCI_BYTES_IN_FRAME << 2) )
       {

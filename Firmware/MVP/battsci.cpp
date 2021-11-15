@@ -25,10 +25,6 @@ uint16_t oldCalculatedSoC = 20;
 
 bool initializeSoC = true;
 
-uint16_t tempSoC = 19; // This variable and everything that uses it is only for LCD debug, and can be removed once that's no longer needed.
-void    tempSoC_set(uint16_t newSoC) { tempSoC = newSoC; }      // Remove when tempSoC is removed.
-uint16_t tempSoC_get(void                 ) { return tempSoC; } // Remove when tempSoC is removed.
-
 uint8_t SoCHysteresisIncrementFrequency = 5; // How many iterations between SoC updates to MCM?
 uint8_t SoCHysteresisCounter = 150;
 uint16_t SoCHysteresisVoltage = 0;
@@ -127,8 +123,6 @@ void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
     @return                 This function does not return anything.  It modifies SoC_Bytes[] in place.
   */
 
-
-
   SoC_MathBytes[0] = 0x00;
   SoC_MathBytes[1] = 0x00;
   evalSoC += 0x48;              // MCM 2nd-byte SoC is 0x48 when SoC is 20%.  20% is our reference, so we need to add this first.
@@ -206,26 +200,23 @@ void BATTSCI_calculateSoC(uint16_t voltage)
     BATTSCI_evaluateSoCBytes(calculatedSoC);
   }
 
-  tempSoC_set(calculatedSoC + 200);   // Delete this line when no longer needed.  Sends user-readable SoC to LCD.
-
   static int16_t packMilliAmps = 0;
   packMilliAmps = adc_getLatestBatteryCurrent_amps();
 
-
   // Modify calculatedSoC in place to be an increment of oldCalculatedSoC
-  // packMilliAmps is being checked so that we only increment SoC if we have current < -0.01 Amps or decremented if we have > +0.01 Amps
+  // packMilliAmps is being checked so that we only increment SoC if we have current < -0.001 Amps or decremented if we have > +0.001 Amps
   // packMilliAmps is + if Amps are going OUT and voltage is going DOWN
   // packMilliAmps is - if Amps are going IN and voltage is going UP
   // This should prevent SoC being changed during Auto Stop due to low cell voltage hysteresis.
   // To Do: We may be able to remove these checks once we are calculating an LiBCM SoC using coulomb counting.
   if (calculatedSoC > oldCalculatedSoC) {
-    if (packMilliAmps <= -10 ) {
+    if (packMilliAmps <= -1 ) {
       calculatedSoC = (oldCalculatedSoC + 1);
       BATTSCI_evaluateSoCBytes(calculatedSoC);  // Update SoC_Bytes[] value to send to MCM
       oldCalculatedSoC = calculatedSoC;         // Set oldCalculatedSoC to the incremented calculatedSoC
     }
   } else if (calculatedSoC < oldCalculatedSoC) {
-    if (packMilliAmps >= 10 ) {
+    if (packMilliAmps >= 1 ) {
       calculatedSoC = (oldCalculatedSoC - 1);
       BATTSCI_evaluateSoCBytes(calculatedSoC);  // Update SoC_Bytes[] value to send to MCM
       oldCalculatedSoC = calculatedSoC;         // Set oldCalculatedSoC to the incremented calculatedSoC
@@ -283,9 +274,7 @@ void BATTSCI_sendFrames()
       else
       { // all cells above 3.000 volts
 
-        // NM:  Updating SoC only every so often.  The OEM SoC gauge doesn't seem to function when the SoC fluctuates too quickly.
-        // A different hysteresis methodology could be employed; this is just a beta implementation.
-        // To Do: Modify or delete all of the voltage hysteresis calculations once we have an internal LiBCM SoC.
+        // NM To Do: Modify or delete all of the voltage hysteresis calculations once we have an internal LiBCM SoC.
 
         // At startup initialize this variable by setting it to whatever vCellWithESR_counts is.
         // This should only run once.
@@ -294,7 +283,7 @@ void BATTSCI_sendFrames()
         }
 
         // Average vCellWithESR_counts over SoCHysteresisIncrementFrequency iterations.
-        // Adding the pre-divided numbers so we don't go past 65535.
+        // Adding the pre-divided numbers so we don't overflow SoCHysteresisVoltage.
         SoCHysteresisVoltage /= 2;
         SoCHysteresisVoltage += (vCellWithESR_counts / 2);
 

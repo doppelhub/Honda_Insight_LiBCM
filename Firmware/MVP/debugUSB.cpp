@@ -13,6 +13,7 @@ char debugCharacter = '.';
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 //print all cell voltages from one IC
+//Regardless of actual physical address (e.g. first ic address is 2), the zeroth array element is the first IC's data  
 //t=2.4 milliseconds worst case
 void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces)
 {
@@ -32,7 +33,7 @@ void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t cellBitmaps[TOTAL_IC] = {0};
+uint16_t cellBitmaps[TOTAL_IC] = {0};
 
 void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap)
 {
@@ -41,7 +42,7 @@ void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-void debugUSB_printCellBalanceStatus()
+void debugUSB_printCellBalanceStatus(void)
 {
 	Serial.print("\nBalance:");
 	for(uint8_t ii = 0; ii < TOTAL_IC; ii++)
@@ -79,7 +80,7 @@ void debugUSB_printLatest_data_gridCharger(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-//This function MUST NOT PRINT more than 63 characters in a single call (that's the maximum Serial buffer size)
+//This function MUST NOT print more than 63 characters in a single call (that's the maximum Serial buffer size)
 void debugUSB_printLatest_data_keyOn(void)
 {	
 	static uint32_t previousMillisDebug = 0;
@@ -95,7 +96,7 @@ void debugUSB_printLatest_data_keyOn(void)
 		//comma delimiter to simplify data analysis 
 		//Complete string should be less than 64 characters (to prevent filling buffer)
 	    //               ****************************************************************
-	  //Serial.print(F("\n140,100,A, 170,156,V, 3.79,3.77,V, e,255,p,255, 28.5,kW, c"    ));
+	  //Serial.print(F("\n140,100,A, 170,156,V, 3.79,3.77,V, 34567,mAh, 28.5,kW"        )); //use comma for easy parsing
 		Serial.print(F("\n"                                                              ));
 		Serial.print(String( adc_getLatestBatteryCurrent_amps()                          ));
 		Serial.print(F(     ","                                                          ));
@@ -108,15 +109,11 @@ void debugUSB_printLatest_data_keyOn(void)
 		Serial.print(String( (LTC68042result_hiCellVoltage_get() * 0.0001), 3)            );
 		Serial.print(F(                            ","                                   ));
 		Serial.print(String( (LTC68042result_loCellVoltage_get() * 0.0001), 3)            );
-		Serial.print(F(                                 ",V, e,"                         ));
-		Serial.print(String( vPackSpoof_getPWMcounts_MCMe()                              ));
-		Serial.print(F(                                          ",p,"                   ));
-		Serial.print(String( vPackSpoof_getPWMcounts_VPIN()                              ));		
-		Serial.print(F(                                                ", "              ));
+		Serial.print(F(                                 ",V, "                           ));
+		Serial.print(String( SoC_packCharge_Now_mAh_get()                                ));		
+		Serial.print(F(                                          ",mAh, "                ));
 		Serial.print(String( (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001), 1 )); //JTS2doLater: do power calc elsewhere
-		Serial.print(F(                                                      ",kW, "     ));
-
-		Serial.print(String( debugCharacter                                              ));
+		Serial.print(F(                                                    ",kW"     ));
 
 		icCellVoltagesToPrint = 0;
 	}
@@ -142,7 +139,7 @@ void debugUSB_printLatest_data_keyOn(void)
 //This is not a well-written input handler... follow the above syntax EXACTLY!
 uint8_t debugUSB_getUserInput(void)
 {
-	static uint8_t userEntry = 150; //initial value (when user hasn't entered value)
+	static uint8_t userEntry = 0; //initial value (when user hasn't entered value)
 
 	uint8_t bytesSentFromUser = Serial.available();
 	if( bytesSentFromUser >= 4 )
