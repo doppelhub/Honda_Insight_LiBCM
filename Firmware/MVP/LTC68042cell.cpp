@@ -139,7 +139,6 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
 	}
 }
 
-
 //---------------------------------------------------------------------------------------
 
 
@@ -150,6 +149,50 @@ void processAllCellVoltages(void)
 	uint32_t packVoltage_RAW = 0; //Multiply by 0.0001 for volts
 	uint16_t loCellVoltage = 65535;
 	uint16_t hiCellVoltage = 0;
+
+	#ifdef LTC68042_ENABLE_C19_VOLTAGE_CORRECTION
+		//On LiBCM, QTY3 LTC6804 ICs measure QTY2 18S EHW5 modules:
+		// -LTC6804 'A' measures the first QTY12 cells in the 1st 18S module (stack cells 01:12).  No problems here.
+		// -LTC6804 'C' measures the  last QTY12 cells in the 2nd 18S module (stack cells 25:36).  No problems here.
+		// -LTC6804 'B' measures the remaining QTY6 cells in both modules (stack cells 13:18 in module 'A', as well as stack cells 19:24 in module 'C').
+		//
+		//Since LTC6804 'B' straddles two 18S modules, reading cell 19's voltage includes
+		//the voltage drop across the several-foot-long current cable connecting between the 18S modules.
+		//This causes the measured cell 19 voltage to differ from the actual voltage at the studs, proportional to the current sourced/sunk into the battery.
+		//Note that the additional voltage error is solely a function of the resistance in the cabling between the modules, and has nothing to do with the cell ESR.
+		//However, due to the high frequency chopping that occurs on the IGBT driver, the current might not actually be flowing the moment the LTC6804 samples the cells.
+		//If no current is flowing at the precise moment the LTC6804 ADC samples the cells, the current-proportional voltage correction (on cell 19) will actually
+		//introduce its own voltage error (rather than correcting the voltage), due to how the OEM Battery Current Sensor measures the true average current (without chopping). 
+		//Therefore, to pick the 'correct' voltage, LiBCM calculates the voltage correction, and then picks whichever voltage lies between the hi/lo voltages.
+		//
+		//Note that the ultimate root cause for this behavior is that the OEM EHW5 BMS connectors don't allow us to separately sense cell 18+ from cell 19-.
+		//FYI: R359 guarantees that only cell 19 (and not cell 18) will have the above-described behavior.
+		//The ideal solution would be to use the LTC6813 - which measures QTY18 cells -on the 18S EHW5 modules.
+		//However, that IC is backordered for years, hence the above hardware decision and this workaround.
+		//It's not ideal, but it's what we've got.  STFP!
+		//
+		//If you're not using 18S Honda EHW5 modules, then disable "#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION" in config.h.
+
+		//cell 19 is the seventh cell on the second IC	
+		#define CELL19_CHIP_NUMBER 1 //array is zero-indexed // '1' is the 2nd IC
+		#define CELL19_CELL_NUMBER 6 //array is zero-indexed // '6' is seventh cell (i.e. stack cell 19)
+
+		#define VOLTAGECORRECTION_mV_PER_AMP 1 //1 mV/A error measured on RevC hardware //only corrects cell 19 for this specific issue
+		#define LTC6804_COUNTS_PER_mV 10 //LSB is 100 uV
+		#define LTC6804_COUNT_ADJUSTMENT_PER_AMP (VOLTAGECORRECTION_mV_PER_AMP * LTC6804_COUNTS_PER_mV) //preprocessor handles this multiply
+
+		uint16_t cell19Voltage_measured = cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER]; //store cell 19 voltage for later
+		uint16_t cell19Voltage_adjusted = cell19Voltage_measured + adc_getLatestBatteryCurrent_amps() * LTC6804_COUNT_ADJUSTMENT_PER_AMP;
+
+		Serial.print("\nC19_actual: ");
+		Serial.print(String(cell19Voltage_measured));
+		Serial.print(", C19_adjusted: ");
+		Serial.print(String(cell19Voltage_adjusted));
+
+		//replace cell 19's voltage with cell 18's, to prevent cell 19's (possibly incorrect) voltage from being either the highest or lowest voltage
+		cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER] = cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER - 1];
+		//we'll restore cell 19's voltage after we determine pack hi/lo (in the for loops below)
+	#endif
 
 	//loop through every cell in pack
 	for (int chip = 0 ; chip < TOTAL_IC; chip++) //actual LTC serial address: 'chip' + FIRST_IC_ADDR )
@@ -177,6 +220,39 @@ void processAllCellVoltages(void)
 	
 	LTC68042result_loCellVoltage_set(loCellVoltage);
 	LTC68042result_hiCellVoltage_set(hiCellVoltage);
+
+	#ifdef LTC68042_ENABLE_C19_VOLTAGE_CORRECTION
+		//Now we need to determine which cell 19 voltage is correct (the actual measured value, or the current-adjusted one)
+		//We do this by determining which voltage has the smallest magnitude from the max/min cell voltages (determined above).
+		
+		uint16_t midpointVoltage = ((hiCellVoltage - loCellVoltage) >> 1) + loCellVoltage;
+		uint16_t cell19deltaMagnitude_measured = 0;
+		uint16_t cell19deltaMagnitude_adjusted = 0;
+
+		//find measured voltage magnitude from midpoint
+		if(cell19Voltage_measured > midpointVoltage) { cell19deltaMagnitude_measured = cell19Voltage_measured - midpointVoltage; }
+		else                                         { cell19deltaMagnitude_measured = midpointVoltage - cell19Voltage_measured; } 
+
+		//find adjusted voltage magnitude from midpoint
+		if(cell19Voltage_adjusted > midpointVoltage) { cell19deltaMagnitude_adjusted = cell19Voltage_adjusted - midpointVoltage; }
+		else                                         { cell19deltaMagnitude_adjusted = midpointVoltage - cell19Voltage_adjusted; } 
+
+		uint16_t cell19Voltage_final = 0;
+
+		if(cell19deltaMagnitude_measured > cell19deltaMagnitude_adjusted) { cell19Voltage_final = cell19Voltage_adjusted; } //adjusted value is closer to midpoint
+		else                                                              { cell19Voltage_final = cell19Voltage_measured; } //measured value is closer to midpoint
+
+		//store whichever cell 19 voltage is closest to the other cells
+		LTC68042result_specificCellVoltage_set(CELL19_CHIP_NUMBER, CELL19_CELL_NUMBER, cell19Voltage_final);
+
+		Serial.print(", C19_final: ");
+		Serial.print(String(cell19Voltage_final));
+
+		//finally, we need to check if cell 19 is either the highest or lowest voltage
+		if(cell19Voltage_final > hiCellVoltage) { LTC68042result_hiCellVoltage_set(cell19Voltage_final); }
+		if(cell19Voltage_final < loCellVoltage) { LTC68042result_loCellVoltage_set(cell19Voltage_final); }
+
+	#endif
 }
 
 
