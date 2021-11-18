@@ -23,6 +23,16 @@ byte temperature_Byte = 0x3A;         // Temperature Byte to send to MCM.  0x3A 
 uint16_t calculatedSoC = 20;
 uint16_t oldCalculatedSoC = 20;
 
+byte IMA_Behaviour_Flag_Bytes[] = {0x00, 0x00};   // NM To Do: Can be looked up by lcd.cpp to display appropriate assist and regen flags.
+/*  [0] 0x00 = Forced Regen
+*   [0] 0x01 = Regen Allowed, Background Regen
+*   [0] 0x02 = Regen Allowed
+*   [0] 0x03 = No Regen
+*   [1] 0x00 = No Assist
+*   [1] 0x01 = Assist Allowed
+*   [1] 0x02 = Max Assist Allowed
+*/
+
 bool initializeSoC = true;
 
 uint8_t SoCHysteresisIncrementFrequency = 2; // How many iterations between SoC updates to MCM?
@@ -112,7 +122,7 @@ void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
   //  25% = 0x11 0x7A -- Regen allowed, Assist barely allowed, Background Regen very aggressive
   //  20% = 0x11 0x48 -- Regen allowed, No Assist, Regen running even during idle
 
-  // MCM can read and accept values outside this window, like 19% SoC or 82% SoC, but we don't need to use those.
+  // MCM can read and accept values outside this window, like 19% SoC or 85% SoC, but we don't need to use those.
 
   /**
     BATTSCI_evaluateSoCBytes evaluates what bytes LiBCM will send to the MCM to set the SoC, depending on the SoC we gave it
@@ -141,6 +151,8 @@ void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
 
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void BATTSCI_evaluateTempertureByte(uint16_t evalSoC) {
   /**
     BATTSCI_evaluateTempertureByte determines the IMA battery temperature we are sending to the MCM.
@@ -155,6 +167,26 @@ void BATTSCI_evaluateTempertureByte(uint16_t evalSoC) {
     temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
   }
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/* void BATTSCI_evaluateIMABehaviourFlags(uint16_t evalSoC) {*/
+  /**
+    BATTSCI_evaluateIMABehaviourFlags sets flags based upon surrent MCM behaviour to be displayed on the LCD
+
+    @param      evalSoC     Integer value of SoC in 0.1% increments beginning at 20%. 0 = 20.0%
+    @return                 This function does not return anything.
+  */
+
+  // Must incorporate MCM Spoofed SoC
+  // Must incorporate MCM Spoofed SoC history
+  // Must incorporate MCM Spoofed Temperature Bytes
+  // Must incorporate MDM Temperature
+
+  // Note: If we can't get MDM Temperature then this will only ever be able to display what the data LiBCM has sent to MCM allow it to do.
+  // The flags won't be able to display what the MCM is ACTUALLY doing//going to do if we can't get MDM tempeerature.
+
+/*}*/
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -234,10 +266,17 @@ void BATTSCI_calculateSoC(uint16_t voltage)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void initialize_MCM_SoC(void)
+void BATTSCI_initializeMCMSoC(void)
 {
   // Key On causes a recalculation of SoC to spoof to MCM
 	initializeSoC = true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+byte* BATTSCI_getIMABehaviourFlags(void)
+{
+  return IMA_Behaviour_Flag_Bytes;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

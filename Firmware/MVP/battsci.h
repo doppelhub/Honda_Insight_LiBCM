@@ -14,7 +14,9 @@
 
 	void BATTSCI_disable();
 
-	void initialize_MCM_SoC(void);
+	void BATTSCI_initializeMCMSoC(void);
+
+	byte* BATTSCI_getIMABehaviourFlags(void);
 
 	void BATTSCI_sendFrames();
 

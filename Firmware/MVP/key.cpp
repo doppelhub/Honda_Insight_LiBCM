@@ -37,7 +37,7 @@ void key_handleKeyEvent_on(void)
 	gpio_setFanSpeed_OEM('L');
 	gpio_turnPowerSensors_on();
 	lcd_displayON();
-	initialize_MCM_SoC();
+	BATTSCI_initializeMCMSoC();
 	LTC68042result_maxEverCellVoltage_set(0    ); //reset maxEver cell voltage
 	LTC68042result_minEverCellVoltage_set(65535); //reset minEver cell voltage
 	LTC68042configure_cellBalancing_disable();
