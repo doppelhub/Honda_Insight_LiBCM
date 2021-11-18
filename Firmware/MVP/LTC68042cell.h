@@ -8,5 +8,9 @@
 	#define STATE_GATHER  1
 	#define STATE_PROCESS 2
 
-	void LTC68042cell_nextVoltages(void);
+	#define GATHERED_LTC6804_DATA  0
+	#define PROCESSED_LTC6804_DATA 1
+
+	bool LTC68042cell_nextVoltages(void);
+	void LTC68042cell_sampleGatherAndProcessAllCellVoltages(void);
 #endif

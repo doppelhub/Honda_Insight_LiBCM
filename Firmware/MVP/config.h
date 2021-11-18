@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.3.8"
-    #define BUILD_DATE "2021NOV15"
+	#define FW_VERSION "0.4.0"
+    #define BUILD_DATE "2021NOV17"
     
 	#define CPU_MAP_MEGA2560
 
@@ -51,6 +51,12 @@
 
 	//#define RUN_BRINGUP_TESTER //test PCB (requires external hardware that you don't have)
 
+	#define STACK_mAh 5000 //nominal pack size (0:100% SoC) //LiBCM uses this value until it determines the actual pack capacity
+	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
+	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
+
+	#define MINIMUM_KEYOFF_VOLTAGE_BEFORE_TURNING_LIBCM_OFF 33800 //33800 = 3.380 volts (~7% SoC)
+
 #endif
 
 /*
@@ -65,11 +71,8 @@ Features to add later:
 
 //Define battery parameters
 #define STACK_CELLS_IN_SERIES 48
-#define STACK_mAh 5000 //nominal pack size.
-#define STACK_SoC_MIN 20 //minimum state of charge
-#define STACK_SoC_MAX 80 //maximum state of charge
-#define STACK_CURRENT_MAX_ASSIST 200 //disable assist above this value
-#define STACK_CURRENT_MAX_REGEN 100 //disable regen above this value
+#define STACK_CURRENT_MAX_ASSIST 200 //disable assist above this current
+#define STACK_CURRENT_MAX_REGEN 100 //disable regen above this current
 
 //Configure when LiBCM turns off when the key is not on.
 //LiBCM will turn off when ANY condition below occurs

@@ -5,8 +5,12 @@
 
 #include "libcm.h"
 
-uint16_t packCharge_Now_mAh = 3E3; //JTS2doLater: will uint16 work with Leaf battery?
-uint16_t packCharge_Full_mAh = 5E3; 
+uint16_t stackFull_Calculated_mAh  = (STACK_mAh * 0.01) * STACK_SoC_MAX;
+uint16_t stackEmpty_Calculated_mAh = (STACK_mAh * 0.01) * STACK_SoC_MIN;
+uint16_t packCharge_Now_mAh = 3000;
+
+//Estimate SoC based on resting cell voltage.
+//EHW5 cells settle to final 'resting' voltage in ten minutes, but are fairly close to that value after just one minute
 
 void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 {
@@ -56,24 +60,185 @@ void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 
 /////////////////////////////////////////////////////////////////////
 
-uint16_t SoC_packCharge_Now_mAh_get(void) { return packCharge_Now_mAh; }
+//SoC is calculated faster when the unit is mAh
+uint16_t SoC_getBatteryStateNow_mAh(void) { return packCharge_Now_mAh; }
+void     SoC_setBatteryStateNow_mAh(uint16_t newPackCharge_mAh) { packCharge_Now_mAh = newPackCharge_mAh; }
 
 /////////////////////////////////////////////////////////////////////
 
-void stateOfCharge_handler(void)
+//SoC is calculated slower when the unit is % 
+uint8_t SoC_getBatteryStateNow_percent(void) { return ((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh; }
+void    SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = newSoC_percent * 0.01 * stackFull_Calculated_mAh; }
+
+/////////////////////////////////////////////////////////////////////
+
+void SoC_updateUsingOpenCircuitVoltage(void)
 {
-	
-	;
-	//JTS2doLater: turn LiBCM off if any cell drops below 2.75 volts
+	LTC68042cell_sampleGatherAndProcessAllCellVoltages(); //get latest cell data
+
+	uint8_t batterySoC_percent = SoC_estimateFromRestingCellVoltage_percent(); //determine resting SoC
+
+	Serial.print(F("\nOld SoC: "));
+	Serial.print( String(SoC_getBatteryStateNow_percent()) );
+	Serial.print(F("%, New SoC:"));
+	Serial.print(String(batterySoC_percent));
+	Serial.print('%');
+
+	SoC_setBatteryStateNow_percent(batterySoC_percent); //update SoC
 }
 
-/*
+/////////////////////////////////////////////////////////////////////
 
--coulombCount
-	-Runs once per second
-	Subtract "zero amp" ADC constant
-	Accumulate with latest sample.
-	32b allows full assist for 18 hours without overflowing when sampled once per second.
+//only call this function when the key is off (or you'll get a check engine light)
+void SoC_openCircuitVoltage_handler(void)
+{
+	#define KEY_OFF_SoC_UPDATE_PERIOD_MINUTES 30
+	#define KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS (KEY_OFF_SoC_UPDATE_PERIOD_MINUTES * 60000)
+
+	static uint32_t SoC_nextUpdate_milliseconds = 0;
+
+	if( (millis() + KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS - SoC_nextUpdate_milliseconds) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS)
+	{
+		//To force this code to run immediately when LiBCM first powers up, "KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS" is added to the above comparison
+
+		//As a consequence, we must add "KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS" to each subsequent comparison.
+		//If we don't add this offset, then the above comparison will always be true (and this code will always run) 
+		SoC_nextUpdate_milliseconds = millis() + KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS;
+		
+		debugUSB_displayUptime_seconds();
+
+		SoC_updateUsingOpenCircuitVoltage();
+
+		//turn LiBCM off if pack SoC is low
+		//LiBCM will power back on when the key is turned on
+		if( LTC68042result_loCellVoltage_get() < MINIMUM_KEYOFF_VOLTAGE_BEFORE_TURNING_LIBCM_OFF)
+		{
+			gpio_turnBuzzer_on_highFreq();
+			delay(100);
+			gpio_turnLiBCM_off(); //game over, thanks for playing 
+			while(1) { ; } //LiBCM takes a bit to turn off... wait here until that happens
+		}
+	}
+}
+
+/////////////////////////////////////////////////////////////////////
+
+//Don't call this function when current is flowing through the current sensor
+uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
+{
+	uint16_t restingCellVoltage = LTC68042result_loCellVoltage_get(); //JTS2doNow: need an algorithm to look at hi cell, too.
+	uint8_t estimatedSoC = 0;
+
+	//JTS2doLater: piecewise linearize this massive conditional into fewer cases
+	//Note: I sure wish lithium cell voltages were linear!
+	if     (restingCellVoltage >= 42000) { estimatedSoC = 100; }
+	else if(restingCellVoltage >= 41750) { estimatedSoC =  99; }
+	else if(restingCellVoltage >= 41500) { estimatedSoC =  98; }
+	else if(restingCellVoltage >= 41350) { estimatedSoC =  97; }
+	else if(restingCellVoltage >= 41200) { estimatedSoC =  96; }
+	else if(restingCellVoltage >= 41100) { estimatedSoC =  95; }
+	else if(restingCellVoltage >= 41000) { estimatedSoC =  94; }
+	else if(restingCellVoltage >= 40900) { estimatedSoC =  93; }
+	else if(restingCellVoltage >= 40800) { estimatedSoC =  92; }
+	else if(restingCellVoltage >= 40700) { estimatedSoC =  91; }
+	else if(restingCellVoltage >= 40600) { estimatedSoC =  90; }
+	else if(restingCellVoltage >= 40500) { estimatedSoC =  89; }
+	else if(restingCellVoltage >= 40400) { estimatedSoC =  88; }
+	else if(restingCellVoltage >= 40300) { estimatedSoC =  87; }
+	else if(restingCellVoltage >= 40200) { estimatedSoC =  86; }
+	else if(restingCellVoltage >= 40100) { estimatedSoC =  85; }
+	else if(restingCellVoltage >= 40000) { estimatedSoC =  84; }
+	else if(restingCellVoltage >= 39900) { estimatedSoC =  83; }
+	else if(restingCellVoltage >= 39800) { estimatedSoC =  82; }
+	else if(restingCellVoltage >= 39700) { estimatedSoC =  81; }
+	else if(restingCellVoltage >= 39600) { estimatedSoC =  80; }
+	else if(restingCellVoltage >= 39500) { estimatedSoC =  79; }
+	else if(restingCellVoltage >= 39375) { estimatedSoC =  78; }
+	else if(restingCellVoltage >= 39250) { estimatedSoC =  77; }
+	else if(restingCellVoltage >= 39125) { estimatedSoC =  76; }
+	else if(restingCellVoltage >= 39000) { estimatedSoC =  75; }
+	else if(restingCellVoltage >= 38900) { estimatedSoC =  74; }
+	else if(restingCellVoltage >= 38800) { estimatedSoC =  73; }
+	else if(restingCellVoltage >= 38700) { estimatedSoC =  72; }
+	else if(restingCellVoltage >= 38600) { estimatedSoC =  71; }
+	else if(restingCellVoltage >= 38500) { estimatedSoC =  70; }
+	else if(restingCellVoltage >= 38400) { estimatedSoC =  69; }
+	else if(restingCellVoltage >= 38300) { estimatedSoC =  68; }
+	else if(restingCellVoltage >= 38225) { estimatedSoC =  67; }
+	else if(restingCellVoltage >= 38150) { estimatedSoC =  66; }
+	else if(restingCellVoltage >= 38075) { estimatedSoC =  65; }
+	else if(restingCellVoltage >= 38000) { estimatedSoC =  64; }
+	else if(restingCellVoltage >= 37925) { estimatedSoC =  63; }
+	else if(restingCellVoltage >= 37850) { estimatedSoC =  62; }
+	else if(restingCellVoltage >= 37800) { estimatedSoC =  61; }
+	else if(restingCellVoltage >= 37750) { estimatedSoC =  60; }
+	else if(restingCellVoltage >= 37700) { estimatedSoC =  59; }
+	else if(restingCellVoltage >= 37650) { estimatedSoC =  58; }
+	else if(restingCellVoltage >= 37575) { estimatedSoC =  57; }
+	else if(restingCellVoltage >= 37500) { estimatedSoC =  56; }
+	else if(restingCellVoltage >= 37450) { estimatedSoC =  55; }
+	else if(restingCellVoltage >= 37400) { estimatedSoC =  54; }
+	else if(restingCellVoltage >= 37350) { estimatedSoC =  53; }
+	else if(restingCellVoltage >= 37275) { estimatedSoC =  52; }
+	else if(restingCellVoltage >= 37200) { estimatedSoC =  51; }
+	else if(restingCellVoltage >= 37150) { estimatedSoC =  50; }
+	else if(restingCellVoltage >= 37100) { estimatedSoC =  49; }
+	else if(restingCellVoltage >= 37050) { estimatedSoC =  48; }
+	else if(restingCellVoltage >= 37000) { estimatedSoC =  47; }
+	else if(restingCellVoltage >= 36950) { estimatedSoC =  46; }
+	else if(restingCellVoltage >= 36900) { estimatedSoC =  45; }
+	else if(restingCellVoltage >= 36850) { estimatedSoC =  44; }
+	else if(restingCellVoltage >= 36800) { estimatedSoC =  43; }
+	else if(restingCellVoltage >= 36750) { estimatedSoC =  42; }
+	else if(restingCellVoltage >= 36700) { estimatedSoC =  41; }
+	else if(restingCellVoltage >= 36650) { estimatedSoC =  40; }
+	else if(restingCellVoltage >= 36600) { estimatedSoC =  39; }
+	else if(restingCellVoltage >= 36550) { estimatedSoC =  38; }
+	else if(restingCellVoltage >= 36475) { estimatedSoC =  37; }
+	else if(restingCellVoltage >= 36400) { estimatedSoC =  36; }
+	else if(restingCellVoltage >= 36350) { estimatedSoC =  35; }
+	else if(restingCellVoltage >= 36300) { estimatedSoC =  34; }
+	else if(restingCellVoltage >= 36250) { estimatedSoC =  33; }
+	else if(restingCellVoltage >= 36200) { estimatedSoC =  32; }
+	else if(restingCellVoltage >= 36125) { estimatedSoC =  31; }
+	else if(restingCellVoltage >= 36050) { estimatedSoC =  30; }
+	else if(restingCellVoltage >= 36000) { estimatedSoC =  29; }
+	else if(restingCellVoltage >= 35925) { estimatedSoC =  28; }
+	else if(restingCellVoltage >= 35850) { estimatedSoC =  27; }
+	else if(restingCellVoltage >= 35775) { estimatedSoC =  26; }
+	else if(restingCellVoltage >= 35700) { estimatedSoC =  25; }
+	else if(restingCellVoltage >= 35600) { estimatedSoC =  24; }
+	else if(restingCellVoltage >= 35500) { estimatedSoC =  23; }
+	else if(restingCellVoltage >= 35400) { estimatedSoC =  22; }
+	else if(restingCellVoltage >= 35300) { estimatedSoC =  21; }
+	else if(restingCellVoltage >= 35200) { estimatedSoC =  20; }
+	else if(restingCellVoltage >= 35150) { estimatedSoC =  19; }
+	else if(restingCellVoltage >= 35100) { estimatedSoC =  18; }
+	else if(restingCellVoltage >= 35050) { estimatedSoC =  17; }
+	else if(restingCellVoltage >= 35000) { estimatedSoC =  16; }
+	else if(restingCellVoltage >= 34950) { estimatedSoC =  15; }
+	else if(restingCellVoltage >= 34900) { estimatedSoC =  14; }
+	else if(restingCellVoltage >= 34850) { estimatedSoC =  13; }
+	else if(restingCellVoltage >= 34800) { estimatedSoC =  12; }
+	else if(restingCellVoltage >= 34750) { estimatedSoC =  11; }
+	else if(restingCellVoltage >= 34700) { estimatedSoC =  10; }
+	else if(restingCellVoltage >= 34400) { estimatedSoC =   9; }
+	else if(restingCellVoltage >= 34100) { estimatedSoC =   8; }
+	else if(restingCellVoltage >= 33700) { estimatedSoC =   7; }
+	else if(restingCellVoltage >= 33200) { estimatedSoC =   6; }
+	else if(restingCellVoltage >= 32700) { estimatedSoC =   5; }
+	else if(restingCellVoltage >= 32200) { estimatedSoC =   4; }
+	else if(restingCellVoltage >= 31500) { estimatedSoC =   3; }
+	else if(restingCellVoltage >= 30800) { estimatedSoC =   2; }
+	else if(restingCellVoltage >= 30100) { estimatedSoC =   1; }
+	else                                 { estimatedSoC =   0; }
+
+	return estimatedSoC;
+}
+
+/////////////////////////////////////////////////////////////////////
+
+/*
 
 -Save SoC(RAM) to EEPROM
 -If value in RAM is more than 10% different from EEPROM value, update EEPROM.
@@ -82,5 +247,3 @@ void stateOfCharge_handler(void)
 	-Example EEPROM code p24 MEGA2560 manual
 
 */
-
-//JTS2doLater: Disable regen & grid charger if any cell drops below some minimum 'safe' voltage

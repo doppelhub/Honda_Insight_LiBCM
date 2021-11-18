@@ -30,4 +30,6 @@
 	void gpio_turnTemperatureSensors_on(void);
 	void gpio_turnTemperatureSensors_off(void);
 
+	void gpio_turnLiBCM_off(void);
+
 #endif
