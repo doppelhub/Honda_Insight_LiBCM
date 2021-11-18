@@ -42,6 +42,13 @@ void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
+void debugUSB_displayUptime_seconds(void)
+{
+	Serial.print(F("\nUptime(ms): "));
+	Serial.print( String(millis()) );
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
 void debugUSB_printCellBalanceStatus(void)
 {
 	Serial.print("\nBalance:");
@@ -110,7 +117,7 @@ void debugUSB_printLatest_data_keyOn(void)
 		Serial.print(F(                            ","                                   ));
 		Serial.print(String( (LTC68042result_loCellVoltage_get() * 0.0001), 3)            );
 		Serial.print(F(                                 ",V, "                           ));
-		Serial.print(String( SoC_packCharge_Now_mAh_get()                                ));		
+		Serial.print(String( SoC_getBatteryStateNow_mAh()                                ));		
 		Serial.print(F(                                          ",mAh, "                ));
 		Serial.print(String( (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001), 1 )); //JTS2doLater: do power calc elsewhere
 		Serial.print(F(                                                    ",kW"     ));

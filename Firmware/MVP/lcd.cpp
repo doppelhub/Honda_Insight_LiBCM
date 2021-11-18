@@ -53,12 +53,13 @@ void lcd_initialize(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-//Update loop iteration ("CCCCC") on screen
+//JTS2doNow: Change this to display keyOn time in seconds
+//new function name: lcd_printKeyOnTime_seconds()
 bool lcd_printLoopCount(void)
 {
 	#ifdef LCD_4X20_CONNECTED
 
-		lcd2.setCursor(5,3);
+		lcd2.setCursor(1,3);
 
 		if(loopCount > 64000)
 		{	//overflow occurred... replace "65535" with "0    "
@@ -74,6 +75,32 @@ bool lcd_printLoopCount(void)
 
 ////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Add SoC display function
+bool lcd_printSoC(void)
+{
+	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
+	#ifdef LCD_4X20_CONNECTED
+		static uint16_t SoC_onScreen = 0;
+		if( SoC_onScreen != SoC_getBatteryStateNow_percent() )
+		{
+			SoC_onScreen = SoC_getBatteryStateNow_percent();
+			lcd2.setCursor(10,3); //SoC screen position
+			if(SoC_onScreen < 10) { lcd2.print( '0');         } //add leading '0' to single digit number
+			if(SoC_onScreen > 99) { lcd2.print("99");         } //can't display '100' (only QTY2 digits)
+			else                  { lcd2.print(SoC_onScreen); } //print actual value
+
+			didscreenUpdateOccur = SCREEN_UPDATED;
+		}
+	#endif
+
+	return didscreenUpdateOccur;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+
+//JTS_updated
 bool lcd_printStackVoltage_actual(void)
 {
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
@@ -82,7 +109,7 @@ bool lcd_printStackVoltage_actual(void)
 		if( packVoltageActual_onScreen != LTC68042result_packVoltage_get() )
 		{
 			packVoltageActual_onScreen = LTC68042result_packVoltage_get();
-			lcd2.setCursor(11,2);
+			lcd2.setCursor(2,2); //actual pack voltage position
 			lcd2.print(packVoltageActual_onScreen);
 
 			didscreenUpdateOccur = SCREEN_UPDATED;
@@ -94,6 +121,7 @@ bool lcd_printStackVoltage_actual(void)
 
 ////////////////////////////////////////////////////////////////////////
 
+//JTS_updated
 bool lcd_printStackVoltage_spoofed(void)
 {
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
@@ -102,13 +130,21 @@ bool lcd_printStackVoltage_spoofed(void)
 		if( packVoltageSpoofed_onScreen != vPackSpoof_getSpoofedPackVoltage() )
 		{
 			packVoltageSpoofed_onScreen = vPackSpoof_getSpoofedPackVoltage();
-			lcd2.setCursor(16,2);
+			lcd2.setCursor(6,2); //spoofed pack voltage position
 			lcd2.print(packVoltageSpoofed_onScreen);
 		}
 	#endif
 
 	return didscreenUpdateOccur;
 }
+
+////////////////////////////////////////////////////////////////////////
+
+//JTS2doNow: Add high temperature function
+
+////////////////////////////////////////////////////////////////////////
+
+//JTS2doNow: Add low temperature function
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -143,7 +179,7 @@ bool lcd_printCellVoltage_hi(void)
 		if( hiCellVoltage_onScreen != LTC68042result_hiCellVoltage_get() )
 		{
 			hiCellVoltage_onScreen = LTC68042result_hiCellVoltage_get();
-			lcd2.setCursor(3,0); //high
+			lcd2.setCursor(1,0); //high cell voltage position
 			lcd2.print( (hiCellVoltage_onScreen * 0.0001), 3 );
 
 			didscreenUpdateOccur = SCREEN_UPDATED;
@@ -180,7 +216,7 @@ bool lcd_printCellVoltage_lo(void)
 		if( loCellVoltage_onScreen != LTC68042result_loCellVoltage_get() )
 		{
 			loCellVoltage_onScreen = LTC68042result_loCellVoltage_get();
-			lcd2.setCursor(3,1); //low
+			lcd2.setCursor(1,1); //low screen position
 			lcd2.print( (loCellVoltage_onScreen * 0.0001), 3 );
 
 			didscreenUpdateOccur = SCREEN_UPDATED;
@@ -217,7 +253,7 @@ bool lcd_printCellVoltage_delta(void)
 		if( deltaVoltage_onScreen != deltaVoltage_LTC6804 )
 		{
 			deltaVoltage_onScreen = deltaVoltage_LTC6804;
-			lcd2.setCursor(2,2); //delta
+			lcd2.setCursor(15,0); //delta cell voltage position
 			lcd2.print( (deltaVoltage_onScreen * 0.0001), 3 );
 
 			didscreenUpdateOccur = SCREEN_UPDATED;
@@ -229,6 +265,10 @@ bool lcd_printCellVoltage_delta(void)
 
 ////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Add pack current display function
+
+////////////////////////////////////////////////////////////////////////
+
 bool lcd_printMaxEverVoltage()
 {
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
@@ -237,7 +277,7 @@ bool lcd_printMaxEverVoltage()
 		if( maxEverCellVoltage_onScreen != LTC68042result_maxEverCellVoltage_get() )
 		{
 			maxEverCellVoltage_onScreen = LTC68042result_maxEverCellVoltage_get();
-			lcd2.setCursor(14,0);
+			lcd2.setCursor(7,0); //maxEver screen position
 			lcd2.print( (maxEverCellVoltage_onScreen * 0.0001) , 3);
 
 			didscreenUpdateOccur = SCREEN_UPDATED;
@@ -257,7 +297,7 @@ bool lcd_printMinEverVoltage()
 		if( minEverCellVoltage_onScreen != LTC68042result_minEverCellVoltage_get() )
 		{
 			minEverCellVoltage_onScreen = LTC68042result_minEverCellVoltage_get();
-			lcd2.setCursor(14,1);
+			lcd2.setCursor(7,1); //minEver screen position
 			lcd2.print( (minEverCellVoltage_onScreen * 0.0001) , 3);
 
 			didscreenUpdateOccur = SCREEN_UPDATED;
@@ -311,7 +351,8 @@ bool lcd_updateValue(uint8_t stateToUpdate)
 		case LCDUPDATE_POWER        : didScreenUpdateOccur = lcd_printPower();                break;
 		case LCDUPDATE_CELL_MAXEVER : didScreenUpdateOccur = lcd_printMaxEverVoltage();       break;
 		case LCDUPDATE_CELL_MINEVER : didScreenUpdateOccur = lcd_printMinEverVoltage();       break;
-		default                     : didScreenUpdateOccur = SCREEN_UPDATED; break; //if illigal input, exit immediately
+		case LCDUPDATE_SoC          : didScreenUpdateOccur = lcd_printSoC();                  break;
+		default                     : didScreenUpdateOccur = SCREEN_UPDATED;                  break; //if illigal input, exit immediately
 	}
 
 	return didScreenUpdateOccur;
@@ -367,18 +408,31 @@ void lcd_refresh(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add pack amps and temperature
-void lcd_printStaticText(void) //screen updates are slow //only call during keyOFF
+//old format
+// 		//                                          1111111111
+// 		//                                01234567890123456789
+// 		//4x20 screen text display format:********************
+// 		lcd2.setCursor(0,0);  lcd2.print("hi:h.hhh (max:H.HHH)"); //row0, (3,0)=h.hhh, (14,0)=H.HHH
+// 		lcd2.setCursor(0,1);  lcd2.print("lo:l.lll (min:L.LLL)"); //row1, (3,1)=l.lll, (14,1)=L.LLL
+// 		lcd2.setCursor(0,2);  lcd2.print("d:d.ddd, V:VVV (SSS)"); //row2, (2,2)=d.ddd, (11,2)=VVV  , (16,2)=SSS
+// 		lcd2.setCursor(0,3);  lcd2.print("E:0 /CCCCC, kW:+WW.0"); //row3, (2,3)=    0, (5,3)=CCCCC , (16,3)=WW.0
+
+//only call during keyOFF (screen updates are slow)
+void lcd_printStaticText(void)
 {
 	#ifdef LCD_4X20_CONNECTED
 		lcd2.setCursor(0,0);
 		//                                          1111111111
 		//                                01234567890123456789
 		//4x20 screen text display format:********************
-		lcd2.setCursor(0,0);  lcd2.print("hi:h.hhh (max:H.HHH)"); //row0, (3,0)=h.hhh, (14,0)=H.HHH
-		lcd2.setCursor(0,1);  lcd2.print("lo:l.lll (min:L.LLL)"); //row1, (3,1)=l.lll, (14,1)=L.LLL
-		lcd2.setCursor(0,2);  lcd2.print("d:d.ddd, V:VVV (SSS)"); //row2, (2,2)=d.ddd, (11,2)=VVV  , (16,2)=SSS
-		lcd2.setCursor(0,3);  lcd2.print("E:0 /CCCCC, kW:+WW.0"); //row3, (2,3)=    0, (5,3)=CCCCC , (16,3)=WW.0
+		lcd2.setCursor(0,0);  lcd2.print("Hx.xxx(y.yyy) dz.zzz"); //row0: x.xxx=(1,0)   y.yyy=(7,0) z.zzz=(15,0)
+		                                                          //      x.xxx:cellHI  y.yyy:Vmax  z.zzz:deltaV
+		lcd2.setCursor(0,1);  lcd2.print("La.aaa(b.bbb) A-ccc "); //row1: a.aaa=(1,1)   b.bbb=(7,1) ccc=(15,1)
+	                                                            //      a.aaa:cellLO  b.bbb:Vmin  ccc:current
+		lcd2.setCursor(0,2);  lcd2.print("Vprrr(fff) tHgg tLhh"); //row2: rrr=(2,2)     fff=(6,2)   gg=(13,2)   hh=(18,2)
+	                                                            //      rrr:Vpack     fff:Vspoof  gg:hiTemp   hh:loTemp
+		lcd2.setCursor(0,3);  lcd2.print("Tuuuuu SoCss kW-kk.k"); //row3: uuuuu=(1,3)   ss=(10,3)   kk.k=(15,3)
+	                                                            //      uuuuu:T_keyOn ss:SoC(%)   kk.k:power
 	#endif
 }
 
@@ -415,7 +469,7 @@ void lcd_displayOFF(void)
 
 void lcd_displayON(void)
 {
-	loopCount=64001;
+	loopCount=64001; //force lcd updater to clear startup text
 	#ifdef LCD_4X20_CONNECTED
 		lcd2.backlight();
 		lcd2.display();
@@ -426,5 +480,15 @@ void lcd_displayON(void)
 
 void lcd_gridChargerWarning(void)
 {
-	//JTS2doNow: display warning if grid charger plugged in and key is on
+	gpio_turnBuzzer_on_highFreq();
+	lcd2.backlight();
+	lcd2.display();
+	lcd2.clear();
+	//                               ********************
+	lcd2.setCursor(0,0); lcd2.print("ALERT: Grid Charger ");
+	lcd2.setCursor(0,1); lcd2.print("       Plugged In!! ");
+	gpio_turnBuzzer_on_lowFreq();
+	lcd2.setCursor(0,2); lcd2.print("LiBCM sent P1648 to ");
+	lcd2.setCursor(0,3); lcd2.print("prevent IMA start.  ");
+	gpio_turnBuzzer_off();
 }

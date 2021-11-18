@@ -55,6 +55,10 @@ void loop()
 
 		lcd_refresh();
 	}
+	else if( key_getSampledState() == KEYOFF )
+	{
+		SoC_openCircuitVoltage_handler(); //periodically check pack voltage
+	}
 
 	blinkLED2(); //Heartbeat
 

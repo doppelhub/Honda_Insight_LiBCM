@@ -37,6 +37,7 @@ void gridCharger_handleUnplugEvent(void)
   gpio_turnGridCharger_off();
   lcd_displayOFF();
   gpio_setGridCharger_powerLevel('H'); //reduces power consumption
+  SoC_updateUsingOpenCircuitVoltage();
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -98,7 +99,8 @@ void gridCharger_chargePack(void)
   cellStatePrevious = cellState;
 
   lcd_refresh();
-  LTC68042cell_nextVoltages(); 
+  LTC68042cell_nextVoltages();
+  SoC_setBatteryStateNow_percent( SoC_estimateFromRestingCellVoltage_percent() ); //LiBCM's low grid charge current hardly changes cell voltage
   debugUSB_printLatest_data_gridCharger();
 
   //at least one cell is severely overcharged
