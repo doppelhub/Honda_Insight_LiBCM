@@ -14,6 +14,8 @@
 
 	void BATTSCI_disable();
 
+	void initialize_MCM_SoC(void);
+
 	void BATTSCI_sendFrames();
 
 	void BATTSCI_setPackVoltage(uint8_t voltage);
