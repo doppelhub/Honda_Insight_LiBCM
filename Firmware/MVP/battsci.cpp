@@ -141,6 +141,8 @@ void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
 
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void BATTSCI_calculateSoC(uint16_t voltage)
 {
   // NM:  The only Magic Number we're using here is 72% SoC.
@@ -162,28 +164,24 @@ void BATTSCI_calculateSoC(uint16_t voltage)
 
   if (voltage >= 40700) {
     // No Regen Allowed, voltage too high, set SoC high to enforce a cooldown period (while SoC drops) before regen is allowed again.
-    uint16_t tempSoCPercent = 620;
+    calculatedSoC = 620;
     oldCalculatedSoC = 620;       // Make sure SoC doesn't immediately spike back down
     temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
   } else if (voltage >= 40000) {
     // No Regen Allowed
-    uint16_t tempSoCPercent = map(voltage, 40000, 40700, 600, 619);
-    calculatedSoC = tempSoCPercent;
+    calculatedSoC = map(voltage, 40000, 40700, 600, 619);
     temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
   } else if (voltage >= 37250) {
     // No BG Regen Allowed
-    uint16_t tempSoCPercent = map(voltage, 37250, 39999, 501, 599);
-    calculatedSoC = tempSoCPercent;
+    calculatedSoC = map(voltage, 37250, 39999, 501, 599);
     temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
   } else if ((voltage < 37250) && (voltage > 36000)) {
     // BG Regen Allowed
-    uint16_t tempSoCPercent = map(voltage, 36001, 37249, 151, 500);
-    calculatedSoC = tempSoCPercent;
+    calculatedSoC = map(voltage, 36001, 37249, 151, 500);
     temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
   } else if ((voltage <= 36000) && (voltage > 34500)) {
     // BG Regen Allowed, SoC very low.
-    uint16_t tempSoCPercent = map(voltage, 34501, 36000, 1, 150);
-    calculatedSoC = tempSoCPercent;
+    calculatedSoC = map(voltage, 34501, 36000, 1, 150);
     temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
   } else if (voltage <= 34500) {
     // No Assist Allowed
@@ -223,6 +221,16 @@ void BATTSCI_calculateSoC(uint16_t voltage)
     }
   }
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void initialize_MCM_SoC(void)
+{
+  // Key On causes a recalculation of SoC to spoof to MCM
+	initializeSoC = true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void BATTSCI_sendFrames()
 { //t=80 microseconds max
