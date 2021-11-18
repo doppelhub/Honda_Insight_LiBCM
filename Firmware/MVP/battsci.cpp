@@ -25,7 +25,7 @@ uint16_t oldCalculatedSoC = 20;
 
 bool initializeSoC = true;
 
-uint8_t SoCHysteresisIncrementFrequency = 5; // How many iterations between SoC updates to MCM?
+uint8_t SoCHysteresisIncrementFrequency = 2; // How many iterations between SoC updates to MCM?
 uint8_t SoCHysteresisCounter = 150;
 uint16_t SoCHysteresisVoltage = 0;
 
@@ -117,7 +117,7 @@ void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
   /**
     BATTSCI_evaluateSoCBytes evaluates what bytes LiBCM will send to the MCM to set the SoC, depending on the SoC we gave it
 
-    @param      evalSoC     Integer value of SoC 0.1% increments between 20% and 80%.
+    @param      evalSoC     Integer value of SoC in 0.1% increments beginning at 20%. 0 = 20.0%
                             This should be between 0 and 600.
                             Out of bounds values will still work, but may cause unexpected results.
     @return                 This function does not return anything.  It modifies SoC_Bytes[] in place.
@@ -141,6 +141,21 @@ void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
 
 }
 
+void BATTSCI_evaluateTempertureByte(uint16_t evalSoC) {
+  /**
+    BATTSCI_evaluateTempertureByte determines the IMA battery temperature we are sending to the MCM.
+
+    @param      evalSoC     Integer value of SoC in 0.1% increments beginning at 20%. 0 = 20.0%
+    @return                 This function does not return anything.
+  */
+  if (evalSoC >= 200)             // 200 = 40% SoC or higher
+  {
+    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
+  } else {
+    temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void BATTSCI_calculateSoC(uint16_t voltage)
@@ -159,35 +174,28 @@ void BATTSCI_calculateSoC(uint16_t voltage)
 
     To Do:  Change this function to use LiBCM's internally calculated SoC value instead of using lowest cell voltage.
     To Do:  Determine what SoC value stops all regen.  We know 80% stops all regen, but the threshold might be lower, like 78%.
-    to Do:  For maintainability, we should probably put the temperature_Byte manipulation into a separate function.
   */
 
   if (voltage >= 40700) {
     // No Regen Allowed, voltage too high, set SoC high to enforce a cooldown period (while SoC drops) before regen is allowed again.
     calculatedSoC = 620;
     oldCalculatedSoC = 620;       // Make sure SoC doesn't immediately spike back down
-    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
   } else if (voltage >= 40000) {
     // No Regen Allowed
     calculatedSoC = map(voltage, 40000, 40700, 600, 619);
-    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
   } else if (voltage >= 37250) {
     // No BG Regen Allowed
     calculatedSoC = map(voltage, 37250, 39999, 501, 599);
-    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
   } else if ((voltage < 37250) && (voltage > 36000)) {
     // BG Regen Allowed
     calculatedSoC = map(voltage, 36001, 37249, 151, 500);
-    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
   } else if ((voltage <= 36000) && (voltage > 34500)) {
     // BG Regen Allowed, SoC very low.
     calculatedSoC = map(voltage, 34501, 36000, 1, 150);
-    temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
   } else if (voltage <= 34500) {
     // No Assist Allowed
     calculatedSoC = 0;
     oldCalculatedSoC = 0;         // Make sure SoC doesn't immediately spike back up
-    temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
     BATTSCI_evaluateSoCBytes(calculatedSoC);
   }
 
@@ -220,6 +228,8 @@ void BATTSCI_calculateSoC(uint16_t voltage)
       oldCalculatedSoC = calculatedSoC;         // Set oldCalculatedSoC to the incremented calculatedSoC
     }
   }
+
+  BATTSCI_evaluateTempertureByte(calculatedSoC);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
