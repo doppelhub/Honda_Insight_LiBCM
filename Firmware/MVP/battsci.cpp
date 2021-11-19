@@ -17,6 +17,8 @@ uint8_t BATTSCI_state = STOPPED;
 uint8_t spoofedVoltageToSend = 0;
 int16_t spoofedCurrentToSend = 0;     //JTS2doLater spoofed pack current can probably be int8_t (+127 A)
 
+uint8_t LiBCM_SoC = 60;
+
 byte SoC_Bytes[] = {0x16, 0x20};      // SoC Bytes to send to MCM.  Index 0 is the upper byte and index 1 is the lower byte.
 byte SoC_MathBytes[] = {0x00, 0x00};  // Math operations are done on this variable before we send SoC_Bytes to the MCM.
 byte temperature_Byte = 0x3A;         // Temperature Byte to send to MCM.  0x3A is +28 Degrees C.
@@ -35,9 +37,9 @@ byte IMA_Behaviour_Flag_Bytes[] = {0x00, 0x00};   // NM To Do: Can be looked up 
 
 bool initializeSoC = true;
 
-uint8_t SoCHysteresisIncrementFrequency = 2; // How many iterations between SoC updates to MCM?
+uint8_t SoCHysteresisIncrementFrequency = 3; // How many iterations between SoC updates to MCM?
 uint8_t SoCHysteresisCounter = 150;
-uint16_t SoCHysteresisVoltage = 0;
+uint8_t SoCHysteresis = 0;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -190,41 +192,33 @@ void BATTSCI_evaluateTempertureByte(uint16_t evalSoC) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_calculateSoC(uint16_t voltage)
+void BATTSCI_calculateSoC()
 {
-  // NM:  The only Magic Number we're using here is 72% SoC.
-  // 72% achieves the following behaviour in both 2000-2004 and 2005-2006 model Insights:
-  // Assist Enabled, Regen Enabled, Background Regen Disabled
-  // Later we can change the profile to not be based around 72, but that would require a new ECM_YEAR variable in config.h
-
   /**
     BATTSCI_calculateSoC calculates what SoC we want to send the MCM, in order to govern the MCM's behaviour.
     The MCM changes how the car uses assist and regen depending on the SoC number we send to it.
 
-    @param      voltage     Integer value of lowest cell voltage, in 0.0001V increments.
     @return                 This function does not return anything.
-
-    To Do:  Change this function to use LiBCM's internally calculated SoC value instead of using lowest cell voltage.
-    To Do:  Determine what SoC value stops all regen.  We know 80% stops all regen, but the threshold might be lower, like 78%.
   */
+  LiBCM_SoC = SoC_getBatteryStateNow_percent();
 
-  if (voltage >= 40700) {
+  if (LiBCM_SoC >= 95) {
     // No Regen Allowed, voltage too high, set SoC high to enforce a cooldown period (while SoC drops) before regen is allowed again.
     calculatedSoC = 620;
     oldCalculatedSoC = 620;       // Make sure SoC doesn't immediately spike back down
-  } else if (voltage >= 40000) {
+  } else if (LiBCM_SoC >= 90) {
     // No Regen Allowed
-    calculatedSoC = map(voltage, 40000, 40700, 600, 619);
-  } else if (voltage >= 37250) {
+    calculatedSoC = map(LiBCM_SoC, 90, 94, 600, 619);
+  } else if (LiBCM_SoC >= 60) {
     // No BG Regen Allowed
-    calculatedSoC = map(voltage, 37250, 39999, 501, 599);
-  } else if ((voltage < 37250) && (voltage > 36000)) {
+    calculatedSoC = map(LiBCM_SoC, 60, 89, 501, 599);
+  } else if ((LiBCM_SoC < 60) && (LiBCM_SoC >= 31)) {
     // BG Regen Allowed
-    calculatedSoC = map(voltage, 36001, 37249, 151, 500);
-  } else if ((voltage <= 36000) && (voltage > 34500)) {
+    calculatedSoC = map(LiBCM_SoC, 31, 59, 151, 500);
+  } else if ((LiBCM_SoC <= 30) && (LiBCM_SoC >= 6)) {
     // BG Regen Allowed, SoC very low.
-    calculatedSoC = map(voltage, 34501, 36000, 1, 150);
-  } else if (voltage <= 34500) {
+    calculatedSoC = map(LiBCM_SoC, 6, 30, 1, 150);
+  } else if (LiBCM_SoC <= 5) {
     // No Assist Allowed
     calculatedSoC = 0;
     oldCalculatedSoC = 0;         // Make sure SoC doesn't immediately spike back up
@@ -314,7 +308,8 @@ void BATTSCI_sendFrames()
       frameSum_87 += BATTSCI_writeByte( 0x40 );                                           //Never changes
       frameSum_87 += BATTSCI_writeByte( (spoofedVoltageToSend >> 1) );                    //Half Vbatt (e.g. 0x40 = d64 = 128 V)
 
-      if(LTC68042result_loCellVoltage_get() <= 30000 )
+      LiBCM_SoC = SoC_getBatteryStateNow_percent();
+      if(LiBCM_SoC <= 5 )
       {
         //at least one cell is severely under-charged.  Disable Assist.
         SoC_Bytes[0] = 0x11;
@@ -331,25 +326,21 @@ void BATTSCI_sendFrames()
       else
       { // all cells above 3.000 volts
 
-        // NM To Do: Modify or delete all of the voltage hysteresis calculations once we have an internal LiBCM SoC.
-
-        // At startup initialize this variable by setting it to whatever vCellWithESR_counts is.
-        // This should only run once.
-        if (SoCHysteresisVoltage <= 1) {
-          SoCHysteresisVoltage = vCellWithESR_counts;
+        // This should only run once at startup.
+        if (SoCHysteresis < 1) {
+          SoCHysteresis = LiBCM_SoC;
         }
 
-        // Average vCellWithESR_counts over SoCHysteresisIncrementFrequency iterations.
-        // Adding the pre-divided numbers so we don't overflow SoCHysteresisVoltage.
-        SoCHysteresisVoltage /= 2;
-        SoCHysteresisVoltage += (vCellWithESR_counts / 2);
+        // Average LiBCM_SoC over SoCHysteresisIncrementFrequency iterations.
+        SoCHysteresis /= 2;
+        SoCHysteresis += (LiBCM_SoC / 2);
 
         // After SoCHysteresisIncrementFrequency iterations have elapsed we calculate SoC and if needed increment it up or down
         // The loop begins at 200 so if we need to we can force an SoC value to be held longer, such as if we need to do a positive or negative recal.
         if (SoCHysteresisCounter >= (SoCHysteresisIncrementFrequency + 200)) {
-          BATTSCI_calculateSoC(SoCHysteresisVoltage);
+          BATTSCI_calculateSoC();
           SoCHysteresisCounter = 200;
-          SoCHysteresisVoltage = vCellWithESR_counts;
+          SoCHysteresis = LiBCM_SoC;
         }
 
         frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                 //Battery SoC (upper byte)
