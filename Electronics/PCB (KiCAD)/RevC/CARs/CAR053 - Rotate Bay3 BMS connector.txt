@@ -1,0 +1,1 @@
+Rotate J13 180 degrees, so right angle latching connector can be used.

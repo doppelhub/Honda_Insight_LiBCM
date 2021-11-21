@@ -5,8 +5,6 @@
 //JTS2doLater: Make this the only line of code in this file:
 #include "libcm.h"
 
-uint32_t previousMillis = millis();
-
 void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup or bootloader delay 
 {
 	gpio_begin();
@@ -60,14 +58,23 @@ void loop()
 		SoC_openCircuitVoltage_handler(); //periodically check pack voltage
 	}
 
-	blinkLED2(); //Heartbeat
-
-	LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left //if off, exceeding LOOP_RATE_MILLISECONDS
-	while( (millis() - previousMillis) < LOOP_RATE_MILLISECONDS ) { ; } //wait here to start next loop //JTS2doLater: Determine Behavior after overflow (50 days)
-	//JTS2doLater: Feed watchdog
-	LED(4,LOW);
+	temperature_handler();
 
 	//JTS2doLater: Check for Serial Input from user
 
-	previousMillis = millis(); //placed at end to prevent delay at keyON event
+	//JTS2doNow: Feed watchdog!
+
+	blinkLED2(); //Heartbeat
+
+	//wait here for next iteration
+	{
+		static uint32_t previousMillis = millis();
+
+		LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left //if off, exceeding LOOP_RATE_MILLISECONDS
+		while( (millis() - previousMillis) < LOOP_RATE_MILLISECONDS ) { ; } //wait here to start next loop //JTS2doLater: Determine Behavior after overflow (50 days)
+		//JTS2doLater: Feed watchdog
+		LED(4,LOW);
+		
+		previousMillis = millis(); //placed at end to prevent delay at keyON event
+	}
 }

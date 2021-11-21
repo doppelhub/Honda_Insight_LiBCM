@@ -30,9 +30,9 @@ int16_t vPackSpoof_getPWMcounts_VPIN(void) { return pwmCounts_VPIN_out; }
 void spoofVoltageMCMe(void)
 {
   //Derivation, empirically determined (see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods)
-  //pwmCounts_MCMe = (               actualPackVoltage                 * 512) / spoofedPackVoltage         - 551
-  //pwmCounts_MCMe = (               actualPackVoltage                 * 256) / spoofedPackVoltage   * 2   - 551 //prevent 16b overflow
-  //pwmCounts_MCMe = (( ( ((uint16_t)actualPackVoltage               ) * 256) / spoofedPackVoltage)  * 2   - 551 
+  //pwmCounts_MCMe = (               actualPackVoltage                 * 512) / spoofedPackVoltage       - 551
+  //pwmCounts_MCMe = (               actualPackVoltage                 * 256) / spoofedPackVoltage   * 2 - 551 //prevent 16b overflow
+  //pwmCounts_MCMe = (( ( ((uint16_t)actualPackVoltage               ) * 256) / spoofedPackVoltage)  * 2 - 551 
 	pwmCounts_MCMe = (( ( ((uint16_t)LTC68042result_packVoltage_get()) << 8 ) / spoofedPackVoltage) << 1 ) - 551;
 
 	//bounds checking
@@ -208,8 +208,8 @@ void vPackSpoof_handleKeyON(void) { ; }
 
 void vPackSpoof_handleKeyOFF(void)
 { 
-	pinMode(PIN_VPIN_OUT_PWM,INPUT); //set VPIN back to high impedance
-  //JTS2doNow: Set MCM'E' high impedance (to save power)
+	pinMode(PIN_VPIN_OUT_PWM,INPUT); //set VPIN back to high impedance (to save power)
+  pinMode(PIN_MCME_PWM,    INPUT); //Set MCM'E' high impedance (to save power)
 } 
 
 //---------------------------------------------------------------------------------------

@@ -7,6 +7,16 @@
 
 uint8_t keyState_sampled  = KEYSTATE_UNINITIALIZED; //updated by key_didStateChange() to prevent mid-loop state changes
 uint8_t keyState_previous = KEYSTATE_UNINITIALIZED;
+uint32_t key_lastTimeTurnedOn_ms = 0;
+uint32_t key_lastTimeTurnedOff_ms = 0;  
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void     key_latestTurnOnTime_ms_set(uint32_t keyOnTime) { key_lastTimeTurnedOn_ms = keyOnTime; }
+uint32_t key_latestTurnOnTime_ms_get(void)               { return key_lastTimeTurnedOn_ms;      }
+
+void key_latestTurnOffTime_ms_set(uint32_t keyOffTime) { key_lastTimeTurnedOff_ms = keyOffTime; }
+uint32_t key_latestTurnOffTime_ms_get(void)            { return key_lastTimeTurnedOff_ms;       }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -18,12 +28,15 @@ void key_handleKeyEvent_off(void)
     METSCI_disable();
     gpio_setFanSpeed_OEM('0');
     gpio_setFanSpeed('0');
+    SoC_updateUsingOpenCircuitVoltage();
     adc_calibrateBatteryCurrentSensorOffset();
     gpio_turnPowerSensors_off();
     LTC6804configure_handleKeyOff();
     lcd_displayOFF();
     vPackSpoof_handleKeyOFF();
     gpio_turnHMI_off();
+    gpio_turnTemperatureSensors_off();
+    key_latestTurnOffTime_ms_set(millis());
     //JTS2doLater: store keyOff time, so LiBCM can turn itself off (e.g. after an hour)
 }
 
@@ -34,13 +47,15 @@ void key_handleKeyEvent_on(void)
 	Serial.print(F("ON"));
 	BATTSCI_enable();
 	METSCI_enable();
-	gpio_setFanSpeed_OEM('L');
+	gpio_turnTemperatureSensors_on();
+	gpio_turnHMI_on();
 	gpio_turnPowerSensors_on();
 	lcd_displayON();
+	gpio_setFanSpeed_OEM('L');
 	LTC68042result_maxEverCellVoltage_set(0    ); //reset maxEver cell voltage
 	LTC68042result_minEverCellVoltage_set(65535); //reset minEver cell voltage
 	LTC68042configure_cellBalancing_disable();
-	gpio_turnHMI_on();
+	key_latestTurnOnTime_ms_set(millis());
 	LED(1,HIGH);
 }
 
@@ -50,7 +65,7 @@ bool key_didStateChange(void)
 {
 	bool didKeyStateChange = NO;
 
-	keyState_sampled = gpio_keyStateNow(); //after startup, this is the only time LiBCM samples actual key state
+	keyState_sampled = gpio_keyStateNow();
 
 	if( (keyState_sampled == KEYOFF) && ((keyState_previous == KEYON) || (keyState_previous == KEYSTATE_UNINITIALIZED)) ) 
 	{	//key state just changed from 'ON' to 'OFF'.

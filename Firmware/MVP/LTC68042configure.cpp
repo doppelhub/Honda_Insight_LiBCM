@@ -27,7 +27,7 @@ void LTC68042configure_writeConfigurationRegisters(uint8_t icAddress)
   const uint8_t CMD_LEN = 4+6+2;
   uint8_t *cmd;
 
-  //JTS2doNow: Replace malloc with array init
+  //JTS2doLater: Replace malloc with array init
   cmd = (uint8_t *)malloc(CMD_LEN*sizeof(uint8_t));
 
   //Load cmd array with the write configuration command and PEC
@@ -143,7 +143,7 @@ void LTC68042configure_wakeupCore()
   if( (millis() - lastTimeDataSent_millis) > T_SLEEP_WATCHDOG_MILLIS )
   { //LTC6804 core might be asleep
     digitalWrite(PIN_SPI_CS,LOW);
-    delayMicroseconds(300); // Guarantees the LTC6804 is in standby (tWake) //JTS2doNow: Do we need to wait tRefup (4400 us)?  
+    delayMicroseconds(300); // Guarantees the LTC6804 is in standby (tWake) //JTS2doLater: Do we need to wait tRefup (4400 us)?  
     digitalWrite(PIN_SPI_CS,HIGH);
   }
 }

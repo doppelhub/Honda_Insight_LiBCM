@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.4.0"
-    #define BUILD_DATE "2021NOV17"
+	#define FW_VERSION "0.4.1"
+    #define BUILD_DATE "2021NOV20"
     
 	#define CPU_MAP_MEGA2560
 
@@ -31,14 +31,10 @@
 	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to print all cell voltages while driving //Grid charger always prints all cell voltages
 
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
-	//Choose which I2C LCD driver to use for 4x20 display:
-		//#define I2C_LIQUID_CRYSTAL //use "LiquidCrystal_I2C.h"
-		//#define I2C_LCD            //use "TwiLiquidCrystal.h"
-		#define LCD_JTS            //use "lcd_I2C.h" (modified version ) 
 	
 	//choose which functions control the LEDs
 	#define LED_NORMAL //enable "     LED()" functions (see debug.c)
-	//#define LED_DEBUG  //enable "debugLED()" functions (FYI: blinkLED functions won't work)
+	//#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
 	#define PRINT_USB_DEBUG_TEXT //prints text sent via debugUSB_debugText() //JTS2doLater: NOT IMPLEMENTED YET
 	#define DEBUG_USB_UPDATE_PERIOD_MS 250 //250 = send data every 250 ms
@@ -54,6 +50,7 @@
 	#define STACK_mAh 5000 //nominal pack size (0:100% SoC) //LiBCM uses this value until it determines the actual pack capacity
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
+	#define STACK_SoC_SETPOINT_GRID_CHARGE 70 //target SoC while grid charging
 
 	#define MINIMUM_KEYOFF_VOLTAGE_BEFORE_TURNING_LIBCM_OFF 33800 //33800 = 3.380 volts (~7% SoC)
 
@@ -85,7 +82,7 @@ Features to add later:
 #define KEYOFF_FANS_MIN_SoC 60 //Fans are disabled below this SoC
 
 //Configure fan temperature setpoints
-//All temperatures are in Celcius
+//All temperatures are in Celsius
 #define TEMP_FAN_LOW 30  //enable OEM fan at  low speed above this value
 #define TEMP_OEMFAN_HIGH 40 //enable OEM fan at high speed above this value
 #define TEMP_FAN_MIN 30 //enable onboard fans at lowest speed

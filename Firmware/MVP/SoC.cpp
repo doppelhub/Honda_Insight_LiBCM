@@ -92,18 +92,14 @@ void SoC_updateUsingOpenCircuitVoltage(void)
 //only call this function when the key is off (or you'll get a check engine light)
 void SoC_openCircuitVoltage_handler(void)
 {
-	#define KEY_OFF_SoC_UPDATE_PERIOD_MINUTES 30
+	#define KEY_OFF_SoC_UPDATE_PERIOD_MINUTES 10 //JTS2doNow: How long to wait?
 	#define KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS (KEY_OFF_SoC_UPDATE_PERIOD_MINUTES * 60000)
 
 	static uint32_t SoC_nextUpdate_milliseconds = 0;
 
-	if( (millis() + KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS - SoC_nextUpdate_milliseconds) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS)
+	if( (millis() - SoC_nextUpdate_milliseconds ) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS)
 	{
-		//To force this code to run immediately when LiBCM first powers up, "KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS" is added to the above comparison
-
-		//As a consequence, we must add "KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS" to each subsequent comparison.
-		//If we don't add this offset, then the above comparison will always be true (and this code will always run) 
-		SoC_nextUpdate_milliseconds = millis() + KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS;
+		SoC_nextUpdate_milliseconds = millis();
 		
 		debugUSB_displayUptime_seconds();
 
@@ -130,6 +126,9 @@ uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
 	uint8_t estimatedSoC = 0;
 
 	//JTS2doLater: piecewise linearize this massive conditional into fewer cases
+	// if     (restingVoltage>4.0 volts) { SoC = (restingVoltage-4.0)*PIECEWISE_SLOPE_ABOVE_4000_mV + 4.000; }
+	// else if(restingVoltage>3.8 volts) { SoC = (restingVoltage-3.8)*PIECEWISE_SLOPE_ABOVE_3800_mV + 3.800; }
+	// else if(restingVoltage>3.5 volts) { SoC = (restingVoltage-3.5)*PIECEWISE_SLOPE_ABOVE_3500_mV + 3.500; }
 	//Note: I sure wish lithium cell voltages were linear!
 	if     (restingCellVoltage >= 42000) { estimatedSoC = 100; }
 	else if(restingCellVoltage >= 41750) { estimatedSoC =  99; }

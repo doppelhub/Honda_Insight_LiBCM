@@ -9,79 +9,67 @@
 
 #include "libcm.h"
 
-#ifdef I2C_LIQUID_CRYSTAL
-  #include "LiquidCrystal_I2C.h"
-  LiquidCrystal_I2C lcd2(0x27, 20, 4);
-#endif
+#include "lcd_I2C.h" //ensure these funcitons are only called within this file
 
-#ifdef I2C_LCD
-  #include "TwiLiquidCrystal.h"
-  TwiLiquidCrystal lcd2(0x27);
-#endif
-
-#ifdef LCD_JTS
-  #include "lcd_I2C.h"
-  lcd_I2C_jts lcd2(0x27);
-#endif
+lcd_I2C_jts lcd2(0x27);
 
 //These variables are reset during key change
-uint16_t loopCount = 64001;
 uint8_t  packVoltageActual_onScreen = 0;
 uint8_t  packVoltageSpoofed_onScreen = 0;
 uint8_t  errorCount_onScreen = 0;
-uint16_t  maxEverCellVoltage_onScreen = 0;
-uint16_t  minEverCellVoltage_onScreen = 0;
+uint16_t maxEverCellVoltage_onScreen = 0;
+uint16_t minEverCellVoltage_onScreen = 0;
+uint8_t  SoC_onScreen = 0;
+int8_t   temp_onScreen = 0;
 
 ////////////////////////////////////////////////////////////////////////
 
 void lcd_initialize(void)
 {
 	#ifdef LCD_4X20_CONNECTED
-		#ifdef I2C_LIQUID_CRYSTAL
-			lcd2.begin();
-		#endif
-
-		#ifdef I2C_LCD
-			lcd2.begin(20,4);
-		#endif
-
-		#ifdef LCD_JTS
-			lcd2.begin(20,4);
-		#endif
+		lcd2.begin(20,4);
 	#endif
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Change this to display keyOn time in seconds
-//new function name: lcd_printKeyOnTime_seconds()
-bool lcd_printLoopCount(void)
+//time since last keyON
+bool lcd_printTime_seconds(void)
 {
+	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
 	#ifdef LCD_4X20_CONNECTED
+		static uint16_t seconds_onScreen = 0;
+		uint32_t keyOnTime_ms = millis() - key_latestTurnOnTime_ms_get();
+		uint16_t keyOnTime_seconds = (uint16_t)(keyOnTime_ms * 0.001); //rolls over after keyON for 18 hours
 
-		lcd2.setCursor(1,3);
+		if(seconds_onScreen != keyOnTime_seconds)
+		{
+			seconds_onScreen = keyOnTime_seconds;
 
-		if(loopCount > 64000)
-		{	//overflow occurred... replace "65535" with "0    "
-			lcd2.print("0    ");
-			loopCount = 0; //reset loop count
-		} 
-		else { lcd2.print(loopCount); }
+			lcd2.setCursor(1,3);
+
+			if     (keyOnTime_seconds < 10   ) { lcd2.print(F("    ")); } //one   digit  //   0:   9
+			else if(keyOnTime_seconds < 100  ) { lcd2.print(F("   ") ); } //two   digits //  10:  99
+			else if(keyOnTime_seconds < 1000 ) { lcd2.print(F("  ")  ); } //three digits // 100: 999
+			else if(keyOnTime_seconds < 10000) { lcd2.print(F(" ")   ); } //four  digits //1000:9999
+                                                                    //five  digits doesn't require leading spaces //10000:65535
+			lcd2.print(String(keyOnTime_seconds));
+
+			didscreenUpdateOccur = SCREEN_UPDATED;
+		}
 	#endif
 
-	bool didscreenUpdateOccur = SCREEN_UPDATED; //loopCount is always different
 	return didscreenUpdateOccur; 
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add SoC display function
 bool lcd_printSoC(void)
 {
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
 	#ifdef LCD_4X20_CONNECTED
-		static uint16_t SoC_onScreen = 0;
 		if( SoC_onScreen != SoC_getBatteryStateNow_percent() )
 		{
 			SoC_onScreen = SoC_getBatteryStateNow_percent();
@@ -97,10 +85,8 @@ bool lcd_printSoC(void)
 	return didscreenUpdateOccur;
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 
-//JTS_updated
 bool lcd_printStackVoltage_actual(void)
 {
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
@@ -121,7 +107,6 @@ bool lcd_printStackVoltage_actual(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-//JTS_updated
 bool lcd_printStackVoltage_spoofed(void)
 {
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
@@ -132,6 +117,8 @@ bool lcd_printStackVoltage_spoofed(void)
 			packVoltageSpoofed_onScreen = vPackSpoof_getSpoofedPackVoltage();
 			lcd2.setCursor(6,2); //spoofed pack voltage position
 			lcd2.print(packVoltageSpoofed_onScreen);
+
+			didscreenUpdateOccur = SCREEN_UPDATED;
 		}
 	#endif
 
@@ -140,16 +127,30 @@ bool lcd_printStackVoltage_spoofed(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add high temperature function
+bool lcd_printTempBattery(void)
+{
+	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
+	#ifdef LCD_4X20_CONNECTED
+		int8_t batteryTempNow = temperature_battery_getLatest(); //get single ADC measurement
+
+		if( temp_onScreen != batteryTempNow )
+		{
+			temp_onScreen = batteryTempNow;
+			lcd2.setCursor(12,2);
+			if((batteryTempNow >= 0) && (batteryTempNow < 10) ) { lcd2.print(' '); } //leading space on " 0" to " 9" degC
+			if(batteryTempNow < -9 ) { lcd2.print(-9); } //JTS2doNow: Add additional digit for temperatures "-10" and lower
+			else                     { lcd2.print(batteryTempNow); }
+
+			didscreenUpdateOccur = SCREEN_UPDATED;
+		}
+	#endif
+
+	return didscreenUpdateOccur;
+}
 
 ////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add low temperature function
-
-////////////////////////////////////////////////////////////////////////
-
-//JTS2doNow: Reset errorCount to 0 if greater than 99 counts
-//only call this function when an error occurs
 bool lcd_printNumErrors(void)
 {
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
@@ -266,6 +267,36 @@ bool lcd_printCellVoltage_delta(void)
 ////////////////////////////////////////////////////////////////////////
 
 //JTS2doNow: Add pack current display function
+bool lcd_printCurrent(void)
+{
+	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
+	#ifdef LCD_4X20_CONNECTED
+		static int16_t packAmps_onScreen = 0; //don't want to multiply to determine power
+
+		if( packAmps_onScreen != adc_getLatestBatteryCurrent_amps() )
+		{
+			packAmps_onScreen = adc_getLatestBatteryCurrent_amps();
+			lcd2.setCursor(15,1);
+			if(adc_getLatestBatteryCurrent_amps() >= 0 )
+			{ 
+				if      (adc_getLatestBatteryCurrent_amps() <  10 ) { lcd2.print("  "); }
+				else if (adc_getLatestBatteryCurrent_amps() < 100 ) { lcd2.print(" ");  }
+				lcd2.print('+');
+			}
+			else //negative current
+			{
+				if      (adc_getLatestBatteryCurrent_amps() >  -10 ) { lcd2.print("  "); }
+				else if (adc_getLatestBatteryCurrent_amps() > -100 ) { lcd2.print(" ");  }
+			}
+			lcd2.print(adc_getLatestBatteryCurrent_amps());
+
+			didscreenUpdateOccur = SCREEN_UPDATED;
+		}
+	#endif
+
+	return didscreenUpdateOccur;
+}
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -315,16 +346,29 @@ bool lcd_printPower(void)
 
 	#ifdef LCD_4X20_CONNECTED
 		static int16_t packAmps_onScreen = 0; //don't want to multiply to determine power
+		static uint8_t packVoltage_onScreen = 0; 
 
-		if( packAmps_onScreen != adc_getLatestBatteryCurrent_amps() )
+		if( packAmps_onScreen != adc_getLatestBatteryCurrent_amps() ||
+			  packVoltage_onScreen != LTC68042result_packVoltage_get() )
 		{
 			packAmps_onScreen = adc_getLatestBatteryCurrent_amps();
+			packVoltage_onScreen = LTC68042result_packVoltage_get();
+
+			int16_t packWatts = LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps();
+
 			lcd2.setCursor(15,3);
-			if(packAmps_onScreen >=0 )
+
+			if(packWatts >=0)
 			{
+				if(packWatts < 10000) { lcd2.print(' '); } //" +0.0" to " +9.9" kW
 				lcd2.print("+");
 			}
-			lcd2.print( (LTC68042result_packVoltage_get() * packAmps_onScreen * 0.001), 1 );
+			else //negative watts
+			{
+				if(packWatts > -10000) { lcd2.print(' '); } //" -0.1" to " -9.9" kW
+			}
+			lcd2.print( (packWatts * 0.001), 1 );
+
 			didscreenUpdateOccur = SCREEN_UPDATED;
 		}
 	#endif
@@ -340,7 +384,7 @@ bool lcd_updateValue(uint8_t stateToUpdate)
 	bool didScreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 	switch(stateToUpdate)
 	{
-		case LCDUPDATE_LOOPCOUNT    : didScreenUpdateOccur = lcd_printLoopCount();            break;
+		case LCDUPDATE_LOOPCOUNT    : didScreenUpdateOccur = lcd_printTime_seconds();         break;
 		case LCDUPDATE_VPACK_ACTUAL : didScreenUpdateOccur = lcd_printStackVoltage_actual();  break;
 		case LCDUPDATE_VPACK_SPOOFED: didScreenUpdateOccur = lcd_printStackVoltage_spoofed(); break;
 		case LCDUPDATE_NUMERRORS    : didScreenUpdateOccur = lcd_printNumErrors();            break;
@@ -351,6 +395,8 @@ bool lcd_updateValue(uint8_t stateToUpdate)
 		case LCDUPDATE_CELL_MAXEVER : didScreenUpdateOccur = lcd_printMaxEverVoltage();       break;
 		case LCDUPDATE_CELL_MINEVER : didScreenUpdateOccur = lcd_printMinEverVoltage();       break;
 		case LCDUPDATE_SoC          : didScreenUpdateOccur = lcd_printSoC();                  break;
+		case LCDUPDATE_CURRENT      : didScreenUpdateOccur = lcd_printCurrent();              break;
+		case LCDUPDATE_TEMP_BATTERY : didScreenUpdateOccur = lcd_printTempBattery();          break;	
 		default                     : didScreenUpdateOccur = SCREEN_UPDATED;                  break; //if illigal input, exit immediately
 	}
 
@@ -401,7 +447,6 @@ void lcd_refresh(void)
 			lcdUpdate_state = LCDUPDATE_NO_UPDATE; //disable screen updates until SCREEN_UPDATE_RATE_MILLIS time has passed
 		}
 
-		loopCount++; //JTS2doLater: Figure out best spot for this
 	#endif
 }
 
@@ -428,7 +473,7 @@ void lcd_printStaticText(void)
 		                                                          //      x.xxx:cellHI  y.yyy:Vmax  z.zzz:deltaV
 		lcd2.setCursor(0,1);  lcd2.print("La.aaa(b.bbb) A-ccc "); //row1: a.aaa=(1,1)   b.bbb=(7,1) ccc=(15,1)
 	                                                            //      a.aaa:cellLO  b.bbb:Vmin  ccc:current
-		lcd2.setCursor(0,2);  lcd2.print("Vprrr(fff) tHgg tLhh"); //row2: rrr=(2,2)     fff=(6,2)   gg=(13,2)   hh=(18,2)
+		lcd2.setCursor(0,2);  lcd2.print("Vprrr(fff) TggC     "); //row2: rrr=(2,2)     fff=(6,2)   gg=(12,2)
 	                                                            //      rrr:Vpack     fff:Vspoof  gg:hiTemp   hh:loTemp
 		lcd2.setCursor(0,3);  lcd2.print("Tuuuuu SoCss kW-kk.k"); //row3: uuuuu=(1,3)   ss=(10,3)   kk.k=(15,3)
 	                                                            //      uuuuu:T_keyOn ss:SoC(%)   kk.k:power
@@ -456,10 +501,11 @@ void lcd_displayOFF(void)
 		lcd2.noDisplay();
 
 		
-		packVoltageActual_onScreen = 0;
-		errorCount_onScreen = 0;
-
+		packVoltageActual_onScreen  = 0;
+		errorCount_onScreen         = 0;
+		SoC_onScreen                = 0;
 		packVoltageSpoofed_onScreen = 0;
+		temp_onScreen               = 0;		
 		LTC68042result_errorCount_set(0);
 	#endif
 }
@@ -468,7 +514,6 @@ void lcd_displayOFF(void)
 
 void lcd_displayON(void)
 { 
-	loopCount=64001; //force lcd updater to clear startup text
 	#ifdef LCD_4X20_CONNECTED
 		lcd2.backlight();
 		lcd2.display();

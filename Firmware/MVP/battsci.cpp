@@ -162,8 +162,9 @@ void BATTSCI_sendFrames()
       frameSum_87 += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F ); //Battery Current (upper byte)
       frameSum_87 += BATTSCI_writeByte(  lowByte(batteryCurrent_toBATTSCI     ) & 0x7F ); //Battery Current (lower byte)
       frameSum_87 += BATTSCI_writeByte( 0x32 );                                           //Almost always 0x32
-      frameSum_87 += BATTSCI_writeByte( 0x3A );                                           //max temp: degC*2 (e.g. 0x3A = 58d = 29 degC
-      frameSum_87 += BATTSCI_writeByte( 0x3A );                                           //min temp: degC*2 (e.g. 0x3A = 58d = 29 degC
+      int8_t battTempBATTSCI = temperature_battery_getLatest() * 2;
+      frameSum_87 += BATTSCI_writeByte( battTempBATTSCI );                                //max temp: degC*2 (e.g. 0x3A = 58d = 29 degC //JTS2doNow: works with negative degC?
+      frameSum_87 += BATTSCI_writeByte( battTempBATTSCI );                                //min temp: degC*2 (e.g. 0x3A = 58d = 29 degC
       frameSum_87 += BATTSCI_writeByte( METSCI_getPacketB3() );                           //MCM's sanity check that BCM isn't getting behind
                      BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_87) );         //Send Checksum. sum(byte0:byte11) should equal 0
       frame2send = 0xAA;

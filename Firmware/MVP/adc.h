@@ -31,7 +31,7 @@
 		#define ADC_NUMLOOPS_PER_RESULT (ADC_NUMSAMPLES_PER_RESULT / ADC_NUMSAMPLES_PER_CALL) //division constants are handled by pre-processor
 	#endif
 
-	#define ADC_NOMINAL_0A_COUNTS 330 //ADC returns ~330 counts when no current flows through sensor
+	#define ADC_NOMINAL_0A_COUNTS 332 //calculated ADC 10b result when no current flows through sensor
 	#define ADC_MILLIAMPS_PER_COUNT 215 //Derivation here: ~/Electronics/PCB (KiCAD)/RevC/V&V/OEM Current Sensor.ods
 
 #endif
