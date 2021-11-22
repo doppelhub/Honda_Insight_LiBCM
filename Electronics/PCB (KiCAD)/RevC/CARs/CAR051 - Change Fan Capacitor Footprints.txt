@@ -1,0 +1,16 @@
+Change C145 (22 uF 1210) to:
+QTY2 1 uF 0805 capacitors
+
+Onboard fans' total power consumption with 2 uF:
+
+PWM value | watts@12V | watts@15V 
+   255    |    7.32   |   11.70
+   200    |    7.08   |   11.55
+   150    |    6.72   |   10.95
+   100    |    6.36   |   10.20
+   050    |    5.76   |    9.30
+   025    |    5.28   |    8.40
+   015    |    4.80   |    7.50
+   010    |   stall   |   stall
+
+should also add an inline resistor to reduce power consumption if we end up needing to use 15 volt power supplies.  QTY2 75 Ohm resistors should drop around 3 volts.  Would also need a 0 Ohm bypass so 12 volt supplies still work.

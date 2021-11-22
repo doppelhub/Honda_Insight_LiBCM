@@ -39,5 +39,6 @@
   #include "LTC68042result.h"
   #include "BringupTester.h"
   #include "SoC.h"
+  #include "temperature.h"
 
 #endif

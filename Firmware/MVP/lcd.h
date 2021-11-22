@@ -20,8 +20,11 @@
 	#define LCDUPDATE_CELL_MAXEVER  9
 	#define LCDUPDATE_CELL_MINEVER 10
 	#define LCDUPDATE_SoC          11
+	#define LCDUPDATE_CURRENT      12
+	#define LCDUPDATE_TEMP_BATTERY 13
 
-	#define LCDUPDATE_MAX_VALUE    11 //must be equal to the highest defined number (above) 
+
+	#define LCDUPDATE_MAX_VALUE    13 //must be equal to the highest defined number (above) 
 
 	void lcd_initialize(void);
 

@@ -132,7 +132,7 @@ void adc_calibrateBatteryCurrentSensorOffset(void)
 	}
 
 	//verify returned values are in the right ballpark
-	if( ((maxResult_counts - minResult_counts) < 2)       && /* verify all returned values are within 1 count */
+	if( ((maxResult_counts - minResult_counts) < 3)       && /* verify all returned values are within 2 counts */
 		 (maxResult_counts < (ADC_NOMINAL_0A_COUNTS + 8)) && /* verify hardware offset tolerance isn't too high */
 		 (minResult_counts > (ADC_NOMINAL_0A_COUNTS - 8)) )  /* verify hardware offset tolerance isn't too low  */ 
 	{

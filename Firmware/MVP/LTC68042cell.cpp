@@ -184,10 +184,10 @@ void processAllCellVoltages(void)
 		uint16_t cell19Voltage_measured = cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER]; //store cell 19 voltage for later
 		uint16_t cell19Voltage_adjusted = cell19Voltage_measured + adc_getLatestBatteryCurrent_amps() * LTC6804_COUNT_ADJUSTMENT_PER_AMP;
 
-		Serial.print("\nC19_actual: ");
-		Serial.print(String(cell19Voltage_measured));
-		Serial.print(", C19_adjusted: ");
-		Serial.print(String(cell19Voltage_adjusted));
+		// Serial.print(F("\nC19_actual: "));
+		// Serial.print(String(cell19Voltage_measured));
+		// Serial.print(F(", C19_adjusted: "));
+		// Serial.print(String(cell19Voltage_adjusted));
 
 		//replace cell 19's voltage with cell 18's, to prevent cell 19's (possibly incorrect) voltage from being either the highest or lowest voltage
 		cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER] = cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER - 1];
@@ -246,8 +246,8 @@ void processAllCellVoltages(void)
 		//store whichever cell 19 voltage is closest to the other cells
 		LTC68042result_specificCellVoltage_set(CELL19_CHIP_NUMBER, CELL19_CELL_NUMBER, cell19Voltage_final);
 
-		Serial.print(", C19_final: ");
-		Serial.print(String(cell19Voltage_final));
+		// Serial.print(F(", C19_final: "));
+		// Serial.print(String(cell19Voltage_final));
 
 		//finally, we need to check if cell 19 is either the highest or lowest voltage
 		if(cell19Voltage_final > hiCellVoltage) { LTC68042result_hiCellVoltage_set(cell19Voltage_final); }

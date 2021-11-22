@@ -51,15 +51,15 @@ void bringupTester_run(void)
 				Serial.print(String(LTC68042result_errorCount_get()));
 				Serial.print(F(": "));
 			
-				if( LTC68042result_errorCount_get() == 0 ) { Serial.print("pass"); }
-				else { Serial.print("FAIL!!!!!!!!!!!!!"); didTestFail = true; } //at least one isoSPI error occurred
+				if( LTC68042result_errorCount_get() == 0 ) { Serial.print(F("pass")); }
+				else { Serial.print(F("FAIL!!!!!!!!!!!!!")); didTestFail = true; } //at least one isoSPI error occurred
 
 				//display all cell voltages
 				for(uint8_t ii=0; ii<TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages( ii, 3); }
 
-				Serial.print("\nmax cell: ");
+				Serial.print(F("\nmax cell: "));
 				Serial.print(String(LTC68042result_hiCellVoltage_get()));
-				Serial.print("\nmin cell: ");
+				Serial.print(F("\nmin cell: "));
 				Serial.print(String(LTC68042result_loCellVoltage_get()));	
 		
 				Serial.print(F("\n\nLTC6804 - verify no shorts: "));
@@ -69,12 +69,12 @@ void bringupTester_run(void)
 				    (LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get() < 1000) && /* verify cells reasonably balanced*/
 				    (LTC68042result_hiCellVoltage_get() < 41000) ) //default returned data is 65535 (if no data sent)
 				{
-					Serial.print("pass");
+					Serial.print(F("pass"));
 					if( LTC68042result_hiCellVoltage_get() > 30000 ) { testToRun = TEST_TYPE_THERMAL_IMAGER; } //lithium batteries connected
 					else                                             { testToRun = TEST_TYPE_GAUNTLET;       } //LED BMS board connected
 
 				} else {
-					Serial.print("FAIL!!!!!!!!!!!!!!!! (check BMS leads & supply)");
+					Serial.print(F("FAIL!!!!!!!!!!!!!!!! (check BMS leads & supply)"));
 					didTestFail = true;
 				}
 			}
@@ -146,8 +146,8 @@ void bringupTester_run(void)
 
 					uint8_t numberLoopedBack = 0;
 					while ( LiDisplay_bytesAvailableToRead() != 0 ) { numberLoopedBack = LiDisplay_readByte(); }
-					if(numberLoopedBack == numberToLoopback) { Serial.print("pass"); }
-					else                                     { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail = true; }
+					if(numberLoopedBack == numberToLoopback) { Serial.print(F("pass")); }
+					else                                     { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail = true; }
 				}
 
 				/////////////////////////////////////////////////////////////////////
@@ -172,8 +172,8 @@ void bringupTester_run(void)
 
 					uint8_t numberLoopedBack = 0;
 					while ( METSCI_bytesAvailableToRead() != 0 ) { numberLoopedBack = METSCI_readByte(); }
-					if(numberLoopedBack == numberToLoopback) { Serial.print("pass"); }
-					else                                     { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail = true; }
+					if(numberLoopedBack == numberToLoopback) { Serial.print(F("pass")); }
+					else                                     { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail = true; }
 
 			    	BATTSCI_disable();
 			   		METSCI_disable();
@@ -197,8 +197,8 @@ void bringupTester_run(void)
 					Serial.print( String(tempWHT) + '/');
 					Serial.print( String(tempBLU) + ": ");
 
-					if((tempYEL > 950) && (tempGRN > 950) && (tempWHT > 950) && (tempBLU > 950)) { Serial.print("pass"); }
-					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+					if((tempYEL > 950) && (tempGRN > 950) && (tempWHT > 950) && (tempBLU > 950)) { Serial.print(F("pass")); }
+					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
 				}
 
 				//lithium module sensors
@@ -211,8 +211,8 @@ void bringupTester_run(void)
 					Serial.print( String(tempBAY2) + '/');
 					Serial.print( String(tempBAY3) + ": ");
 
-					if((tempBAY1 > 950) && (tempBAY2 > 950) && (tempBAY3 > 950)) { Serial.print("pass"); }
-					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+					if((tempBAY1 > 950) && (tempBAY2 > 950) && (tempBAY3 > 950)) { Serial.print(F("pass")); }
+					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
 				}
 
 				/////////////////////////////////////////////////////////////////////
@@ -239,8 +239,8 @@ void bringupTester_run(void)
 					if((tempYEL > 462) && (tempYEL < 562) &&
 					   (tempGRN > 462) && (tempGRN < 562) &&
 					   (tempWHT > 462) && (tempWHT < 562) &&
-					   (tempBLU > 462) && (tempBLU < 562)) { Serial.print("pass"); }
-					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+					   (tempBLU > 462) && (tempBLU < 562)) { Serial.print(F("pass")); }
+					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
 				}
 
 				//lithium module sensors
@@ -255,8 +255,8 @@ void bringupTester_run(void)
 
 					if((tempBAY1 > 462) && (tempBAY1 < 562) &&
 					   (tempBAY2 > 462) && (tempBAY2 < 562) &&
-					   (tempBAY3 > 462) && (tempBAY3 < 562)) { Serial.print("pass"); }
-					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+					   (tempBAY3 > 462) && (tempBAY3 < 562)) { Serial.print(F("pass")); }
+					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
 				}
 
 				gpio_turnTemperatureSensors_off();
@@ -277,8 +277,8 @@ void bringupTester_run(void)
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
 					Serial.print(String(resultADC));
 					Serial.print(F(" counts: "));
-					if((resultADC > 328) && (resultADC < 336)) { Serial.print("pass"); }
-					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+					if((resultADC > 328) && (resultADC < 336)) { Serial.print(F("pass")); }
+					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
 				}
 
 				Serial.print(F("\nCurrent sensor 10b result @ 3A through OEM_FAN_L is "));
@@ -291,8 +291,8 @@ void bringupTester_run(void)
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
 					Serial.print(String(resultADC));
 					Serial.print(F(" counts: "));
-					if((resultADC > 585) && (resultADC < 605)) { Serial.print("pass"); }
-					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+					if((resultADC > 585) && (resultADC < 605)) { Serial.print(F("pass")); }
+					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
 				}
 
 				Serial.print(F("\nCurrent sensor 10b result @ 3A through OEM_FAN_H is "));
@@ -305,8 +305,8 @@ void bringupTester_run(void)
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
 					Serial.print(String(resultADC));
 					Serial.print(F(" counts: "));
-					if((resultADC > 585) && (resultADC < 605)) { Serial.print("pass"); }
-					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+					if((resultADC > 585) && (resultADC < 605)) { Serial.print(F("pass")); }
+					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
 				}
 
 				Serial.print(F("\nCurrent sensor 10b result @ 3A through onboard fans is "));
@@ -319,8 +319,8 @@ void bringupTester_run(void)
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
 					Serial.print(String(resultADC));
 					Serial.print(F(" counts: "));
-					if((resultADC > 585) && (resultADC < 605)) { Serial.print("pass"); }
-					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+					if((resultADC > 585) && (resultADC < 605)) { Serial.print(F("pass")); }
+					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
 				}
 
 				//test that OEM current sensor turns off correctly
@@ -334,8 +334,8 @@ void bringupTester_run(void)
 					delay(100);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
-					if((resultADC > 328) && (resultADC < 336)) { Serial.print("pass"); }
-					else { Serial.print("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); didTestFail=true; }
+					if((resultADC > 328) && (resultADC < 336)) { Serial.print(F("pass")); }
+					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
 				}
 
 				//turn all FETs off (so they don't overheat)
@@ -381,8 +381,8 @@ void bringupTester_run(void)
 				{
 					gpio_turnGridCharger_off(); //turn IGBT off (power applied to grid charger side)
 					delay(25);
-					if( gpio_isGridChargerPluggedInNow() == false ) { Serial.print("pass"); }
-					else { Serial.print("FAIL!!!!!!!!!!!!!!!!"); didTestFail = true; }
+					if( gpio_isGridChargerPluggedInNow() == false ) { Serial.print(F("pass")); }
+					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!")); didTestFail = true; }
 				}
 
 				Serial.print(F("\nTesting if grid IGBT is on:  "));
@@ -390,8 +390,8 @@ void bringupTester_run(void)
 				{
 					gpio_turnGridCharger_on(); //turn IGBT on... grid sense should now see power
 					delay(25);
-					if( gpio_isGridChargerPluggedInNow() == true ) { Serial.print("pass"); }
-					else { Serial.print("FAIL!!!!!!!!!!!!!!!!"); didTestFail = true; }
+					if( gpio_isGridChargerPluggedInNow() == true ) { Serial.print(F("pass")); }
+					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!")); didTestFail = true; }
 				}
 
 				gpio_turnGridCharger_off();
@@ -406,8 +406,8 @@ void bringupTester_run(void)
 				{
 					gpio_setGridCharger_powerLevel('H'); //open drain is left floating (negative logic)
 					delay(100);
-					if( gpio_keyStateNow() == true ) { Serial.print("pass"); } //key appears on
-					else { Serial.print("FAIL!!!!!!!!!!"); didTestFail = true; }
+					if( gpio_keyStateNow() == true ) { Serial.print(F("pass")); } //key appears on
+					else { Serial.print(F("FAIL!!!!!!!!!!")); didTestFail = true; }
 				}
 
 				Serial.print(F("\nTesting GRID_PWM: "));
@@ -415,15 +415,15 @@ void bringupTester_run(void)
 				{
 					gpio_setGridCharger_powerLevel('0'); //open drain is shorted (negative logic)
 					delay(100);
-					if( gpio_keyStateNow() == false ) { Serial.print("pass"); } //GRID_PWM's open collector is pulling to 0V
-					else { Serial.print("FAIL!!!!!!!!!!"); didTestFail = true; }
+					if( gpio_keyStateNow() == false ) { Serial.print(F("pass")); } //GRID_PWM's open collector is pulling to 0V
+					else { Serial.print(F("FAIL!!!!!!!!!!")); didTestFail = true; }
 				}
 				//Don't add any code here
 				Serial.print(F("\nTesting 12V_KEYON state is OFF: "));
 				serialUSB_waitForEmptyBuffer();
 				{
-					if( gpio_keyStateNow() == false ) { Serial.print("pass"); } //key appears off
-					else { Serial.print("FAIL!!!!!!!!!!"); didTestFail = true; }
+					if( gpio_keyStateNow() == false ) { Serial.print(F("pass")); } //key appears off
+					else { Serial.print(F("FAIL!!!!!!!!!!")); didTestFail = true; }
 				}
 
 				gpio_setGridCharger_powerLevel('H'); //turn GRID_PWM off (negative logic)
@@ -433,8 +433,8 @@ void bringupTester_run(void)
 				//test buzzer high frequency
 				gpio_turnBuzzer_on_highFreq();
 
-				if( didTestFail == false) { Serial.print("\n\nUnit PASSED!\n\n"); delay(100); }
-				else {	          Serial.print("\n\nUnit FAILED!!!!!!!!!!!\n\n"); delay(999); }
+				if( didTestFail == false) { Serial.print(F("\n\nUnit PASSED!\n\n")); delay(100); }
+				else {	          Serial.print(F("\n\nUnit FAILED!!!!!!!!!!!\n\n")); delay(999); }
 				gpio_turnBuzzer_off();
 
 			}

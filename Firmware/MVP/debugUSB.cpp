@@ -44,14 +44,14 @@ void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap)
 
 void debugUSB_displayUptime_seconds(void)
 {
-	Serial.print(F("\nUptime(ms): "));
-	Serial.print( String(millis()) );
+	Serial.print(F("\nUptime(s): "));
+	Serial.print( String(millis() * 0.001) );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 void debugUSB_printCellBalanceStatus(void)
 {
-	Serial.print("\nBalance:");
+	Serial.print(F("\nBalance:"));
 	for(uint8_t ii = 0; ii < TOTAL_IC; ii++)
 	{
 	    Serial.print(String(cellBitmaps[ii], HEX));
@@ -94,40 +94,45 @@ void debugUSB_printLatest_data_keyOn(void)
 	static uint32_t previousMillisCellVoltages = 0;
 	static uint8_t icCellVoltagesToPrint = 0;
 
-	if( millis() - previousMillisDebug >= DEBUG_USB_UPDATE_PERIOD_MS) //JTS2doNow: && (Serial.availableForWrite() >= 63)
+	if( (millis() - previousMillisDebug >= DEBUG_USB_UPDATE_PERIOD_MS) && /*enough time has passed*/
+	    (Serial.availableForWrite() > 62) ) //the transmit buffer can intake the entire message
 	{
 		previousMillisDebug = millis();
 		previousMillisCellVoltages = millis(); //prevent cell voltage printing at same time as debug packet
 
 		//t= 1080 microseconds max
 		//comma delimiter to simplify data analysis 
-		//Complete string should be less than 64 characters (to prevent filling buffer)
-	    //               ****************************************************************
-	  //Serial.print(F("\n140,100,A, 170,156,V, 3.79,3.77,V, 34567,mAh, 28.5,kW"        )); //use comma for easy parsing
-		Serial.print(F("\n"                                                              ));
-		Serial.print(String( adc_getLatestBatteryCurrent_amps()                          ));
-		Serial.print(F(     ","                                                          ));
-		Serial.print(String( adc_getLatestSpoofedCurrent_amps()                          ));
-		Serial.print(F(         ",A, "                                                   ));
-		Serial.print(String( LTC68042result_packVoltage_get()                            ));
-		Serial.print(F(                ","                                               ));
-		Serial.print(String( vPackSpoof_getSpoofedPackVoltage()                          ));
-		Serial.print(F(                    ",V, "                                        ));
-		Serial.print(String( (LTC68042result_hiCellVoltage_get() * 0.0001), 3)            );
-		Serial.print(F(                            ","                                   ));
-		Serial.print(String( (LTC68042result_loCellVoltage_get() * 0.0001), 3)            );
-		Serial.print(F(                                 ",V, "                           ));
-		Serial.print(String( SoC_getBatteryStateNow_mAh()                                ));		
-		Serial.print(F(                                          ",mAh, "                ));
-		Serial.print(String( (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001), 1 )); //JTS2doLater: do power calc elsewhere
-		Serial.print(F(                                                    ",kW"     ));
+		//Complete string should be 63 characters or less (to prevent waiting for the buffer to empty)
+		//                        111111111122222222223333333333444444444455555555556666
+		//               123456789012345678901234567890123456789012345678901234567890123
+	    //               ***************************************************************
+	  //Serial.print(F("\n140,100,A, 170,156,V, 3.79,3.77,V, 34567,mAh, 28.5,kW, 23,C"  )); //use comma for easy parsing
+		Serial.print(F("\n"                                                             ));
+		Serial.print(String( adc_getLatestBatteryCurrent_amps()                         ));
+		Serial.print(F(     ","                                                         ));
+		Serial.print(String( adc_getLatestSpoofedCurrent_amps()                         ));
+		Serial.print(F(         ",A, "                                                  ));
+		Serial.print(String( LTC68042result_packVoltage_get()                           ));
+		Serial.print(F(                ","                                              ));
+		Serial.print(String( vPackSpoof_getSpoofedPackVoltage()                         ));
+		Serial.print(F(                    ",V, "                                       ));
+		Serial.print(String( (LTC68042result_hiCellVoltage_get() * 0.0001), 3)           );
+		Serial.print(F(                            ","                                  ));
+		Serial.print(String( (LTC68042result_loCellVoltage_get() * 0.0001), 3)           );
+		Serial.print(F(                                 ",V, "                          ));
+		Serial.print(String( SoC_getBatteryStateNow_mAh()                               ));		
+		Serial.print(F(                                          ",mAh, "               ));
+		Serial.print(String( (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001), 1 ));
+		Serial.print(F(                                                    ",kW, "      ));
+		Serial.print(String( temperature_battery_getLatest()                            ));		
+		Serial.print(F(                                                           ",C"  ));
 
 		icCellVoltagesToPrint = 0;
 	}
 
 	#ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
-		else if( (millis() - previousMillisCellVoltages >= (DEBUG_USB_UPDATE_PERIOD_MS / (TOTAL_IC + 1) ) )
-			     && (icCellVoltagesToPrint < TOTAL_IC) ) //print all cell data 
+		else if( (millis() - previousMillisCellVoltages >= (DEBUG_USB_UPDATE_PERIOD_MS / (TOTAL_IC + 1) ) ) &&
+			     (icCellVoltagesToPrint < TOTAL_IC) ) //print all cell data 
 		{	 
 			previousMillisCellVoltages = millis();
 			debugUSB_printOneICsCellVoltages(icCellVoltagesToPrint++, TWO_DECIMAL_PLACES);
@@ -160,7 +165,7 @@ uint8_t debugUSB_getUserInput(void)
 		{			
 			uint8_t userInteger = Serial.parseInt();
 			if(byteRead == 's') { userEntry = userInteger; }
-			Serial.print(" User typed: ");
+			Serial.print(F(" User typed: "));
 			Serial.print(String(userEntry)); 
 		}
 	}

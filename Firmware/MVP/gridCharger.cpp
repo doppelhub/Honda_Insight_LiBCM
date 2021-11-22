@@ -121,6 +121,7 @@ void gridCharger_chargePack(void)
     gpio_turnGridCharger_off();
     gpio_setFanSpeed('0'); //set inside balanceCells()
     gpio_setGridCharger_powerLevel('0');
+    gpio_turnBuzzer_off();
   }
 
   //grid charger plugged in and all cells less than full
@@ -130,6 +131,7 @@ void gridCharger_chargePack(void)
     gpio_turnGridCharger_on();
     gpio_setFanSpeed('M');
     gpio_setGridCharger_powerLevel('H');
+    gpio_turnBuzzer_off();
   }
 
   //grid charger plugged in and all cells almost full
@@ -138,12 +140,13 @@ void gridCharger_chargePack(void)
     cellState = CELLSTATE_BALANCING;
     //gpio_setFanSpeed('0'); //set inside balanceCells()
     gridCharger_balanceCells();
+    gpio_turnBuzzer_off();
   }
 
   if (cellStatePrevious != cellState)
   {
     //state has changed
-    Serial.print(" grid:");
+    Serial.print(F(" grid:"));
     switch (cellState)
     {
       case CELLSTATE_UNINITIALIZED: Serial.print(F("init")       ); break;
