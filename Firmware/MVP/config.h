@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.4.2"
-    #define BUILD_DATE "2021NOV21"
+	#define FW_VERSION "0.4.3"
+    #define BUILD_DATE "2021NOV22"
     
 	#define CPU_MAP_MEGA2560
 
@@ -43,7 +43,7 @@
 
 	#define GRID_CHARGER_CELL_VMAX 39000 // Vcell = (GRID_CHARGER_CELL_VMAX * 0.0001 V) //cells charged to this voltage
 
-	//#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //Uncomment if using 18S Honda EHW5 modules
+	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //Uncomment if using 18S Honda EHW5 modules
 
 	//#define RUN_BRINGUP_TESTER //test PCB (requires external hardware that you don't have)
 

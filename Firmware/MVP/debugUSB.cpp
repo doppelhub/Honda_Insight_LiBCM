@@ -51,7 +51,7 @@ void debugUSB_displayUptime_seconds(void)
 /////////////////////////////////////////////////////////////////////////////////////////////
 void debugUSB_printCellBalanceStatus(void)
 {
-	Serial.print("\nBalance:");
+	Serial.print(F("\nBalance:"));
 	for(uint8_t ii = 0; ii < TOTAL_IC; ii++)
 	{
 	    Serial.print(String(cellBitmaps[ii], HEX));
@@ -165,7 +165,7 @@ uint8_t debugUSB_getUserInput(void)
 		{			
 			uint8_t userInteger = Serial.parseInt();
 			if(byteRead == 's') { userEntry = userInteger; }
-			Serial.print(" User typed: ");
+			Serial.print(F(" User typed: "));
 			Serial.print(String(userEntry)); 
 		}
 	}
