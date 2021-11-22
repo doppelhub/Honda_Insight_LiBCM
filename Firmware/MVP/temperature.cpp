@@ -175,18 +175,7 @@ int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
 
 	int8_t tempMeasured_celsius = 0;
 	if     (countsADC > 1000) { tempMeasured_celsius = TEMPERATURE_SENSOR_FAULT; } //sensor unplugged
-	else if(countsADC >  997) { tempMeasured_celsius = -40; }
-	else if(countsADC >  995) { tempMeasured_celsius = -39; }
-	else if(countsADC >  993) { tempMeasured_celsius = -38; }
-	else if(countsADC >  991) { tempMeasured_celsius = -37; }
-	else if(countsADC >  988) { tempMeasured_celsius = -36; }
-	else if(countsADC >  986) { tempMeasured_celsius = -35; }
-	else if(countsADC >  983) { tempMeasured_celsius = -34; }
-	else if(countsADC >  981) { tempMeasured_celsius = -33; }
-	else if(countsADC >  978) { tempMeasured_celsius = -32; }
-	else if(countsADC >  975) { tempMeasured_celsius = -31; }
-
-	else if(countsADC >  971) { tempMeasured_celsius = -30; }
+	else if(countsADC >  971) { tempMeasured_celsius = -30; } //MCM expecting uint8_t, where T_MCM = T_actual + 30 //So MCM can only receive down to -30 degC
 	else if(countsADC >  968) { tempMeasured_celsius = -29; }
 	else if(countsADC >  964) { tempMeasured_celsius = -28; }
 	else if(countsADC >  961) { tempMeasured_celsius = -27; }

@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.4.1"
-    #define BUILD_DATE "2021NOV20"
+	#define FW_VERSION "0.4.2"
+    #define BUILD_DATE "2021NOV21"
     
 	#define CPU_MAP_MEGA2560
 
