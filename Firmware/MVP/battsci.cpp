@@ -37,7 +37,7 @@ byte IMA_Behaviour_Flag_Bytes[] = {0x00, 0x00};   // NM To Do: Can be looked up 
 
 bool initializeSoC = true;
 
-uint8_t SoCHysteresisIncrementFrequency = 3; // How many iterations between SoC updates to MCM?
+uint8_t SoCHysteresisIncrementFrequency = 4; // How many iterations between SoC updates to MCM?
 uint8_t SoCHysteresisCounter = 150;
 uint8_t SoCHysteresis = 0;
 
@@ -203,22 +203,17 @@ void BATTSCI_calculateSoC()
   LiBCM_SoC = SoC_getBatteryStateNow_percent();
 
   if (LiBCM_SoC >= 95) {
-    // No Regen Allowed, voltage too high, set SoC high to enforce a cooldown period (while SoC drops) before regen is allowed again.
-    calculatedSoC = 620;
+    calculatedSoC = 620;          // No Regen Allowed, set MCM SoC high to enforce a cooldown period (while SoC drops) before regen is allowed again.
     oldCalculatedSoC = 620;       // Make sure SoC doesn't immediately spike back down
   } else if (LiBCM_SoC >= 90) {
-    // No Regen Allowed
-    calculatedSoC = map(LiBCM_SoC, 90, 94, 600, 619);
+    calculatedSoC = map(LiBCM_SoC, 90, 94, 600, 619);   // No Regen Allowed
   } else if (LiBCM_SoC >= 60) {
-    // No BG Regen Allowed
-    calculatedSoC = map(LiBCM_SoC, 60, 89, 501, 599);
-  } else if ((LiBCM_SoC < 60) && (LiBCM_SoC >= 31)) {
-    // BG Regen Allowed
-    calculatedSoC = map(LiBCM_SoC, 31, 59, 151, 500);
-  } else if ((LiBCM_SoC <= 30) && (LiBCM_SoC >= 6)) {
-    // BG Regen Allowed, SoC very low.
-    calculatedSoC = map(LiBCM_SoC, 6, 30, 1, 150);
-  } else if (LiBCM_SoC <= 5) {
+    calculatedSoC = map(LiBCM_SoC, 60, 89, 501, 599);   // No BG Regen Allowed
+  } else if (LiBCM_SoC >= 30) {
+    calculatedSoC = map(LiBCM_SoC, 30, 59, 151, 500);   // BG Regen Allowed
+  } else if (LiBCM_SoC >= 5) {
+    calculatedSoC = map(LiBCM_SoC, 5, 29, 1, 150);      // BG Regen Allowed, SoC very low.
+  } else {
     // No Assist Allowed
     calculatedSoC = 0;
     oldCalculatedSoC = 0;         // Make sure SoC doesn't immediately spike back up
