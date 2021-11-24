@@ -172,7 +172,7 @@ void BATTSCI_evaluateTempertureByte(uint16_t evalSoC) {
 		temperature_Byte = battTempBATTSCI;
 	} else temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
   } else {
-	if (battTempBATTSCI < 0x3A) {
+	if (battTempBATTSCI < 0x30) {
 		temperature_Byte = battTempBATTSCI;
 	} else temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
   }
