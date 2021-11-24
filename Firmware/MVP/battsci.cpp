@@ -37,7 +37,7 @@ byte IMA_Behaviour_Flag_Bytes[] = {0x00, 0x00};   // NM To Do: Can be looked up 
 
 bool initializeSoC = true;
 
-uint8_t SoCHysteresisIncrementFrequency = 4; // How many iterations between SoC updates to MCM?
+uint8_t SoCHysteresisIncrementFrequency = 5; // How many iterations between SoC updates to MCM?
 uint8_t SoCHysteresisCounter = 150;
 uint8_t SoCHysteresis = 0;
 
@@ -162,11 +162,19 @@ void BATTSCI_evaluateTempertureByte(uint16_t evalSoC) {
     @param      evalSoC     Integer value of SoC in 0.1% increments beginning at 20%. 0 = 20.0%
     @return                 This function does not return anything.
   */
+
+  // battTempBATTSCI will be displayed if it won't affect MCM behaviour, as determined by SoC
+  int8_t battTempBATTSCI = temperature_battery_getLatest() + 30;                      //T_MCM = T_actual + 30
+
   if (evalSoC >= 200)             // 200 = 40% SoC or higher
   {
-    temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
+	if (battTempBATTSCI > 0x3A) {
+		temperature_Byte = battTempBATTSCI;
+	} else temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
   } else {
-    temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
+	if (battTempBATTSCI < 0x3A) {
+		temperature_Byte = battTempBATTSCI;
+	} else temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
   }
 }
 
