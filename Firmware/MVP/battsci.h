@@ -16,8 +16,6 @@
 
 	void BATTSCI_initializeMCMSoC(void);
 
-	byte* BATTSCI_getIMABehaviourFlags(void);
-
 	void BATTSCI_sendFrames();
 
 	void BATTSCI_setPackVoltage(uint8_t voltage);

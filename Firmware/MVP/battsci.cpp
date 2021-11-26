@@ -20,26 +20,14 @@ int16_t spoofedCurrentToSend = 0;     //JTS2doLater spoofed pack current can pro
 uint8_t LiBCM_SoC = 60;
 
 byte SoC_Bytes[] = {0x16, 0x20};      // SoC Bytes to send to MCM.  Index 0 is the upper byte and index 1 is the lower byte.
-byte SoC_MathBytes[] = {0x00, 0x00};  // Math operations are done on this variable before we send SoC_Bytes to the MCM.
 byte temperature_Byte = 0x3A;         // Temperature Byte to send to MCM.  0x3A is +28 Degrees C.
 uint16_t calculatedSoC = 20;
 uint16_t oldCalculatedSoC = 20;
 
-byte IMA_Behaviour_Flag_Bytes[] = {0x00, 0x00};   // NM To Do: Can be looked up by lcd.cpp to display appropriate assist and regen flags.
-/*  [0] 0x00 = Forced Regen
-*   [0] 0x01 = Regen Allowed, Background Regen
-*   [0] 0x02 = Regen Allowed
-*   [0] 0x03 = No Regen
-*   [1] 0x00 = No Assist
-*   [1] 0x01 = Assist Allowed
-*   [1] 0x02 = Max Assist Allowed
-*/
-
 bool initializeSoC = true;
 
-uint8_t SoCHysteresisIncrementFrequency = 5; // How many iterations between SoC updates to MCM?
-uint8_t SoCHysteresisCounter = 150;
-uint8_t SoCHysteresis = 0;
+uint8_t SoCUpdateDelayFrameIncrement = 5;	// How many frames between SoC updates to MCM?
+uint8_t SoCUpdateDelayCounter = 150;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -111,11 +99,8 @@ uint8_t BATTSCI_calculateChecksum( uint8_t frameSum )
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
-
-  //  BCM sends two bytes in a row for SoC values.
-  //  First is the upper byte, second is the lower byte.
-  //  Upper byte increments every time the lower byte hits 128.
-  //  Lower byte valid values therefore are 0x00 --> 0x7F inclusive.
+  //  BCM sends two bytes in a row for SoC values.  First is the upper byte, second is the lower byte.
+  //  Upper byte increments every time the lower byte hits 128.  Lower byte valid values therefore are 0x00 --> 0x7F inclusive.
 
   //  80% = 0x16 0x20 -- No Regen, Assist allowed
   //  72% = 0x15 0x50 -- Regen allowed, Assist allowed
@@ -135,29 +120,24 @@ void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
     @return                 This function does not return anything.  It modifies SoC_Bytes[] in place.
   */
 
-  SoC_MathBytes[0] = 0x00;
-  SoC_MathBytes[1] = 0x00;
-  evalSoC += 0x48;              // MCM 2nd-byte SoC is 0x48 when SoC is 20%.  20% is our reference, so we need to add this first.
+  SoC_Bytes[0] = 0x00;
+  evalSoC += 0x48;			// MCM 2nd-byte SoC is 0x48 when SoC is 20%.  20% is our reference, so we need to add this first.
 
   do {
-    SoC_MathBytes[0] += 0x01;
-    evalSoC -= 128;             // MCM 2nd-byte SoC CANNOT exceed 0x7F so we need to subtract 128 from it over and over until 2nd-byte is < 0x80
+    SoC_Bytes[0] += 0x01;
+    evalSoC -= 128;			// MCM 2nd-byte SoC CANNOT exceed 0x7F so we need to subtract 128 from it over and over until 2nd-byte is < 0x80
   }
   while (evalSoC > 128);
 
-  SoC_MathBytes[1] = evalSoC;
-  SoC_MathBytes[0] += 0x11;     // MCM 1st-byte SoC is 0x11 when SoC is 20% so we need to add 0x11.
-
-  SoC_Bytes[0] = SoC_MathBytes[0];
-  SoC_Bytes[1] = SoC_MathBytes[1];
-
+  SoC_Bytes[0] += 0x11;		// MCM 1st-byte SoC is 0x11 when SoC is 20% so we need to add 0x11.
+  SoC_Bytes[1] = evalSoC;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_evaluateTempertureByte(uint16_t evalSoC) {
+void BATTSCI_evaluateTemperatureByte(uint16_t evalSoC) {
   /**
-    BATTSCI_evaluateTempertureByte determines the IMA battery temperature we are sending to the MCM.
+    BATTSCI_evaluateTemperatureByte determines the IMA battery temperature we are sending to the MCM.
 
     @param      evalSoC     Integer value of SoC in 0.1% increments beginning at 20%. 0 = 20.0%
     @return                 This function does not return anything.
@@ -177,26 +157,6 @@ void BATTSCI_evaluateTempertureByte(uint16_t evalSoC) {
 	} else temperature_Byte = 0x30;      // Set temperature to +18 deg C to reduce max Assist in 2nd and 3rd
   }
 }
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/* void BATTSCI_evaluateIMABehaviourFlags(uint16_t evalSoC) {*/
-  /**
-    BATTSCI_evaluateIMABehaviourFlags sets flags based upon surrent MCM behaviour to be displayed on the LCD
-
-    @param      evalSoC     Integer value of SoC in 0.1% increments beginning at 20%. 0 = 20.0%
-    @return                 This function does not return anything.
-  */
-
-  // Must incorporate MCM Spoofed SoC
-  // Must incorporate MCM Spoofed SoC history
-  // Must incorporate MCM Spoofed Temperature Bytes
-  // Must incorporate MDM Temperature
-
-  // Note: If we can't get MDM Temperature then this will only ever be able to display what the data LiBCM has sent to MCM allow it to do.
-  // The flags won't be able to display what the MCM is ACTUALLY doing//going to do if we can't get MDM tempeerature.
-
-/*}*/
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -240,25 +200,23 @@ void BATTSCI_calculateSoC()
 
   // Modify calculatedSoC in place to be an increment of oldCalculatedSoC
   // packMilliAmps is being checked so that we only increment SoC if we have current < -0.01 Amps or decremented if we have > +0.01 Amps
-  // packMilliAmps is + if Amps are going OUT and voltage is going DOWN
-  // packMilliAmps is - if Amps are going IN and voltage is going UP
-  // This should prevent SoC being changed during Auto Stop due to low cell voltage hysteresis.
+  // This should prevent SoC being changed during Auto Stop.
   // To Do: We may be able to remove these checks once we are calculating an LiBCM SoC using coulomb counting.
   if (calculatedSoC > oldCalculatedSoC) {
-    if (packMilliAmps <= -10 ) {
+    if (packMilliAmps <= -10 ) {				// packMilliAmps is - if Amps are going IN and voltage is going UP
       calculatedSoC = (oldCalculatedSoC + 1);
-      BATTSCI_evaluateSoCBytes(calculatedSoC);  // Update SoC_Bytes[] value to send to MCM
+      BATTSCI_evaluateSoCBytes(calculatedSoC);
       oldCalculatedSoC = calculatedSoC;         // Set oldCalculatedSoC to the incremented calculatedSoC
     }
   } else if (calculatedSoC < oldCalculatedSoC) {
-    if (packMilliAmps >= 10 ) {
+    if (packMilliAmps >= 10 ) {					// packMilliAmps is + if Amps are going OUT and voltage is going DOWN
       calculatedSoC = (oldCalculatedSoC - 1);
-      BATTSCI_evaluateSoCBytes(calculatedSoC);  // Update SoC_Bytes[] value to send to MCM
+      BATTSCI_evaluateSoCBytes(calculatedSoC);
       oldCalculatedSoC = calculatedSoC;         // Set oldCalculatedSoC to the incremented calculatedSoC
     }
   }
 
-  BATTSCI_evaluateTempertureByte(calculatedSoC);
+  BATTSCI_evaluateTemperatureByte(calculatedSoC);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -267,13 +225,6 @@ void BATTSCI_initializeMCMSoC(void)
 {
   // Key On causes a recalculation of SoC to spoof to MCM
 	initializeSoC = true;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-byte* BATTSCI_getIMABehaviourFlags(void)
-{
-  return IMA_Behaviour_Flag_Bytes;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -301,7 +252,7 @@ void BATTSCI_sendFrames()
     uint16_t vCellWithESR_counts = LTC68042result_hiCellVoltage_get() + (adc_getLatestBatteryCurrent_amps() << 4);
     //<<1=0.2mOhm, <<2=0.4mOhm, <<3=0.8mOhm, <<4=1.6mOhm, <<5=3.2mOhm, <<6=6.4mOhm, <<7=12.8mOhm //uint16_t overflows above here
 
-    SoCHysteresisCounter += 1;
+    SoCUpdateDelayCounter += 1;
 
     if(frame2send == 0x87)
     {
@@ -322,28 +273,17 @@ void BATTSCI_sendFrames()
         calculatedSoC = 0;
         oldCalculatedSoC = 0;
         temperature_Byte = 0x30;
-        SoCHysteresisCounter = 0;  // Setting this to 0 keeps SoC at 20% for extra loops so the IMA has extra time to be charged.
+        SoCUpdateDelayCounter = 0;  // Setting this to 0 keeps SoC at 20% for extra frames so the IMA has extra time to be charged.
 
         debugUSB_sendChar('1');
       }
       else
       { // all cells above 3.000 volts
 
-        // This should only run once at startup.
-        if (SoCHysteresis < 1) {
-          SoCHysteresis = LiBCM_SoC;
-        }
-
-        // Average LiBCM_SoC over SoCHysteresisIncrementFrequency iterations.
-        SoCHysteresis /= 2;
-        SoCHysteresis += (LiBCM_SoC / 2);
-
-        // After SoCHysteresisIncrementFrequency iterations have elapsed we calculate SoC and if needed increment it up or down
         // The loop begins at 200 so if we need to we can force an SoC value to be held longer, such as if we need to do a positive or negative recal.
-        if (SoCHysteresisCounter >= (SoCHysteresisIncrementFrequency + 200)) {
+        if (SoCUpdateDelayCounter >= (SoCUpdateDelayFrameIncrement + 200)) {
           BATTSCI_calculateSoC();
-          SoCHysteresisCounter = 200;
-          SoCHysteresis = LiBCM_SoC;
+          SoCUpdateDelayCounter = 200;
         }
 
         frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                 //Battery SoC (upper byte)
