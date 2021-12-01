@@ -1,3 +1,5 @@
+OEM BCM removed and replaced with LiBCM
+
 e6405ab304d
 e6405ab41834
 e6405ae1207f
