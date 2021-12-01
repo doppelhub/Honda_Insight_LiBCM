@@ -19,15 +19,15 @@ int16_t spoofedCurrentToSend = 0;     //JTS2doLater spoofed pack current can pro
 
 uint8_t LiBCM_SoC = 60;
 
-byte SoC_Bytes[] = {0x16, 0x20};      // SoC Bytes to send to MCM.  Index 0 is the upper byte and index 1 is the lower byte.
-byte temperature_Byte = 0x3A;         // Temperature Byte to send to MCM.  0x3A is +28 Degrees C.
-uint16_t calculatedSoC = 20;
-uint16_t oldCalculatedSoC = 20;
+byte SoC_Bytes[] = {0x15, 0x50};      // SoC Bytes to send to MCM.  Index 0 is the upper byte and index 1 is the lower byte.
+byte temperature_Byte = 0x33;         // Temperature Byte to send to MCM.  0x33 is +21 Degrees C.
+uint16_t calculatedSoC = 500;
+uint16_t oldCalculatedSoC = 500;
 
 bool initializeSoC = true;
 
-uint8_t SoCUpdateDelayFrameIncrement = 5;	// How many frames between SoC updates to MCM?
-uint8_t SoCUpdateDelayCounter = 150;
+uint8_t SoCUpdateDelayFrameIncrement = 6;	// How many frames between SoC updates to MCM?
+uint8_t SoCUpdateDelayCounter = 207;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -144,13 +144,16 @@ void BATTSCI_evaluateTemperatureByte(uint16_t evalSoC) {
   */
 
   // battTempBATTSCI will be displayed if it won't affect MCM behaviour, as determined by SoC
+  // 0x26 = 08 Deg C
+  // 0x30 = 18 Deg C
+  // 0x31 = 19 Deg C
   int8_t battTempBATTSCI = temperature_battery_getLatest() + 30;                      //T_MCM = T_actual + 30
 
   if (evalSoC >= 200)             // 200 = 40% SoC or higher
   {
-	if (battTempBATTSCI > 0x3A) {
+	if (battTempBATTSCI > 0x33) {
 		temperature_Byte = battTempBATTSCI;
-	} else temperature_Byte = 0x3A;      // Set temperature to +28 deg C to allow max Assist in 2nd and 3rd
+	} else temperature_Byte = 0x33;      // Set temperature to +21 deg C to allow max Assist in 2nd and 3rd
   } else {
 	if (battTempBATTSCI < 0x30) {
 		temperature_Byte = battTempBATTSCI;
@@ -265,7 +268,7 @@ void BATTSCI_sendFrames()
       LiBCM_SoC = SoC_getBatteryStateNow_percent();
       if(LiBCM_SoC <= 5 )
       {
-        //at least one cell is severely under-charged.  Disable Assist.
+        //at least one cell is severely under-charged.  Disable Assist.  0x11 0x48 is 20% SoC.  This if statement functionally performs a negaive recal.
         SoC_Bytes[0] = 0x11;
         SoC_Bytes[1] = 0x48;
 
@@ -284,10 +287,7 @@ void BATTSCI_sendFrames()
         if (SoCUpdateDelayCounter >= (SoCUpdateDelayFrameIncrement + 200)) {
           BATTSCI_calculateSoC();
           SoCUpdateDelayCounter = 200;
-        }
-
-        frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                 //Battery SoC (upper byte)
-        frameSum_87 += BATTSCI_writeByte( SoC_Bytes[1] );                                 //Battery SoC (lower byte)
+	    }
 
         if        (vCellWithESR_counts >= 39500) { //39500 = 3.9500 volts
           debugUSB_sendChar('8');
@@ -302,20 +302,18 @@ void BATTSCI_sendFrames()
         }
       }
 
+	  frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                   //Battery SoC (upper byte)
+	  frameSum_87 += BATTSCI_writeByte( SoC_Bytes[1] );                                   //Battery SoC (lower byte)
+
       frameSum_87 += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F ); //Battery Current (upper byte)
       frameSum_87 += BATTSCI_writeByte(  lowByte(batteryCurrent_toBATTSCI     ) & 0x7F ); //Battery Current (lower byte)
-      frameSum_87 += BATTSCI_writeByte( 0x32 );                                           //Almost always 0x32
+      frameSum_87 += BATTSCI_writeByte( 0x32 );                                      //Almost always 0x32 -- 0x00 P1449	0x01 P1449	0x10 P1447	0x11 P1447	0x12 P1447	0X14 P1447	0x15 N	0x16 N	0x17 N	0x20 N	0x30 N	0x31 N	0x33 N	0x7F N
       frameSum_87 += BATTSCI_writeByte( temperature_Byte );                               //max temp: degC*2 (e.g. 0x3A = 58d = 28 degC
       frameSum_87 += BATTSCI_writeByte( temperature_Byte );                               //min temp: degC*2 (e.g. 0x3A = 58d = 28 degC
       frameSum_87 += BATTSCI_writeByte( METSCI_getPacketB3() );                           //MCM's sanity check that BCM isn't getting behind
                      BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_87) );         //Send Checksum. sum(byte0:byte11) should equal 0
       frame2send = 0xAA;
     }
-
-    // 0x26 = 08 Deg C
-    // 0x30 = 18 Deg C
-    // 0x31 = 19 Deg C
-
 
     else if( frame2send == 0xAA )
     {
@@ -347,7 +345,7 @@ void BATTSCI_sendFrames()
       }
 
       frameSum_AA += BATTSCI_writeByte( 0x40 );                                           //Charge request.  0x20=charge@4bars, 0x00=charge@background
-      frameSum_AA += BATTSCI_writeByte( 0x61 );                                           //Never changes
+      frameSum_AA += BATTSCI_writeByte( 0x61 );                                           //Never changes	0x00 N	0x01 P1440	0x60 N	0x32 N
       frameSum_AA += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F ); //Battery Current (upper byte)
       frameSum_AA += BATTSCI_writeByte(  lowByte(batteryCurrent_toBATTSCI     ) & 0x7F ); //Battery Current (lower byte)
       frameSum_AA += BATTSCI_writeByte( METSCI_getPacketB4() );                           //MCM's sanity check that BCM isn't getting behind

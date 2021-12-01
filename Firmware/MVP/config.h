@@ -8,7 +8,7 @@
 	#include "libcm.h"  //For Arduino IDE compatibility
 
 	#define FW_VERSION "0.4.4"
-    #define BUILD_DATE "2021NOV22"
+    #define BUILD_DATE "2021NOV30"
 
 	#define CPU_MAP_MEGA2560
 
@@ -41,7 +41,7 @@
 
 	#define LOOP_RATE_MILLISECONDS 10 // Superloop execution rate: 1/LOOP_RATE_MILLISECONDS (e.g. LOOP_RATE_MILLISECONDS==10 is 100 Hz)
 
-	#define GRID_CHARGER_CELL_VMAX 40000 // Vcell = (GRID_CHARGER_CELL_VMAX * 0.0001 V) //cells charged to this voltage
+	#define GRID_CHARGER_CELL_VMAX 39500 // Vcell = (GRID_CHARGER_CELL_VMAX * 0.0001 V) //cells charged to this voltage
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //Uncomment if using 18S Honda EHW5 modules
 
