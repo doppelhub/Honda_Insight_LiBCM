@@ -26,7 +26,7 @@ uint16_t oldCalculatedSoC = 500;
 
 bool initializeSoC = true;
 
-uint8_t SoCUpdateDelayFrameIncrement = 6;	// How many frames between SoC updates to MCM?
+uint8_t SoCUpdateDelayFrameIncrement = 17;	// How many frames between SoC updates to MCM?  OEM BCM usually does 17 but sometimes does 16
 uint8_t SoCUpdateDelayCounter = 207;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -108,6 +108,7 @@ void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
   //  40% = 0x13 0x10 -- Regen allowed, Assist allowed, Background Regen more aggressive
   //  25% = 0x11 0x7A -- Regen allowed, Assist barely allowed, Background Regen very aggressive
   //  20% = 0x11 0x48 -- Regen allowed, No Assist, Regen running even during idle
+  //  20% = 0x21 0x48 -- THIS IS ALSO 20%
 
   // MCM can read and accept values outside this window, like 19% SoC or 85% SoC, but we don't need to use those.
 
@@ -129,7 +130,7 @@ void BATTSCI_evaluateSoCBytes(uint16_t evalSoC) {
   }
   while (evalSoC > 128);
 
-  SoC_Bytes[0] += 0x11;		// MCM 1st-byte SoC is 0x11 when SoC is 20% so we need to add 0x11.
+  SoC_Bytes[0] += 0x21;		// MCM 1st-byte SoC is 0x11 OR 0x21 when SoC is 20% so we need to add 0x11.
   SoC_Bytes[1] = evalSoC;
 }
 
@@ -179,7 +180,7 @@ void BATTSCI_calculateSoC()
   } else if (LiBCM_SoC >= 90) {
     calculatedSoC = map(LiBCM_SoC, 90, 94, 600, 619);   // No Regen Allowed
   } else if (LiBCM_SoC >= 60) {
-    calculatedSoC = map(LiBCM_SoC, 60, 89, 501, 599);   // No BG Regen Allowed
+    calculatedSoC = map(LiBCM_SoC, 60, 89, 501, 599);   // No BG Regen Allowed 84 = 582
   } else if (LiBCM_SoC >= 30) {
     calculatedSoC = map(LiBCM_SoC, 30, 59, 151, 500);   // BG Regen Allowed
   } else if (LiBCM_SoC >= 5) {
@@ -204,18 +205,46 @@ void BATTSCI_calculateSoC()
   // Modify calculatedSoC in place to be an increment of oldCalculatedSoC
   // packMilliAmps is being checked so that we only increment SoC if we have current < -0.01 Amps or decremented if we have > +0.01 Amps
   // This should prevent SoC being changed during Auto Stop.
-  // To Do: We may be able to remove these checks once we are calculating an LiBCM SoC using coulomb counting.
+
   if (calculatedSoC > oldCalculatedSoC) {
-    if (packMilliAmps <= -10 ) {				// packMilliAmps is - if Amps are going IN and voltage is going UP
+	if (packMilliAmps <= -300) {								// packMilliAmps is - if Amps are going IN and voltage is going UP
+		if ((oldCalculatedSoC + 5) > calculatedSoC) {
+			calculatedSoC = (oldCalculatedSoC + 5);
+			BATTSCI_evaluateSoCBytes(calculatedSoC);
+			oldCalculatedSoC = calculatedSoC;
+		} else if ((oldCalculatedSoC + 2) > calculatedSoC) {
+			calculatedSoC = (oldCalculatedSoC + 2);
+			BATTSCI_evaluateSoCBytes(calculatedSoC);
+			oldCalculatedSoC = calculatedSoC;
+		} else if ((oldCalculatedSoC + 1) > calculatedSoC) {
+			calculatedSoC = (oldCalculatedSoC + 1);
+			BATTSCI_evaluateSoCBytes(calculatedSoC);
+			oldCalculatedSoC = calculatedSoC;
+		}
+	} else if (packMilliAmps <= -10 ) {
       calculatedSoC = (oldCalculatedSoC + 1);
       BATTSCI_evaluateSoCBytes(calculatedSoC);
-      oldCalculatedSoC = calculatedSoC;         // Set oldCalculatedSoC to the incremented calculatedSoC
+      oldCalculatedSoC = calculatedSoC;
     }
   } else if (calculatedSoC < oldCalculatedSoC) {
-    if (packMilliAmps >= 10 ) {					// packMilliAmps is + if Amps are going OUT and voltage is going DOWN
+	if (packMilliAmps >= 300 ) {								// packMilliAmps is + if Amps are going OUT and voltage is going DOWN
+		if ((oldCalculatedSoC - 5) < calculatedSoC) {
+			calculatedSoC = (oldCalculatedSoC - 5);
+			BATTSCI_evaluateSoCBytes(calculatedSoC);
+			oldCalculatedSoC = calculatedSoC;
+		} else if ((oldCalculatedSoC - 2) < calculatedSoC) {
+			calculatedSoC = (oldCalculatedSoC - 2);
+			BATTSCI_evaluateSoCBytes(calculatedSoC);
+			oldCalculatedSoC = calculatedSoC;
+		} else if ((oldCalculatedSoC - 1) < calculatedSoC) {
+			calculatedSoC = (oldCalculatedSoC - 1);
+			BATTSCI_evaluateSoCBytes(calculatedSoC);
+			oldCalculatedSoC = calculatedSoC;
+		}
+    } else if (packMilliAmps >= 10 ) {
       calculatedSoC = (oldCalculatedSoC - 1);
       BATTSCI_evaluateSoCBytes(calculatedSoC);
-      oldCalculatedSoC = calculatedSoC;         // Set oldCalculatedSoC to the incremented calculatedSoC
+      oldCalculatedSoC = calculatedSoC;
     }
   }
 
@@ -269,7 +298,8 @@ void BATTSCI_sendFrames()
       if(LiBCM_SoC <= 5 )
       {
         //at least one cell is severely under-charged.  Disable Assist.  0x11 0x48 is 20% SoC.  This if statement functionally performs a negaive recal.
-        SoC_Bytes[0] = 0x11;
+		//turns out 0x20 0x48 is ALSO 20% SoC
+        SoC_Bytes[0] = 0x20;
         SoC_Bytes[1] = 0x48;
 
         // Make sure SoC doesn't immediately spike back up
@@ -301,6 +331,9 @@ void BATTSCI_sendFrames()
           debugUSB_sendChar('2');
         }
       }
+
+	// frameSum_87 += BATTSCI_writeByte( 0x21 );                                   //Battery SoC (upper byte)
+	// frameSum_87 += BATTSCI_writeByte( 0x7A );                                   //Battery SoC (lower byte)
 
 	  frameSum_87 += BATTSCI_writeByte( SoC_Bytes[0] );                                   //Battery SoC (upper byte)
 	  frameSum_87 += BATTSCI_writeByte( SoC_Bytes[1] );                                   //Battery SoC (lower byte)
