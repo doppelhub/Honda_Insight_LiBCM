@@ -201,7 +201,7 @@ void BATTSCI_sendFrames()
       }
 
       frameSum_AA += BATTSCI_writeByte( 0x40 );                                           //Charge request.  0x20=charge@4bars, 0x00=charge@background
-      frameSum_AA += BATTSCI_writeByte( 0x61 );                                           //Never changes
+      frameSum_AA += BATTSCI_writeByte( 0x61 );                                           //Never changes //JTS2doNow: should this be 0x66?
       frameSum_AA += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F ); //Battery Current (upper byte)
       frameSum_AA += BATTSCI_writeByte(  lowByte(batteryCurrent_toBATTSCI     ) & 0x7F ); //Battery Current (lower byte)
       frameSum_AA += BATTSCI_writeByte( METSCI_getPacketB4() );                           //MCM's sanity check that BCM isn't getting behind
