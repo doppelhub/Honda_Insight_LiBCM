@@ -15,15 +15,15 @@
  * ---------------------------------------------------------------------------------------------------------------------
  * 
  * As shown above, each 30 byte message consists of ten packets.
- * A single packet is sent every 100 ms, hence a complete message is sent every second.
+ * A single packet is sent every 100 ms, hence a complete frame is sent every 200 ms, and a complete message is sent every 1000 ms.
  * Every other packet always starts with 0xE6.
  * Storing the complete message isn't important, as each frame is self-contained.
  * 
  * At the frame level, the above table reduces to:
- * ---------------------------------------------------------
- * Frame:  | Packet:            | Byte:                    |
+ * --------------------------------------------------------------------------|
+ * Frame:  | Packet:            | Byte:                                      |
  * (frame) | (packet0)(packet1) | (Byte0)(Byte1)(Byte2)(Byte3)(Byte4)(Byte5) | 
- * ---------------------------------------------------------
+ * --------------------------------------------------------------------------|
  * 
  * Where the byte order for each frame is always:
  * -Byte0: ALWAYS 0xE6
