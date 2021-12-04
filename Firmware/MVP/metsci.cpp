@@ -130,9 +130,6 @@ struct packetTypes
   uint8_t latestE1Packet_SoC;
 } METSCI_Packets;
 
-
-uint8_t METSCI_state = RUNNING;
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void METSCI_begin()
@@ -144,47 +141,33 @@ void METSCI_begin()
   digitalWrite(PIN_METSCI_REn,HIGH);
   
   Serial3.begin(9600,SERIAL_8E1);
-  METSCI_state = RUNNING;
   Serial.print(F("\nMETSCI BEGIN"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 void METSCI_enable()
 {  
   digitalWrite(PIN_METSCI_REn,LOW);
-  
-  METSCI_state = RUNNING;
 
   //MCM throws CEL if old data sent when key first turned on
-  METSCI_Packets.latestB4Packet_engine = 0;
-  METSCI_Packets.latestE6Packet_assistLevel = 0;
-  METSCI_Packets.latestB3Packet_engine = 0;
+  METSCI_Packets.latestB4Packet_engine = 24; //OEM BCM transmits 0x18 on BATTSCI until first valid B4 packet received on METSCI
+  METSCI_Packets.latestE6Packet_assistLevel = 64; // 0x40 is "zero bars assist/regen"
+  METSCI_Packets.latestB3Packet_engine = 6; //OEM BCM transmits 0x06 on BATTSCI until first valid B3 packet received on METSCI 
   METSCI_Packets.latestE1Packet_SoC = 0;
 }
 
-void METSCI_disable()
-{
-  digitalWrite(PIN_METSCI_REn,HIGH);
-  //JTS2doLater: Verify we're in low power state
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  METSCI_state = STOPPED;
-}
+void METSCI_disable() { digitalWrite(PIN_METSCI_REn,HIGH); } //prevent backdriving MCM (thru METSCI bus)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t METSCI_readByte()
-{
-  return Serial3.read();
-}
+uint8_t METSCI_readByte() { return Serial3.read(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t METSCI_bytesAvailableToRead()
-{
-  return Serial3.available();
-}
+uint8_t METSCI_bytesAvailableToRead() { return Serial3.available(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -205,16 +188,6 @@ void METSCI_processLatestFrame(void)
   
   //At this point we should have ONLY the latest complete frame in queue (i.e. not more than 12 bytes in the serial receive buffer)
   //If everything is in sync, then the next six bytes are a complete frame, and the first byte is 0xE6.
-  
-  if( METSCI_state == STOPPED )
-  {
-    METSCI_Packets.latestE6Packet_assistLevel = 0;
-    METSCI_Packets.latestB4Packet_engine = 0;
-    METSCI_Packets.latestB3Packet_engine = 0;
-    METSCI_Packets.latestE1Packet_SoC    = 0;
-
-    return;
-  }
 
   if( METSCI_bytesAvailableToRead() > METSCI_BYTES_IN_FRAME )  //Verify a full frame exists in the buffer
   {
