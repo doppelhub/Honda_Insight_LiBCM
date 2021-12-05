@@ -14,8 +14,6 @@
 
 	void BATTSCI_disable();
 
-	void BATTSCI_initializeMCMSoC(void);
-
 	void BATTSCI_sendFrames();
 
 	void BATTSCI_setPackVoltage(uint8_t voltage);
@@ -23,5 +21,8 @@
 	void BATTSCI_setSpoofedCurrent(int16_t packCurrent);
 
 	uint8_t BATTSCI_writeByte(uint8_t data);
+
+	uint16_t map_16bU(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max) { return (((x - in_min) * (out_max - out_min)) / (in_max - in_min)) + out_min; }
+
 
 #endif

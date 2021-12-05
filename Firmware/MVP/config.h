@@ -43,9 +43,13 @@
 
 	#define GRID_CHARGER_CELL_VMAX 39500 // Vcell = (GRID_CHARGER_CELL_VMAX * 0.0001 V) //cells charged to this voltage
 
+
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //Uncomment if using 18S Honda EHW5 modules
 
 	//#define RUN_BRINGUP_TESTER //test PCB (requires external hardware that you don't have)
+
+	#define CELL_MAX_ALLOWED_VOLTAGE_REGEN 42000
+	#define CELL_MIN_ALLOWED_VOLTAGE_ASSIST 32000
 
 	#define STACK_mAh 5000 //nominal pack size (0:100% SoC) //LiBCM uses this value until it determines the actual pack capacity
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
