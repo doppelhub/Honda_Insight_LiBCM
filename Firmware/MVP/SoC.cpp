@@ -108,7 +108,7 @@ void SoC_openCircuitVoltage_handler(void)
 
 		//turn LiBCM off if pack SoC is low
 		//LiBCM will power back on when the key is turned on
-		if( LTC68042result_loCellVoltage_get() < MINIMUM_KEYOFF_VOLTAGE_BEFORE_TURNING_LIBCM_OFF)
+		if( LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF)
 		{
 			gpio_turnBuzzer_on_highFreq();
 			delay(100);

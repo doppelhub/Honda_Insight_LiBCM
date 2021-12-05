@@ -113,14 +113,21 @@ void BATTSCI_sendFrames()
     {
       //Place 0x87 frame into serial send buffer
       uint8_t frameSum_87 = 0; //this will overflow, which is ok for CRC
-      frameSum_87 += BATTSCI_writeByte( 0x87 );                                           //Never changes
-      frameSum_87 += BATTSCI_writeByte( 0x40 );                                           //Never changes
-      frameSum_87 += BATTSCI_writeByte( (spoofedVoltageToSend >> 1) );                    //Half Vbatt (e.g. 0x40 = d64 = 128 V)
+      frameSum_87 += BATTSCI_writeByte( 0x87 );                                           //B0 Never changes
+      frameSum_87 += BATTSCI_writeByte( 0x40 );                                           //B1 Never changes
+      frameSum_87 += BATTSCI_writeByte( (spoofedVoltageToSend >> 1) );                    //B2 Half Vbatt (e.g. 0x40 = d64 = 128 V)
 
+      //To convert LiBCM_SoC to MCM_SoC
+      //LiBCM_SoC_deciPercent = LiBCM_SoC_percent * 10;
+      //SoC_Integer = LiBCM_SoC_deciPercent / 128; //Example: 75% SoC = 75*10/128 = 5d
+      //SoC_upper_byte = (SoC_Integer | 0x00010000)  //set flag in the upper nibble //we don't know what this flag does... but it's required.
+      //SoC_lower_byte = LiBCM_SoC_deciPercent - (SoC_Integer * 128);
+
+      //JTS2doNow: Replace this garbage with current-accumulated SoC
       if(LTC68042result_loCellVoltage_get() <= 30000 )
       { //at least one cell is severely under-charged.  Disable Assist.
-        frameSum_87 += BATTSCI_writeByte( 0x11 );                                         //Battery SoC (upper byte)
-        frameSum_87 += BATTSCI_writeByte( 0x48 ); //20% SoC                               //Battery SoC (lower byte)
+        frameSum_87 += BATTSCI_writeByte( 0x11 );                                         //B3 Battery SoC (upper byte)
+        frameSum_87 += BATTSCI_writeByte( 0x48 ); //20% SoC                               //B4 Battery SoC (lower byte)
         debugUSB_sendChar('1');
       }
       else
@@ -128,84 +135,83 @@ void BATTSCI_sendFrames()
 
         // Battery is full. Disable Regen.   
         if        (vCellWithESR_counts >= 39500) { //39500 = 3.9500 volts                                                    
-          frameSum_87 += BATTSCI_writeByte( 0x16 );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( 0x20 ); //80% SoC                               //Battery SoC (lower byte)
+          frameSum_87 += BATTSCI_writeByte( 0x16 );                                       //B3 Battery SoC (upper byte)
+          frameSum_87 += BATTSCI_writeByte( 0x20 ); //80% SoC                             //B4 Battery SoC (lower byte)
           debugUSB_sendChar('8');
           //JTS2doNow: Change SoC to 81%
 
         // Regen & Assist, no background charge   
         } else if (vCellWithESR_counts >= 37000) { //37000 = 3.7000 volts                                               
-          frameSum_87 += BATTSCI_writeByte( 0x15 );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( 0x50 ); //72% SoC                               //Battery SoC (lower byte)
+          frameSum_87 += BATTSCI_writeByte( 0x15 );                                       //B3 Battery SoC (upper byte)
+          frameSum_87 += BATTSCI_writeByte( 0x50 ); //72% SoC                             //B4 Battery SoC (lower byte)
           debugUSB_sendChar('7');
 
         // Regen & Assist, with background charge 
         } else if (vCellWithESR_counts >= 36000) { //34500 = 3.4500 volts                                            
-          frameSum_87 += BATTSCI_writeByte( 0x14 );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( 0x58 ); //60% SoC                               //Battery SoC (lower byte)
+          frameSum_87 += BATTSCI_writeByte( 0x14 );                                       //B3 Battery SoC (upper byte)
+          frameSum_87 += BATTSCI_writeByte( 0x58 ); //60% SoC                             //B4 Battery SoC (lower byte)
           debugUSB_sendChar('6');
 
         // Regen & Assist, with background charge   
         } else if (vCellWithESR_counts >= 35000) { //33000 = 3.3000 volts                                              
-          frameSum_87 += BATTSCI_writeByte( 0x13 );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( 0x10 ); //40% SoC                               //Battery SoC (lower byte)
+          frameSum_87 += BATTSCI_writeByte( 0x13 );                                       //B3 Battery SoC (upper byte)
+          frameSum_87 += BATTSCI_writeByte( 0x10 ); //40% SoC                             //B4 Battery SoC (lower byte)
           debugUSB_sendChar('4');
 
         // Battery is empty. Disable Assist.  
         } else {
-          frameSum_87 += BATTSCI_writeByte( 0x11 );                                         //Battery SoC (upper byte)
-          frameSum_87 += BATTSCI_writeByte( 0x48 ); //20% SoC                               //Battery SoC (lower byte)
+          frameSum_87 += BATTSCI_writeByte( 0x11 );                                       //B3 Battery SoC (upper byte)
+          frameSum_87 += BATTSCI_writeByte( 0x48 ); //20% SoC                             //B4 Battery SoC (lower byte)
           debugUSB_sendChar('2');
         }
       }
 
-      frameSum_87 += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F ); //Battery Current (upper byte)
-      frameSum_87 += BATTSCI_writeByte(  lowByte(batteryCurrent_toBATTSCI     ) & 0x7F ); //Battery Current (lower byte)
-      frameSum_87 += BATTSCI_writeByte( 0x32 );                                           //Almost always 0x32
+      frameSum_87 += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F ); //B5 Battery Current (upper byte)
+      frameSum_87 += BATTSCI_writeByte(  lowByte(batteryCurrent_toBATTSCI     ) & 0x7F ); //B6 Battery Current (lower byte)
+      frameSum_87 += BATTSCI_writeByte( 0x32 );                                           //B7 always 0x32, except before 0xAAbyte5 changes from 0x00 to 0x10 (then 0x23)
       
       int8_t battTempBATTSCI = temperature_battery_getLatest() + 30;                      //T_MCM = T_actual + 30
-      frameSum_87 += BATTSCI_writeByte( battTempBATTSCI );                                //max temp //0 degC = 30d = 0x1E
-      frameSum_87 += BATTSCI_writeByte( battTempBATTSCI );                                //min temp
+      frameSum_87 += BATTSCI_writeByte( battTempBATTSCI );                                //B8 max temp //0 degC = 30d = 0x1E
+      frameSum_87 += BATTSCI_writeByte( battTempBATTSCI );                                //B9 min temp
       
-      frameSum_87 += BATTSCI_writeByte( METSCI_getPacketB3() );                           //MCM's sanity check that BCM isn't getting behind
-                     BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_87) );         //Send Checksum. sum(byte0:byte11) should equal 0
+      frameSum_87 += BATTSCI_writeByte( METSCI_getPacketB3() );                           //B10 MCM latest B3 data byte
+                     BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_87) );         //B11 Send Checksum. sum(byte0:byte11) should equal 0
       frame2send = 0xAA;
     }
     else if( frame2send == 0xAA )
     {
       //Place 0xAA frame into serial send buffer
       uint8_t frameSum_AA = 0; //this will overflow, which is ok for CRC
-      frameSum_AA += BATTSCI_writeByte( 0xAA );                                           //Never changes
-      frameSum_AA += BATTSCI_writeByte( 0x10 );                                           //Never changes
-      frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //Never changes
-      frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //Never changes unless P codes
-      frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //Never changes unless P codes
-
-      //JTS2doNow: change to bitwise, with temp variable.
-      if( (LTC68042result_hiCellVoltage_get() < 42000 ) && (LTC68042result_loCellVoltage_get() > 29500) )
-      { //all cells are within acceptable range
-        frameSum_AA += BATTSCI_writeByte( 0x00 );                                         //enable assist & regen
+      frameSum_AA += BATTSCI_writeByte( 0xAA );                                           //B0 Never changes
+      frameSum_AA += BATTSCI_writeByte( 0x10 );                                           //B1 Always 0x10, unless METSCI signal not received
+      frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B2 Never changes unless P codes
+      frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B3 Never changes unless P codes
+      frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B4 Never changes unless P codes
+      frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B5 Never changes unless P codes //search note on '0xAAbyte5'
       
-      } else if( (LTC68042result_hiCellVoltage_get() > 42000 ) && (LTC68042result_loCellVoltage_get() < 29500))
-      { //at least one cell is over-changed AND at least one cell is under-charged
-        //JTS2doLater: set P-code... battery is beyond redeemable.
-        frameSum_AA += BATTSCI_writeByte( 0x30 );                                         //b00110000 disables regen & assist
-
-      } else if(LTC68042result_hiCellVoltage_get() > 42000) //42000 = 4.2000
-      { //at least one cell is overcharged.  disable regen
-        frameSum_AA += BATTSCI_writeByte( 0x20 );                                         //b00100000 disables regen  
-      
-      } else if(LTC68042result_loCellVoltage_get() < 29500) //29500 = 2.9500 volts
-      { //at least one cell is undercharged. disable assist
-        frameSum_AA += BATTSCI_writeByte( 0x10 );                                         //b00010000 disables assist
+      //charge request byte //limits assist and regen
+      //first verify all cell voltages are in range
+      if     (LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYON) { frameSum_AA += BATTSCI_writeByte( 0x32 ); } //B6 battery empty; disable assist
+      else if(LTC68042result_hiCellVoltage_get() > CELL_VMAX_KEYON) { frameSum_AA += BATTSCI_writeByte( 0x52 ); } //B6 battery full; disable regen
+      else
+      {
+        //if we get here, all cells are at a 'safe' voltage
+        //use current-accumulated SoC to determine whether we should disable assist or regen
+        if( (METSCI_getPacketB4() == 24) || (METSCI_getPacketB4() == 0) ) //These METSCI 'B4' data values indicate the key has just turned on
+        {
+          if(SoC_getBatteryStateNow_percent() > (STACK_SoC_MIN + 1) )   { frameSum_AA += BATTSCI_writeByte( 0x40 ); } //B6 use IMA to start the engine
+          else                                                          { frameSum_AA += BATTSCI_writeByte( 0x20 ); } //B6 use backup starter          
+        }
+        else if(SoC_getBatteryStateNow_percent() > (STACK_SoC_MAX - 1)) { frameSum_AA += BATTSCI_writeByte( 0x52 ); } //B6 battery full; disable regen
+        else if(SoC_getBatteryStateNow_percent() < (STACK_SoC_MIN + 1)) { frameSum_AA += BATTSCI_writeByte( 0x32 ); } //B6 battery empty; disable assist
+        else /* battery neither charged nor empty */                    { frameSum_AA += BATTSCI_writeByte( 0x12 ); } //B6 enable both regen & assist
       }
 
-      frameSum_AA += BATTSCI_writeByte( 0x40 );                                           //Charge request.  0x20=charge@4bars, 0x00=charge@background
-      frameSum_AA += BATTSCI_writeByte( 0x61 );                                           //Never changes //JTS2doNow: should this be 0x66?
-      frameSum_AA += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F ); //Battery Current (upper byte)
-      frameSum_AA += BATTSCI_writeByte(  lowByte(batteryCurrent_toBATTSCI     ) & 0x7F ); //Battery Current (lower byte)
-      frameSum_AA += BATTSCI_writeByte( METSCI_getPacketB4() );                           //MCM's sanity check that BCM isn't getting behind
-                     BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_AA) );         //Send Checksum. sum(byte0:byte11) should equal 0
+      frameSum_AA += BATTSCI_writeByte( 0x61 );                                            //B7 BCM hardware/firmware version?
+      frameSum_AA += BATTSCI_writeByte( highByte(batteryCurrent_toBATTSCI << 1) & 0x7F );  //B8 Battery Current (upper byte)
+      frameSum_AA += BATTSCI_writeByte(  lowByte(batteryCurrent_toBATTSCI     ) & 0x7F );  //B9 Battery Current (lower byte)
+      frameSum_AA += BATTSCI_writeByte( METSCI_getPacketB4() );                            //B10 MCM latest B4 data byte //
+                     BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_AA) );          //B11 Send Checksum. sum(byte0:byte11) should equal 0
       frame2send = 0x87;
     }
   }
