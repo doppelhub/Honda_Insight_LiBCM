@@ -1,0 +1,37 @@
+MOTSFB uses USART:
+
+no CEL when:
+110000110
+
+All CEL codes are contained within:
+1xxxxx110
+
+USART:
+-idles high
+-start bit is low
+-stop bit is high
+Thus, uC frame must be one of the following:
+
+0yyyyy1
+0yyyyyy1
+0yyyyyyy1
+0yyyyyyyy1
+0yyyyyyyyy1
+0yyyyyyyy11
+0yyyyyyyyy11
+
+So a valid OEM data stream needs to be:
+
+DDDDDDDDDZZZZZZZZZDDDDDDDDDZZZZZZZZZDDDDDDDDDZZZZZZZZZ
+1xxxxx1100000000001xxxxx1100000000001xxxxx110000000000
+...but there's no way to generate that stream because start, stop and idle are all backwards!
+
+Thus, we must invert uC output with discrete inverter:
+-we idle low
+-start bit is high
+-stop bit is low
+Then we can send:
+SDDDDDDDC idleidleidle SDDDDDDDC
+1xxxxx110 000000000000 1xxxxx110
+Problem Solved!
+We just have to remember to invert the 7 data bits!

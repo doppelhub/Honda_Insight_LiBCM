@@ -1,0 +1,120 @@
+keyON, never started
+
+19:11:29.944 -> fe f4 98 98 ca ca ff ff ff ff ff ff ff ff 
+19:11:41.565 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:11:51.381 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:12:01.217 -> f4 f4 98 98 ff ff ff 
+
+keyOFF
+wait for relay to turn off
+keyON, never started
+
+19:12:38.451 -> fa f4 98 98 ca ca ff ff ff ff ff ff ff ff 
+19:12:49.936 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:12:59.769 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:13:09.591 -> f4 f4 98 98 ff ff ff 
+
+keyOFF
+wait for relay to turn off
+54.2% SoC
+keyON, never started
+
+19:13:34.525 -> fa f4 98 98 ca ca ff ff ff ff ff ff ff ff 
+19:13:46.029 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:13:55.836 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:14:05.692 -> f4 f4 98 98 ff ff ff ff ff ff 
+
+keyOFF
+wait for relay to turn off
+54.2% SoC
+keyON, never started
+
+19:15:00.930 -> fc f4 f4 98 98 ca ca ff ff ff ff ff ff ff ff 
+19:15:13.163 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:15:22.980 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:15:32.818 -> f4 f4 98 98 ff ff ff ff ff ff
+
+keyOFF
+wait for relay to turn off
+keyON, never started
+grid charged 54.2% SoC -> 83.0%
+
+
+19:17:12.338 -> fa f4 98 98 ca ca ff ff ff ff ff ff ff ff 
+19:17:23.838 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:17:33.690 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:17:43.499 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:17:53.350 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:18:03.163 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:18:13.002 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:18:22.825 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:18:34.313 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:18:44.134 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:18:53.972 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:19:03.790 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:19:13.603 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:19:23.447 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:19:33.264 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:19:43.091 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:19:54.561 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:20:04.399 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:20:14.245 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:20:24.049 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:20:33.905 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:20:43.708 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:20:53.565 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:21:03.368 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:21:14.864 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:21:24.663 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:21:34.501 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:21:44.356 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:21:54.165 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:22:03.995 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:22:13.845 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:22:23.672 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:22:35.132 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:22:44.969 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:22:54.796 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:23:04.626 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:23:14.455 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:23:24.290 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:23:34.089 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:23:43.930 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:23:55.411 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:24:05.224 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:24:15.064 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:24:24.900 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:24:34.704 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:24:44.559 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:24:54.381 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:25:04.215 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:25:15.690 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:25:25.510 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:25:35.327 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:25:45.187 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:25:55.018 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:26:04.840 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:26:14.668 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:26:24.504 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:26:35.960 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:26:45.804 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:26:55.635 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:27:05.448 -> f4 f4 98 98 ff ff 
+
+keyOFF
+wait for relay to turn off
+82.1% SoC
+keyON, never started
+
+19:28:18.222 -> f4 f4 98 98 ca ca ff ff ff ff ff ff ff ff 
+19:28:29.701 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:28:39.555 -> f4 f4 98 98 ff ff ff ff 
+
+keyOFF
+wait for relay to turn off
+82.1% SoC
+keyON, never started
+
+19:29:10.324 -> 0 f4 98 98 ca ca ff ff ff ff ff ff ff ff 
+19:29:21.547 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:29:31.352 -> f4 f4 98 98 ff ff 

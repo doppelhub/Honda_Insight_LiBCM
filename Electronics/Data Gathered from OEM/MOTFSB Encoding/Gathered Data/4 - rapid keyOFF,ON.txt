@@ -1,0 +1,24 @@
+Turning keyOFF, then right back ON (without relay turning off)
+
+19:30:55.292 -> f4 f4 98 98 ca ca ff ff ff ff ff ff ff ff 
+19:31:06.772 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:31:16.603 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:31:26.402 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:31:36.244 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:31:46.075 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:31:55.912 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:32:05.729 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:32:17.223 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:32:27.037 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:32:36.870 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:32:46.705 -> f4 f4 98 98 ff 
+19:33:06.039 -> d0 f4 98 98 ca ca ff ff ff ff ff ff ff ff 
+19:33:17.429 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:33:27.274 -> f4 f4 98 98 ff ff 
+19:33:34.840 -> e7 f0 ff 
+19:33:36.734 -> f4 f4 98 98 f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:33:49.834 -> f4 f4 98 98 ff ff 
+19:33:56.389 -> f1 fc ff 
+19:33:58.376 -> f4 f4 98 98 f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:34:11.492 -> f4 f4 7f 0 ff 
+19:34:17.551 -> f4 f4 98 98 ff ff ff ff 
