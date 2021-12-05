@@ -7,9 +7,9 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.5.1"
-    #define BUILD_DATE "2021DEC05"
-
+	#define FW_VERSION "0.4.3"
+    #define BUILD_DATE "2021NOV22"
+    
 	#define CPU_MAP_MEGA2560
 
     //chose ONE of the following:
@@ -31,7 +31,7 @@
 	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to print all cell voltages while driving //Grid charger always prints all cell voltages
 
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
-
+	
 	//choose which functions control the LEDs
 	#define LED_NORMAL //enable "     LED()" functions (see debug.c)
 	//#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
@@ -41,28 +41,25 @@
 
 	#define LOOP_RATE_MILLISECONDS 10 // Superloop execution rate: 1/LOOP_RATE_MILLISECONDS (e.g. LOOP_RATE_MILLISECONDS==10 is 100 Hz)
 
-	#define CELL_MAX_ALLOWED_VOLTAGE_REGEN 42000
-	#define CELL_MIN_ALLOWED_VOLTAGE_ASSIST 32000
-
-	#define CELL_VMAX_GRIDCHARGER 39000 //39000 = 3.9000 volts
-	#define CELL_VMAX_KEYON       42500 //42500 = 4.2500 volts //LiBCM disables regen above this voltage
-	#define CELL_VMIN_KEYON       32500 //32500 = 3.2500 volts //LiBCM disables assist below this voltage
-	#define CELL_VMIN_KEYOFF      31000 //33800 = 3.1000 volts //LiBCM turns off below this voltage
+	#define GRID_CHARGER_CELL_VMAX 39000 // Vcell = (GRID_CHARGER_CELL_VMAX * 0.0001 V) //cells charged to this voltage
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //Uncomment if using 18S Honda EHW5 modules
+
+	//#define RUN_BRINGUP_TESTER //test PCB (requires external hardware that you don't have)
 
 	#define STACK_mAh 5000 //nominal pack size (0:100% SoC) //LiBCM uses this value until it determines the actual pack capacity
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
 	#define STACK_SoC_SETPOINT_GRID_CHARGE 70 //target SoC while grid charging
 
-	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
+	#define MINIMUM_KEYOFF_VOLTAGE_BEFORE_TURNING_LIBCM_OFF 33800 //33800 = 3.380 volts (~7% SoC)
+
 #endif
 
 /*
 Features to add later:
 
-#define PCODE_IF_COVER_NOT_INSTALLED
+#define QUERY_ISCOVERINSTALLED_SWITCH
 
 //Define realtime commands that are immediately picked off from the serial stream.
 //These characters are not passed to the serial parser, and are executed immediately.
@@ -77,6 +74,7 @@ Features to add later:
 //Configure when LiBCM turns off when the key is not on.
 //LiBCM will turn off when ANY condition below occurs
 #define KEYOFF_TURNOFF_HOURS 4       //LiBCM turns off after this much time, -1 to disable
+#define KEYOFF_TURNOFF_BELOW_mV 3500 //LiBCM turns off when any cell drops below this value
 #define KEYOFF_TURNOFF_BELOW_SoC 50  //LiBCM turns off when SoC drops below this value
 
 //Configure fan behavior when key is off
@@ -85,7 +83,7 @@ Features to add later:
 
 //Configure fan temperature setpoints
 //All temperatures are in Celsius
-#define TEMP_FAN_LOW 30  //enable OEM fan at low speed above this value
+#define TEMP_FAN_LOW 30  //enable OEM fan at  low speed above this value
 #define TEMP_OEMFAN_HIGH 40 //enable OEM fan at high speed above this value
 #define TEMP_FAN_MIN 30 //enable onboard fans at lowest speed
 #define TEMP_FAN_MAX 40 //enable onboard fans at highest speed
@@ -110,8 +108,10 @@ Features to add later:
 
 //Grid charger behavior
 #define GRID_CHARGE_ALLOWED YES
+#define GRID_CHARGE_MAX_SoC 80 //grid charger disabled when SoC exceeds this percentage
+#define GRID_CHARGE_MAX_mV 3900 //grid charger disabled when any cell exceeds this value
 #define GRID_CHARGE_TEMP_MIN //grid charging disabled below this temperature
-#define GRID_CHARGE_TEMP_MAX //grid charging disabled above this temperature
+#define GRID_CHARGE_TEMP_MAX //grid charging disabled below this temperature
 #define GRID_CHARGE_CURRENT_MAX_mA //specifies grid charger's maximum current output in mA
 
 #define SERIAL_H_LINE_CONNECTED NO //H-Line wire connected to OEM BCM connector pin B01

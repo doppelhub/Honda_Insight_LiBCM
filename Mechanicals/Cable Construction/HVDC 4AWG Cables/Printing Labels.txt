@@ -1,0 +1,3 @@
+Printing labels:
+-Use "chain print" feed option
+-Add 15 spaces between each "BAY2+" label 

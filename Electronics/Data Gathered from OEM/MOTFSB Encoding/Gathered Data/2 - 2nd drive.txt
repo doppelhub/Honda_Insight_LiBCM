@@ -1,0 +1,517 @@
+keyON
+keySTART @ line 6
+
+autostop 18:27:13 @ 45th & Guild until 18:28:23
+
+18:29:16 autostop at guild & ochs untils 18:29:53
+
+18:30:36 assist up hill to Sanders until ~18:31:52ish
+
+18:32:44 out of autostop
+
+18:33:07 downhill 2nd until 18:34:55
+
+autostop until 18:35:44
+
+garage 18:37:04 autostop 
+19:02:25 fan high
+19:03:05 fan low
+19:03:35 fan off
+clutch no change
+DCDC 12.x 14.x no change
+DCDC current no change
+SoC no change
+batt temp (in bounds)
+positive recal (to 82%) does nothing
+
+
+...
+
+
+18:25:31.490 -> fa f4 98 98 ca ca ff ff ff ff ff ff ff ff 
+18:25:42.990 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:25:52.823 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:26:02.677 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:26:12.482 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:26:22.327 -> f4 f4 fe ff 
+18:26:24.750 -> 98 ff ff ff ff ff 
+18:26:28.140 -> 80 ff ff ff 
+18:26:28.960 -> 0 ff ff 
+18:26:29.828 -> 80 ff ff ff ff 
+18:26:32.106 -> c4 ff 
+18:26:32.936 -> 30 c3 98 ff ff ff ff 
+18:26:36.279 -> f8 ff ff ff ff 
+18:26:38.027 -> e0 ff 
+18:26:38.818 -> f0 ff ff ff ff 
+18:26:40.435 -> fc ff ff 
+18:26:41.978 -> f4 ff 
+18:26:42.936 -> 80 9c c3 ff 
+18:26:45.313 -> fe ff ff 
+18:26:46.054 -> fe ff ff ff ff 
+18:26:47.839 -> e0 ff 
+18:26:48.627 -> fc ff 
+18:26:49.452 -> e0 ff ff ff 
+18:26:51.162 -> e0 ff ff 
+18:26:51.907 -> f0 ff ff ff 
+18:26:53.463 -> 40 ff 
+18:26:54.288 -> 60 c6 e3 ff 
+18:26:56.763 -> fc ff 
+18:26:57.559 -> fe ff 
+18:26:58.373 -> f8 ff 
+18:26:59.266 -> fc ff 
+18:27:00.133 -> f0 ff 
+18:27:01.049 -> 0 ff ff ff 
+18:27:02.482 -> fc ff 
+18:27:03.292 -> c0 ff 
+18:27:04.078 -> 90 98 f0 f8 ff 
+18:27:06.541 -> fc ff ff ff 
+18:27:08.250 -> f8 ff 
+18:27:09.204 -> 80 ff 
+18:27:10.094 -> 80 ff 
+18:27:10.744 -> c0 ff 
+18:27:11.722 -> c0 ff 
+18:27:13.120 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:27:22.952 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:27:32.759 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:27:42.593 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:27:52.436 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:28:02.250 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:28:13.731 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:28:23.547 -> f4 f4 cc 98 ff ff ff 
+18:28:27.864 -> 0 ff 
+18:28:28.474 -> fe ff 
+18:28:29.438 -> c0 ff 
+18:28:30.302 -> e0 ff 
+18:28:31.016 -> c0 ff 
+18:28:31.842 -> fc ff 
+18:28:32.576 -> f0 ff 
+18:28:33.407 -> c0 ff 
+18:28:34.082 -> f7 ce 98 ff ff ff ff 
+18:28:37.586 -> 80 ff ff ff ff ff 
+18:28:41.769 -> e0 ff 
+18:28:42.683 -> 0 fa f4 c7 80 c0 ff ff ff ff ff ff 
+18:28:46.540 -> c0 ff ff ff ff 
+18:28:47.341 -> c0 ff ff ff ff 
+18:28:48.194 -> 0 ff ff ff ff 
+18:28:49.903 -> f8 ff 
+18:28:50.801 -> e0 ff 
+18:28:51.631 -> 80 ff 
+18:28:52.410 -> c0 f9 f4 c6 c1 ff 
+18:28:56.428 -> e0 ff 
+18:28:57.251 -> e0 ff 
+18:28:57.998 -> f0 ff 
+18:28:58.886 -> f8 ff 
+18:28:59.742 -> 80 ff 
+18:29:00.485 -> f0 ff 
+18:29:01.432 -> c0 ff ff ff 
+18:29:02.736 -> f8 c0 ff 
+18:29:03.720 -> d0 e7 fc fe ff ff ff ff ff 
+18:29:07.805 -> fe ff ff ff ff 
+18:29:09.499 -> f0 ff ff 
+18:29:10.464 -> 0 ff ff 
+18:29:11.392 -> 0 ff ff 
+18:29:12.072 -> 80 ff 
+18:29:12.548 -> fc c0 fc c0 c3 9c ff ff ff 
+18:29:16.096 -> c0 ff ff ff ff 
+18:29:16.878 -> c0 ff ff ff ff ff ff 
+18:29:22.547 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:29:34.000 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:29:43.824 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:29:53.664 -> f4 f4 98 98 ff 
+18:29:57.067 -> e0 ff 
+18:29:57.915 -> e0 ff ff 
+18:29:59.699 -> 0 ff 
+18:30:00.416 -> e0 ff ff ff ff ff 
+18:30:01.931 -> 0 ff 
+18:30:03.438 -> fa fa e1 e3 ff 
+18:30:06.843 -> f8 ff 
+18:30:07.883 -> 80 ff ff ff ff 
+18:30:11.056 -> c0 ff 
+18:30:11.730 -> f8 ff 
+18:30:12.515 -> fe ff 
+18:30:13.192 -> e7 ff 
+18:30:14.121 -> c0 f8 e0 f1 c0 ff ff ff ff ff 
+18:30:17.552 -> 0 ff ff 
+18:30:18.325 -> 0 ff ff ff 
+18:30:19.140 -> 0 ff ff ff 
+18:30:19.997 -> 0 ff ff ff ff 
+18:30:21.557 -> e0 ff ff ff ff 
+18:30:23.084 -> be ff 
+18:30:23.973 -> 0 fe e0 fc f0 ff ff ff 
+18:30:26.576 -> 0 ff ff 
+18:30:27.277 -> f8 ff ff 
+18:30:28.251 -> c0 ff ff ff ff ff 
+18:30:30.570 -> e0 ff ff 
+18:30:31.437 -> f0 ff 
+18:30:32.359 -> e0 f4 f4 98 f3 ff ff 
+18:30:36.376 -> e0 ff ff 
+18:30:37.264 -> c0 ff ff ff 
+18:30:38.946 -> c0 ff 
+18:30:39.742 -> e0 ff ff ff 
+18:30:42.823 -> f4 f4 98 98 aa aa 8a 8a ff ff ff ff ff ff 
+18:30:54.269 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:31:04.124 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:31:13.949 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:31:23.778 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:31:33.610 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:31:43.445 -> f4 f4 98 8e ff ff 
+18:31:46.730 -> fe ff ff ff ff 
+18:31:47.594 -> 0 ff ff ff ff 
+18:31:48.380 -> f0 ff ff ff ff 
+18:31:49.179 -> e0 ff ff ff ff 
+18:31:51.045 -> c0 ff ff 
+18:31:52.730 -> 0 ff 
+18:31:53.405 -> 80 f4 98 98 ff ff ff ff ff ff ff ff 
+18:32:03.076 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:32:14.561 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:32:24.377 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:32:34.230 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:32:44.061 -> f4 f4 9e f8 80 ff ff ff 
+18:32:49.285 -> 0 ff 
+18:32:50.062 -> 80 ff 
+18:32:50.883 -> 80 ff 
+18:32:51.694 -> 0 ff ff 
+18:32:53.317 -> 0 fd fa cf c7 0 ff 
+18:32:57.416 -> c0 ff 
+18:32:58.030 -> f8 ff 
+18:32:58.901 -> f0 ff 
+18:32:59.754 -> e0 ff 
+18:33:00.563 -> f8 ff 
+18:33:01.289 -> fe ff 
+18:33:02.082 -> fe ff ff 
+18:33:03.050 -> 0 ff 
+18:33:03.768 -> 80 ff 
+18:33:04.450 -> e7 fc 80 c7 ff ff 
+18:33:07.119 -> c0 ff ff 
+18:33:07.924 -> 80 ff 
+18:33:08.895 -> 80 ff 
+18:33:09.614 -> 80 ff 
+18:33:10.335 -> f8 ff ff ff ff 
+18:33:13.458 -> 8 ff 
+18:33:14.240 -> f8 0 f9 0 e6 ff 
+18:33:17.043 -> 80 ff ff ff ff ff 
+18:33:18.476 -> f8 ff ff ff ff 
+18:33:19.327 -> e0 ff ff ff ff 
+18:33:20.120 -> f0 ff ff ff ff 
+18:33:20.916 -> fe ff ff ff ff ff 
+18:33:21.802 -> 0 ff ff ff 
+18:33:22.592 -> f8 ff ff ff 
+18:33:23.275 -> 1c ff ff 
+18:33:24.067 -> 81 0 ff 
+18:33:24.862 -> fe fe fc ff ff ff 
+18:33:26.747 -> e0 ff ff ff ff ff 
+18:33:27.505 -> 0 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff 
+18:33:29.918 -> f8 ff ff ff ff ff 
+18:33:30.737 -> fc ff ff ff ff ff ff 
+18:33:31.589 -> e0 ff ff ff ff ff ff ff ff ff ff ff 
+18:33:33.234 -> e0 ff ff ff ff ff ff ff ff 
+18:33:34.697 -> e0 fc ff ff ff 
+18:33:35.523 -> c1 f0 ff 
+18:33:36.232 -> 0 ff ff 
+18:33:37.027 -> 80 ff 
+18:33:37.168 -> e0 ff ff ff ff 
+18:33:38.117 -> e0 ff ff ff ff ff 
+18:33:38.925 -> e0 ff ff ff ff 
+18:33:39.733 -> c0 ff ff ff ff ff ff ff ff 
+18:33:41.441 -> fc ff ff ff ff ff ff 
+18:33:42.242 -> 80 ff ff ff ff 
+18:33:43.029 -> f8 ff ff ff ff 
+18:33:43.890 -> 0 ff ff 
+18:33:44.512 -> fc f8 ff ff 
+18:33:45.341 -> c0 fe ff 
+18:33:46.015 -> f8 ff 
+18:33:46.220 -> 80 fe ff 
+18:33:47.045 -> 80 ff ff ff ff ff ff ff ff ff ff 
+18:33:48.813 -> c0 ff ff ff 
+18:33:49.572 -> fc ff ff ff ff ff ff ff ff ff ff ff 
+18:33:51.213 -> fc ff ff ff ff ff 
+18:33:52.036 -> fc ff ff ff ff ff 
+18:33:52.897 -> e0 ff ff ff ff ff ff 
+18:33:53.724 -> 80 ff ff ff ff 
+18:33:54.431 -> fc ff ff ff 
+18:33:55.155 -> fe ff ff 
+18:33:55.899 -> 0 fe ff 
+18:33:56.656 -> f8 ff 
+18:33:56.842 -> f8 ff ff ff ff ff ff 
+18:33:57.766 -> f0 ff ff ff ff ff ff ff 
+18:33:58.622 -> f0 ff ff ff ff ff ff 
+18:33:59.443 -> 80 ff ff ff ff ff ff ff 
+18:34:00.220 -> fc ff ff ff ff ff ff ff 
+18:34:01.041 -> fc ff ff ff ff ff 
+18:34:01.904 -> 80 ff ff ff ff ff ff ff 
+18:34:02.687 -> c0 ff ff ff ff ff ff ff ff ff ff ff 
+18:34:04.221 -> 7 0 ff ff ff ff ff 
+18:34:05.028 -> fc ff ff ff ff 
+18:34:05.847 -> 80 ff 
+18:34:06.493 -> e0 ff 
+18:34:06.637 -> fe ff ff ff ff ff ff ff 
+18:34:07.598 -> c0 ff ff ff ff ff ff ff ff 
+18:34:08.423 -> e0 ff ff ff ff ff ff 
+18:34:09.236 -> fe ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff 
+18:34:10.879 -> 0 ff ff ff ff ff ff ff 
+18:34:11.725 -> f0 ff ff ff ff ff ff ff ff ff ff ff ff 
+18:34:14.007 -> fe ff ff ff 
+18:34:14.946 -> 38 f8 ff 
+18:34:16.319 -> f8 fe ff ff ff ff ff ff ff ff ff ff ff ff ff 
+18:34:18.272 -> e0 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff 
+18:34:19.881 -> f8 ff ff ff ff ff ff ff 
+18:34:20.744 -> e0 ff ff ff ff ff ff ff 
+18:34:21.556 -> e0 ff ff ff ff ff ff ff 
+18:34:22.343 -> e0 ff ff ff ff ff ff ff 
+18:34:23.174 -> f8 ff ff ff 
+18:34:23.822 -> f0 ff ff ff ff ff 
+18:34:24.653 -> fc fc ff ff ff 
+18:34:25.557 -> c0 ff 
+18:34:26.172 -> f8 ff 
+18:34:26.345 -> fc ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff 
+18:34:29.736 -> fc ff ff ff ff 
+18:34:30.612 -> 80 ff ff ff ff 
+18:34:31.357 -> f0 ff ff ff ff 
+18:34:32.184 -> fc ff ff ff 
+18:34:33.011 -> fc ff ff 
+18:34:33.687 -> df 80 ff ff 
+18:34:34.650 -> e0 ff 
+18:34:35.259 -> c1 f0 f0 ff 
+18:34:36.264 -> 0 ff ff ff ff ff ff ff 
+18:34:37.939 -> e0 ff ff 
+18:34:38.744 -> fc ff ff ff ff ff ff 
+18:34:40.441 -> fc ff ff 
+18:34:41.232 -> c0 ff ff ff 
+18:34:42.116 -> 0 ff ff 
+18:34:42.896 -> f8 ff 
+18:34:43.571 -> f3 ff ff 
+18:34:44.471 -> c0 f8 e0 e0 f8 ff ff 
+18:34:46.938 -> fc ff ff 
+18:34:47.844 -> f0 ff ff 
+18:34:48.603 -> f0 ff ff 
+18:34:49.472 -> 0 ff 
+18:34:50.366 -> e0 ff ff ff ff ff ff 
+18:34:55.115 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:35:04.943 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:35:14.767 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:35:24.589 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:35:34.437 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:35:44.272 -> f4 f4 f8 c0 cf ff ff 
+18:35:48.620 -> 80 ff 
+18:35:49.343 -> f0 ff 
+18:35:50.024 -> fc ff 
+18:35:50.857 -> f8 ff ff 
+18:35:51.713 -> 0 ff ff 
+18:35:52.435 -> f8 ff 
+18:35:53.459 -> e0 f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:36:03.901 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:36:15.383 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:36:25.225 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:36:35.062 -> f4 f4 98 98 ff ff ff 
+18:36:39.257 -> f8 ff ff ff ff 
+18:36:41.776 -> f0 ff ff ff ff ff 
+18:36:44.092 -> e0 f4 ff ff 
+18:36:45.635 -> c0 98 e1 c0 ff 
+18:36:48.321 -> c0 ff 
+18:36:48.994 -> fe ff 
+18:36:49.840 -> f8 ff ff ff 
+18:36:50.692 -> c0 ff ff ff ff 
+18:36:51.461 -> 0 ff ff ff 
+18:36:53.968 -> fc ff 
+18:36:54.676 -> 9c ff 
+18:36:55.428 -> c7 e7 8e ff ff ff ff ff ff ff ff 
+18:37:04.524 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:37:14.368 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:37:24.215 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:37:35.669 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:37:45.489 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:37:55.328 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:38:05.171 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:38:14.974 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:38:24.826 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:38:34.640 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:38:44.455 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:38:55.942 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:39:05.783 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:39:15.593 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:39:25.418 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:39:35.280 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:39:45.097 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:39:54.928 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:40:04.751 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:40:16.219 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:40:26.041 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:40:35.869 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:40:45.696 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:40:55.538 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:41:05.368 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:41:15.198 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:41:25.027 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:41:36.483 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:41:46.333 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:41:56.143 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:42:05.973 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:42:15.820 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:42:25.630 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:42:35.473 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:42:45.325 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:42:56.773 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:43:06.597 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:43:16.436 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:43:26.257 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:43:36.108 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:43:45.925 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:43:55.770 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:44:05.579 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:44:17.061 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:44:26.874 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:44:36.704 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:44:46.558 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:44:56.374 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:45:06.221 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:45:16.048 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:45:25.862 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:45:37.332 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:45:47.145 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:45:56.984 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:46:06.832 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:46:16.663 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:46:26.480 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:46:36.313 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:46:46.130 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:46:57.625 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:47:07.422 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:47:17.268 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:47:27.111 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:47:36.942 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:47:46.751 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:47:56.592 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:48:06.409 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:48:17.900 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:48:27.696 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:48:37.553 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:48:47.372 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:48:57.202 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:49:07.027 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:49:16.859 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:49:26.692 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:49:38.161 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:49:47.990 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:49:57.817 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:50:07.674 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:50:17.501 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:50:27.331 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:50:37.138 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:50:46.960 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:50:58.431 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:51:08.274 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:51:18.095 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:51:27.926 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:51:37.780 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:51:47.604 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:51:57.426 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:52:07.269 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:52:18.726 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:52:28.549 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:52:38.388 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:52:48.206 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:52:58.036 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:53:07.871 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:53:17.694 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:53:27.533 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:53:39.012 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:53:48.826 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:53:58.639 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:54:08.488 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:54:18.324 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:54:28.126 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:54:37.979 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:54:47.822 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:54:59.273 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:55:09.088 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:55:18.950 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:55:28.764 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:55:38.592 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:55:48.412 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:55:58.253 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:56:08.070 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:56:19.551 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:56:29.395 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:56:39.229 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:56:49.041 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:56:58.879 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:57:08.700 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:57:18.513 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:57:28.376 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:57:39.813 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:57:49.672 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:57:59.485 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:58:09.300 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:58:19.169 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:58:28.991 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:58:38.815 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:58:48.630 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+18:59:00.112 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:59:09.935 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:59:19.758 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:59:29.602 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:59:39.413 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:59:49.278 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+18:59:59.094 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:00:08.899 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:00:20.387 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:00:30.194 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:00:40.045 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:00:49.890 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:00:59.706 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:01:09.516 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:01:19.353 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:01:29.195 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:01:40.650 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:01:50.498 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:02:00.328 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:02:10.164 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:02:19.978 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:02:29.793 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:02:39.629 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:02:49.465 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:03:00.946 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:03:10.775 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:03:20.614 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:03:30.438 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:03:40.269 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:03:50.090 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:03:59.901 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:04:09.733 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:04:21.205 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:04:31.058 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:04:40.862 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:04:50.700 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:05:00.521 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:05:10.359 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:05:20.184 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:05:30.020 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:05:41.500 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:05:51.303 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:06:01.150 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:06:10.980 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:06:20.825 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:06:30.630 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:06:40.467 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:06:50.299 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:07:01.777 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:07:11.590 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:07:21.409 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:07:31.251 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:07:41.090 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:07:50.916 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:08:00.739 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:08:10.564 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:08:22.057 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:08:31.866 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:08:41.691 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:08:51.517 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:09:01.368 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:09:11.179 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:09:21.015 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:09:30.848 -> f4 f4 98 98 ff ff ff ff ff ff ff ff ff ff 
+19:09:42.339 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:09:52.136 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:10:01.996 -> f4 f4 98 98 ff ff ff ff ff ff ff ff 
+19:10:11.804 -> f4 f4 98 98 ff ff ff ff ff 
+//stops immediately on keyOFF because pullup resistor is inside ECM.

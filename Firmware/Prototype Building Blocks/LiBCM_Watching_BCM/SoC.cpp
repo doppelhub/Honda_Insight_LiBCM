@@ -89,18 +89,17 @@ void SoC_updateUsingOpenCircuitVoltage(void)
 
 /////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Don't update SoC until the key has been off for at least ten minutes.  This prevents recent current from influencing resting battery voltage 
 //only call this function when the key is off (or you'll get a check engine light)
 void SoC_openCircuitVoltage_handler(void)
 {
 	#define KEY_OFF_SoC_UPDATE_PERIOD_MINUTES 10 //JTS2doNow: How long to wait?
 	#define KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS (KEY_OFF_SoC_UPDATE_PERIOD_MINUTES * 60000)
 
-	static uint32_t SoC_latestUpdate_milliseconds = 0;
+	static uint32_t SoC_nextUpdate_milliseconds = 0;
 
-	if( (millis() - SoC_latestUpdate_milliseconds ) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS)
+	if( (millis() - SoC_nextUpdate_milliseconds ) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS)
 	{
-		SoC_latestUpdate_milliseconds = millis();
+		SoC_nextUpdate_milliseconds = millis();
 		
 		debugUSB_displayUptime_seconds();
 
@@ -108,7 +107,7 @@ void SoC_openCircuitVoltage_handler(void)
 
 		//turn LiBCM off if pack SoC is low
 		//LiBCM will power back on when the key is turned on
-		if( LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF)
+		if( LTC68042result_loCellVoltage_get() < MINIMUM_KEYOFF_VOLTAGE_BEFORE_TURNING_LIBCM_OFF)
 		{
 			gpio_turnBuzzer_on_highFreq();
 			delay(100);
@@ -121,7 +120,6 @@ void SoC_openCircuitVoltage_handler(void)
 /////////////////////////////////////////////////////////////////////
 
 //Don't call this function when current is flowing through the current sensor
-//Wait at least ten minutes after keyOff for most accurate results
 uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
 {
 	uint16_t restingCellVoltage = LTC68042result_loCellVoltage_get(); //JTS2doNow: need an algorithm to look at hi cell, too.

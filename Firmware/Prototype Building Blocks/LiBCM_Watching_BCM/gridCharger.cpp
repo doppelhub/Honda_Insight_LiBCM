@@ -104,7 +104,7 @@ void gridCharger_chargePack(void)
   debugUSB_printLatest_data_gridCharger();
 
   //at least one cell is severely overcharged
-  if( LTC68042result_hiCellVoltage_get() > (CELL_VMAX_GRIDCHARGER + VCELL_HYSTERESIS) )
+  if( LTC68042result_hiCellVoltage_get() > (GRID_CHARGER_CELL_VMAX + VCELL_HYSTERESIS) )
   {
     cellState = CELLSTATE_OVERCHARGED;
     gpio_turnGridCharger_off();
@@ -115,7 +115,7 @@ void gridCharger_chargePack(void)
   }
 
   //at least one cell is full
-  else if( (LTC68042result_hiCellVoltage_get() > CELL_VMAX_GRIDCHARGER) )
+  else if( (LTC68042result_hiCellVoltage_get() > GRID_CHARGER_CELL_VMAX) )
   {
     cellState = CELLSTATE_ONECELLFULL;
     gpio_turnGridCharger_off();
@@ -125,7 +125,7 @@ void gridCharger_chargePack(void)
   }
 
   //grid charger plugged in and all cells less than full
-  else if( LTC68042result_hiCellVoltage_get() <= (CELL_VMAX_GRIDCHARGER - VCELL_HYSTERESIS) )
+  else if( LTC68042result_hiCellVoltage_get() <= (GRID_CHARGER_CELL_VMAX - VCELL_HYSTERESIS) )
   {
     cellState = CELLSTATE_NOCELLSFULL;
     gpio_turnGridCharger_on();
@@ -135,7 +135,7 @@ void gridCharger_chargePack(void)
   }
 
   //grid charger plugged in and all cells almost full
-  else if( (LTC68042result_hiCellVoltage_get() <= CELL_VMAX_GRIDCHARGER) )
+  else if( (LTC68042result_hiCellVoltage_get() <= GRID_CHARGER_CELL_VMAX) )
   {
     cellState = CELLSTATE_BALANCING;
     //gpio_setFanSpeed('0'); //set inside balanceCells()
