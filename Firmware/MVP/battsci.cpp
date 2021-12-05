@@ -21,7 +21,7 @@ uint8_t LiBCM_SoC = SoC_getBatteryStateNow_percent();
 
 byte SoC_Bytes[] = {0x01, 0x71};      // SoC Bytes to send to MCM.  Index 0 is the upper byte and index 1 is the lower byte.
 byte temperature_Byte = 0x33;         // Temperature Byte to send to MCM.  0x33 is +21 Degrees C.
-uint16_t SoC_sentToMCM = 500;
+uint16_t SoC_sendToMCM = 500;
 uint16_t lastSoC_sentToMCM = 500;
 
 bool initializeSpoofedSoC = true;
@@ -98,6 +98,12 @@ uint8_t BATTSCI_calculateChecksum( uint8_t frameSum )
 {
   uint8_t twosComplement = (~frameSum) + 1;
   return (twosComplement & 0x7F);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+uint16_t map_16bU(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max) {
+	return (((x - in_min) * (out_max - out_min)) / (in_max - in_min)) + out_min;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -210,7 +216,7 @@ void BATTSCI_calculateSoC_sentToMCM()
 		lastSoC_sentToMCM = SoC_sendToMCM;
 	}
 
-	BATTSCI_evaluateTemperatureByte(SoC_sendToMCM);
+	BATTSCI_evaluateTemperatureByte();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
