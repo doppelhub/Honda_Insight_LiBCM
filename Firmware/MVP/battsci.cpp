@@ -194,6 +194,7 @@ void BATTSCI_calculateSoC_sentToMCM()
 	if (initializeSpoofedSoC) {
 		lastSoC_sentToMCM = SoC_sendToMCM;
 		initializeSpoofedSoC = false;
+		BATTSCI_evaluateSoCBytes(SoC_sendToMCM);
 	}
 
 	static int16_t packMilliAmps = adc_getLatestBatteryCurrent_amps();
@@ -202,13 +203,13 @@ void BATTSCI_calculateSoC_sentToMCM()
 	// packMilliAmps is being checked so that we only increment SoC if we have current < -0.01 Amps or decremented if we have > +0.01 Amps
 	// This should prevent SoC being changed during Auto Stop.
 
-	if ((SoC_sendToMCM > lastSoC_sentToMCM) && (packMilliAmps <= -10)) {		// packMilliAmps is - if Amps are going IN and voltage is going UP
+	if ((SoC_sendToMCM > lastSoC_sentToMCM) && (packMilliAmps <= -1)) {		// packMilliAmps is - if Amps are going IN and voltage is going UP
 		if(SoC_sendToMCM > (lastSoC_sentToMCM + 5)) {
 			SoC_sendToMCM = (lastSoC_sentToMCM + 5);
 		}
 		BATTSCI_evaluateSoCBytes(SoC_sendToMCM);
 		lastSoC_sentToMCM = SoC_sendToMCM;
-	} else if ((SoC_sendToMCM < lastSoC_sentToMCM) && (packMilliAmps >= 10)) {  // packMilliAmps is + if Amps are going OUT and voltage is going DOWN
+	} else if ((SoC_sendToMCM < lastSoC_sentToMCM) && (packMilliAmps >= 1)) {  // packMilliAmps is + if Amps are going OUT and voltage is going DOWN
 		if (SoC_sendToMCM < (lastSoC_sentToMCM - 5)) {
 			SoC_sendToMCM = (lastSoC_sentToMCM - 5);
 		}
@@ -244,10 +245,10 @@ void BATTSCI_sendFrames()
     uint16_t vCellWithESR_counts = LTC68042result_hiCellVoltage_get() + (adc_getLatestBatteryCurrent_amps() << 4);
     //<<1=0.2mOhm, <<2=0.4mOhm, <<3=0.8mOhm, <<4=1.6mOhm, <<5=3.2mOhm, <<6=6.4mOhm, <<7=12.8mOhm //uint16_t overflows above here
 
-    SoC_sentToMCMDelayCounter += 1;
-
     if(frame2send == 0x87)
     {
+      SoC_sentToMCMDelayCounter += 1;
+
       //Place 0x87 frame into serial send buffer
       uint8_t frameSum_87 = 0; //this will overflow, which is ok for CRC
       frameSum_87 += BATTSCI_writeByte( 0x87 );                                           //B0 Never changes
