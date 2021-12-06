@@ -197,21 +197,19 @@ void BATTSCI_calculateSoC_sentToMCM()
 		BATTSCI_evaluateSoCBytes(SoC_sendToMCM);
 	}
 
-	static int16_t packMilliAmps = adc_getLatestBatteryCurrent_amps();
+	// static int16_t packMilliAmps = adc_getLatestBatteryCurrent_amps();
 
-	// Modify SoC_sendToMCM in place to be an increment of lastSoC_sentToMCM
-	// packMilliAmps is being checked so that we only increment SoC if we have current < -0.01 Amps or decremented if we have > +0.01 Amps
-	// This should prevent SoC being changed during Auto Stop.
+	// Throttle SoC_sendToMCM change in case the change is large
 
-	if ((SoC_sendToMCM > lastSoC_sentToMCM) && (packMilliAmps <= -1)) {		// packMilliAmps is - if Amps are going IN and voltage is going UP
-		if(SoC_sendToMCM > (lastSoC_sentToMCM + 5)) {
-			SoC_sendToMCM = (lastSoC_sentToMCM + 5);
+	if ((SoC_sendToMCM > lastSoC_sentToMCM)/* && (packMilliAmps <= -1)*/) {		// packMilliAmps is - if Amps are going IN and voltage is going UP
+		if(SoC_sendToMCM > (lastSoC_sentToMCM + 10)) {
+			SoC_sendToMCM = (lastSoC_sentToMCM + 10);
 		}
 		BATTSCI_evaluateSoCBytes(SoC_sendToMCM);
 		lastSoC_sentToMCM = SoC_sendToMCM;
-	} else if ((SoC_sendToMCM < lastSoC_sentToMCM) && (packMilliAmps >= 1)) {  // packMilliAmps is + if Amps are going OUT and voltage is going DOWN
-		if (SoC_sendToMCM < (lastSoC_sentToMCM - 5)) {
-			SoC_sendToMCM = (lastSoC_sentToMCM - 5);
+	} else if ((SoC_sendToMCM < lastSoC_sentToMCM)/* && (packMilliAmps >= 1)*/) {  // packMilliAmps is + if Amps are going OUT and voltage is going DOWN
+		if (SoC_sendToMCM < (lastSoC_sentToMCM - 10)) {
+			SoC_sendToMCM = (lastSoC_sentToMCM - 10);
 		}
 		BATTSCI_evaluateSoCBytes(SoC_sendToMCM);
 		lastSoC_sentToMCM = SoC_sendToMCM;
