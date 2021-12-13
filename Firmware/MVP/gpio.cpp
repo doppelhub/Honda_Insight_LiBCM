@@ -32,6 +32,7 @@ void gpio_begin(void)
 	pinMode(PIN_FANOEM_LOW,OUTPUT);
 	pinMode(PIN_FANOEM_HI,OUTPUT);
 	pinMode(PIN_GRID_EN,OUTPUT);
+	pinMode(PIN_TEMP_EN,OUTPUT);
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
