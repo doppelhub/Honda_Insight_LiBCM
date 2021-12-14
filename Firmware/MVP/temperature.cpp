@@ -106,7 +106,6 @@ void temperature_handler(void)
 
 		if     (tempSensorState == TEMP_SENSORS_ON)  { tempSensorState = TEMP_MEASURE_NOW;                                       }
 		else if(tempSensorState == TEMP_SENSORS_OFF) { tempSensorState = TEMP_SENSORS_POWERUP; gpio_turnTemperatureSensors_on(); }
-
 	}
 
 	else if(tempSensorState == TEMP_MEASURE_NOW)
