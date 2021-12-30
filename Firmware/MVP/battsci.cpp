@@ -157,7 +157,7 @@ void BATTSCI_evaluateTemperatureByte() {
   // battTempBATTSCI will be displayed if it won't affect MCM behaviour
   // 0x33 = 21 Deg C
   int8_t battTempBATTSCI = temperature_battery_getLatest() + 30;	//T_MCM = T_actual + 30
-  if (battTempBATTSCI > 0x33) {
+  if ((battTempBATTSCI > 0x33) || (SoC_sendToMCM < SOC_SEND_MCM_MAX_ASSIST_THRESHOLD)) {
     temperature_Byte = battTempBATTSCI;
   } else temperature_Byte = 0x33;									// Set temperature to +21 deg C to allow max Assist in 2nd and 3rd
 }
@@ -251,7 +251,7 @@ void BATTSCI_sendFrames()
       uint8_t frameSum_87 = 0; //this will overflow, which is ok for CRC
       frameSum_87 += BATTSCI_writeByte( 0x87 );                                           //B0 Never changes
       frameSum_87 += BATTSCI_writeByte( 0x40 );                                           //B1 Never changes
-      frameSum_87 += BATTSCI_writeByte( (spoofedVoltageToSend >> 1) );                    //B2 Half Vbatt (e.g. 0x40 = d64 = 128 V)
+      frameSum_87 += BATTSCI_writeByte( ((spoofedVoltageToSend) >> 1) );                    //B2 Half Vbatt (e.g. 0x40 = d64 = 128 V)
 
       //To convert LiBCM_SoC to MCM_SoC
       //LiBCM_SoC_deciPercent = LiBCM_SoC_percent * 10;
