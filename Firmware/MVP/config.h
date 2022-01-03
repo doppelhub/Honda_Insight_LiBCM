@@ -46,7 +46,7 @@
 	#define CELL_MAX_ALLOWED_VOLTAGE_REGEN 42000
 	#define CELL_MIN_ALLOWED_VOLTAGE_ASSIST 32000
 
-	#define CELL_VMAX_GRIDCHARGER 40000 //39000 = 3.9000 volts
+	#define CELL_VMAX_GRIDCHARGER 39500 //39000 = 3.9000 volts
 	#define CELL_VMAX_KEYON       42500 //42500 = 4.2500 volts //LiBCM disables regen above this voltage
 	#define CELL_VMIN_KEYON       32500 //32500 = 3.2500 volts //LiBCM disables assist below this voltage
 	#define CELL_VMIN_KEYOFF      31000 //33800 = 3.1000 volts //LiBCM turns off below this voltage
