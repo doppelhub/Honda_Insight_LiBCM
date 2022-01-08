@@ -286,7 +286,7 @@ void bringupTester_run(void)
 				{
 					gpio_setFanSpeed_OEM('L'); //test OEM fan low speed relay
 					gpio_setFanSpeed('0');
-					delay(500); //JTS2do: How long to wait?
+					delay(500);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
 					Serial.print(String(resultADC));
@@ -300,7 +300,7 @@ void bringupTester_run(void)
 				{
 					gpio_setFanSpeed_OEM('H'); //test OEM fan low speed relay
 					gpio_setFanSpeed('0');
-					delay(500); //JTS2do: How long to wait?
+					delay(500);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
 					Serial.print(String(resultADC));
@@ -314,7 +314,7 @@ void bringupTester_run(void)
 				{
 					gpio_setFanSpeed_OEM('0'); //test OEM fan low speed relay
 					gpio_setFanSpeed('H');
-					delay(500); //JTS2do: How long to wait?
+					delay(500);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
 					Serial.print(String(resultADC));
@@ -328,7 +328,7 @@ void bringupTester_run(void)
 				serialUSB_waitForEmptyBuffer();
 				{
 					gpio_turnPowerSensors_off();
-					delay(500); //JTS2do: how long?
+					delay(500);
 
 					gpio_setFanSpeed('H'); //should already be here
 					delay(100);
@@ -449,7 +449,7 @@ void bringupTester_run(void)
 				//This is due to -2.5V PFET gate threshold voltage & also LTC6804 "Discharge Switch On-Resistance vs Cell Voltage" (p14).
 				//Therefore, to test discharge resistors, run test again with actual batteries plugged in, then use thermal imager.
 				
-				//JTS2do: Solder together a 75 Ohm test board - similar to existing LED test board - so that the above is no longer an issue.
+				//JTS2doLater: Solder together a 75 Ohm test board - similar to existing LED test board - so that the above is no longer an issue.
 
 				LTC68042configure_wakeupCore();
 				delay(1);
