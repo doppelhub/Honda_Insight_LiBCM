@@ -93,6 +93,9 @@ Features to add later:
 #define TEMP_OEMFAN_HIGH 40 //enable OEM fan at high speed above this value
 #define TEMP_FAN_MIN 30 //enable onboard fans at lowest speed
 #define TEMP_FAN_MAX 40 //enable onboard fans at highest speed
+"Allow Cooling When Key OFF"
+"When key OFF, Turn LiBCM off below ____ SoC" ("Key OFF fan minimum SoC Level")
+#SPOOF_TEMP_FOR_MAX_POWER YES
 
 //Define which parameters are reported over the USB serial bus
 #define USB_REPORT_ALLOWED YES	//if disabled, no data is reported

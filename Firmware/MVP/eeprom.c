@@ -16,6 +16,17 @@
 /* Define to reduce code size. */
 #define EEPROM_IGNORE_SELFPROG //!< Remove SPM flag polling.
 
+/*JTS2doNow: Write firmware erase feature
+Get compile date stored in EEPROM.
+Get compile date stored in program memory ("__DATE__").
+If dates don't match, then the firmware has just been updated.
+...so reset the accumulated hours counter to zero, then write the program memory date to EEPROM (to prevent this from occurring each time LiBCM boots).
+
+else if the dates are identical, then increment a counter (stored in EEPROM) once ever per hour.
+Each EEPROM byte is rated for 100,000 writes.  One update per hours is 100,000 updates over 11 years.  LiBCM should be out of beta before then ;).
+
+*/
+
 //////////////////////////////////////////////////////////////////////////////
 
 //Read one byte from a given EEPROM address.

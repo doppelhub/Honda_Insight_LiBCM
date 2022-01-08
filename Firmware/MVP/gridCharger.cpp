@@ -52,6 +52,7 @@ void gridCharger_handlePluginEvent(void)
 
 //////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Separate grid charging from balancing... balancing should occur independently from grid charging
 //JTS2doNow: Think this through to make sure it won't over-discharge cells
 //only call when:
 //grid charger is plugged in

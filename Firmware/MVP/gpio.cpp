@@ -8,6 +8,7 @@
 
 //FYI: simple pin state read/writes take less than 10 us
 
+//JTS2doNow: Disable METSCI if safety cover isn't installed
 void gpio_begin(void)
 {
 	//Ensure 12V->5V DCDC stays on

@@ -266,7 +266,7 @@ bool lcd_printCellVoltage_delta(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add pack current display function
+//JTS2doNow: Flip sign
 bool lcd_printCurrent(void)
 {
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;

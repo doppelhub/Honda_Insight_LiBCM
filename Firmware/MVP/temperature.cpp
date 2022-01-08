@@ -75,6 +75,7 @@ void temperature_battery_measure(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Change behavior below 20 degC and below 0 degC
 void temperature_handler(void)
 {
 	#define TEMP_SENSORS_OFF     0
@@ -276,7 +277,7 @@ int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
 	else if(countsADC >  188) { tempMeasured_celsius =  60; }
 	else if(countsADC >  182) { tempMeasured_celsius =  61; }
 	else if(countsADC >  177) { tempMeasured_celsius =  62; }
-	else if(countsADC >  172) { tempMeasured_celsius =  63; } //JTS2doNow: It's possible MCM can only receive values up to 63 degC (63*2 = 126 (max int8_t))
+	else if(countsADC >  172) { tempMeasured_celsius =  63; }
 	else if(countsADC >  167) { tempMeasured_celsius =  64; }
 	else if(countsADC >  162) { tempMeasured_celsius =  65; }
 	else if(countsADC >  157) { tempMeasured_celsius =  66; }

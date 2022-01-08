@@ -1,3 +1,6 @@
 https://nextion.tech/editor_guide/
 https://nextion.tech/instruction-set/
 https://github.com/itead/ITEADLIB_Arduino_Nextion/tree/master/doc/Documentation
+
+https://www.youtube.com/watch?v=OhYyBpjyR14
+https://www.youtube-nocookie.com/embed/wIWxSLVAAQE?autoplay=1&iv_load_policy=3&loop=1&modestbranding=1&playlist=wIWxSLVAAQE
