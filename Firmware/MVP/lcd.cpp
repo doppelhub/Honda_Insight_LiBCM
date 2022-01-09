@@ -60,7 +60,7 @@ bool lcd_printTime_seconds(void)
 		}
 	#endif
 
-	return didscreenUpdateOccur; 
+	return didscreenUpdateOccur;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -91,7 +91,7 @@ bool lcd_printStackVoltage_actual(void)
 {
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
-	#ifdef LCD_4X20_CONNECTED	
+	#ifdef LCD_4X20_CONNECTED
 		if( packVoltageActual_onScreen != LTC68042result_packVoltage_get() )
 		{
 			packVoltageActual_onScreen = LTC68042result_packVoltage_get();
@@ -154,7 +154,7 @@ bool lcd_printTempBattery(void)
 bool lcd_printNumErrors(void)
 {
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
-	
+
 	#ifdef LCD_4X20_CONNECTED
 		if( errorCount_onScreen != LTC68042result_errorCount_get() )
 		{
@@ -182,15 +182,15 @@ bool lcd_printCellVoltage_hi(void)
 			hiCellVoltage_onScreen = LTC68042result_hiCellVoltage_get();
 			lcd2.setCursor(1,0); //high cell voltage position
 			lcd2.print( (hiCellVoltage_onScreen * 0.0001), 3 );
-			
+
 			didscreenUpdateOccur = SCREEN_UPDATED;
 		}
-	
+
 		static bool isBacklightOn = true;
 
 		if( (LTC68042result_hiCellVoltage_get() > 41500) || (isBacklightOn == false) )
-		{ //at least one cell overcharged	
-			
+		{ //at least one cell overcharged
+
 			if ( isBacklightOn == true ) {
 				lcd2.noBacklight();
 				gpio_turnBuzzer_on_lowFreq();
@@ -214,19 +214,19 @@ bool lcd_printCellVoltage_lo(void)
 
 	#ifdef LCD_4X20_CONNECTED
 		static uint16_t loCellVoltage_onScreen = 0;
-		if( loCellVoltage_onScreen != LTC68042result_loCellVoltage_get() ) 
+		if( loCellVoltage_onScreen != LTC68042result_loCellVoltage_get() )
 		{
 			loCellVoltage_onScreen = LTC68042result_loCellVoltage_get();
 			lcd2.setCursor(1,1); //low screen position
 			lcd2.print( (loCellVoltage_onScreen * 0.0001), 3 );
 
 			didscreenUpdateOccur = SCREEN_UPDATED;
-		}	
+		}
 
 		static bool isBacklightOn = true;
 
 		if( (LTC68042result_loCellVoltage_get() < 31500) || (isBacklightOn == false) )
-		{ //at least one cell undercharged	
+		{ //at least one cell undercharged
 			if ( isBacklightOn == true ) {
 				lcd2.noBacklight();
 				isBacklightOn = false;
@@ -245,9 +245,9 @@ bool lcd_printCellVoltage_lo(void)
 bool lcd_printCellVoltage_delta(void)
 {
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
-	
+
 	#ifdef LCD_4X20_CONNECTED
-		static uint16_t deltaVoltage_onScreen = 0; 
+		static uint16_t deltaVoltage_onScreen = 0;
 
 		uint16_t deltaVoltage_LTC6804 = LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get();
 
@@ -279,7 +279,7 @@ bool lcd_printCurrent(void)
 			packAmps_onScreen = adc_getLatestBatteryCurrent_amps();
 			lcd2.setCursor(15,1);
 			if(adc_getLatestBatteryCurrent_amps() >= 0 )
-			{ 
+			{
 				if      (adc_getLatestBatteryCurrent_amps() <  10 ) { lcd2.print("  "); }
 				else if (adc_getLatestBatteryCurrent_amps() < 100 ) { lcd2.print(" ");  }
 				lcd2.print('+');
@@ -301,7 +301,7 @@ bool lcd_printCurrent(void)
 ////////////////////////////////////////////////////////////////////////
 
 bool lcd_printMaxEverVoltage()
-{ 
+{
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
 	#ifdef LCD_4X20_CONNECTED
@@ -321,7 +321,7 @@ bool lcd_printMaxEverVoltage()
 ////////////////////////////////////////////////////////////////////////
 
 bool lcd_printMinEverVoltage()
-{ 
+{
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
 	#ifdef LCD_4X20_CONNECTED
@@ -346,7 +346,7 @@ bool lcd_printPower(void)
 
 	#ifdef LCD_4X20_CONNECTED
 		static int16_t packAmps_onScreen = 0; //don't want to multiply to determine power
-		static uint8_t packVoltage_onScreen = 0; 
+		static uint8_t packVoltage_onScreen = 0;
 
 		if( packAmps_onScreen != adc_getLatestBatteryCurrent_amps() ||
 			  packVoltage_onScreen != LTC68042result_packVoltage_get() )
@@ -396,33 +396,33 @@ bool lcd_updateValue(uint8_t stateToUpdate)
 		case LCDUPDATE_CELL_MINEVER : didScreenUpdateOccur = lcd_printMinEverVoltage();       break;
 		case LCDUPDATE_SoC          : didScreenUpdateOccur = lcd_printSoC();                  break;
 		case LCDUPDATE_CURRENT      : didScreenUpdateOccur = lcd_printCurrent();              break;
-		case LCDUPDATE_TEMP_BATTERY : didScreenUpdateOccur = lcd_printTempBattery();          break;	
+		case LCDUPDATE_TEMP_BATTERY : didScreenUpdateOccur = lcd_printTempBattery();          break;
 		default                     : didScreenUpdateOccur = SCREEN_UPDATED;                  break; //if illigal input, exit immediately
 	}
 
 	return didScreenUpdateOccur;
-}	
+}
 
 ////////////////////////////////////////////////////////////////////////
 
 //primary interface
 //update one screen element (if any have changed)
 void lcd_refresh(void)
-{	
+{
 	#ifdef LCD_4X20_CONNECTED
 
 		static uint8_t lcdUpdate_state = LCDUPDATE_NUMERRORS; //init round-robin with least likely state to have changed
 		static uint8_t lastElementUpdated = LCDUPDATE_NUMERRORS; //last LCD screen element updated //cannot = LCDUPDATE_NO_UPDATE
 		static uint32_t millis_previous = 0;
 
-		#define SCREEN_UPDATE_RATE_MILLIS 32 
+		#define SCREEN_UPDATE_RATE_MILLIS 32
 		// Number of screen element updates per second = (1.0 / SCREEN_UPDATE_RATE_MILLIS)
 		// Since only one screen element updates at a time, the per-element update rate is:
 		//     ( (1.0 / SCREEN_UPDATE_RATE_MILLIS) / LCDUPDATE_MAX_VALUE)
 		//  Ex:( (1.0 / 32E-3                    ) / 8                  ) = each screen element updates 3.9x/second
 
 		//Only update screen at a human-readable rate
-		if(millis() - millis_previous > SCREEN_UPDATE_RATE_MILLIS) 
+		if(millis() - millis_previous > SCREEN_UPDATE_RATE_MILLIS)
 		{ //update which screen element is allowed to update (if changed via another lcd_ function)
 			millis_previous = millis();
 
@@ -434,10 +434,10 @@ void lcd_refresh(void)
 			do
 			{	//repeats until ONE screen element update occurs
 				lcdUpdate_state++; //select which LCD variable is next in line to update
-				
+
 				if(lcdUpdate_state > LCDUPDATE_MAX_VALUE) {lcdUpdate_state = 1;} //reset to first element
 				updateAttempts++;
-			} while( (lcd_updateValue(lcdUpdate_state) == SCREEN_DIDNT_UPDATE) && (updateAttempts < MAX_LCDUPDATE_ATTEMPTS) );	
+			} while( (lcd_updateValue(lcdUpdate_state) == SCREEN_DIDNT_UPDATE) && (updateAttempts < MAX_LCDUPDATE_ATTEMPTS) );
 
 			lastElementUpdated = lcdUpdate_state; //store last updated screen element
 		}
@@ -500,12 +500,12 @@ void lcd_displayOFF(void)
 		lcd2.noBacklight();
 		lcd2.noDisplay();
 
-		
+
 		packVoltageActual_onScreen  = 0;
 		errorCount_onScreen         = 0;
 		SoC_onScreen                = 0;
 		packVoltageSpoofed_onScreen = 0;
-		temp_onScreen               = 0;		
+		temp_onScreen               = 0;
 		LTC68042result_errorCount_set(0);
 	#endif
 }
@@ -513,7 +513,7 @@ void lcd_displayOFF(void)
 ////////////////////////////////////////////////////////////////////////
 
 void lcd_displayON(void)
-{ 
+{
 	#ifdef LCD_4X20_CONNECTED
 		lcd2.backlight();
 		lcd2.display();
@@ -523,7 +523,7 @@ void lcd_displayON(void)
 ////////////////////////////////////////////////////////////////////////
 
 void lcd_gridChargerWarning(void)
-{	
+{
 	gpio_turnBuzzer_on_highFreq();
 	lcd2.backlight();
 	lcd2.display();

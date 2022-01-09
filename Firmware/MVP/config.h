@@ -7,9 +7,9 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.5.1"
+	#define FW_VERSION "0.5.2"
     #define BUILD_DATE "2021DEC27"
-    
+
 	#define CPU_MAP_MEGA2560
 
     //chose ONE of the following:
@@ -30,8 +30,10 @@
 
 	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to print all cell voltages while driving //Grid charger always prints all cell voltages
 
+	#define MCME_VOLTAGE_OFFSET_ADJUST 12 //difference between OBDIIC&C and LiBCM spoofed pack voltage (Subtract LiBCM voltage from OBDIIC&C Bvo.  Default is 12.)
+
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
-	
+
 	//choose which functions control the LEDs
 	#define LED_NORMAL //enable "     LED()" functions (see debug.c)
 	//#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
@@ -41,7 +43,10 @@
 
 	#define LOOP_RATE_MILLISECONDS 10 // Superloop execution rate: 1/LOOP_RATE_MILLISECONDS (e.g. LOOP_RATE_MILLISECONDS==10 is 100 Hz)
 
-	#define CELL_VMAX_GRIDCHARGER 39000 //39000 = 3.9000 volts
+	#define CELL_MAX_ALLOWED_VOLTAGE_REGEN 42000
+	#define CELL_MIN_ALLOWED_VOLTAGE_ASSIST 32000
+
+	#define CELL_VMAX_GRIDCHARGER 39500 //39000 = 3.9000 volts
 	#define CELL_VMAX_KEYON       42500 //42500 = 4.2500 volts //LiBCM disables regen above this voltage
 	#define CELL_VMIN_KEYON       32500 //32500 = 3.2500 volts //LiBCM disables assist below this voltage
 	#define CELL_VMIN_KEYOFF      31000 //33800 = 3.1000 volts //LiBCM turns off below this voltage
@@ -52,6 +57,9 @@
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
 	#define STACK_SoC_SETPOINT_GRID_CHARGE 70 //target SoC while grid charging
+
+	#define SOC_SEND_MCM_MAX_ASSIST_THRESHOLD 45 // minimum state of charge we are sending to MCM before we are going to spoof +20ºC to always get max assist
+												//JTS2doNow: Rename "LIMIT_MAX_ASSIST_BELOW_SOC"
 
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
 #endif
