@@ -87,6 +87,7 @@ void temperature_handler(void)
 	static uint8_t keyStatePrevious = KEYOFF;
 	uint8_t keyState_Now = key_getSampledState();
 
+	//JTS2doNow: Logic doesn't seem right.  Verify behavior.
 	if(keyState_Now != keyStatePrevious) { tempSensorState = TEMP_SENSORS_OFF; } //key state just changed (keyON->OFF or keyOFF->ON)
 
 	keyStatePrevious = keyState_Now;
@@ -144,7 +145,7 @@ int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
 {			
 	uint16_t countsADC = analogRead(thermistorPin); //measure ADC counts
 
-	//This commented out section quite math intensive:
+	//This commented out section is quite math intensive:
 	// -QTY3 floating point divisions
 	// -QTY1 natural log (+5kB to load library)
 	// -QTY3 multiplies

@@ -17,4 +17,6 @@
 	void SoC_openCircuitVoltage_handler(void);
 	void SoC_updateUsingOpenCircuitVoltage(void);
 
+	void SoC_handler(void);
+
 #endif

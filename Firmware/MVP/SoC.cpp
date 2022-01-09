@@ -8,6 +8,7 @@
 uint16_t stackFull_Calculated_mAh  = (STACK_mAh * 0.01) * STACK_SoC_MAX;
 uint16_t stackEmpty_Calculated_mAh = (STACK_mAh * 0.01) * STACK_SoC_MIN;
 uint16_t packCharge_Now_mAh = 3000;
+uint8_t  packCharge_Now_percent = (packCharge_Now_mAh * 100) / stackFull_Calculated_mAh;
 
 //Estimate SoC based on resting cell voltage.
 //EHW5 cells settle to final 'resting' voltage in ten minutes, but are fairly close to that value after just one minute
@@ -64,11 +65,9 @@ void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 uint16_t SoC_getBatteryStateNow_mAh(void) { return packCharge_Now_mAh; }
 void     SoC_setBatteryStateNow_mAh(uint16_t newPackCharge_mAh) { packCharge_Now_mAh = newPackCharge_mAh; }
 
-/////////////////////////////////////////////////////////////////////
-
 //SoC is calculated slower when the unit is % 
-uint8_t SoC_getBatteryStateNow_percent(void) { return ((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh; }
-void    SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = newSoC_percent * 0.01 * stackFull_Calculated_mAh; }
+uint8_t SoC_getBatteryStateNow_percent(void) { return packCharge_Now_percent; }
+void    SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = newSoC_percent * 0.01 * stackFull_Calculated_mAh; } //JTS2doNow: Is this cast correctly?
 
 /////////////////////////////////////////////////////////////////////
 
@@ -235,6 +234,13 @@ uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
 	else                                 { estimatedSoC =   0; }
 
 	return estimatedSoC;
+}
+
+/////////////////////////////////////////////////////////////////////
+
+void SoC_handler(void)
+{
+	packCharge_Now_percent = (uint8_t)((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh;
 }
 
 /////////////////////////////////////////////////////////////////////
