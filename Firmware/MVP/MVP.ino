@@ -33,8 +33,9 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 void loop()
 {
 	key_stateChangeHandler();
-
 	gridCharger_handler();
+	SoC_handler();
+	temperature_handler();
 
 	if( key_getSampledState() == KEYON )
 	{
@@ -58,15 +59,13 @@ void loop()
 		SoC_openCircuitVoltage_handler(); //periodically check pack voltage
 	}
 
-	temperature_handler();
-
 	//JTS2doLater: Check for Serial Input from user
 
 	//JTS2doNow: Feed watchdog!
 
 	blinkLED2(); //Heartbeat
 
-	//wait here for next iteration
+	//wait here until next iteration
 	{
 		static uint32_t previousMillis = millis();
 
