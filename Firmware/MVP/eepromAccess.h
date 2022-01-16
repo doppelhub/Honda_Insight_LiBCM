@@ -5,7 +5,7 @@
 
 	void EEPROM_checkForExpiredFirmware(void);
 	
-	uint16_t EEPROM_calculateTotalHoursSinceLastFirmwareUpdate(void);
+	uint16_t EEPROM_uptimeStoredInEEPROM_hours_get(void);
 	
 	uint8_t EEPROM_firmwareStatus_get(void);
 

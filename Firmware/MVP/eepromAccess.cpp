@@ -55,7 +55,7 @@ bool wasFirmwareJustUpdated(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-uint16_t uptimeStoredInEEPROM_hours_get(void)
+uint16_t EEPROM_uptimeStoredInEEPROM_hours_get(void)
 {
 	uint16_t hoursSinceLastFirmwareUpdate = 0;
 
@@ -99,7 +99,8 @@ uint16_t EEPROM_calculateTotalHoursSinceLastFirmwareUpdate(void)
   uint32_t timeSincePreviousKeyOff_ms = millis() - key_latestTurnOffTime_ms_get();
   uint16_t timeSincePreviousKeyOff_hours = (uint16_t)(timeSincePreviousKeyOff_ms / MILLISECONDS_PER_HOUR);
   
-  uint16_t totalHours = uptimeStoredInEEPROM_hours_get() + timeSincePreviousKeyOff_hours;
+  uint16_t totalHours = EEPROM_uptimeStoredInEEPROM_hours_get() + timeSincePreviousKeyOff_hours;
+  if(totalHours > REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS) { totalHours = REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS; } //coerce
 
   return totalHours;
 }
@@ -116,6 +117,7 @@ void EEPROM_checkForExpiredFirmware(void)
     compileDateStoredInEEPROM_set(); //store new compile date in EEPROM (so we can compare again on future keyOFF events)
     EEPROM_firmwareStatus_set(FIRMWARE_STATUS_VALID); //prevent P1648 at keyON
 
+    Serial.print(F("\nFirmwareUpdated"));
     gpio_playSound_firmwareUpdated();
   }
   else //user didn't update the firmware
@@ -123,9 +125,15 @@ void EEPROM_checkForExpiredFirmware(void)
     uint16_t newUptime_hours = EEPROM_calculateTotalHoursSinceLastFirmwareUpdate(); 
     uptimeStoredInEEPROM_hours_set(newUptime_hours); //store new total uptime in EEPROM
 
-    if(newUptime_hours > REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS)
+    //Displays total hours on this FW version and maximum hours allowed per version
+    Serial.print(F("\nTotal hours since firmware last uploaded: "));
+    if(newUptime_hours == REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS) { Serial.print(F("EXPIRED"));    }
+    else                                                         { Serial.print(newUptime_hours); }
+    Serial.print(F(" (")); Serial.print(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS); Serial.print(F( " Hours MAX)" )); 
+
+    if(newUptime_hours == REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS) //newUptime_hours is bounded to REQUIRED_FW_UPDATE_PERIOD_HOURS 
     {
-      Serial.print(F("\nOpen Beta ALERT: Firmware update required (linsight.org/downloads)\nLiBCM disabled until firmware is updated."));
+      Serial.print(F("\nOpen Beta ALERT: Firmware update required (linsight.org/downloads)\nLiBCM disabled until firmware is updated"));
       lcd_firmwareUpdateWarning(); 
       EEPROM_firmwareStatus_set(FIRMWARE_STATUS_EXPIRED);
       delay(5000); //give user time to read display

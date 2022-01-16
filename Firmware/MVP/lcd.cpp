@@ -488,12 +488,9 @@ void lcd_displayOFF(void)
 		lcd2.clear();
 		lcd2.setCursor(0,0);
 		lcd2.print(F("LiBCM v")); lcd2.print(String(FW_VERSION));
-		lcd2.setCursor(0,1);
-
-		//display hours remaining until next firmware update is required
-		uint16_t hoursSinceUpdate = (int16_t)EEPROM_calculateTotalHoursSinceLastFirmwareUpdate();
-		if(hoursSinceUpdate > REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS) { hoursSinceUpdate = REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS; }
-		lcd2.print(F("FW Hours Left: ")); lcd2.print(String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - hoursSinceUpdate));
+		lcd2.setCursor(0,1);	
+		lcd2.print(F("FW Hours Left: "));
+		lcd2.print(String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - EEPROM_uptimeStoredInEEPROM_hours_get() ));
 
 		delay(1000); //allow time for operator to read firmware version
 
