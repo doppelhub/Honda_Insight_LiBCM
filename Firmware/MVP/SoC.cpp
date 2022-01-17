@@ -5,18 +5,16 @@
 
 #include "libcm.h"
 
-uint16_t stackFull_Calculated_mAh  = (STACK_mAh * 0.01) * STACK_SoC_MAX;
-uint16_t stackEmpty_Calculated_mAh = (STACK_mAh * 0.01) * STACK_SoC_MIN;
-uint16_t packCharge_Now_mAh = 3000;
+uint16_t stackFull_Calculated_mAh  = STACK_mAh_NOM; //JTS2doLater: LiBCM needs to adjust value after it figures out actual pack mAh
+uint16_t packCharge_Now_mAh = 3000; //immediately overwritten if keyOFF when LiBCM turns on
 uint8_t  packCharge_Now_percent = (packCharge_Now_mAh * 100) / stackFull_Calculated_mAh;
 
-//Estimate SoC based on resting cell voltage.
-//EHW5 cells settle to final 'resting' voltage in ten minutes, but are fairly close to that value after just one minute
-
+//integrate current over time (coulomb counting)
+//LiBCM uses this function to determine SoC while keyON
 void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 {
 	//determine how much 'charge' (in ADC counts) went into the battery
-	int16_t deltaCharge_counts = adcCounts - ADC_NOMINAL_0A_COUNTS; //positive during assist, negative during regen
+	int16_t deltaCharge_counts = adcCounts - ADC_NOMINAL_0A_COUNTS; //positive during assist, negative during regen //adcCounts already calibrated to zero crossing
 	
 	//Time for some dimensional analysis!
 	//Note: items in brackets are units (e.g. "123 [amps]", "456 [volts]")
@@ -56,7 +54,6 @@ void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 		intermediateChargeBuffer_uCoulomb += ONE_MILLIAMPHOUR_IN_MICROCOULOMBS; //add 1 mAh to buffer
 		if(packCharge_Now_mAh < 65535) { packCharge_Now_mAh += 1; } //pack charged 1 mAh (regen)
 	}
-
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -71,6 +68,9 @@ void    SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_
 
 /////////////////////////////////////////////////////////////////////
 
+//Estimate SoC based on resting cell voltage.
+//LiBCM uses this function to determine SoC while keyOFF
+//EHW5 cells settle to final 'resting' voltage in ten minutes, but are fairly close to that value after just one minute
 void SoC_updateUsingOpenCircuitVoltage(void)
 {
 	LTC68042cell_sampleGatherAndProcessAllCellVoltages(); //get latest cell data
