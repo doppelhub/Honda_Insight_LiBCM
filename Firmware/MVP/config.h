@@ -28,6 +28,8 @@
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //only spoof during assist, using either 120 volts or (vPackActual-12)
 		#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //always spoof voltage (enables stronger regen)
 
+	//#define BACKGROUND_REGEN_DISABLE //regen only allowed while braking //JTS2doNow: Implement
+
 	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to print all cell voltages while driving //Grid charger always prints all cell voltages
 
 	#define MCME_VOLTAGE_OFFSET_ADJUST 12 //difference between OBDIIC&C and LiBCM spoofed pack voltage (Subtract LiBCM voltage from OBDIIC&C Bvo.  Default is 12.)
@@ -35,7 +37,7 @@
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
 
 	//choose which functions control the LEDs
-	#define LED_NORMAL //enable "     LED()" functions (see debug.c)
+	#define LED_NORMAL //enable "LED()" functions (see debug.c)
 	//#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
 	#define PRINT_USB_DEBUG_TEXT //prints text sent via debugUSB_debugText() //JTS2doLater: NOT IMPLEMENTED YET
@@ -43,23 +45,19 @@
 
 	#define LOOP_RATE_MILLISECONDS 10 // Superloop execution rate: 1/LOOP_RATE_MILLISECONDS (e.g. LOOP_RATE_MILLISECONDS==10 is 100 Hz)
 
-	#define CELL_MAX_ALLOWED_VOLTAGE_REGEN 42000
-	#define CELL_MIN_ALLOWED_VOLTAGE_ASSIST 32000
+	#define CELL_VMAX_REGEN       42000 //42000 = 4.2000 volts
+	#define CELL_VMIN_ASSIST      31900 //allows for ESR-based voltage drop
+	#define CELL_VMAX_GRIDCHARGER 39000 //3.9 volts is 75% SoC //other values: See SoC.cpp
+	#define CELL_VMIN_GRIDCHARGER 30000 //grid charger will not charge severely empty cells
+	#define CELL_VMIN_KEYOFF      34400 //When car is off, LiBCM turns off below this voltage
 
-	#define CELL_VMAX_GRIDCHARGER 39500 //39000 = 3.9000 volts
-	#define CELL_VMAX_KEYON       42500 //42500 = 4.2500 volts //LiBCM disables regen above this voltage
-	#define CELL_VMIN_KEYON       32500 //32500 = 3.2500 volts //LiBCM disables assist below this voltage
-	#define CELL_VMIN_KEYOFF      31000 //33800 = 3.1000 volts //LiBCM turns off below this voltage
-
-	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //Uncomment if using 18S Honda EHW5 modules
+	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //Uncomment if using stock Honda EHW5 lithium modules 
 
 	#define STACK_mAh 5000 //nominal pack size (0:100% SoC) //LiBCM uses this value until it determines the actual pack capacity
-	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
-	#define STACK_SoC_SETPOINT_GRID_CHARGE 70 //target SoC while grid charging
-
-	#define SOC_SEND_MCM_MAX_ASSIST_THRESHOLD 45 // minimum state of charge we are sending to MCM before we are going to spoof +20ºC to always get max assist
-												//JTS2doNow: Rename "LIMIT_MAX_ASSIST_BELOW_SOC"
+	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
+	#define CELL_VREST_85_PERCENT_SoC 40100 //for maximum life, resting cell voltage should remain below 85% SoC
+	#define CELL_VREST_10_PERCENT_SoC 34700 //for maximum life, resting cell voltage should remain above 10% SoC
 
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
 #endif

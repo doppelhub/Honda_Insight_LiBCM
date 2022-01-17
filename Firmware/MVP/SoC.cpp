@@ -88,16 +88,16 @@ void SoC_updateUsingOpenCircuitVoltage(void)
 
 /////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Don't update SoC until the key has been off for at least ten minutes.  This prevents recent current from influencing resting battery voltage 
 //only call this function when the key is off (or you'll get a check engine light)
 void SoC_openCircuitVoltage_handler(void)
 {
-	#define KEY_OFF_SoC_UPDATE_PERIOD_MINUTES 10 //JTS2doNow: How long to wait?
+	#define KEY_OFF_SoC_UPDATE_PERIOD_MINUTES 10
 	#define KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS (KEY_OFF_SoC_UPDATE_PERIOD_MINUTES * 60000)
 
 	static uint32_t SoC_latestUpdate_milliseconds = 0;
 
-	if( (millis() - SoC_latestUpdate_milliseconds ) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS)
+	if( ( (millis() - SoC_latestUpdate_milliseconds ) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS ) && //more than ten minutes since last measurement
+		( (millis() - key_latestTurnOffTime_ms_get()) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS ) )  //more than ten minutes since key turned off
 	{
 		SoC_latestUpdate_milliseconds = millis();
 		
@@ -105,15 +105,16 @@ void SoC_openCircuitVoltage_handler(void)
 
 		SoC_updateUsingOpenCircuitVoltage();
 
-		//turn LiBCM off if pack SoC is low
-		//LiBCM will power back on when the key is turned on
+		static bool wasCellVoltagePreviouslyTooLow = false;
+
+		//turn LiBCM off if any cell voltage is too low
+		//LiBCM remains off until the next keyON occurs
 		if( LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF)
-		{
-			gpio_turnBuzzer_on_highFreq();
-			delay(100);
-			gpio_turnLiBCM_off(); //game over, thanks for playing 
-			while(1) { ; } //LiBCM takes a bit to turn off... wait here until that happens
+		{	
+			if(wasCellVoltagePreviouslyTooLow == false) { wasCellVoltagePreviouslyTooLow = true; } //do nothing the first time cell voltage is too low
+			else /* second time voltage is too low */   { Serial.print("\nLow cell voltage"); gpio_turnLiBCM_off(); } //game over, thanks for playing	 
 		}
+		else { wasCellVoltagePreviouslyTooLow = false; } //pack is charged enough for LiBCM to stay on
 	}
 }
 
@@ -146,7 +147,7 @@ uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
 	else if(restingCellVoltage >= 40400) { estimatedSoC =  88; }
 	else if(restingCellVoltage >= 40300) { estimatedSoC =  87; }
 	else if(restingCellVoltage >= 40200) { estimatedSoC =  86; }
-	else if(restingCellVoltage >= 40100) { estimatedSoC =  85; }
+	else if(restingCellVoltage >= CELL_VREST_85_PERCENT_SoC) { estimatedSoC =  85; } //max cell voltage for long lifetime
 	else if(restingCellVoltage >= 40000) { estimatedSoC =  84; }
 	else if(restingCellVoltage >= 39900) { estimatedSoC =  83; }
 	else if(restingCellVoltage >= 39800) { estimatedSoC =  82; }
@@ -221,7 +222,7 @@ uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
 	else if(restingCellVoltage >= 34850) { estimatedSoC =  13; }
 	else if(restingCellVoltage >= 34800) { estimatedSoC =  12; }
 	else if(restingCellVoltage >= 34750) { estimatedSoC =  11; }
-	else if(restingCellVoltage >= 34700) { estimatedSoC =  10; }
+	else if(restingCellVoltage >= CELL_VREST_10_PERCENT_SoC) { estimatedSoC =  10; } //min cell voltage for long lifetime
 	else if(restingCellVoltage >= 34400) { estimatedSoC =   9; }
 	else if(restingCellVoltage >= 34100) { estimatedSoC =   8; }
 	else if(restingCellVoltage >= 33700) { estimatedSoC =   7; }

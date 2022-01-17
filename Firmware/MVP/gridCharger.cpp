@@ -92,7 +92,7 @@ void gridCharger_balanceCells(void)
 
 //////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Think this through
+//JTS2doNow: Separate balancing routine entirely from charging routine
 void gridCharger_chargePack(void)
 {
   static uint8_t cellState = CELLSTATE_UNINITIALIZED;
@@ -103,6 +103,8 @@ void gridCharger_chargePack(void)
   LTC68042cell_nextVoltages();
   SoC_setBatteryStateNow_percent( SoC_estimateFromRestingCellVoltage_percent() ); //LiBCM's low grid charge current hardly changes cell voltage
   debugUSB_printLatest_data_gridCharger();
+
+  //JTS2doNow: Prevent grid charging if any cell is too discharged (CELL_VMIN_GRIDCHARGER)
 
   //at least one cell is severely overcharged
   if( LTC68042result_hiCellVoltage_get() > (CELL_VMAX_GRIDCHARGER + VCELL_HYSTERESIS) )
