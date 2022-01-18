@@ -19,7 +19,7 @@ uint8_t SoC_getBatteryStateNow_percent(void) { return packCharge_Now_percent; }
 void    SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = (stackFull_Calculated_mAh * 0.01) * newSoC_percent; } //JTS2doNow: Is this cast correctly?
 
 //uses SoC percentage to update mAh value (LiBCM stores battery SoC in mAh, not %)
-void SoC_updateBatteryStateNow_percent(void) { packCharge_Now_percent = (uint8_t)((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh; }
+void SoC_updateBatteryStateNow_percent(void) { packCharge_Now_percent = (uint8_t)(((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh); }
 
 /////////////////////////////////////////////////////////////////////
 
