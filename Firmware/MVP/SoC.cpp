@@ -60,13 +60,13 @@ void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 	while(intermediateChargeBuffer_uCoulomb > ONE_MILLIAMPHOUR_IN_MICROCOULOMBS )
 	{	//assist
 		intermediateChargeBuffer_uCoulomb -= ONE_MILLIAMPHOUR_IN_MICROCOULOMBS;  //remove 1 mAh from buffer
-		if(SoC_getBatteryStateNow_mAh() >     0) { SoC_setBatteryStateNow_mAh( SoC_getBatteryStateNow_mAh() - 1; ) } //pack discharged 1 mAh (assist)
+		if(SoC_getBatteryStateNow_mAh() >     0) { SoC_setBatteryStateNow_mAh( SoC_getBatteryStateNow_mAh() - 1 ); } //pack discharged 1 mAh (assist)
 	}
 
 	while(intermediateChargeBuffer_uCoulomb < -ONE_MILLIAMPHOUR_IN_MICROCOULOMBS)
 	{	//regen
 		intermediateChargeBuffer_uCoulomb += ONE_MILLIAMPHOUR_IN_MICROCOULOMBS; //add 1 mAh to buffer
-		if(SoC_getBatteryStateNow_mAh() < 65535) { SoC_setBatteryStateNow_mAh( SoC_getBatteryStateNow_mAh() + 1; ) } //pack charged 1 mAh (regen)
+		if(SoC_getBatteryStateNow_mAh() < 65535) { SoC_setBatteryStateNow_mAh( SoC_getBatteryStateNow_mAh() + 1 ); } //pack charged 1 mAh (regen)
 	}
 }
 
