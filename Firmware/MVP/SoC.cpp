@@ -5,9 +5,23 @@
 
 #include "libcm.h"
 
+//These variables should only be used until the next "////////////////////" comment (after that, use these functions instead)
 uint16_t stackFull_Calculated_mAh  = STACK_mAh_NOM; //JTS2doLater: LiBCM needs to adjust value after it figures out actual pack mAh
 uint16_t packCharge_Now_mAh = 3000; //immediately overwritten if keyOFF when LiBCM turns on
 uint8_t  packCharge_Now_percent = (packCharge_Now_mAh * 100) / stackFull_Calculated_mAh;
+
+//SoC calculation is faster when the unit is mAh
+uint16_t SoC_getBatteryStateNow_mAh(void) { return packCharge_Now_mAh; }
+void     SoC_setBatteryStateNow_mAh(uint16_t newPackCharge_mAh) { packCharge_Now_mAh = newPackCharge_mAh; }
+
+//SoC calculation is slower when the unit is % 
+uint8_t SoC_getBatteryStateNow_percent(void) { return packCharge_Now_percent; }
+void    SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = (stackFull_Calculated_mAh * 0.01) * newSoC_percent; } //JTS2doNow: Is this cast correctly?
+
+//uses SoC percentage to update mAh value (LiBCM stores battery SoC in mAh, not %)
+void SoC_updateBatteryStateNow_percent(void) { packCharge_Now_percent = (uint8_t)((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh; }
+
+/////////////////////////////////////////////////////////////////////
 
 //integrate current over time (coulomb counting)
 //LiBCM uses this function to determine SoC while keyON
@@ -46,25 +60,15 @@ void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 	while(intermediateChargeBuffer_uCoulomb > ONE_MILLIAMPHOUR_IN_MICROCOULOMBS )
 	{	//assist
 		intermediateChargeBuffer_uCoulomb -= ONE_MILLIAMPHOUR_IN_MICROCOULOMBS;  //remove 1 mAh from buffer
-		if(packCharge_Now_mAh >     0) { packCharge_Now_mAh -= 1; } //pack discharged 1 mAh (assist)
+		if(SoC_getBatteryStateNow_mAh() >     0) { SoC_setBatteryStateNow_mAh( SoC_getBatteryStateNow_mAh() - 1; ) } //pack discharged 1 mAh (assist)
 	}
 
 	while(intermediateChargeBuffer_uCoulomb < -ONE_MILLIAMPHOUR_IN_MICROCOULOMBS)
 	{	//regen
 		intermediateChargeBuffer_uCoulomb += ONE_MILLIAMPHOUR_IN_MICROCOULOMBS; //add 1 mAh to buffer
-		if(packCharge_Now_mAh < 65535) { packCharge_Now_mAh += 1; } //pack charged 1 mAh (regen)
+		if(SoC_getBatteryStateNow_mAh() < 65535) { SoC_setBatteryStateNow_mAh( SoC_getBatteryStateNow_mAh() + 1; ) } //pack charged 1 mAh (regen)
 	}
 }
-
-/////////////////////////////////////////////////////////////////////
-
-//SoC is calculated faster when the unit is mAh
-uint16_t SoC_getBatteryStateNow_mAh(void) { return packCharge_Now_mAh; }
-void     SoC_setBatteryStateNow_mAh(uint16_t newPackCharge_mAh) { packCharge_Now_mAh = newPackCharge_mAh; }
-
-//SoC is calculated slower when the unit is % 
-uint8_t SoC_getBatteryStateNow_percent(void) { return packCharge_Now_percent; }
-void    SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = newSoC_percent * 0.01 * stackFull_Calculated_mAh; } //JTS2doNow: Is this cast correctly?
 
 /////////////////////////////////////////////////////////////////////
 
@@ -98,6 +102,7 @@ void SoC_openCircuitVoltage_handler(void)
 
 	if( ( (millis() - SoC_latestUpdate_milliseconds ) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS ) && //more than ten minutes since last measurement
 		( (millis() - key_latestTurnOffTime_ms_get()) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS ) )  //more than ten minutes since key turned off
+		//JTS2doNow: Grid charger routine also updates SoC... so no need to run this function if grid charger plugged in (see gridCharger_chargePack())
 	{
 		SoC_latestUpdate_milliseconds = millis();
 		
@@ -241,7 +246,7 @@ uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
 
 void SoC_handler(void)
 {
-	packCharge_Now_percent = (uint8_t)((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh;
+	SoC_updateBatteryStateNow_percent();
 }
 
 /////////////////////////////////////////////////////////////////////

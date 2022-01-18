@@ -116,16 +116,17 @@ void debugUSB_printLatest_data_keyOn(void)
 		Serial.print(F(                ","                                              ));
 		Serial.print(String( vPackSpoof_getSpoofedPackVoltage()                         ));
 		Serial.print(F(                    ",V, "                                       ));
-		Serial.print(String( (LTC68042result_hiCellVoltage_get() * 0.0001), 3)           );
+		Serial.print(String( (LTC68042result_hiCellVoltage_get() * 0.0001), 3           ));
 		Serial.print(F(                            ","                                  ));
-		Serial.print(String( (LTC68042result_loCellVoltage_get() * 0.0001), 3)           );
+		Serial.print(String( (LTC68042result_loCellVoltage_get() * 0.0001), 3           ));
 		Serial.print(F(                                 ",V, "                          ));
 		Serial.print(String( SoC_getBatteryStateNow_mAh()                               ));		
 		Serial.print(F(                                          ",mAh, "               ));
 		Serial.print(String( (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001), 1 ));
 		Serial.print(F(                                                    ",kW, "      ));
 		Serial.print(String( temperature_battery_getLatest()                            ));		
-		Serial.print(F(                                                           ",C"  ));
+		Serial.print(F(                                                           ",C " ));
+		Serial.print(Strint( SoC_getBatteryStateNow_percent()                           )); //JTSdebug
 
 		icCellVoltagesToPrint = 0;
 	}
