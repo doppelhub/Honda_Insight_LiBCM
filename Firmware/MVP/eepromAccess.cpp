@@ -28,8 +28,7 @@ void compileDateStoredInEEPROM_get(void)
 ////////////////////////////////////////////////////////////////////////////////////
 
 //store compile date into EEPROM (i.e. after the firmware is updated)
-//Limit calls to this function (EEPROM has limited lifetime)
-//t = 
+//Limit calls to this function (EEPROM has limited write lifetime)
 void compileDateStoredInEEPROM_set(void)
 {
   for(int ii = 0; ii < BYTES_IN_DATE; ii++) { EEPROM.update( (ii + EEPROM_ADDRESS_COMPILE_DATE), COMPILE_DATE_PROGRAM[ii] ); }
@@ -68,8 +67,7 @@ uint16_t EEPROM_uptimeStoredInEEPROM_hours_get(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//Limit calls to this function (EEPROM has limited lifetime)
-//t = 
+//Limit calls to this function (EEPROM has limited write lifetime)
 void uptimeStoredInEEPROM_hours_set(uint16_t hourCount)
 {
 	EEPROM.update( EEPROM_ADDRESS_HOURS_SINCE_UPDATE    , highByte(hourCount) ); //write lower byte
@@ -78,6 +76,7 @@ void uptimeStoredInEEPROM_hours_set(uint16_t hourCount)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+//Takes 4 clock cycles.  EEPROM read limit: infinite
 uint8_t EEPROM_firmwareStatus_get(void)
 { 
   //structured this way to prevent EEPROM read/write failures from disabling LiBCM
