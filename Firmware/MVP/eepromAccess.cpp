@@ -40,7 +40,7 @@ void compileDateStoredInEEPROM_set(void)
 //if dates are different, then firmware was updated since the last keyOFF event
 bool wasFirmwareJustUpdated(void)
 {
-  Serial.print("\nstart wasFirmwareJustUpdated");
+  Serial.print("\nstart wasFirmwareJustUpdated? ");
   compileDateStoredInEEPROM_get(); //result stored in array 'compileDateEEPROM[]' (in RAM)
 
   bool areDatesIdentical = true;

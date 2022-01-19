@@ -142,7 +142,7 @@ void gpio_turnBuzzer_off(void) { analogWrite(PIN_BUZZER_PWM,0); }
 
 void gpio_playSound_firmwareUpdated(void)
 {
-	const uint8_t NUM_BEEPS = 15;
+	const uint8_t NUM_BEEPS = 10;
 	for(uint8_t ii = 1; ii < (NUM_BEEPS); ii++)
 	{
 		gpio_turnBuzzer_on_lowFreq();
@@ -150,6 +150,7 @@ void gpio_playSound_firmwareUpdated(void)
 		gpio_turnBuzzer_on_highFreq();
 		delay(10 * (NUM_BEEPS - ii));
 	}
+	gpio_turnBuzzer_off();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
