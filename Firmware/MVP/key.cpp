@@ -32,11 +32,11 @@ void key_handleKeyEvent_off(void)
     adc_calibrateBatteryCurrentSensorOffset();
     gpio_turnPowerSensors_off();
     LTC6804configure_handleKeyOff();
-    lcd_displayOFF();
     vPackSpoof_handleKeyOFF();
     gpio_turnHMI_off();
     gpio_turnTemperatureSensors_off();
-    EEPROM_checkForExpiredFirmware();
+    EEPROM_checkForExpiredFirmware(); //must occur before lcd_displayOFF()
+    lcd_displayOFF();
 
     key_latestTurnOffTime_ms_set(millis()); //MUST RUN LAST!   
 }

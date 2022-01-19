@@ -10,7 +10,8 @@ const uint8_t COMPILE_DATE_PROGRAM[BYTES_IN_DATE]= __DATE__; //Format: Mmm DD YY
 
 //EEPROM address map:
 const uint16_t EEPROM_ADDRESS_COMPILE_DATE       = 0x000; //EEPROM range is 0x000:0x00B (12B)
-const uint16_t EEPROM_ADDRESS_HOURS_SINCE_UPDATE = 0x010; //EEPROM range is 0x00C:0x00D ( 2B)
+const uint16_t EEPROM_ADDRESS_HOURS_SINCE_UPDATE = 0x00C; //EEPROM range is 0x00C:0x00D ( 2B)
+const uint16_t EEPROM_ADDRESS_FIRMWARE_STATUS    = 0x00E; //EEPROM range is 0x00E:0x00E ( 1B)
 
 //compile date previously stored in EEPROM (the last time the firmware was updated)
 uint8_t compileDateEEPROM[BYTES_IN_DATE] = {};
@@ -75,10 +76,22 @@ void uptimeStoredInEEPROM_hours_set(uint16_t hourCount)
 	EEPROM.update( EEPROM_ADDRESS_HOURS_SINCE_UPDATE + 1,  lowByte(hourCount) ); //write upper byte
 }
 
+////////////////////////////////////////////////////////////////////////////////////
 
+uint8_t EEPROM_firmwareStatus_get(void)
+{ 
+  //structured this way to prevent EEPROM read/write failures from disabling LiBCM
+  if( (EEPROM.read(EEPROM_ADDRESS_FIRMWARE_STATUS)) == FIRMWARE_STATUS_EXPIRED ) { return FIRMWARE_STATUS_EXPIRED; }
+  else                                                                           { return FIRMWARE_STATUS_VALID  ; }          
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+void EEPROM_firmwareStatus_set(uint8_t newFirmwareStatus) { EEPROM.update(EEPROM_ADDRESS_FIRMWARE_STATUS, newFirmwareStatus); }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+//add value stored in EEPROM (from last keyOFF event) to previous keyOFF time
 uint16_t EEPROM_calculateTotalHoursSinceLastFirmwareUpdate(void)
 {
   #define MILLISECONDS_PER_HOUR 3600000
@@ -101,6 +114,7 @@ void EEPROM_checkForExpiredFirmware(void)
   	//user recently updated the firmware, so...
     uptimeStoredInEEPROM_hours_set(0); //reset hour counter to zero
     compileDateStoredInEEPROM_set(); //store new compile date in EEPROM (so we can compare again on future keyOFF events)
+    EEPROM_firmwareStatus_set(FIRMWARE_STATUS_VALID); //prevent P1648 at keyON
 
     gpio_playSound_firmwareUpdated();
   }
@@ -112,9 +126,9 @@ void EEPROM_checkForExpiredFirmware(void)
     if(newUptime_hours > REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS)
     {
       Serial.print(F("\nOpen Beta ALERT: Firmware update required (linsight.org/downloads)\nLiBCM disabled until firmware is updated."));
-      lcd_firmwareUpdateWarning();
-      delay(1000); //give time for serial buffers to empty prior to hanging forever (see next line)
-      while(1) { ; } //hang here forever //THIS DOES NOT RETURN!
+      lcd_firmwareUpdateWarning(); 
+      EEPROM_firmwareStatus_set(FIRMWARE_STATUS_EXPIRED);
+      delay(5000); //give user time to read display
     } 
   }
 }

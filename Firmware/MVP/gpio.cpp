@@ -52,7 +52,7 @@ bool gpio_keyStateNow(void) { return digitalRead(PIN_IGNITION_SENSE); }
 //THIS FUNCTION DOES NOT RETURN!
 void gpio_turnLiBCM_off(void)
 { 
-	Serial.print("\nLiBCM turning off");
+	Serial.print(F("\nLiBCM turning off"));
 	delay(20); //wait for the above message to transmit
 	digitalWrite(PIN_TURNOFFLiBCM,HIGH);
 	while(1) { ; } //LiBCM takes a bit to turn off... wait here until that happens

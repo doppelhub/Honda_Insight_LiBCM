@@ -117,7 +117,7 @@ void SoC_openCircuitVoltage_handler(void)
 		if( LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF)
 		{	
 			if(wasCellVoltagePreviouslyTooLow == false) { wasCellVoltagePreviouslyTooLow = true; } //do nothing the first time cell voltage is too low
-			else /* second time voltage is too low */   { Serial.print("\nLow cell voltage"); gpio_turnLiBCM_off(); } //game over, thanks for playing	 
+			else /* second time voltage is too low */   { Serial.print(F("\nLow cell voltage")); gpio_turnLiBCM_off(); } //game over, thanks for playing	 
 		}
 		else { wasCellVoltagePreviouslyTooLow = false; } //pack is charged enough for LiBCM to stay on
 	}

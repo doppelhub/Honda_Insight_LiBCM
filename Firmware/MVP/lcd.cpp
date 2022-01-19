@@ -75,7 +75,7 @@ bool lcd_printSoC(void)
 			SoC_onScreen = SoC_getBatteryStateNow_percent();
 			lcd2.setCursor(10,3); //SoC screen position
 			if(SoC_onScreen < 10) { lcd2.print( '0');         } //add leading '0' to single digit number
-			if(SoC_onScreen > 99) { lcd2.print("99");         } //can't display '100' (only QTY2 digits)
+			if(SoC_onScreen > 99) { lcd2.print(F("99"));      } //can't display '100' (only QTY2 digits)
 			else                  { lcd2.print(SoC_onScreen); } //print actual value
 
 			didscreenUpdateOccur = SCREEN_UPDATED;
@@ -280,14 +280,14 @@ bool lcd_printCurrent(void)
 			lcd2.setCursor(15,1);
 			if(adc_getLatestBatteryCurrent_amps() >= 0 )
 			{
-				if      (adc_getLatestBatteryCurrent_amps() <  10 ) { lcd2.print("  "); }
-				else if (adc_getLatestBatteryCurrent_amps() < 100 ) { lcd2.print(" ");  }
+				if      (adc_getLatestBatteryCurrent_amps() <  10 ) { lcd2.print(F("  ")); }
+				else if (adc_getLatestBatteryCurrent_amps() < 100 ) { lcd2.print(  ' '  );  }
 				lcd2.print('+');
 			}
 			else //negative current
 			{
-				if      (adc_getLatestBatteryCurrent_amps() >  -10 ) { lcd2.print("  "); }
-				else if (adc_getLatestBatteryCurrent_amps() > -100 ) { lcd2.print(" ");  }
+				if      (adc_getLatestBatteryCurrent_amps() >  -10 ) { lcd2.print(F("  ")); }
+				else if (adc_getLatestBatteryCurrent_amps() > -100 ) { lcd2.print(  ' '  );  }
 			}
 			lcd2.print(adc_getLatestBatteryCurrent_amps());
 
@@ -361,7 +361,7 @@ bool lcd_printPower(void)
 			if(packWatts >=0)
 			{
 				if(packWatts < 10000) { lcd2.print(' '); } //" +0.0" to " +9.9" kW
-				lcd2.print("+");
+				lcd2.print('+');
 			}
 			else //negative watts
 			{
@@ -466,16 +466,16 @@ void lcd_printStaticText(void)
 {
 	#ifdef LCD_4X20_CONNECTED
 		lcd2.setCursor(0,0);
-		//                                          1111111111
-		//                                01234567890123456789
-		//4x20 screen text display format:********************
-		lcd2.setCursor(0,0);  lcd2.print("Hx.xxx(y.yyy) dz.zzz"); //row0: x.xxx=(1,0)   y.yyy=(7,0) z.zzz=(15,0)
+		//                                            1111111111
+		//                                  01234567890123456789
+		//4x20 screen text display format:  ********************
+		lcd2.setCursor(0,0);  lcd2.print(F("Hx.xxx(y.yyy) dz.zzz")); //row0: x.xxx=(1,0)   y.yyy=(7,0) z.zzz=(15,0)
 		                                                          //      x.xxx:cellHI  y.yyy:Vmax  z.zzz:deltaV
-		lcd2.setCursor(0,1);  lcd2.print("La.aaa(b.bbb) A-ccc "); //row1: a.aaa=(1,1)   b.bbb=(7,1) ccc=(15,1)
+		lcd2.setCursor(0,1);  lcd2.print(F("La.aaa(b.bbb) A-ccc ")); //row1: a.aaa=(1,1)   b.bbb=(7,1) ccc=(15,1)
 	                                                            //      a.aaa:cellLO  b.bbb:Vmin  ccc:current
-		lcd2.setCursor(0,2);  lcd2.print("Vprrr(fff) TggC     "); //row2: rrr=(2,2)     fff=(6,2)   gg=(12,2)
+		lcd2.setCursor(0,2);  lcd2.print(F("Vprrr(fff) TggC     ")); //row2: rrr=(2,2)     fff=(6,2)   gg=(12,2)
 	                                                            //      rrr:Vpack     fff:Vspoof  gg:hiTemp   hh:loTemp
-		lcd2.setCursor(0,3);  lcd2.print("Tuuuuu SoCss kW-kk.k"); //row3: uuuuu=(1,3)   ss=(10,3)   kk.k=(15,3)
+		lcd2.setCursor(0,3);  lcd2.print(F("Tuuuuu SoCss kW-kk.k")); //row3: uuuuu=(1,3)   ss=(10,3)   kk.k=(15,3)
 	                                                            //      uuuuu:T_keyOn ss:SoC(%)   kk.k:power
 	#endif
 }
@@ -487,9 +487,13 @@ void lcd_displayOFF(void)
 	#ifdef LCD_4X20_CONNECTED
 		lcd2.clear();
 		lcd2.setCursor(0,0);
-		lcd2.print("LiBCM v" + String(FW_VERSION) );
+		lcd2.print(F("LiBCM v")); lcd2.print(String(FW_VERSION));
 		lcd2.setCursor(0,1);
-		lcd2.print("FW Hours Left: " + String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - EEPROM_calculateTotalHoursSinceLastFirmwareUpdate()) );
+
+		//display hours remaining until next firmware update is required
+		uint16_t hoursSinceUpdate = (int16_t)EEPROM_calculateTotalHoursSinceLastFirmwareUpdate();
+		if(hoursSinceUpdate > REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS) { hoursSinceUpdate = REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS; }
+		lcd2.print(F("FW Hours Left: ")); lcd2.print(String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - hoursSinceUpdate));
 
 		delay(1000); //allow time for operator to read firmware version
 
@@ -530,12 +534,12 @@ void lcd_gridChargerWarning(void)
 	lcd2.backlight();
 	lcd2.display();
 	lcd2.clear();
-	//                               ********************
-	lcd2.setCursor(0,0); lcd2.print("ALERT: Grid Charger ");
-	lcd2.setCursor(0,1); lcd2.print("       Plugged In!! ");
+	//                                 ********************
+	lcd2.setCursor(0,0); lcd2.print(F("ALERT: Grid Charger "));
+	lcd2.setCursor(0,1); lcd2.print(F("       Plugged In!! "));
 	gpio_turnBuzzer_on_lowFreq();
-	lcd2.setCursor(0,2); lcd2.print("LiBCM sent P1648 to ");
-	lcd2.setCursor(0,3); lcd2.print("prevent IMA start.  ");
+	lcd2.setCursor(0,2); lcd2.print(F("LiBCM sent P1648 to "));
+	lcd2.setCursor(0,3); lcd2.print(F("prevent IMA start.  "));
 	gpio_turnBuzzer_off();
 }
 
@@ -546,9 +550,9 @@ void lcd_firmwareUpdateWarning(void)
 	lcd2.backlight();
 	lcd2.display();
 	lcd2.clear();
-	//                               ********************
-	lcd2.setCursor(0,0); lcd2.print("ALERT: New firmware ");
-	lcd2.setCursor(0,1); lcd2.print("required during beta");
-	lcd2.setCursor(0,2); lcd2.print(" --LiBCM disabled-- ");
-	lcd2.setCursor(0,3); lcd2.print("  www.linsight.org  ");
+	//                                 ********************
+	lcd2.setCursor(0,0); lcd2.print(F("ALERT: New firmware "));
+	lcd2.setCursor(0,1); lcd2.print(F("required during beta"));
+	lcd2.setCursor(0,2); lcd2.print(F(" --LiBCM disabled-- "));
+	lcd2.setCursor(0,3); lcd2.print(F("  www.linsight.org  "));
 }

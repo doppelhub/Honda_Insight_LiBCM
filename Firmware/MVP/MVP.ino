@@ -39,8 +39,8 @@ void loop()
 
 	if( key_getSampledState() == KEYON )
 	{
-		if( gpio_isGridChargerPluggedInNow() == PLUGGED_IN ) { lcd_gridChargerWarning(); } //grid charging not allowed when keyON
-		else { BATTSCI_sendFrames(); } //BATTSCI data only sent if grid charger unplugged (forces P-code if car tethered)
+		if( gpio_isGridChargerPluggedInNow() == PLUGGED_IN ) { lcd_gridChargerWarning(); } //P1648 occurs if grid charger powered while keyON
+		else if( EEPROM_firmwareStatus_get() != FIRMWARE_STATUS_EXPIRED ) { BATTSCI_sendFrames(); } //P1648 occurs if firmware is expired
 
 	 	LTC68042cell_nextVoltages(); //round-robin handler measures QTY3 cell voltages per call
 
