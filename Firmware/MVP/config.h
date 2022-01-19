@@ -17,9 +17,9 @@
     	#define HW_REVC
 
 	//choose ONE of the following:
-		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
+		#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
 		//#define SET_CURRENT_HACK_20 //+20%
-		#define SET_CURRENT_HACK_40 //+40%
+		//#define SET_CURRENT_HACK_40 //+40%
 		//#define SET_CURRENT_HACK_60 //+60% //Note: LiBCM can only measure between 71 A regen & 147 A assist //higher current values will (safely) rail the ADC
 
 	//choose ONE of the following:
@@ -28,7 +28,7 @@
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //only spoof during assist, using either 120 volts or (vPackActual-12)
 		#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //always spoof voltage (enables stronger regen)
 
-	//#define DISABLE_BACKGROUND_REGEN_UNLESS_BRAKING //regen only allowed while braking //JTS2doNow: Implement
+	//#define REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING //EXPERIMENTAL! //JTS2doNow: Make it better
 
 	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to print all cell voltages while driving //Grid charger always prints all cell voltages
 

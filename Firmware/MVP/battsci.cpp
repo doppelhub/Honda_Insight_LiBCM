@@ -179,8 +179,12 @@ uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
   //static uint16_t lastSoC_sentToMCM = 0;
   //static uint16_t SoC_sentToMCMDelayIncrement...
 
-  #ifdef DISABLE_BACKGROUND_REGEN_UNLESS_BRAKING
-    if( (SoC_mappedToMCM_deciPercent < 720) && (Soc_mappedToMCM_deciPercent > 250) ) { SoC_mappedToMCM_deciPercent = 720; }
+  #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING
+    if( (SoC_mappedToMCM_deciPercent < 720) && (SoC_mappedToMCM_deciPercent > 250) ) { SoC_mappedToMCM_deciPercent = 720; }
+    //JTS2doNow: Need to increase spoofed pack voltage when this mode is activated
+    //           Otherwise, MCM ignores LiBCM request when pack is discharged
+    //           Need to verify MCM honors BATTSCI "disable assist" flag (so pack isn't over-discharged)
+
   #endif
 
   return SoC_mappedToMCM_deciPercent;
