@@ -126,7 +126,6 @@ void debugUSB_printLatest_data_keyOn(void)
 		Serial.print(F(                                                    ",kW, "      ));
 		Serial.print(String( temperature_battery_getLatest()                            ));		
 		Serial.print(F(                                                           ",C " ));
-		Serial.print(String( SoC_getBatteryStateNow_percent()                           )); //JTSdebug
 
 		icCellVoltagesToPrint = 0;
 	}

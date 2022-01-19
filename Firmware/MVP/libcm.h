@@ -40,5 +40,6 @@
   #include "BringupTester.h"
   #include "SoC.h"
   #include "temperature.h"
+  #include "eepromAccess.h"
 
 #endif
