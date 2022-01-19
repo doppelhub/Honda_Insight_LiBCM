@@ -488,9 +488,12 @@ void lcd_displayOFF(void)
 		lcd2.clear();
 		lcd2.setCursor(0,0);
 		lcd2.print("LiBCM v" + String(FW_VERSION) );
-		delay(1000); //allow time for operator to read firmware version
-		//JTS2doLater: refresh screen during keyON (will need to send one instruction per loop)
+		lcd2.setCursor(0,1);
+		lcd2.print("FW Hours Left: " + String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - EEPROM_calculateTotalHoursSinceLastFirmwareUpdate()) );
 
+		delay(1000); //allow time for operator to read firmware version
+
+		//Refresh lcd (can't do this while key on)
 		Wire.end();
 		delay(50);
 		lcd_initialize();
@@ -499,7 +502,6 @@ void lcd_displayOFF(void)
 
 		lcd2.noBacklight();
 		lcd2.noDisplay();
-
 
 		packVoltageActual_onScreen  = 0;
 		errorCount_onScreen         = 0;
@@ -535,4 +537,18 @@ void lcd_gridChargerWarning(void)
 	lcd2.setCursor(0,2); lcd2.print("LiBCM sent P1648 to ");
 	lcd2.setCursor(0,3); lcd2.print("prevent IMA start.  ");
 	gpio_turnBuzzer_off();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+void lcd_firmwareUpdateWarning(void)
+{
+	lcd2.backlight();
+	lcd2.display();
+	lcd2.clear();
+	//                               ********************
+	lcd2.setCursor(0,0); lcd2.print("ALERT: New firmware ");
+	lcd2.setCursor(0,1); lcd2.print("required during beta");
+	lcd2.setCursor(0,2); lcd2.print(" --LiBCM disabled-- ");
+	lcd2.setCursor(0,3); lcd2.print("  www.linsight.org  ");
 }

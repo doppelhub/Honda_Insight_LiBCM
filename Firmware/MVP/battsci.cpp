@@ -178,11 +178,9 @@ uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
   //examples:
   //static uint16_t lastSoC_sentToMCM = 0;
   //static uint16_t SoC_sentToMCMDelayIncrement...
-  //
-  //"SOC_SEND_MCM_MAX_ASSIST_THRESHOLD 45" should probably still be in config.h... I propose renaming to "REDUCE_ASSIST_BELOW_SOC 45" 
 
-  #ifdef BACKGROUND_REGEN_DISABLE
-    if(SoC_mappedToMCM_deciPercent < 720) { SoC_mappedToMCM_deciPercent = 720; } //SoC never less than 72%
+  #ifdef DISABLE_BACKGROUND_REGEN_UNLESS_BRAKING
+    if( (SoC_mappedToMCM_deciPercent < 720) && (Soc_mappedToMCM_deciPercent > 250) ) { SoC_mappedToMCM_deciPercent = 720; }
   #endif
 
   return SoC_mappedToMCM_deciPercent;

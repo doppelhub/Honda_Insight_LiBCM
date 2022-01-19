@@ -28,7 +28,7 @@
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //only spoof during assist, using either 120 volts or (vPackActual-12)
 		#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //always spoof voltage (enables stronger regen)
 
-	//#define BACKGROUND_REGEN_DISABLE //regen only allowed while braking //JTS2doNow: Implement
+	//#define DISABLE_BACKGROUND_REGEN_UNLESS_BRAKING //regen only allowed while braking //JTS2doNow: Implement
 
 	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to print all cell voltages while driving //Grid charger always prints all cell voltages
 

@@ -38,13 +38,20 @@ bool wasFirmwareJustUpdated(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+#define TIMING_PIN 8 //Arduino IO8
+
 void setup()
 {
+  pinMode(TIMING_PIN,OUTPUT);
+  digitalWrite(TIMING_PIN,LOW);
+  
   Serial.begin(115200);
   Serial.print("\ntest started");
   delay(100);
 
+  
   //read compileDate array from EEPROM
+  //t = 2 ms
   Serial.print("\n");
   for(int ii = 0; ii < BYTES_IN_DATE; ii++)
   {
@@ -52,10 +59,11 @@ void setup()
     Serial.print(compileDateEEPROM[ii]);
     Serial.print(' ');
   }
+  
 
   //read hoursSinceLastFirmwareUpdate from EEPROM
-  hoursSinceLastFirmwareUpdate  = ( EEPROM.read(EEPROM_ADDRESS_HOURS_SINCE_UPDATE) << 8 ); //retrieve upper byte
-  hoursSinceLastFirmwareUpdate +=   EEPROM.read(EEPROM_ADDRESS_HOURS_SINCE_UPDATE + 1); //retrieve lower byte
+  hoursSinceLastFirmwareUpdate  = ( EEPROM.read(EEPROM_ADDRESS_HOURS_SINCE_UPDATE    ) << 8 ); //retrieve upper byte
+  hoursSinceLastFirmwareUpdate += ( EEPROM.read(EEPROM_ADDRESS_HOURS_SINCE_UPDATE + 1)      ); //retrieve lower byte
   
   Serial.print("\nHours since last update:" + String(hoursSinceLastFirmwareUpdate) );
 
@@ -67,11 +75,13 @@ void setup()
     EEPROM.update(EEPROM_ADDRESS_HOURS_SINCE_UPDATE    , 0); //clear lower byte
     EEPROM.update(EEPROM_ADDRESS_HOURS_SINCE_UPDATE + 1, 0); //clear upper byte
 
+    digitalWrite(TIMING_PIN,HIGH);
     //store new compile date in EEPROM (so we can compare again on future powerups)
     for(int ii = 0; ii < BYTES_IN_DATE; ii++)
     {
       EEPROM.update( (ii + EEPROM_ADDRESS_COMPILE_DATE), COMPILE_DATE_PROGRAM[ii]);
     }
+    digitalWrite(TIMING_PIN,LOW);
    
     //continue to main()
   }

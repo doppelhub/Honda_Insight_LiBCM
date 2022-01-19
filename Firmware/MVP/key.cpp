@@ -36,8 +36,9 @@ void key_handleKeyEvent_off(void)
     vPackSpoof_handleKeyOFF();
     gpio_turnHMI_off();
     gpio_turnTemperatureSensors_off();
-    key_latestTurnOffTime_ms_set(millis());
-    //JTS2doLater: store keyOff time, so LiBCM can turn itself off (e.g. after an hour)
+    EEPROM_checkForExpiredFirmware();
+
+    key_latestTurnOffTime_ms_set(millis()); //MUST RUN LAST!   
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -55,8 +56,9 @@ void key_handleKeyEvent_on(void)
 	LTC68042result_maxEverCellVoltage_set(0    ); //reset maxEver cell voltage
 	LTC68042result_minEverCellVoltage_set(65535); //reset minEver cell voltage
 	LTC68042configure_cellBalancing_disable();
-	key_latestTurnOnTime_ms_set(millis());
 	LED(1,HIGH);
+
+	key_latestTurnOnTime_ms_set(millis()); //MUST RUN LAST!
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
