@@ -21,6 +21,7 @@
 	void gpio_turnBuzzer_on_highFreq(void);
 	void gpio_turnBuzzer_on_lowFreq(void);
 	void gpio_turnBuzzer_off(void);
+	void gpio_playSound_firmwareUpdated(void);
 
 	bool gpio_isCoverInstalled(void);
 

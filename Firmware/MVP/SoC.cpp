@@ -5,18 +5,30 @@
 
 #include "libcm.h"
 
-uint16_t stackFull_Calculated_mAh  = (STACK_mAh * 0.01) * STACK_SoC_MAX;
-uint16_t stackEmpty_Calculated_mAh = (STACK_mAh * 0.01) * STACK_SoC_MIN;
-uint16_t packCharge_Now_mAh = 3000;
+//These variables should only be used until the next "////////////////////" comment (after that, use these functions instead)
+uint16_t stackFull_Calculated_mAh  = STACK_mAh_NOM; //JTS2doLater: LiBCM needs to adjust value after it figures out actual pack mAh
+uint16_t packCharge_Now_mAh = 3000; //immediately overwritten if keyOFF when LiBCM turns on
 uint8_t  packCharge_Now_percent = (packCharge_Now_mAh * 100) / stackFull_Calculated_mAh;
 
-//Estimate SoC based on resting cell voltage.
-//EHW5 cells settle to final 'resting' voltage in ten minutes, but are fairly close to that value after just one minute
+//SoC calculation is faster when the unit is mAh
+uint16_t SoC_getBatteryStateNow_mAh(void) { return packCharge_Now_mAh; }
+void     SoC_setBatteryStateNow_mAh(uint16_t newPackCharge_mAh) { packCharge_Now_mAh = newPackCharge_mAh; }
 
+//SoC calculation is slower when the unit is % 
+uint8_t SoC_getBatteryStateNow_percent(void) { return packCharge_Now_percent; }
+void    SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = (stackFull_Calculated_mAh * 0.01) * newSoC_percent; } //JTS2doNow: Is this cast correctly?
+
+//uses SoC percentage to update mAh value (LiBCM stores battery SoC in mAh, not %)
+void SoC_updateBatteryStateNow_percent(void) { packCharge_Now_percent = (uint8_t)(((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh); }
+
+/////////////////////////////////////////////////////////////////////
+
+//integrate current over time (coulomb counting)
+//LiBCM uses this function to determine SoC while keyON
 void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 {
 	//determine how much 'charge' (in ADC counts) went into the battery
-	int16_t deltaCharge_counts = adcCounts - ADC_NOMINAL_0A_COUNTS; //positive during assist, negative during regen
+	int16_t deltaCharge_counts = adcCounts - ADC_NOMINAL_0A_COUNTS; //positive during assist, negative during regen //adcCounts already calibrated to zero crossing
 	
 	//Time for some dimensional analysis!
 	//Note: items in brackets are units (e.g. "123 [amps]", "456 [volts]")
@@ -48,29 +60,21 @@ void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 	while(intermediateChargeBuffer_uCoulomb > ONE_MILLIAMPHOUR_IN_MICROCOULOMBS )
 	{	//assist
 		intermediateChargeBuffer_uCoulomb -= ONE_MILLIAMPHOUR_IN_MICROCOULOMBS;  //remove 1 mAh from buffer
-		if(packCharge_Now_mAh >     0) { packCharge_Now_mAh -= 1; } //pack discharged 1 mAh (assist)
+		if(SoC_getBatteryStateNow_mAh() >     0) { SoC_setBatteryStateNow_mAh( SoC_getBatteryStateNow_mAh() - 1 ); } //pack discharged 1 mAh (assist)
 	}
 
 	while(intermediateChargeBuffer_uCoulomb < -ONE_MILLIAMPHOUR_IN_MICROCOULOMBS)
 	{	//regen
 		intermediateChargeBuffer_uCoulomb += ONE_MILLIAMPHOUR_IN_MICROCOULOMBS; //add 1 mAh to buffer
-		if(packCharge_Now_mAh < 65535) { packCharge_Now_mAh += 1; } //pack charged 1 mAh (regen)
+		if(SoC_getBatteryStateNow_mAh() < 65535) { SoC_setBatteryStateNow_mAh( SoC_getBatteryStateNow_mAh() + 1 ); } //pack charged 1 mAh (regen)
 	}
-
 }
 
 /////////////////////////////////////////////////////////////////////
 
-//SoC is calculated faster when the unit is mAh
-uint16_t SoC_getBatteryStateNow_mAh(void) { return packCharge_Now_mAh; }
-void     SoC_setBatteryStateNow_mAh(uint16_t newPackCharge_mAh) { packCharge_Now_mAh = newPackCharge_mAh; }
-
-//SoC is calculated slower when the unit is % 
-uint8_t SoC_getBatteryStateNow_percent(void) { return packCharge_Now_percent; }
-void    SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = newSoC_percent * 0.01 * stackFull_Calculated_mAh; } //JTS2doNow: Is this cast correctly?
-
-/////////////////////////////////////////////////////////////////////
-
+//Estimate SoC based on resting cell voltage.
+//LiBCM uses this function to determine SoC while keyOFF
+//EHW5 cells settle to final 'resting' voltage in ten minutes, but are fairly close to that value after just one minute
 void SoC_updateUsingOpenCircuitVoltage(void)
 {
 	LTC68042cell_sampleGatherAndProcessAllCellVoltages(); //get latest cell data
@@ -88,16 +92,17 @@ void SoC_updateUsingOpenCircuitVoltage(void)
 
 /////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Don't update SoC until the key has been off for at least ten minutes.  This prevents recent current from influencing resting battery voltage 
 //only call this function when the key is off (or you'll get a check engine light)
 void SoC_openCircuitVoltage_handler(void)
 {
-	#define KEY_OFF_SoC_UPDATE_PERIOD_MINUTES 10 //JTS2doNow: How long to wait?
+	#define KEY_OFF_SoC_UPDATE_PERIOD_MINUTES 10
 	#define KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS (KEY_OFF_SoC_UPDATE_PERIOD_MINUTES * 60000)
 
 	static uint32_t SoC_latestUpdate_milliseconds = 0;
 
-	if( (millis() - SoC_latestUpdate_milliseconds ) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS)
+	if( ( (millis() - SoC_latestUpdate_milliseconds ) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS ) && //more than ten minutes since last measurement
+		( (millis() - key_latestTurnOffTime_ms_get()) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS ) )  //more than ten minutes since key turned off
+		//JTS2doNow: Grid charger routine also updates SoC... so no need to run this function if grid charger plugged in (see gridCharger_chargePack())
 	{
 		SoC_latestUpdate_milliseconds = millis();
 		
@@ -105,15 +110,16 @@ void SoC_openCircuitVoltage_handler(void)
 
 		SoC_updateUsingOpenCircuitVoltage();
 
-		//turn LiBCM off if pack SoC is low
-		//LiBCM will power back on when the key is turned on
+		static bool wasCellVoltagePreviouslyTooLow = false;
+
+		//turn LiBCM off if any cell voltage is too low
+		//LiBCM remains off until the next keyON occurs
 		if( LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF)
-		{
-			gpio_turnBuzzer_on_highFreq();
-			delay(100);
-			gpio_turnLiBCM_off(); //game over, thanks for playing 
-			while(1) { ; } //LiBCM takes a bit to turn off... wait here until that happens
+		{	
+			if(wasCellVoltagePreviouslyTooLow == false) { wasCellVoltagePreviouslyTooLow = true; } //do nothing the first time cell voltage is too low
+			else /* second time voltage is too low */   { Serial.print("\nLow cell voltage"); gpio_turnLiBCM_off(); } //game over, thanks for playing	 
 		}
+		else { wasCellVoltagePreviouslyTooLow = false; } //pack is charged enough for LiBCM to stay on
 	}
 }
 
@@ -146,7 +152,7 @@ uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
 	else if(restingCellVoltage >= 40400) { estimatedSoC =  88; }
 	else if(restingCellVoltage >= 40300) { estimatedSoC =  87; }
 	else if(restingCellVoltage >= 40200) { estimatedSoC =  86; }
-	else if(restingCellVoltage >= 40100) { estimatedSoC =  85; }
+	else if(restingCellVoltage >= CELL_VREST_85_PERCENT_SoC) { estimatedSoC =  85; } //max cell voltage for long lifetime
 	else if(restingCellVoltage >= 40000) { estimatedSoC =  84; }
 	else if(restingCellVoltage >= 39900) { estimatedSoC =  83; }
 	else if(restingCellVoltage >= 39800) { estimatedSoC =  82; }
@@ -221,7 +227,7 @@ uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
 	else if(restingCellVoltage >= 34850) { estimatedSoC =  13; }
 	else if(restingCellVoltage >= 34800) { estimatedSoC =  12; }
 	else if(restingCellVoltage >= 34750) { estimatedSoC =  11; }
-	else if(restingCellVoltage >= 34700) { estimatedSoC =  10; }
+	else if(restingCellVoltage >= CELL_VREST_10_PERCENT_SoC) { estimatedSoC =  10; } //min cell voltage for long lifetime
 	else if(restingCellVoltage >= 34400) { estimatedSoC =   9; }
 	else if(restingCellVoltage >= 34100) { estimatedSoC =   8; }
 	else if(restingCellVoltage >= 33700) { estimatedSoC =   7; }
@@ -240,7 +246,7 @@ uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
 
 void SoC_handler(void)
 {
-	packCharge_Now_percent = (uint8_t)((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh;
+	SoC_updateBatteryStateNow_percent();
 }
 
 /////////////////////////////////////////////////////////////////////

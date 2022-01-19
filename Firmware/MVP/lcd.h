@@ -37,4 +37,6 @@
 	void lcd_printStaticText(void);
 
 	void lcd_gridChargerWarning(void);
+
+	void lcd_firmwareUpdateWarning(void);
 #endif

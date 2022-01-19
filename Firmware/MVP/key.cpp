@@ -8,7 +8,7 @@
 uint8_t keyState_sampled  = KEYSTATE_UNINITIALIZED; //updated by key_didStateChange() to prevent mid-loop state changes
 uint8_t keyState_previous = KEYSTATE_UNINITIALIZED;
 uint32_t key_lastTimeTurnedOn_ms = 0;
-uint32_t key_lastTimeTurnedOff_ms = 0;  
+uint32_t key_lastTimeTurnedOff_ms = 0;
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -36,8 +36,9 @@ void key_handleKeyEvent_off(void)
     vPackSpoof_handleKeyOFF();
     gpio_turnHMI_off();
     gpio_turnTemperatureSensors_off();
-    key_latestTurnOffTime_ms_set(millis());
-    //JTS2doLater: store keyOff time, so LiBCM can turn itself off (e.g. after an hour)
+    EEPROM_checkForExpiredFirmware();
+
+    key_latestTurnOffTime_ms_set(millis()); //MUST RUN LAST!   
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -55,8 +56,9 @@ void key_handleKeyEvent_on(void)
 	LTC68042result_maxEverCellVoltage_set(0    ); //reset maxEver cell voltage
 	LTC68042result_minEverCellVoltage_set(65535); //reset minEver cell voltage
 	LTC68042configure_cellBalancing_disable();
-	key_latestTurnOnTime_ms_set(millis());
 	LED(1,HIGH);
+
+	key_latestTurnOnTime_ms_set(millis()); //MUST RUN LAST!
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +69,7 @@ bool key_didStateChange(void)
 
 	keyState_sampled = gpio_keyStateNow();
 
-	if( (keyState_sampled == KEYOFF) && ((keyState_previous == KEYON) || (keyState_previous == KEYSTATE_UNINITIALIZED)) ) 
+	if( (keyState_sampled == KEYOFF) && ((keyState_previous == KEYON) || (keyState_previous == KEYSTATE_UNINITIALIZED)) )
 	{	//key state just changed from 'ON' to 'OFF'.
 		//don't immediately handle keyOFF event, in case this is due to noise.
 		//if the key is still off the next time thru the loop, then we'll handle keyOFF event
@@ -102,8 +104,8 @@ void key_stateChangeHandler(void)
 ////////////////////////////////////////////////////////////////////////////////////
 
 //only called outside this file
-uint8_t key_getSampledState(void) 
-{ 
+uint8_t key_getSampledState(void)
+{
 	if(keyState_previous == KEYOFF_JUSTOCCURRED) { return KEYON;            } //prevent noise from accidentally turning LiBCM off
 	else                                         { return keyState_sampled; }
 }

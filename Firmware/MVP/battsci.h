@@ -13,7 +13,7 @@
 	void BATTSCI_enable();
 
 	void BATTSCI_disable();
-	
+
 	void BATTSCI_sendFrames();
 
 	void BATTSCI_setPackVoltage(uint8_t voltage);

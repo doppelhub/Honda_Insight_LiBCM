@@ -33,7 +33,7 @@ int16_t  latest_battCurrent_counts = 0; //calibrated 10b result //0A is exactly 
 
 //sample ADC and return average battery current
 //To prevent overflow, raw ADC result must not exceed 1191 counts (i.e. don't use an ADC with more than 10b!!)
-//Returned current value is not accurate enough for coulomb counting (use stateOfCharge functions for that)
+//Returned current value is not accurate enough for coulomb counting (use "SoC_integrateCharge_adcCounts" value for that)
 int16_t adc_measureBatteryCurrent_amps(void)
 {
 	static uint8_t adcSamplesTaken = 0; //samples acquired since last oversampled result
