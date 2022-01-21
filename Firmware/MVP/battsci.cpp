@@ -117,15 +117,13 @@ bool BATTSCI_isPackFull(void)
 
 bool BATTSCI_isPackEmpty(void)
 {
-  uint16_t currentAdjustedCellVoltage_min = CELL_VMIN_ASSIST;
+  uint16_t currentAdjusted_Vmin = CELL_VMIN_ASSIST;
 
-  if(adc_getLatestBatteryCurrent_amps() > 0)
-  {
-    //assist, which decreases measured cell voltage (due to ESR)
-    currentAdjustedCellVoltage_min = CELL_VREST_10_PERCENT_SoC - cellVoltageOffsetDueToESR(); } //fcn returns positive number
+  //account for additional cell voltage drop during assist
+  if(adc_getLatestBatteryCurrent_amps() > 0) { currentAdjusted_Vmin = CELL_VMIN_ASSIST - cellVoltageOffsetDueToESR(); }
 
   if( (LTC68042result_loCellVoltage_get() > CELL_VMIN_ASSIST              ) && //above hard voltage limit (if SoC estimator is wrong) 
-      (LTC68042result_loCellVoltage_get() > currentAdjustedCellVoltage_min) && //above ESR-adjusted voltage limit (due to IMA current)
+      (LTC68042result_loCellVoltage_get() > currentAdjusted_Vmin) && //above ESR-adjusted voltage limit (due to IMA current)
       (  SoC_getBatteryStateNow_percent() > STACK_SoC_MIN                 ) )  //above SoC limit
        { return false; } //pack is good
   else { return true;  } //pack is undercharged
