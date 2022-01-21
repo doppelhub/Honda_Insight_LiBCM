@@ -33,7 +33,6 @@ const uint16_t remap_actualToSpoofedSoC[101] = {
 };  //Data empirically gathered from OEM NiMH IMA system //see ../Firmware/Prototype Building Blocks/Remap SoC.ods for calculations
 
 uint16_t previousOutputSoC = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()];
-//uint16_t previousOutputSoC = 700;
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -46,7 +45,6 @@ void BATTSCI_begin(void)
   pinMode(PIN_BATTSCI_REn, OUTPUT);
   digitalWrite(PIN_BATTSCI_REn,HIGH);
 
-//previousOutputSoC = 400;
   previousOutputSoC = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; // If user grid charged over night SoC may have changed a lot.
 
   Serial2.begin(9600,SERIAL_8E1);
@@ -214,7 +212,6 @@ uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
   previousOutputSoC = SoC_mappedToMCM_deciPercent;
 
   return SoC_mappedToMCM_deciPercent;
-  //return previousOutputSoC;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
