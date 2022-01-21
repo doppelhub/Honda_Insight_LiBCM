@@ -50,9 +50,9 @@ void bringupTester_run(void)
 				Serial.print(F("\nLTC6804 - isoSPI error count is "));
 				Serial.print(String(LTC68042result_errorCount_get()));
 				Serial.print(F(": "));
-			
+
 				if( LTC68042result_errorCount_get() == 0 ) { Serial.print(F("pass")); }
-				else { Serial.print(F("FAIL!!!!!!!!!!!!!")); didTestFail = true; } //at least one isoSPI error occurred
+				else { Serial.print(F("FAIL!! !! !! !! !")); didTestFail = true; } //at least one isoSPI error occurred
 
 				//display all cell voltages
 				for(uint8_t ii=0; ii<TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages( ii, 3); }
@@ -60,8 +60,8 @@ void bringupTester_run(void)
 				Serial.print(F("\nmax cell: "));
 				Serial.print(String(LTC68042result_hiCellVoltage_get()));
 				Serial.print(F("\nmin cell: "));
-				Serial.print(String(LTC68042result_loCellVoltage_get()));	
-		
+				Serial.print(String(LTC68042result_loCellVoltage_get()));
+
 				Serial.print(F("\n\nLTC6804 - verify no shorts: "));
 				serialUSB_waitForEmptyBuffer();
 				//verify all cells are in range
@@ -74,7 +74,7 @@ void bringupTester_run(void)
 					else                                             { testToRun = TEST_TYPE_GAUNTLET;       } //LED BMS board connected
 
 				} else {
-					Serial.print(F("FAIL!!!!!!!!!!!!!!!! (check BMS leads & supply)"));
+					Serial.print(F("FAIL!! !! !! !! !! ! (check BMS leads & supply)"));
 					didTestFail = true;
 				}
 			}
@@ -82,7 +82,7 @@ void bringupTester_run(void)
 			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			if(testToRun == TEST_TYPE_GAUNTLET)
-			{	
+			{
 				/////////////////////////////////////////////////////////////////////
 
 				//test LEDs/display
@@ -99,7 +99,7 @@ void bringupTester_run(void)
 
 				//Turn 4x20 screen on
 				Serial.print(F("\nWriting Data to 4x20 LCD"));
-				serialUSB_waitForEmptyBuffer();		
+				serialUSB_waitForEmptyBuffer();
 				lcd_initialize();
 				lcd_printStaticText();
 				lcd_displayON();
@@ -147,7 +147,7 @@ void bringupTester_run(void)
 					uint8_t numberLoopedBack = 0;
 					while ( LiDisplay_bytesAvailableToRead() != 0 ) { numberLoopedBack = LiDisplay_readByte(); }
 					if(numberLoopedBack == numberToLoopback) { Serial.print(F("pass")); }
-					else                                     { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail = true; }
+					else                                     { Serial.print(F("FAIL!! !! !! !! !! !! !! !! ")); didTestFail = true; }
 				}
 
 				/////////////////////////////////////////////////////////////////////
@@ -173,7 +173,7 @@ void bringupTester_run(void)
 					uint8_t numberLoopedBack = 0;
 					while ( METSCI_bytesAvailableToRead() != 0 ) { numberLoopedBack = METSCI_readByte(); }
 					if(numberLoopedBack == numberToLoopback) { Serial.print(F("pass")); }
-					else                                     { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail = true; }
+					else                                     { Serial.print(F("FAIL!! !! !! !! !! !! !! !! ")); didTestFail = true; }
 
 			    	BATTSCI_disable();
 			   		METSCI_disable();
@@ -198,7 +198,7 @@ void bringupTester_run(void)
 					Serial.print( String(tempBLU) + ": ");
 
 					if((tempYEL > 950) && (tempGRN > 950) && (tempWHT > 950) && (tempBLU > 950)) { Serial.print(F("pass")); }
-					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
+					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
 				//lithium module sensors
@@ -212,7 +212,7 @@ void bringupTester_run(void)
 					Serial.print( String(tempBAY3) + ": ");
 
 					if((tempBAY1 > 950) && (tempBAY2 > 950) && (tempBAY3 > 950)) { Serial.print(F("pass")); }
-					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
+					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
 				/////////////////////////////////////////////////////////////////////
@@ -223,7 +223,7 @@ void bringupTester_run(void)
 
 				gpio_turnTemperatureSensors_on();
 				delay(500); //wait for temp sensor LPF
-				
+
 				//OEM sensors
 				{
 					uint16_t tempYEL = adc_getTemperature(PIN_TEMP_YEL);
@@ -240,7 +240,7 @@ void bringupTester_run(void)
 					   (tempGRN > 462) && (tempGRN < 562) &&
 					   (tempWHT > 462) && (tempWHT < 562) &&
 					   (tempBLU > 462) && (tempBLU < 562)) { Serial.print(F("pass")); }
-					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
+					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
 				//lithium module sensors
@@ -256,7 +256,7 @@ void bringupTester_run(void)
 					if((tempBAY1 > 462) && (tempBAY1 < 562) &&
 					   (tempBAY2 > 462) && (tempBAY2 < 562) &&
 					   (tempBAY3 > 462) && (tempBAY3 < 562)) { Serial.print(F("pass")); }
-					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
+					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
 				gpio_turnTemperatureSensors_off();
@@ -266,7 +266,7 @@ void bringupTester_run(void)
 				//test current sensor, both OEM fan speeds, and onboard fans
 				//Lambda Gen is set to 2V@3A, and is open-drained thru QTY3 fan drive FETs (in parallel, tested one at a time)
 				//current sensor has QTY19 turns, so 3A is seen as 57 amps assist.
-	
+
 				Serial.print(F("\n\nCurrent sensor 10b result @ 0A is "));
 				serialUSB_waitForEmptyBuffer();
 				{
@@ -278,7 +278,7 @@ void bringupTester_run(void)
 					Serial.print(String(resultADC));
 					Serial.print(F(" counts: "));
 					if((resultADC > 328) && (resultADC < 336)) { Serial.print(F("pass")); }
-					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
+					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
 				Serial.print(F("\nCurrent sensor 10b result @ 3A through OEM_FAN_L is "));
@@ -292,7 +292,7 @@ void bringupTester_run(void)
 					Serial.print(String(resultADC));
 					Serial.print(F(" counts: "));
 					if((resultADC > 585) && (resultADC < 605)) { Serial.print(F("pass")); }
-					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
+					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
 				Serial.print(F("\nCurrent sensor 10b result @ 3A through OEM_FAN_H is "));
@@ -306,7 +306,7 @@ void bringupTester_run(void)
 					Serial.print(String(resultADC));
 					Serial.print(F(" counts: "));
 					if((resultADC > 585) && (resultADC < 605)) { Serial.print(F("pass")); }
-					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
+					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
 				Serial.print(F("\nCurrent sensor 10b result @ 3A through onboard fans is "));
@@ -320,7 +320,7 @@ void bringupTester_run(void)
 					Serial.print(String(resultADC));
 					Serial.print(F(" counts: "));
 					if((resultADC > 585) && (resultADC < 605)) { Serial.print(F("pass")); }
-					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
+					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
 				//test that OEM current sensor turns off correctly
@@ -335,7 +335,7 @@ void bringupTester_run(void)
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
 					if((resultADC > 328) && (resultADC < 336)) { Serial.print(F("pass")); }
-					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")); didTestFail=true; }
+					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
 				//turn all FETs off (so they don't overheat)
@@ -353,7 +353,7 @@ void bringupTester_run(void)
 					uint16_t result = analogRead(PIN_VPIN_IN);
 					Serial.print(String(result));
 					if(result < 40) { Serial.print(F(" pass")); } //40 counts is 0.2 volts
-					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!")); didTestFail = true; }
+					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !")); didTestFail = true; }
 
 					analogWrite(PIN_VPIN_OUT_PWM,127); // 127 counts = 2.5 volts
 					delay(200); //LPF
@@ -361,7 +361,7 @@ void bringupTester_run(void)
 					Serial.print(F("\nVPIN Loopback @ 2.5V: "));
 					Serial.print(String(result));
 					if((result < 532) && (result > 492)) { Serial.print(F(" pass")); } //492 counts is 2.4 volts //532 counts is 2.6 volts
-					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!")); didTestFail = true; }
+					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !")); didTestFail = true; }
 
 					analogWrite(PIN_VPIN_OUT_PWM,255); // 255 counts = 5.0 volts
 					delay(200); //LPF
@@ -369,7 +369,7 @@ void bringupTester_run(void)
 					Serial.print(F("\nVPIN Loopback @ 5.0V: "));
 					Serial.print(String(result));
 					if(result > 984) { Serial.print(F(" pass")); } //984 counts is 4.8 volts
-					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!!!!!!!")); didTestFail = true; }
+					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !")); didTestFail = true; }
 
 				}
 
@@ -382,7 +382,7 @@ void bringupTester_run(void)
 					gpio_turnGridCharger_off(); //turn IGBT off (power applied to grid charger side)
 					delay(25);
 					if( gpio_isGridChargerPluggedInNow() == false ) { Serial.print(F("pass")); }
-					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!")); didTestFail = true; }
+					else { Serial.print(F("FAIL!! !! !! !! !! !")); didTestFail = true; }
 				}
 
 				Serial.print(F("\nTesting if grid IGBT is on:  "));
@@ -391,7 +391,7 @@ void bringupTester_run(void)
 					gpio_turnGridCharger_on(); //turn IGBT on... grid sense should now see power
 					delay(25);
 					if( gpio_isGridChargerPluggedInNow() == true ) { Serial.print(F("pass")); }
-					else { Serial.print(F("FAIL!!!!!!!!!!!!!!!!")); didTestFail = true; }
+					else { Serial.print(F("FAIL!! !! !! !! !! !")); didTestFail = true; }
 				}
 
 				gpio_turnGridCharger_off();
@@ -407,7 +407,7 @@ void bringupTester_run(void)
 					gpio_setGridCharger_powerLevel('H'); //open drain is left floating (negative logic)
 					delay(100);
 					if( gpio_keyStateNow() == true ) { Serial.print(F("pass")); } //key appears on
-					else { Serial.print(F("FAIL!!!!!!!!!!")); didTestFail = true; }
+					else { Serial.print(F("FAIL!! !! !! !")); didTestFail = true; }
 				}
 
 				Serial.print(F("\nTesting GRID_PWM: "));
@@ -416,14 +416,14 @@ void bringupTester_run(void)
 					gpio_setGridCharger_powerLevel('0'); //open drain is shorted (negative logic)
 					delay(100);
 					if( gpio_keyStateNow() == false ) { Serial.print(F("pass")); } //GRID_PWM's open collector is pulling to 0V
-					else { Serial.print(F("FAIL!!!!!!!!!!")); didTestFail = true; }
+					else { Serial.print(F("FAIL!! !! !! !")); didTestFail = true; }
 				}
 				//Don't add any code here
 				Serial.print(F("\nTesting 12V_KEYON state is OFF: "));
 				serialUSB_waitForEmptyBuffer();
 				{
 					if( gpio_keyStateNow() == false ) { Serial.print(F("pass")); } //key appears off
-					else { Serial.print(F("FAIL!!!!!!!!!!")); didTestFail = true; }
+					else { Serial.print(F("FAIL!! !! !! !")); didTestFail = true; }
 				}
 
 				gpio_setGridCharger_powerLevel('H'); //turn GRID_PWM off (negative logic)
@@ -434,7 +434,7 @@ void bringupTester_run(void)
 				gpio_turnBuzzer_on_highFreq();
 
 				if( didTestFail == false) { Serial.print(F("\n\nUnit PASSED!\n\n")); delay(100); }
-				else {	          Serial.print(F("\n\nUnit FAILED!!!!!!!!!!!\n\n")); delay(999); }
+				else {	          Serial.print(F("\n\nUnit FAILED!! !! !! !!\n\n")); delay(999); }
 				gpio_turnBuzzer_off();
 
 			}
@@ -448,7 +448,7 @@ void bringupTester_run(void)
 				//JTS note: The LTC6804 cannot enable discharge resistors with high impedance spoofed BMS voltage (i.e. from series LED chain).
 				//This is due to -2.5V PFET gate threshold voltage & also LTC6804 "Discharge Switch On-Resistance vs Cell Voltage" (p14).
 				//Therefore, to test discharge resistors, run test again with actual batteries plugged in, then use thermal imager.
-				
+
 				//JTS2doLater: Solder together a 75 Ohm test board - similar to existing LED test board - so that the above is no longer an issue.
 
 				LTC68042configure_wakeupCore();

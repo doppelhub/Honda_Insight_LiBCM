@@ -7,19 +7,18 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.6.2"
-    #define BUILD_DATE "2022JAN20"
+	#define FW_VERSION "0.6.3"
+    #define BUILD_DATE "2022JAN21"
 
 	#define CPU_MAP_MEGA2560
 
     //chose ONE of the following:
-    	//#define HW_REVB
     	#define HW_REVC
 
 	//choose ONE of the following:
-		#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
+		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
 		//#define SET_CURRENT_HACK_20 //+20%
-		//#define SET_CURRENT_HACK_40 //+40%
+		#define SET_CURRENT_HACK_40 //+40%
 		//#define SET_CURRENT_HACK_60 //+60% //Note: LiBCM can only measure between 71 A regen & 147 A assist //higher current values will (safely) rail the ADC
 
 	//choose ONE of the following:
@@ -47,11 +46,11 @@
 
 	#define CELL_VMAX_REGEN       42000 //42000 = 4.2000 volts
 	#define CELL_VMIN_ASSIST      31900 //allows for ESR-based voltage drop
-	#define CELL_VMAX_GRIDCHARGER 39000 //3.9 volts is 75% SoC //other values: See SoC.cpp
+	#define CELL_VMAX_GRIDCHARGER 41000 //3.9 volts is 75% SoC //other values: See SoC.cpp
 	#define CELL_VMIN_GRIDCHARGER 30000 //grid charger will not charge severely empty cells
 	#define CELL_VMIN_KEYOFF      34400 //When car is off, LiBCM turns off below this voltage
 
-	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //Uncomment if using stock Honda EHW5 lithium modules 
+	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //Uncomment if using stock Honda EHW5 lithium modules
 
 	#define STACK_mAh_NOM 5000 //nominal pack size (0:100% SoC) //LiBCM uses this value until it determines the actual pack capacity
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
