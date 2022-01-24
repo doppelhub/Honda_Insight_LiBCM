@@ -25,14 +25,14 @@ const uint16_t remap_actualToSpoofedSoC[101] = {
 	355,363,375,387,399,411,423,435,447,459, //LiCBM SoC = 30% to 39% //MCM enables light regen below 700 (70.0%)
 	471,483,495,507,519,532,544,556,568,580, //LiCBM SoC = 40% to 49%
 	592,604,616,628,640,652,664,676,688,700, //LiCBM SoC = 50% to 59% //MCM disables background regen agove 582 (58.2%)
-	701,705,709,713,717,721,725,728,732,736, //LiCBM SoC = 60% to 69% //TODO_NATALYA (not urgent as of 2022JAN21) evaluate regen behaviour while driving to see if LiBCM 60 to 69 needs to be remapped to a smaller MCM range of 69 to 72, or if this range needs to begin at LiBCM 60 = MCM 68% instead of 70%
+	701,705,709,713,717,721,725,728,732,736, //LiCBM SoC = 60% to 69% //TODO_NATALYA (not urgent as of 2022JAN21) drive and eval regen behaviour to see if LiBCM 60 to 69 needs to be remapped to a smaller MCM range of 69 to 72, or if this range needs to begin at LiBCM 60 = MCM 68% instead of 70%
 	740,744,748,752,756,760,764,768,772,775, //LiCBM SoC = 70% to 79%
 	779,783,787,791,795,799,800,814,829,843, //LiCBM SoC = 80% to 89% //MCM disables regen above 800 (80.0%)
 	857,871,886,900,914,929,943,957,971,986, //LiCBM SoC = 90% to 99%
 	1000,                                    //LiCBM SoC = 100%
 };  //Data empirically gathered from OEM NiMH IMA system //see ../Firmware/Prototype Building Blocks/Remap SoC.ods for calculations
 
-uint16_t previousOutputSoC = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()];
+uint16_t previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()];
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,15 +45,19 @@ void BATTSCI_begin(void)
   pinMode(PIN_BATTSCI_REn, OUTPUT);
   digitalWrite(PIN_BATTSCI_REn,HIGH);
 
-  previousOutputSoC = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; // If user grid charged over night SoC may have changed a lot.
-
   Serial2.begin(9600,SERIAL_8E1);
   Serial.print(F("\nBATTSCI BEGIN"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_enable(void) { digitalWrite(PIN_BATTSCI_DE,HIGH); }
+void BATTSCI_enable(void) {
+	digitalWrite(PIN_BATTSCI_DE,HIGH);
+	previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; // If user grid charged over night SoC may have changed a lot.
+	Serial.print(F("\nLiBCM SoC: "));
+    Serial.print(String(SoC_getBatteryStateNow_percent()));
+	Serial.print('%');
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -195,10 +199,10 @@ uint8_t BATTSCI_calculateChargeRequestByte(void)
 //Adjust final SoC value as needed to improve driving characteristics
 uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
 {
-  if (SoC_mappedToMCM_deciPercent > previousOutputSoC) {
-	  SoC_mappedToMCM_deciPercent = previousOutputSoC + 1;
-  } else if (SoC_mappedToMCM_deciPercent < previousOutputSoC) {
-	  SoC_mappedToMCM_deciPercent = previousOutputSoC - 1;
+  if (SoC_mappedToMCM_deciPercent > previousOutputSoC_deciPercent) {
+	  SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent + 1;
+  } else if (SoC_mappedToMCM_deciPercent < previousOutputSoC_deciPercent) {
+	  SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent - 1;
   }
 
   #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING
@@ -209,7 +213,7 @@ uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
 
   #endif
 
-  previousOutputSoC = SoC_mappedToMCM_deciPercent;
+  previousOutputSoC_deciPercent = SoC_mappedToMCM_deciPercent;
 
   return SoC_mappedToMCM_deciPercent;
 }
@@ -297,7 +301,7 @@ void BATTSCI_sendFrames(void)
       frameSum_87 += BATTSCI_writeByte( highByte(spoofedCurrentToSend_Counts << 1) & 0x7F ); //B5 Battery Current (upper byte)
       frameSum_87 += BATTSCI_writeByte(  lowByte(spoofedCurrentToSend_Counts     ) & 0x7F ); //B6 Battery Current (lower byte)
       frameSum_87 += BATTSCI_writeByte( 0x32 );                                              //B7 always 0x32, except before 0xAAbyte5 changes from 0x00 to 0x10 (then 0x23)
-      frameSum_87 += BATTSCI_writeByte( BATTSCI_calculateTemperatureByte() );                //B8 max battery module temp //TODO_JTS: Could we store the result of BATTSCI_calculateTemperatureByte so the function doesn't need to be performed twice per frame?
+      frameSum_87 += BATTSCI_writeByte( BATTSCI_calculateTemperatureByte() );                //B8 max battery module temp
       frameSum_87 += BATTSCI_writeByte( BATTSCI_calculateTemperatureByte() );                //B9 min battery module temp
       frameSum_87 += BATTSCI_writeByte( METSCI_getPacketB3() );                              //B10 MCM latest B3 data byte
                      BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_87) );            //B11 Send Checksum. sum(byte0:byte11) should equal 0
