@@ -32,6 +32,8 @@
 
 	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to print all cell voltages while driving //Grid charger always prints all cell voltages
 
+	//#define DISABLE_ASSIST_AND_REGEN //Uncomment to disable regen and assist entirely //JTS2doNow: add feature
+
 	#define MCME_VOLTAGE_OFFSET_ADJUST 12 //difference between OBDIIC&C and LiBCM spoofed pack voltage (Subtract LiBCM voltage from OBDIIC&C Bvo.  Default is 12.)
 
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
