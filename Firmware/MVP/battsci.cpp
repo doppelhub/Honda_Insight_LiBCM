@@ -54,9 +54,11 @@ void BATTSCI_begin(void)
 void BATTSCI_enable(void) {
 	digitalWrite(PIN_BATTSCI_DE,HIGH);
 	previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; // If user grid charged over night SoC may have changed a lot.
-	Serial.print(F("\nLiBCM SoC: "));
-    Serial.print(String(SoC_getBatteryStateNow_percent()));
-	Serial.print('%');
+	
+  //JTS: Don't want to overload serial buffer on cold boot (will cause check engine light)
+  //Serial.print(F("\nLiBCM SoC: "));
+  //Serial.print(String(SoC_getBatteryStateNow_percent()));
+	//Serial.print('%');
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -147,11 +149,11 @@ bool BATTSCI_isPackEmpty(void)
   uint16_t currentAdjusted_Vmin = CELL_VMIN_ASSIST;
 
   //account for additional cell voltage drop during assist
-  if(adc_getLatestBatteryCurrent_amps() > 0) { currentAdjusted_Vmin = CELL_VMIN_ASSIST - cellVoltageOffsetDueToESR(); }
+  //if(adc_getLatestBatteryCurrent_amps() > 0) { currentAdjusted_Vmin = CELL_VMIN_ASSIST - cellVoltageOffsetDueToESR(); }
 
-  if( (LTC68042result_loCellVoltage_get() > CELL_VMIN_ASSIST              ) && //above hard voltage limit (if SoC estimator is wrong)
-      (LTC68042result_loCellVoltage_get() > currentAdjusted_Vmin) && //above ESR-adjusted voltage limit (due to IMA current)
-      (  SoC_getBatteryStateNow_percent() > STACK_SoC_MIN                 ) )  //above SoC limit
+  if( (LTC68042result_loCellVoltage_get() > CELL_VMIN_ASSIST    ) && //above hard voltage limit (if SoC estimator is wrong)
+      //(LTC68042result_loCellVoltage_get() > currentAdjusted_Vmin) && //above ESR-adjusted voltage limit (due to IMA current)
+      (  SoC_getBatteryStateNow_percent() > STACK_SoC_MIN       ) )  //above SoC limit
        { return false; } //pack is good
   else { return true;  } //pack is undercharged
 }
@@ -199,11 +201,16 @@ uint8_t BATTSCI_calculateChargeRequestByte(void)
 //Adjust final SoC value as needed to improve driving characteristics
 uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
 {
-  if (SoC_mappedToMCM_deciPercent > previousOutputSoC_deciPercent) {
-	  SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent + 1;
-  } else if (SoC_mappedToMCM_deciPercent < previousOutputSoC_deciPercent) {
+  if (SoC_mappedToMCM_deciPercent > previousOutputSoC_deciPercent)
+  {
+    SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent + 1;
+  }
+  else if (SoC_mappedToMCM_deciPercent < previousOutputSoC_deciPercent)
+  {
 	  SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent - 1;
   }
+
+  previousOutputSoC_deciPercent = SoC_mappedToMCM_deciPercent;
 
   #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING
     if( (SoC_mappedToMCM_deciPercent < 720) && (SoC_mappedToMCM_deciPercent > 250) ) { SoC_mappedToMCM_deciPercent = 720; }
@@ -212,8 +219,6 @@ uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
     //           Need to verify MCM honors BATTSCI "disable assist" flag (so pack isn't over-discharged)
 
   #endif
-
-  previousOutputSoC_deciPercent = SoC_mappedToMCM_deciPercent;
 
   return SoC_mappedToMCM_deciPercent;
 }
