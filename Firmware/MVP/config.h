@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.6.2"
-    #define BUILD_DATE "2022JAN20"
+	#define FW_VERSION "0.6.3"
+    #define BUILD_DATE "2022JAN24"
 
 	#define CPU_MAP_MEGA2560
 
@@ -53,7 +53,7 @@
 	#define CELL_VMIN_GRIDCHARGER 30000 //grid charger will not charge severely empty cells
 	#define CELL_VMIN_KEYOFF      34400 //When car is off, LiBCM turns off below this voltage
 
-	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //Uncomment if using stock Honda EHW5 lithium modules 
+	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //Uncomment if using stock Honda EHW5 lithium modules
 
 	#define STACK_mAh_NOM 5000 //nominal pack size (0:100% SoC) //LiBCM uses this value until it determines the actual pack capacity
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
