@@ -452,14 +452,14 @@ void lcd_refresh(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-//old format
+//JTS2doNow: Implement proposed format
 // 		//                                          1111111111
 // 		//                                01234567890123456789
 // 		//4x20 screen text display format:********************
-// 		lcd2.setCursor(0,0);  lcd2.print("hi:h.hhh (max:H.HHH)"); //row0, (3,0)=h.hhh, (14,0)=H.HHH
-// 		lcd2.setCursor(0,1);  lcd2.print("lo:l.lll (min:L.LLL)"); //row1, (3,1)=l.lll, (14,1)=L.LLL
-// 		lcd2.setCursor(0,2);  lcd2.print("d:d.ddd, V:VVV (SSS)"); //row2, (2,2)=d.ddd, (11,2)=VVV  , (16,2)=SSS
-// 		lcd2.setCursor(0,3);  lcd2.print("E:0 /CCCCC, kW:+WW.0"); //row3, (2,3)=    0, (5,3)=CCCCC , (16,3)=WW.0
+// 		lcd2.setCursor(0,0);  lcd2.print("00Hx.xxx(y.yyy) Css%");  
+// 		lcd2.setCursor(0,1);  lcd2.print("00La.aaa(b.bbb) TggC");  
+// 		lcd2.setCursor(0,2);  lcd2.print("Vprrr(fff) dz.zzz   ");
+// 		lcd2.setCursor(0,3);  lcd2.print("Tuuuuu A-ccc kW-kk.k");
 
 //only call during keyOFF (screen updates are slow)
 void lcd_printStaticText(void)

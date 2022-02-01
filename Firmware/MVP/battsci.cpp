@@ -101,6 +101,8 @@ uint8_t BATTSCI_calculateTemperatureByte(void)
   uint8_t tempBATTSCI = temperature_battery_getLatest() + BATTSCI_TEMP_OFFSET;
   if(tempBATTSCI < BATTSCI_TEMP_21DEGC) { tempBATTSCI = BATTSCI_TEMP_21DEGC; } //spoof temps below 21 degC to 21 degC //allows IMA start and max assist
 
+  //JTS2doNow: EHW5 power density drops off below freezing... need to spoof lower temperatures to limit assist at cold temperatures.
+
   return tempBATTSCI;
 }
 
