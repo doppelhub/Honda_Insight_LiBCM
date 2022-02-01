@@ -188,7 +188,7 @@ bool lcd_printCellVoltage_hi(void)
 
 		static bool isBacklightOn = true;
 
-		if( (LTC68042result_hiCellVoltage_get() > 41500) || (isBacklightOn == false) )
+		if( (LTC68042result_hiCellVoltage_get() > CELL_VMAX_REGEN) || (isBacklightOn == false) )
 		{ //at least one cell overcharged
 
 			if ( isBacklightOn == true ) {
