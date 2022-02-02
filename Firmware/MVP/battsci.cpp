@@ -165,7 +165,7 @@ bool BATTSCI_isPackEmpty(void)
 //decide whether to allow assist and/or regen
 uint8_t BATTSCI_calculateChargeRequestByte(void)
 {
-  #define BATTSCI_IMA_START_ALLOWED        0x40 //IMA system will start engine
+  #define BATTSCI_IMA_START_ALLOWED        0x40 //use IMA to start engine
   #define BATTSCI_IMA_START_DISABLED       0x20 //use backup starter
   #define BATTSCI_DISABLE_ASSIST_AND_REGEN 0x72 //0x12 (engine started) + 0x20 (disable assist) + 0x40 (disable regen)
   #define BATTSCI_ALLOW_ASSIST_MASK        0xDF //clear DISABLE_ASSIST bit (0x20)
@@ -307,7 +307,7 @@ void BATTSCI_sendFrames(void)
 
       frameSum_87 += BATTSCI_writeByte( highByte(spoofedCurrentToSend_Counts << 1) & 0x7F ); //B5 Battery Current (upper byte)
       frameSum_87 += BATTSCI_writeByte(  lowByte(spoofedCurrentToSend_Counts     ) & 0x7F ); //B6 Battery Current (lower byte)
-      frameSum_87 += BATTSCI_writeByte( 0x32 );                                              //B7 always 0x32, except before 0xAAbyte5 changes from 0x00 to 0x10 (then 0x23)
+      frameSum_87 += BATTSCI_writeByte( 0x32 );                                              //B7 always 0x32, except before 0xAAbyte6 changes from 0x00 to 0x10 (then 0x23)
       frameSum_87 += BATTSCI_writeByte( BATTSCI_calculateTemperatureByte() );                //B8 max battery module temp
       frameSum_87 += BATTSCI_writeByte( BATTSCI_calculateTemperatureByte() );                //B9 min battery module temp
       frameSum_87 += BATTSCI_writeByte( METSCI_getPacketB3() );                              //B10 MCM latest B3 data byte
@@ -324,8 +324,8 @@ void BATTSCI_sendFrames(void)
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B2 Never changes unless P codes
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B3 Never changes unless P codes
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B4 Never changes unless P codes
-      frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B5 Never changes unless P codes //search note on '0xAAbyte5'
-      frameSum_AA += BATTSCI_writeByte( BATTSCI_calculateChargeRequestByte() );           //B6 disable assist and/or regen if battery high/low
+      frameSum_AA += BATTSCI_writeByte( BATTSCI_calculateChargeRequestByte() );           //B5 disable assist and/or regen if battery high/low
+      frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B6 Never changes unless P codes //search note on '0xAAbyte6'
       frameSum_AA += BATTSCI_writeByte( 0x61 );                                           //B7 BCM hardware/firmware version?
       frameSum_AA += BATTSCI_writeByte( highByte(spoofedCurrentToSend_Counts << 1) & 0x7F ); //B8 Battery Current (upper byte)
       frameSum_AA += BATTSCI_writeByte(  lowByte(spoofedCurrentToSend_Counts     ) & 0x7F ); //B9 Battery Current (lower byte)
