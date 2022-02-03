@@ -170,8 +170,8 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
 
   uint8_t flags = 0;
 
-  if(BATTSCI_isPackEmpty == true) { flags |= BATTSCI_DISABLE_ASSIST_FLAG; }
-  if(BATTSCI_isPackFull  == true) { flags |= BATTSCI_DISABLE_REGEN_FLAG;  }
+  if(BATTSCI_isPackEmpty() == true) { flags |= BATTSCI_DISABLE_ASSIST_FLAG; }
+  if(BATTSCI_isPackFull()  == true) { flags |= BATTSCI_DISABLE_REGEN_FLAG;  }
 
   return flags;
 }
