@@ -162,7 +162,7 @@ bool BATTSCI_isPackEmpty(void)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//sternly demands no regen and/or assist
+//sternly demand no regen and/or assist from MCM
 uint8_t BATTSCI_calculateRegenAssistFlags(void)
 {
   #define BATTSCI_DISABLE_ASSIST_FLAG 0x10
@@ -178,42 +178,54 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: add initial keyON values (first QTY100 frames after keyON are different: e.g. 0x00/01, 0x20/21, 0x40)
 //JTS2doNow: Change negative logic to positive logic (less confusing)
-//kindly requests regen and/or no regen
+
+// Byte06 ("charge request byte"):
+// Initial keyON values (first ~100 BATTSCI frames, ~7 seconds... until METSCI B4 is neither 24 nor 0):
+// 0x00 = 00d = 0b0000 0000: pack 'good'
+// 0x01 = 01d = 0b0000 0001: ??? See "Electronics/Data from OEM../Day 1/Day1Analysis.ods>Day1-5"
+// 0x20 = 32d = 0b0010 0000: pack empty
+// 0x21 = 33d = 0b0010 0001: ??? See "Electronics/Data from OEM../Day 1/Day1Analysis.ods>Day1-6"
+// 0x40 = 64d = 0b0100 0000: pack full
+
+// Afterwards, this becomes:
+// 0x12 = 18d = 0b0001 0010: pack 'good'
+// 0x32 = 50d = 0b0011 0010: pack empty
+// 0x52 = 82d = 0b0101 0010: pack full (usually... see "Day1-1" for case where pack is empty)
+
+//kindly request regen and/or no regen from MCM
 uint8_t BATTSCI_calculateChargeRequestByte(void)
 {
   #define BATTSCI_IMA_START_ALLOWED     0x40 //use IMA to start engine
   #define BATTSCI_IMA_START_DISABLED    0x20 //use backup starter
-  #define BATTSCI_NO_REQUEST            0x72 //0x12 (engine started) + 0x20 (disable assist) + 0x40 (disable regen)
-  #define BATTSCI_REQUEST_REGEN_MASK    0xDF //clear DISABLE_ASSIST bit (0x20)
-  #define BATTSCI_REQUEST_NO_REGEN_MASK 0xBF //clear DISABLE_REGEN  bit (0x40)
+  #define BATTSCI_NO_CHARGE_REQUEST     0x12 //engine started
+  #define BATTSCI_REQUEST_REGEN_FLAG    0x20 //request strong background regen
+  #define BATTSCI_REQUEST_NO_REGEN_FLAG 0x40 //request no background regen
 
   //has driver started car yet?
   if( (METSCI_getPacketB4() == 24) || (METSCI_getPacketB4() == 0) ) //if B4 packet is either 0 or 24, then car isn't started
   {
-    //car isn't started
-    //specifically: key turned to 'ON' position, but not yet to 'START' position
+    //car isn't started (key turned to 'ON' position, but not yet to 'START' position)
 
     //is IMA battery charged enough for IMA start?
     if(BATTSCI_isPackEmpty() == true) { return BATTSCI_IMA_START_DISABLED; } //pack empty
+    //JTS2doLater: 0x00 is a third case... probably means "pack neither empty nor full"
     else                              { return BATTSCI_IMA_START_ALLOWED;  } //pack charged enough for IMA start
   }
   else
   {
-    //car is started
-    //specifically: key previously turned to 'START', presently in 'ON' position
+    //car is started (key previously turned to 'START', presently in 'ON' position)
 
-    uint8_t chargeRequestByte = BATTSCI_NO_REQUEST;
+    uint8_t chargeRequestByte = BATTSCI_NO_CHARGE_REQUEST;
 
-    if(BATTSCI_isPackEmpty() == false) { chargeRequestByte &= BATTSCI_REQUEST_REGEN_MASK; } //allow assist
-    if(BATTSCI_isPackFull()  == false) { chargeRequestByte &= BATTSCI_REQUEST_NO_REGEN_MASK ; } //allow regen
+    if(BATTSCI_isPackEmpty() == true) { chargeRequestByte |= BATTSCI_REQUEST_REGEN_FLAG; }
+    if(BATTSCI_isPackFull()  == true) { chargeRequestByte |= BATTSCI_REQUEST_NO_REGEN_FLAG ; }
 
     return chargeRequestByte;
   }
 
   //code should never get here
-  return BATTSCI_NO_REQUEST;
+  return BATTSCI_NO_CHARGE_REQUEST;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
