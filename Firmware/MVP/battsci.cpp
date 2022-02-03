@@ -162,14 +162,32 @@ bool BATTSCI_isPackEmpty(void)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//decide whether to allow assist and/or regen
+//sternly demands no regen and/or assist
+uint8_t BATTSCI_calculateRegenAssistFlags(void)
+{
+  #define BATTSCI_DISABLE_ASSIST_FLAG 0x10
+  #define BATTSCI_DISABLE_REGEN_FLAG  0x20
+
+  uint8_t flags = 0;
+
+  if(BATTSCI_isPackEmpty == true) { flags |= BATTSCI_DISABLE_ASSIST_FLAG; }
+  if(BATTSCI_isPackFull  == true) { flags |= BATTSCI_DISABLE_REGEN_FLAG;  }
+
+  return flags;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//JTS2doNow: add initial keyON values (first QTY100 frames after keyON are different: e.g. 0x00/01, 0x20/21, 0x40)
+//JTS2doNow: Change negative logic to positive logic (less confusing)
+//kindly requests regen and/or no regen
 uint8_t BATTSCI_calculateChargeRequestByte(void)
 {
-  #define BATTSCI_IMA_START_ALLOWED        0x40 //use IMA to start engine
-  #define BATTSCI_IMA_START_DISABLED       0x20 //use backup starter
-  #define BATTSCI_DISABLE_ASSIST_AND_REGEN 0x72 //0x12 (engine started) + 0x20 (disable assist) + 0x40 (disable regen)
-  #define BATTSCI_ALLOW_ASSIST_MASK        0xDF //clear DISABLE_ASSIST bit (0x20)
-  #define BATTSCI_ALLOW_REGEN_MASK         0xBF //clear DISABLE_REGEN  bit (0x40)
+  #define BATTSCI_IMA_START_ALLOWED     0x40 //use IMA to start engine
+  #define BATTSCI_IMA_START_DISABLED    0x20 //use backup starter
+  #define BATTSCI_NO_REQUEST            0x72 //0x12 (engine started) + 0x20 (disable assist) + 0x40 (disable regen)
+  #define BATTSCI_REQUEST_REGEN_MASK    0xDF //clear DISABLE_ASSIST bit (0x20)
+  #define BATTSCI_REQUEST_NO_REGEN_MASK 0xBF //clear DISABLE_REGEN  bit (0x40)
 
   //has driver started car yet?
   if( (METSCI_getPacketB4() == 24) || (METSCI_getPacketB4() == 0) ) //if B4 packet is either 0 or 24, then car isn't started
@@ -186,16 +204,16 @@ uint8_t BATTSCI_calculateChargeRequestByte(void)
     //car is started
     //specifically: key previously turned to 'START', presently in 'ON' position
 
-    uint8_t chargeRequestByte = BATTSCI_DISABLE_ASSIST_AND_REGEN;
+    uint8_t chargeRequestByte = BATTSCI_NO_REQUEST;
 
-    if(BATTSCI_isPackEmpty() == false) { chargeRequestByte &= BATTSCI_ALLOW_ASSIST_MASK; } //allow assist
-    if(BATTSCI_isPackFull()  == false) { chargeRequestByte &= BATTSCI_ALLOW_REGEN_MASK ; } //allow regen
+    if(BATTSCI_isPackEmpty() == false) { chargeRequestByte &= BATTSCI_REQUEST_REGEN_MASK; } //allow assist
+    if(BATTSCI_isPackFull()  == false) { chargeRequestByte &= BATTSCI_REQUEST_NO_REGEN_MASK ; } //allow regen
 
     return chargeRequestByte;
   }
 
   //code should never get here
-  return BATTSCI_DISABLE_ASSIST_AND_REGEN;
+  return BATTSCI_NO_REQUEST;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -307,7 +325,7 @@ void BATTSCI_sendFrames(void)
 
       frameSum_87 += BATTSCI_writeByte( highByte(spoofedCurrentToSend_Counts << 1) & 0x7F ); //B5 Battery Current (upper byte)
       frameSum_87 += BATTSCI_writeByte(  lowByte(spoofedCurrentToSend_Counts     ) & 0x7F ); //B6 Battery Current (lower byte)
-      frameSum_87 += BATTSCI_writeByte( 0x32 );                                              //B7 always 0x32, except before 0xAAbyte6 changes from 0x00 to 0x10 (then 0x23)
+      frameSum_87 += BATTSCI_writeByte( 0x32 );                                              //B7 always 0x32, except before 0xAAbyte5 changes from 0x00 to 0x10 (then 0x23)
       frameSum_87 += BATTSCI_writeByte( BATTSCI_calculateTemperatureByte() );                //B8 max battery module temp
       frameSum_87 += BATTSCI_writeByte( BATTSCI_calculateTemperatureByte() );                //B9 min battery module temp
       frameSum_87 += BATTSCI_writeByte( METSCI_getPacketB3() );                              //B10 MCM latest B3 data byte
@@ -324,8 +342,8 @@ void BATTSCI_sendFrames(void)
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B2 Never changes unless P codes
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B3 Never changes unless P codes
       frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B4 Never changes unless P codes
-      frameSum_AA += BATTSCI_writeByte( BATTSCI_calculateChargeRequestByte() );           //B5 disable assist and/or regen if battery high/low
-      frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B6 Never changes unless P codes //search note on '0xAAbyte6'
+      frameSum_AA += BATTSCI_writeByte( BATTSCI_calculateRegenAssistFlags()  );           //B5 Disable assist/regen flags
+      frameSum_AA += BATTSCI_writeByte( BATTSCI_calculateChargeRequestByte() );           //B6 Request regen/noRegen if battery low/high
       frameSum_AA += BATTSCI_writeByte( 0x61 );                                           //B7 BCM hardware/firmware version?
       frameSum_AA += BATTSCI_writeByte( highByte(spoofedCurrentToSend_Counts << 1) & 0x7F ); //B8 Battery Current (upper byte)
       frameSum_AA += BATTSCI_writeByte(  lowByte(spoofedCurrentToSend_Counts     ) & 0x7F ); //B9 Battery Current (lower byte)
