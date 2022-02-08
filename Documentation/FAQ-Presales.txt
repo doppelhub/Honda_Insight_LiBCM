@@ -1,0 +1,136 @@
+Q: How do I pronounce the name?
+A: Layman's terms: Say the five letters separately (L, I, B, C, M)
+A: Phonetic: El+Eye+Bee+Sea+'Em 
+A: IPA: 'ɛl'aɪˈbiˈsiˈɛm`
+
+Q: What is "LiBCM"
+A: "Lithium Battery Condition Monitor"
+A: A drop-in replacement computer that allows safe lithium operation in the G1 Honda Insight (2000-2006).
+
+Q: What is "Linsight"?
+A: "Lithium Insight", a company.
+A: Previously: a never-released hardware project (circa 2016).  That project morphed into "LiBCM".
+
+Q: What new features does LiBCM add?
+A: More power!  LiBCM can more than double the original hybrid power output.
+A: Effortless grid charging comes standard.  Plug LiBCM into an extension cord; LiBCM handles the rest.
+A: Built-in cell balancing whenever the car is off.
+A: Per-cell voltage measurements.  Diagnose pack issues down to the specific cell.
+A: Custom LCD screen reports real-time hybrid pack data to the driver.
+A: Advanced USB diagnostic data.  Log data to your computer as you drive.
+A: USB firmware updates... add new features as they become available
+A: LiBCM can cool the battery while the car is off.
+
+Q: Will LiBCM make my car faster?
+A: Absolutely.  The difference is night-and-day.
+A: Adding the +40% current hack PCB (sold by user "@Bull Dog") will add even more power.
+A: Once you drive an LiBCM-equipped Insight, you'll never want to switch back.
+A: Testimonial: youtube.com/watch?v=srkx_Rq2-ro
+
+Q: How much additional power does LiBCM add to the car?
+A: A stock IMA system with NiMH cells delivers at most 12 kW (16 horsepower).
+A: An LiBCM-equipped pack in a manual transmission car delivers at most 18 kW (24 horsepower)(50% more power)
+A: Adding the current hack PCB (https://www.youtube.com/watch?v=wtwM0kgxeJ4) to a manual transmission car increases LiBCM power to at most 24 kW (32 horsepower)(100% more power).
+A: Adding the current hack PCB to a CVT car increases LiBCM power to around 21 kW.
+A: The above values are only briefly possible in 2nd or 3rd gear.  To access this power at your command, you need a manual IMA control system.
+A: LiBCM can theoretically deliver at most 32 kW (42 horsepower)(e.g. with lower ESR cells and 60S configuration).
+
+Q: Will all this additional power 'hurt' the stock IMA system?
+A: The NiMH pack is by far the weakest part of the OEM IMA system.
+A: The next weakest part is the IGBT module.  The MCM monitors both current and temperature on this module (and will disable assist/regen as needed).
+A: The IMA motor does not have temperature feedback.  However, the 5 Ah EHW5 lithium modules LiBCM is designed for cannot provide regen/assist long enough to overheat the motor (a larger lithium battery could, though).  Anecdotal evidence suggests that discharging an 8x larger pack does not overheat the IMA motor. 
+A: Overall, there's low risk that installing LiBCM will damage the IMA system.
+A: LiBCM could cause increased wear on mechanical components, due to the increased torque delivered to the wheels.
+A: Use LiBCM at your own risk.
+
+Q: Is LiDisplay included with the DIY LiBCM Kit?
+A: No.  It hasn't been designed yet.  For now, a basic 4x20 debug LCD is included.
+A: Once LiDisplay exists, it will be sold as a separate product (for maybe $100... TBD).
+
+Q: Is LiBCM legal to use on roadways in the United States?
+A: Yes, per the "Clean Alternative Fuel Vehicle and Engine Conversions Act", passed in 2011.
+A: See 40 CFR parts 85 & 86.
+
+Q: How "open source" is LiBCM?
+A: 100%.  The entire design is located here: github.com/doppelhub/Honda_Insight_LiBCM
+
+Q: Can I manufacture and sell my own LiBCM modules?
+A: Yes, except that you cannot use the names 'LiBCM' or 'Linsight'.
+A: Full disclosure: you probably won't make any money doing it.
+
+Q: Does LiBCM work with other vehicles (besides the G1 Honda Insight)?
+A: No.  LiBCM is only designed for the G1 Honda Insight.
+A: I'm not interested in 'porting' the design to other vehicles (except as a paid contractor).
+
+Q: Do I really need a battery management system (BMS) to use lithium batteries?
+A: Most lithium battery chemistries are unstable beyond a narrow voltage range.  Charging/discharging cells beyond this range can cause a thermal event (i.e. fire).
+A: Operating a lithium battery without a BMS might work initially, but isn't safe.
+
+Q: What's included with the "DIY LiBCM Kit"?
+A: Everything except the actual lithium battery modules.
+A: Complete details: linsight.org/kit
+
+Q: Where do I purchase lithium battery modules?
+A: See linsight.org/kit
+
+Q: Why is LiBCM so expensive?
+A: It's not.
+A: As of this writing, I've personally invested more than 2400 hours designing LiBCM.  I estimate that each LiBCM Kit will take 4 hours to manufacture.  Assuming I sell QTY250 LiBCM units, I'll have invested 3400+ hours into the LiBCM project, which works out to 13+ hours of labor per shipped LiBCM unit.  Honestly I should charge quite a bit more for LiBCM, but it's a labor of love... I'm not in this for the money.
+
+Q: What happens if my Insight is in a wreck?
+A: Hopefully you're ok.
+A: If you follow the installation instructions, LiBCM isn't any less safe than OEM.
+
+Q: Is LiBCM better than the computer it replaces?
+A: Absolutely, and in every possible way.
+
+Q: What is a "Drop-In LiBCM Battery"?
+A: A completely assembled lithium battery - contained within the original plastic battery housing - with the LiBCM computer already connected and ready to go.  Installation is nearly identical to an OEM battery (see www.linsight.org/install/libcm-equipped-battery).  
+
+Q: Where do I purchase a Drop-In LiBCM Battery?
+A: BumbleBatteries.com is the primary Drop-In LiBCM Battery distributor.
+A: The following insightcentral.net members are authorized to install 
+A: I do not sell Drop-In LiBCM Batteries directly to customers.  However, I do offer an "LiBCM Kit" for sale to anyone who can pass my safety quiz.
+
+Q: How difficult is it to convert an OEM battery to use LiBCM?
+A: DIY installation instructions are available here: linsight.org/install/diy-libcm-kit
+
+Q: What is LiBCM's warranty period?
+A: "Drop-In LiBCM Batteries" are warranted per the terms of the authorized reseller.
+A: From a legal standpoint, "DIY LiBCM Kits" are provided as-is, without any warranty whatsoever.  Note that each DIY LiBCM Kit is 100% test driven prior to shipment.
+A: I will make reasonable efforts to repair defective components at my actual cost, regardless of fault.  If the LiBCM PCB cannot be safely repaired, I will replace the entire PCB at a reduced cost. 
+A: On a case-by-case basis, if I determine the failure occurred at no fault of the user, I will repair the PCB for free, excluding shipping costs.
+
+Q: Where is LiBCM manufactured?
+A: In my garage in Chattanooga, TN, using globally sourced parts.
+A: Here's a video: https://www.youtube.com/watch?v=lkyL85lTiGc
+
+Q: What portions of the original hybrid system does LiBCM replace?
+A: The original "Battery Condition Module" ('BCM') and the NiMH cells.
+A: Complete list of removed OEM parts: www.youtube.com/watch?v=5RkxeL5m9-A
+
+Q: What parts of the original IMA system are modified by LiBCM?
+A: The IMA wire harness has a single wire cut and spliced.  Easily revertible.
+A: The battery temperature harness has two wires cut and shortened.  Easily revertible.
+A: The battery voltage tap harness (with orange side plate) has two wires cut.  Easily revertible as long as you only cut those two wires (more details in installation videos).
+A: Full details: linsight.org/install/diy-libcm-kit/modify-oem-parts
+
+Q: If I decide the DIY LiBCM Kit isn't for me, can I get a refund?
+A: Yes, and you don't need to state a reason.  I will refund your entire purchase price - minus my actual costs** - for any reason whatsoever.  
+A: I do not sell Drop-In LiBCM Batteries directly to end users (only DIY LiBCM Kits).  Therefore, if you purchase a Drop-In LiBCM Battery from an authorized installer and decide it isn't for you, then you'll need to contact the installer directly (and go by their terms).
+**I will not refund the following fees:
+-Actual shipping costs, and/or;
+-Fees that PayPal doesn't refund.  If you paid using "friends & family", then that fee is $0.30.  If you paid using "commercial service", then that fee is $35.17, and/or;
+-LiBCM Kit parts that are returned damaged; I will charge a reasonable fee to cover the repair.
+
+Q: How easy is it to uninstall LiBCM (and go back to NiMH)?
+A: If you follow the LiBCM installation instructions, the entire process is electrically reversible.  Mechanically, there will be a few leftover holes, but they do not affect the original NiMH functionality.
+A: Since LiBCM only modifies components within the original battery enclosure, the simplest method to convert back to NiMH is to purchase an additional NiMH battery enclosure.
+A: If there's any chance you might want to revert back to NiMH later (using the same battery enclosure), follow the specific "I might go back" instructions noted in these videos: linsight.org/install/diy-libcm-kit/modify-oem-parts
+
+Q: Is the LiBCM Kit dangerous to install?
+A: Absolutely.  LiBCM can easily kill you if you don't follow the installation instructions.
+
+Q: How is LiBCM shipped?
+A: USA: Flat rate shipping (UPS or USPS) is included in the purchase price.
+A: Other: The first $20 is included in the purchase price.  You pay the difference based on the actual USPS rate.

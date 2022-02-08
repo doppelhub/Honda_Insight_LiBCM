@@ -1,0 +1,35 @@
+Q: Will LiBCM work with other (non-EHW5) lithium modules?
+A: Yes, but it will require custom mechanical fitment (e.g. HVDC current and BMS ribbon cables).
+A: Linsight will create custom-length ribbon cables to any length.
+A: You must determine how to correctly connect these cables to each cell/module.
+A: You must use a lithium chemistry whose charging range lies between 3.000 & 4.200 volts. 
+A: LTO & LiFePO4 modules ARE NOT ELIGIBLE for the early adopter program (but may work later).
+A: At present, LiBCM only supports 48S configurations.
+
+Q: Which lithium chemistries will LiBCM work with?
+A: LiBCM's hardware supports all known lithium cell chemistries.
+A: The firmware defaults attempt to keep each cell between 3.25 volts (10% SoC) and 3.9 volts (85% SoC), with absolute max values between 3.00 volts (0% SoC) and 4.2 volts (100% SoC).  
+A: These values can be changed (at your own risk) to any value between 1.1 & 5.0 volts.
+
+Q: Can I use LiBCM with the original NiMH cells?
+A: Yes, but you'd need to change the firmware.  I will not help you do that.
+A: I can't think of a reason why you'd want to do this.
+
+Q: Can I use LiBCM without any battery at all (e.g. as a defeat device to pass emissions)?
+A: Yes, but you'd need change the firmware.  I will not help you do that.
+A: Per 42 USC 7522: defeating an emissions component is illegal in the United States.
+A: There are cheaper ways to defeat IMA-related P-codes in the G1 Honda Insight.
+
+Q: How many cells in series does LiBCM support?
+A: The hardware supports 36S to 60S.
+A: At present, the firmware only supports 48S.
+
+Q: Can LiBCM work with packs larger than 60S?
+A: Not easily.  You would need to connect an additional BMS PCB to LiBCM's SPI bus, and then rewrite the firmware to talk to it.  It's possible, but you're on your own.
+
+Q: Can LiBCM work with packs less than 36S?
+A: Probably not, as the pack voltage becomes too low; the OEM MCM prevents assist below 110 volts.
+A: If the voltage drops too low, the MCM will enable force background charging, which could overcharge packs less than 36S.
+
+Q: Why would placing the fuse/switch between modules 2 & 3 damage LiBCM?
+A: Six cells in each of these two modules share a single LTC6804 voltage monitoring IC.  If the fuse blows and/or the switch is turned off - and then current is applied to the HVDC bus - then the full pack voltage will develop across one LTC6804.  This will (safely) destroy the LiBCM PCB.  The ideal solution is to use a different BMS IC (e.g. LTC6813), but the Great Chip Shortage forced my hand.

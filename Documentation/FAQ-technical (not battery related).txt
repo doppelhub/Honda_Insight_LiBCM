@@ -1,0 +1,107 @@
+Q: How can LiBCM "more than double the original hybrid power output"?  Is that safe?
+A: Insight's NiMH cells are the weakest link in the original hybrid electric design.  LiBCM replaces the outdated NiMH chemistry with modern lithium cells, which can handle considerably more power.
+
+Q: Does LiBCM work with CVT transmissions?
+A: Yes.
+
+Q: Does LiBCM work with 2005 & 2006 Honda Insights?
+A: Yes.
+
+Q: Do you still recommend cutting the DCDC's WHT/GRN wire (to keep 12 volt battery charged)?
+A: Yes.  Honda's goal was to slightly improve mpg (by selectively not charging the 12 volt battery).  However, that design decision is a false economy, as it rapidly degrades the 12 volt battery. 
+A: Cutting the WHT/GRN wire forces the DCDC to output 14.x volts, which keeps the 12 volt battery charged (just like a traditional alternator does).
+A: Cutting the WHT/GRN wire is not required and technically has nothing to do with LiBCM.
+
+Q: Can LiBCM turn the DCDC converter on whenever the key is in the 'ON' position?
+A: Yes, by connecting the DCDC's GRN/BLK wire to a GPIO pin on LiBCM.
+A: Full details to be announced later.
+
+Q: Will the car still run if LiBCM fails?
+A: Yes.  If the IMA system fails, the car will use the backup starter (just like OEM).
+A: LiBCM won't leave you any more stranded than an OEM pack will.
+A: In an error condition where LiBCM is at-fault, unplugging the BCM connector will allow the IMA system to run the DCDC converter (with a CEL).
+A: Unless the PCB is damaged, LiBCM will continue monitoring cell voltages even when the BCM connector is unplugged. If a cell gets too high/low, a buzzer will sound (whether or not the vehicle is on).  If you continue driving the vehicle while the buzzer is on, the lithium modules could catch on fire. 
+
+Q: Will LiBCM work in my car is something in the IMA system is broken?
+A: LiBCM will not work unless the IMA system is entirely present and functional, except that the OEM BCM and the actual NiMH cells can be in any condition (because LiBCM replaces them entirely).  Everything else in the IMA system must work.
+
+Q: My IMA/CEL light is on.  Will LiBCM 'fix' that?
+A: If the IMA issue is due to a failing NiMH battery, then yes.
+A: LiBCM will not 'fix' any other IMA/CEL error.  
+
+Q: How do I grid charge LiBCM?  
+A: With the key off, plug LiBCM's NEMA 5-15P power cable into an extension cord.
+A: LiBCM automatically charges and balances the cells as needed.
+A: You can leave the grid charger plugged in as long as you want.
+A: You can unplug the grid charger whenever you want.
+
+Q: Is grid charging required?
+A: No, but it's recommended so the battery is full at the beginning of each drive cycle.
+
+Q: Is it safe to touch the exposed metal prongs on the grid charger power cable?
+A: Yes.  There are redundant diodic and galvanic isolation barriers between the IMA HVDC bus and the 5-15P plug.
+
+Q: What is LiBCM's recommended ambient operating temperature range?
+A: -30 degC to 55 degC
+
+Q: How often should I grid charge?
+A: Grid charging is only necessary when the resting cell voltages become severely unbalanced.  However, I recommend grid charging as often as possible.  Starting each trip with a full pack allows you to use assist without worrying about the mpg penalty required to recharge the pack.  
+A: With LiBCM, there's no 'guesswork'... LiBCM's LCD display will tell you when grid charging is necessary.
+
+Q: Can I leave the grid charger plugged in?
+A: Yes, for as long (or as little) as you'd like.  LiBCM 100% handles grid charging, just like any other modern lithium vehicle.
+
+Q: What aftermarket accessories are compatible with LiBCM?
+A: Any accessory whose wiring doesn't physically connect to wires inside the IMA bay.
+A: Any accessory that modifies the signals between the MCM & ECM (e.g. IMAC&C).
+A: So-called "current hacks", except that LiBCM can spoof the battery current sensor in software.  If you'd rather leave the entire 'current hack' in place, you can disable said software spoofing (and use your existing hardware instead).  LiBCM is specifically designed for use with the (excellent) "Current Hack PCB", designed by @retepsnikrep & @Bull Dog.
+
+Q: What aftermarket accessories are NOT compatible with LiBCM?
+A: Any and all NiMH-based grid chargers, which are dangerous to use with LiBCM.  LiBCM's built-in grid charger makes these unnecessary.
+A: Dischargers of any kind.  LiBCM's built-in balancing hardware makes these unnecessary. 
+A: Any device that intercepts/modifies data from the BATTSCI data bus (which routes from the BCM to the MCM).
+
+Q: Why doesn't LiBCM support ____________?
+A: Maybe it should?  I'm all ears for any and all feature requests.
+A: Post all feature requests in the relevant insightcentral.net forums.
+
+Q: How long can I leave my LiBCM-equipped Insight parked without charging (e.g. at the airport)?
+A: This primarily depends on the initial SoC and the ambient temperature.  But in general:
+	-Best case (mild temperature and 100% initial SoC): 3 years
+	-Worst case (extreme temperatures and 10% initial SoC): 3 months
+
+Q: If I plan to park my Insight for longer than the above figures, how do I prevent LiBCM from completely discharging my battery to empty?
+A: Grid charge the battery until full (to allow longer storage time), or;
+A: Leave the grid charger plugged in as long as the car is in storage, or;
+A: Turn the IMA master switch off (ideally with the pack half-charged).
+
+Q: Why does LiBCM spoof a lower pack voltage?  Why not send the actual voltage to the other car computers?
+A: The lithium charge/discharge voltage curve is substantially different from NiMH cells.
+A: Sending the actual pack voltage would cause the IMA system to undercharge the lithium modules.
+A: Spoofing a lower voltage causes the IMA system to deliver more power to the hybrid motor.
+
+Q: Can LiBCM communicate directly with the H-Line serial bus
+A: The LiBCM hardware supports it, but it's not supported in firmware.
+A: The OEM BCM isn't connected to the H-line either.  Instead, the MCM transmits BCM data to the H-line (e.g. to display SoC on OBDIIC&C).
+
+Q: Does LiBCM ever turn off?
+A: LiBCM typically remains on, unless the IMA battery is empty.  This allows LiBCM to:
+-balance cells when the car is off, and;
+-sense when the grid charger is plugged in, and;
+-monitor cell voltage and temperature at all times.
+A: LiBCM powers on each time the IMA switch is manually turned on.
+A: LiBCM also powers on whenever the key is in the 'ON' position (and the IMA switch is on).
+A: LiBCM can choose to turn itself off (as required).  To turn LiBCM back on, either turn the key on or cycle the IMA switch.
+
+Q: How long does it take to balance a lithium pack?
+A: When LiBCM is first installed in the car, if the SoC is drastically different between two modules, then it could take several days to balance the cells.  It's ok to drive the car with an unbalanced pack, but the SoC range will be limited. 
+A: Healthy lithium packs spend at most a few hours balancing each month.
+A: Unhealthy packs should still rebalance completely overnight.
+A: Balancing occurs automatically whenever the car is off, as long as the pack is sufficiently charged.  Plugging the grid charger in allows the modules to balance faster, as the fans can run continuously.
+
+Q: Why does it take so long to balance the lithium cells?
+A: LiBCM balances cells by connecting a 75 Ohm resistor in parallel to each 'full' cell.  LiBCM balances cells near 3.9 volts, hence LiBCM can only discharge full cells at 52 mA (200 mW/cell).  Since each 5 Ah EHW5 cell contains 18.5 Wh of energy, if you were to install one completely empty module (0% SoC) and another completely full module (100% SoC), then the worst-case balancing time would be 92 hours.
+A: After the initial balancing concludes, the cells in a healthy pack should always stay well balanced.
+
+Q: If my car previously had the current hack installed, do I leave it installed?
+A: The only current hack hardware that should remain installed is the PCB inside the MCM (https://www.youtube.com/watch?v=wtwM0kgxeJ4), and the high current fuse (150/175/200 A).  Remove all other current hack hardware.

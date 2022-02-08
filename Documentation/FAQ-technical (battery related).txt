@@ -1,0 +1,19 @@
+Q: How much lighter is an LiBCM-equipped pack?
+A: A complete OEM NiMH pack weighs 73 pounds (including MCM & BCM).
+A: A complete LiBCM-eqipped EHW5 pack weighs 62 pounds (with MCM & grid charger).
+
+Q: Can I convert an 18S+ module to 18S- (or 18S- to 18S+)?
+A: No, or rather it's not officially supported.
+A: Linsight created a working prototype (by flipping the individual cells aroun), but the concept never made it to production.  If you do this, the BMS pinout will change and the high current cable lengths are different.
+A: You're on your own mechanically if you decide to convert an 18S+/18S- module to 18S-/18S+. 
+A: Linsight only supports the configurations shown here: linsight.org/kit.
+
+Q: How long will EHW5 lithium modules last?
+A: Panasonic's datasheet specifies their EHW5 cell will retain 90% capacity after 10 years.
+A: The 5 Ah EHW5 Panasonic cell is rated for 50,000 cycles (10-85% SoC) with a continuous 40 A charge/discharge test.
+
+Q: What are the best ways to maximize battery life?
+A: In warm weather, park Insight out of direct sunlight.
+A: When temperatures drop below freezing for extended periods, park Insight in direct sunlight (to increase pack temperature during the day). 
+A: Limit assist and regen whenever the resting cell voltage delta exceeds 25 mV.
+
