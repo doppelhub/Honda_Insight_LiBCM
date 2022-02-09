@@ -42,13 +42,13 @@ void loop()
 		if( gpio_isGridChargerPluggedInNow() == PLUGGED_IN ) { lcd_gridChargerWarning(); } //P1648 occurs if grid charger powered while keyON
 		else if( EEPROM_firmwareStatus_get() != FIRMWARE_STATUS_EXPIRED ) { BATTSCI_sendFrames(); } //P1648 occurs if firmware is expired
 
-	 	LTC68042cell_nextVoltages(); //round-robin handler measures QTY3 cell voltages per call
+		LTC68042cell_nextVoltages(); //round-robin handler measures QTY3 cell voltages per call
 
-    	METSCI_processLatestFrame();
+		METSCI_processLatestFrame();
 
-    	adc_updateBatteryCurrent();
+		adc_updateBatteryCurrent();
 
-  		vPackSpoof_setVoltage();
+		vPackSpoof_setVoltage();
 
 		debugUSB_printLatest_data_keyOn();
 
