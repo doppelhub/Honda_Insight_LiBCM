@@ -1,35 +1,59 @@
+FAQ - Lithium Battery - Other Configurations
+
 Q: Will LiBCM work with other (non-EHW5) lithium modules?
 A: Yes, but it will require custom mechanical fitment (e.g. HVDC current and BMS ribbon cables).
 A: Linsight will create custom-length ribbon cables to any length.
 A: You must determine how to correctly connect these cables to each cell/module.
-A: You must use a lithium chemistry whose charging range lies between 3.000 & 4.200 volts. 
-A: LTO & LiFePO4 modules ARE NOT ELIGIBLE for the early adopter program (but may work later).
 A: At present, LiBCM only supports 48S configurations.
+A: Without firmware modifications, LiBCM supports batteries from 0.5 Ah to 65.5 Ah.
+A: Linsight only officially supports EHW5 lithium modules.
 
-Q: Which lithium chemistries will LiBCM work with?
-A: LiBCM's hardware supports all known lithium cell chemistries.
-A: The firmware defaults attempt to keep each cell between 3.25 volts (10% SoC) and 3.9 volts (85% SoC), with absolute max values between 3.00 volts (0% SoC) and 4.2 volts (100% SoC).  
+Q: Which lithium chemistries does LiBCM work with?
+A: LiBCM's hardware supports all known lithium cell chemistries.  Specifically, LiBCM supports any cell that charges with a CC/CV profile.
+A: At present, LTO & LiFePO4 modules are NOT supported in firmware.
+A: The firmware defaults attempt to keep each cell between 3.47 volts (10% SoC) and 4.01 volts (85% SoC), with absolute max values between 3.01 volts (0% SoC) and 4.2 volts (100% SoC).  
 A: These values can be changed (at your own risk) to any value between 1.1 & 5.0 volts.
 
-Q: Can I use LiBCM with the original NiMH cells?
-A: Yes, but you'd need to change the firmware.  I will not help you do that.
-A: I can't think of a reason why you'd want to do this.
-
-Q: Can I use LiBCM without any battery at all (e.g. as a defeat device to pass emissions)?
-A: Yes, but you'd need change the firmware.  I will not help you do that.
-A: Per 42 USC 7522: defeating an emissions component is illegal in the United States.
-A: There are cheaper ways to defeat IMA-related P-codes in the G1 Honda Insight.
-
 Q: How many cells in series does LiBCM support?
-A: The hardware supports 36S to 60S.
+A: The hardware supports from 4S to 60S.
 A: At present, the firmware only supports 48S.
 
 Q: Can LiBCM work with packs larger than 60S?
 A: Not easily.  You would need to connect an additional BMS PCB to LiBCM's SPI bus, and then rewrite the firmware to talk to it.  It's possible, but you're on your own.
 
 Q: Can LiBCM work with packs less than 36S?
-A: Probably not, as the pack voltage becomes too low; the OEM MCM prevents assist below 110 volts.
+A: Probably not, as the pack voltage becomes too low for the OEM MCM, which severely limits assist below 120 volts.
 A: If the voltage drops too low, the MCM will enable force background charging, which could overcharge packs less than 36S.
 
+Q: Can I use LiBCM with the original NiMH cells?
+A: Yes, but you'd need to change the firmware.  I will not help you do that.
+A: I can't think of a reason why you'd want to do this.
+
+Q: Can I use LiBCM without any battery at all (e.g. as a defeat device to pass emissions)?
+A: Per 42 USC 7522: defeating an emissions component is felony in the United States.  LiBCM's firmware will not work unless a lithium battery is connected.
+
 Q: Why would placing the fuse/switch between modules 2 & 3 damage LiBCM?
-A: Six cells in each of these two modules share a single LTC6804 voltage monitoring IC.  If the fuse blows and/or the switch is turned off - and then current is applied to the HVDC bus - then the full pack voltage will develop across one LTC6804.  This will (safely) destroy the LiBCM PCB.  The ideal solution is to use a different BMS IC (e.g. LTC6813), but the Great Chip Shortage forced my hand.
+A: Six cells in each of these two modules share a single voltage monitoring IC, which is only rated to measure up to 8 volts per cell.  If the fuse and/or switch are installed between modules 2 & 3 - and the fuse blows and/or the switch is turned off - then the entire pack voltage would develop across one measurement circuit.  This would (safely) destroy the LiBCM PCB.
+A: The ideal solution is to use a different IC (e.g. LTC6813, which is unavailable due to the Great Chip Shortage).
+
+Q: Considering the abundance of 18S modules, and that a 54S (18S*3) setup fits inside the OEM enclosure, why does LiBCM presently only support 48S?
+A: While QTY3 18S modules mechanically fit inside the OEM enclosure, placing an 18S module in bay 1 (closest to the junction board) prevents the high current cables from cleanly routing to the junction board.  
+A: Numerous firmware changes are required to support 54S.
+A: The OEM DCDC converted will not work above ~218 volts.
+A: Due to other hardware issues**, the increased voltage from a 54S pack only increases assist power by ~8% (compared to an equivalent 48S pack).
+**Primary limitation: LiBCM can only spoof the actual pack voltage down to 67%. Since the MCM reduces current as the (spoofed) pack voltage increases, the higher voltage developed by a 54S pack will cause the MCM to reduce output current, hence the output power is also reduced.  Adding additional external resistors might resolve this problem (TBD). 
+
+Q: When will the LiBCM firmware support 54S?
+A: No idea, but not anytime soon.  If you want to use LiBCM anytime soon, you should use a 48S battery.
+A: When 54S ships, it will require a few cable changes and a new BMS adapter.  The LiBCM PCB itself won't require any changes.  
+
+Q: When will the LiBCM firmware support 60S?
+A: No idea, but probably never with standard lithium cells (4.2 Vmax).  The resulting voltage is too high for the OEM IMA system (but not for LiBCM), and requires substantial hardware modifications.  Certainly a different HVDCDC converter is required. 
+A: 60S is primarily intended for LiFePO4 cells (3.7 Vmax).  
+
+Q: How do I use LiBCM with a larger pack?
+A: EHW5 modules are easily reconfigurable; the cells are bolted together, rather than tab welded.  It takes around an hour to reconfigure an 18S1P pack to either 9S2P, 6S3P, or 3S6P.  Reconfiguring QTY8 18S modules to 6S3P yields a 15Ah 48S module.
+A: A cheaper option is to purchase a larger battery.
+A: In either case, you'd also need to connect custom BMS ribbon cables to each module; contact Linsight for more details.
+
+

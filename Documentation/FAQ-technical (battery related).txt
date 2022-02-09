@@ -1,19 +1,64 @@
-Q: How much lighter is an LiBCM-equipped pack?
+FAQ - Lithium Battery - 48S EHW5 Configuration
+
+Q: Why is the 18S+/18S+/12S+ module configuration not supported?
+A: The high current leads are too long, difficult to route, and require two separate manual disconnects.  This increases RF noise inside the IMA bay, which increases the serial data error rate.
+A: There are far fewer 18S+ modules than there are 18S- modules. 
+
+Q: How 'hard' is LiBCM pushing the EHW5 modules?
+A: Way below spec.
+A: LiBCM would theoretically approach the EHW5's limits around 53 kW assist.  LiBCM presently delivers less than half that value.
+
+Q: How much lighter is an LiBCM-equipped battery pack?
 A: A complete OEM NiMH pack weighs 73 pounds (including MCM & BCM).
 A: A complete LiBCM-eqipped EHW5 pack weighs 62 pounds (with MCM & grid charger).
 
-Q: Can I convert an 18S+ module to 18S- (or 18S- to 18S+)?
+Q: Can I convert an 18S+ lithium EHW5 module to 18S- (or 18S- to 18S+)?
 A: No, or rather it's not officially supported.
-A: Linsight created a working prototype (by flipping the individual cells aroun), but the concept never made it to production.  If you do this, the BMS pinout will change and the high current cable lengths are different.
-A: You're on your own mechanically if you decide to convert an 18S+/18S- module to 18S-/18S+. 
+A: Linsight created a working prototype (by flipping the individual cells around), but the concept never made it to production.  
+A: You're on your own mechanically if you decide to convert an 18S+/18S- module to 18S-/18S+. The BMS pinout will change, as will the HVDC current cable lengths (the cable posts will be in a different locations).
 A: Linsight only supports the configurations shown here: linsight.org/kit.
 
 Q: How long will EHW5 lithium modules last?
-A: Panasonic's datasheet specifies their EHW5 cell will retain 90% capacity after 10 years.
-A: The 5 Ah EHW5 Panasonic cell is rated for 50,000 cycles (10-85% SoC) with a continuous 40 A charge/discharge test.
+A: Panasonic's datasheet specifies 90% capacity retention after 10 years.  EHW5 cells will still work (at reduced capacity) after ten years.
+A: At room temperature, the 5 Ah EHW5 cell is rated for 50,000 cycles (10-85% SoC) with a continuous 40 A charge/discharge test.  That's thirteen cycles per day for ten years straight.
+A: The cells should die due to old age, rather than cycle count.
 
 Q: What are the best ways to maximize battery life?
-A: In warm weather, park Insight out of direct sunlight.
-A: When temperatures drop below freezing for extended periods, park Insight in direct sunlight (to increase pack temperature during the day). 
-A: Limit assist and regen whenever the resting cell voltage delta exceeds 25 mV.
+A: In warm weather, park in the shade.
+A: When temperatures drop below freezing, park in direct sunlight to increase pack temperature.
+A: Extreme temperatures will substantially reduce cell life.
+A: Limit assist and regen whenever the resting cell voltage delta exceeds 25 mV.  LiBCM automatically balances cells whenever the car is off.
+A: Avoid storing LiBCM with a near-empty or near-full battery.
 
+Q: Why does LiBCM limit assist and regen below freezing?
+A: To increase battery life.
+A: In cold weather, if the cabin temperature is warmer than the battery, LiBCM will draw air into the IMA bay to heat the battery.
+
+Q: What happens 10+ years down the road when these EHW5 cells die?
+A: As the cells ESR increases, the cells will unbalance more rapidly while driving.  Whenever the car is off, LiBCM will automatically balance the cells to within 1 mV.
+A: Balancing the cells won't 'fix' aging batteries, but it will maximize performance. 
+A: All cells will eventually fail. Fortunately, the EHW5 lithium cell geometry seems destined to become a de-facto standard... and if not, then a decade from now we can always have more made specifically for our purpose.  Or maybe another existing lithium pack design will come along that's equally compatible.
+
+Q: How much heat does an EHW5 lithium pack generate internally (due to ESR)?
+A; Around ten times less than the OEM NiMH pack (which can generate several kW in heat inside the NiMH sticks).  
+A: Empirical testing shows that new cells won't heat up beyond 20 degF above ambient in even the most demanding use cases.
+A: EHW5 lithium cells have an initial cell ESR around 1.1 mOhm.
+A: LiBCM can briefly deliver 140 amps in assist, which generates ~22 watts in heat inside each cell (1035 watts for the entire pack).
+A: LiBCM can continuously deliver 80 amps until the pack is empty.  At this power level, each cell internally generates 7 watts in heat (338 watts for the entire pack).  Each EHW5 is therefore generating about the same heat as a 100 watt incandescent light bulb.
+A: In practice, battery self-heating is inconsequential.  The overwhelming contributor to pack heat is the cabin air temperature.
+A: LiBCM directly monitors each EHW5 module's outer enclosure temperature.  LiBCM also monitors the cabin air temperature, the exhaust air temperature, the IMA bay temperature, and several other temperatures to verify the pack operates within acceptable temperatures.  LiBCM will disable assist/regen if needed to prevent overheating.
+
+Q: Does a 48S EHW5 lithium battery store more energy than the stock NiMH pack?
+A: An LiBCM-equipped IMA battery with QTY48 EHW5 lithium cells stores 30% more deliverable energy than an OEM NiMH pack*.
+*An OEM NiMH pack nominally stores 936 Wh, whereas the EHW5 lithium pack only stores 887 Wh.  However, the lithium pack has a wider safe operating SoC range, and can therefore deliver more energy (666 Wh) than the OEM pack (515 Wh).
+
+Q: What's special about cell 19?
+A: LiBCM has QTY5 voltage measurement ICs.  Each IC measures QTY12 cells.  Four of the five ICs measure cells that are contained within the same module (e.g. IC1 measures cells 1:12, which are all in the same 18S module; IC3 measures cells 25:36, which are all in the same 18S module; IC4 measures cells 37:48, which are all in the same 12S module; etc).
+A: In contrast, IC2 measures cells in two different 18S modules (cells 13:18 are in one 18S module, whereas cells 19:24 are in a different 18S module).  This causes LiBCM to measure not only the actual C19 voltage, but also the voltage drop in the cable between both 18S modules.
+A: LiBCM uses an empirically-derived resistance value to cancel out the cable drop voltage.
+A: If you're not using EHW5 modules, you can modify (or disable) this feature (search "LTC68042_ENABLE_C19_VOLTAGE_CORRECTION" in config.h)
+A: You can blame this oddity on the 2020/2021/2022 global chip shortage... Ideally LiBCM would use the LTC6813 (which measures QTY18 cells per IC).
+
+Q: Where can I find more info on EHW5 modules?
+A: Everything I know about these specific modules is located here: github.com/doppelhub/Honda_Insight_LiBCM/tree/main/Electronics/Lithium%20Batteries
+github.com/doppelhub/Honda_Insight_LiBCM/tree/main/Mechanicals/Honda%20G3%20Lithium%20Batteries

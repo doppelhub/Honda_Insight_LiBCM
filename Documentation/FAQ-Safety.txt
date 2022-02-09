@@ -1,0 +1,32 @@
+FAQ - Safety
+
+Q: What safety features does LiBCM use to prevent electrocution?
+A: All low voltage signals interfacing with LiBCM are galvanically isolated from all high voltage signals.  You can actually hold the PCB up to a bright light and see the clearance.  The entire LiBCM PCB can burn to a crisp and there's zero chance the HVDC will bridge to the low voltage control signals.
+A: Both HVDC+ and HVDC- are isolated from chassis ground.  In theory, touching either HVDC signal will not result in shock, even if you are also touching chassis ground.  You would need to touch BOTH HVDC signals at the same time to receive an electric shock.
+A: The MCM constantly monitors for HVDC faults to chassis ground. If a ground fault is detected, the MCM will open the HVDC contactor and set the check engine light.
+A: LiBCM is completely surrounded by a touch-proof polycarbonate cover.  LiBCM will set a check engine light if that cover isn't installed.
+
+Q: Is it safe to touch the exposed metal prongs on the grid charger power cable?
+A: Yes.  There are redundant diodic and galvanic isolation barriers between the IMA HVDC bus and the 5-15P plug.  The galvanic isolation barrier is continuously tested by the MCM whenever the key is on.
+
+Q: Does LiBCM safely manage cell voltage under all conditions?
+A: Probably.  That's certainly the goal.
+A: If the voltage goes out-of-bounds, LiBCM will emit an audible beep and disable the IMA system, which will prevent further charge/discharge... unless you've hacked the IMA system that prevents this... in that case, you're on your own.  If LiBCM is installed in an otherwise OEM vehicle, then over/under-charging is unlikely.
+
+Q: Is it safe that LiBCM's high current cables use 75 amp rated Anderson connectors, even though the IMA system can pull 140 amps?
+A: Yes.
+A: The nominal 75 amp rating is for a continuous load, and with the additional heat-load introduced by adjacent multi-gang connectors (which are not present in LiBCM).
+A: Anderson rates this connector to 120 amps for five minutes (per UL 1977 testing).  The IMA system cannot maintain currents this high for this long (so this connector is not the weakest link).
+A: This specific connector has been used in various IMA-related projects for 15+ years. 
+
+Q: Why does the LiBCM cover say "Hazardous voltage present under this cover, even when IMA switch is off"?
+A: UL requires a warning whenever exposed voltages greater than 60 VDC are present and likely to come into contact with a service technician. 
+A: Turning the IMA switch off splits the pack into two separate modules.  However, since the combined pack voltage exceeds 120 volts, it follows that at least one (or both) separated modules will exceed 60 VDC.
+A: When LiBCM's cover is installed, LiBCM does not expose any HVDC signals to the user.
+
+Q: What certifications does LiBCM have?
+A: None, only my many years of experience as an EE.  It's a passion project.
+A: LiBCM is exempt from FCC emissions testing requirements, per 15.103(A), which exempts "digital devices utilized exclusively in any transportation vehicle".
+A: LiBCM does not violate 42 USC 7521 ("emissions defeat device"), per subsection (c)(3).
+A: LiBCM is legal to operate on roadways in the United States, per 40 CFR parts 85 & 86.
+A: UL/CE/etc testing is not required to sell LiBCM in the USA or UK.  However, LiBCM is not legal for sale in the EU (which requires CE approval).

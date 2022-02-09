@@ -162,6 +162,8 @@ bool BATTSCI_isPackEmpty(void)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Add hysteresis and/or different SoC setpoints
+
 //sternly demand no regen and/or assist from MCM
 uint8_t BATTSCI_calculateRegenAssistFlags(void)
 {
@@ -178,7 +180,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Change negative logic to positive logic (less confusing)
+//JTS2doNow: Add hysteresis and/or different SoC setpoints
 
 // Byte06 ("charge request byte"):
 // Initial keyON values (first ~100 BATTSCI frames, ~7 seconds... until METSCI B4 is neither 24 nor 0):

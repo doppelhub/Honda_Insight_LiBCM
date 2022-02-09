@@ -67,7 +67,9 @@
 /*
 Features to add later:
 
-#define PCODE_IF_COVER_NOT_INSTALLED
+#define DISPLAY_OEM_CURRENT_SIGN //JTS2doNow: add feature
+
+#define PCODE_IF_COVER_NOT_INSTALLED //JRS2doNow
 
 //Define realtime commands that are immediately picked off from the serial stream.
 //These characters are not passed to the serial parser, and are executed immediately.

@@ -1,0 +1,92 @@
+Q: I found a problem with the firmware/hardware/LiBCM.  How do I request support?
+A: insightcentral.net/threads/libcm-open-beta-support-thread.128957/page-6#post-1495530
+OR
+A: github.com/doppelhub/Honda_Insight_LiBCM/issues
+A: Please include useful troubleshooting information for a quick response.  "It doesn't work" isn't actionable.  A youtube video showing the behavior is strongly encouraged.
+
+Q: I turned the key on while the grid charger was plugged in.  Now I have a P1648 code.  What do I do?
+A: To prevent driving off while the grid charger is plugged in, LiBCM does not allow grid charging when the key is on.  If the grid charger is connected and the key is on, LiBCM will:
+-emit a continuous audible beep until the key is turned off, and;
+-display a warning message on the LCD, and;
+-set a Pcode and disable IMA-starting.
+
+Q: Why does LiBCM sometimes emit an audible beep during heavy regenerative braking?
+A: (Beta) LiBCM emits an alarm whenever any cell voltage exceeds 4.200 volts.  Future firmware updates will more intelligently limit the maximum cell voltage (based on current amplitude).
+A: LiBCM will tell the MCM to disable regen before any cell voltage gets this high, but sometimes the delay is too long and the voltage briefly exceeds 4.200 volts.
+A: When the batteries are nearly full, heavy regen can cause the cell voltage to briefly spike above this limit.
+A: If the beep stops when you let off the brake pedal, then there's nothing to worry about.
+A: If the beeping persists, IMMEDIATE manual user interaction is required (e.g. engage Calpod Switch, place transmission in neutral, etc).
+A: Heavy regen produces severe RF noise inside the IMA bay.  Even with heavy analog filtering, this noise electrically couples into the BMS cell voltage measurement circuitry, and can temporarily cause incorrect voltage readings during heavy regen.
+
+Q: How do I update new firmware?
+A: (Beta) Watch the "Upload Firmware" video here: linsight.org/install/diy-libcm-kit/libcm-into-car 
+A: Make sure the car is off (or you'll get a CEL).
+A: The IMA switch can either be off or on (doesn't matter).
+
+Q: While uploading the firmware, why does Arduino sometimes display warning messages?
+A: The compiler is trying (in vain) to be helpful.
+A: The warnings aren't important... the code still compiles just fine.
+A: There won't be any warnings when the firmware hits V1.0.0.
+
+Q: Why can't I upload firmware onto the Arduino Mega PCB when it's disconnected from the LiBCM PCB?
+A: Why did you do that?  Put it back together!
+A: The Arduino PCB connected to LiBCM has a custom bootloader that prevents host-initiated hardware resets unless both PCBs are mated together.
+FYI: The custom bootloader allows LiBCM to boot in just 16.1 ms (the stock bootloader takes 920 ms).  Faster booting prevents P1648-related errors (when LiBCM was initially off and the key turns on).
+
+Q: What are the two DIP switches on the LiBCM PCB used for?
+A: "Disable Reset" = ON: plugging in the USB cable does not restart LiBCM, but USB firmware updates are not allowed
+A: "Disable Reset" = OFF: plugging in the USB cable restarts LiBCM, and USB firmware updates are allowed (default)
+A: "User Switch" is firmware-programmable behavior.  Not presently implemented for any specific task.
+
+Q: How do I troubleshoot a failing lithium cell?
+A: A failing cell will tend to charge/discharge faster during regen/assist, respectively.  
+A: LiBCM can help you determine if any cells are in worse shape than the rest of the pack.  First, turn the car off and wait for LiBCM to (automatically) balance the cells.  Depending on how unbalanced the pack is, this could take several hours.  Tip: Plug in the grid charger while the key is off to see realtime data on the the LCD.  Once the cells are balanced to less than 1 mV, unplug the grid charger and drive the car until the pack is nearly empty.  If the resting delta grows rapidly (e.g. to more than 15 mV), then it's likely that at least one cell is failing.  You can plug a laptop into the USB cable and see realtime voltage readings for all cells.  Previously balanced cells that quickly develop large voltage deviations (from the pack average) are likely failing.
+A:LiBCM's balancing circuitry cannot 'fix' broken cells, but it can prevent cells from under/over-charging, thus prolonging lifetime.
+
+Q: Why won't LiBCM work if the safety cover isn't installed?
+A: To prevent you from installing LiBCM into a car without the safety cover installed
+A: You can disable this in firmware, if you know what you're doing... but really just install the cover.
+
+Q: After installing LiBCM, my OBDIIC&C keeps resetting.  What's wrong?
+A: The longer high current leads inside LiBCM-equipped IMA packs can generate increased RF noise under heavy regen/assist.  This noise can conduct into the H-Line signal.  Honda's H-Line signal is intended to be a debug tool only, and is not used by the vehicle in normal use.  However, the aftermarket OBDIIC&C uses this bus to query data from the various vehicle computers.
+A: If your OBDIIC&C resets aftrer installing LiBCM, OBDIIC&C's designer recommends:
+	-placing a 10 nF capacitor between H-Line and GND at the OBDIIC&C PCB.
+	-adding a 1 kOhm pulling from the H-Line to 5V at the OBDIIC&C PCB.
+
+Q: (18S-/18S-/12S+ only): I forgot to plug in the RED (or BLU) high current connector before using LiBCM.  Did I damage LiBCM?
+A: If you only plugged in the grid charger, then LiBCM is probably.
+A: If you attempted to drive the car, then you almost certainly damaged LiBCM.
+A: Contact Linsight for more information.
+
+Q: The 4x20 LCD backlight turns on, but I don't see any text.  What's wrong?
+A: Adjust the potentiometer on the LCD's back side, using a small flathead screwdriver.
+A: Turn the key off/on.
+A: Verify the 10' cable is plugged in correctly.
+A: See: youtube.com/watch?v=vtU__58DWYw
+
+Q: The 4x20 LCD text sometimes gets corrupted while driving.  What's wrong?
+A: Users that have reported this issue typically resolve it by moving the LCD cable further away from the harness that travels down the center console (to the IMA bay).
+A: The IMA system generates considerable RF noise, which gets coupled into the cables leaving the IMA bay.  Even with massive RF signal filtering, the noise can sometimes corrupt data heading to the 4x20 LCD.
+A: The 4x20 LCD uses an archaic 4-bit serial architecture, which lacks any data validation and requires LiBCM to maintain an elaborate state machine (the actual screen is 'modally dumb').  Therefore, when an error occurs, sending the same data again doesn't 'fix' the issue (since LiBCM's state machine now differs from the LCD's).
+A: LiBCM cannot 'read back' the data on the 4x20 display... it's a classic "king's messenger" problem: LiBCM cannot sense when errors have occurred, but when they do, LiBCM's state machine doesn't match the 4x20 LCD's, so subsequent data transmissions further corrupt the screen characters.
+A: Since LiBCM cannot detect transmission errors to the LCD, it cannot fix them (e.g. by sending the data again).
+A: The only way for the LCD to recover from a data corruption is to reset the screen, so that both state machines are in a known-good state.  Unfortunately, resetting the LCD requires LiBCM's full attention (due to the archaic 4-bit architecture, which has specific timing requirements).  Therefore, resetting the LCD isn't possible while the car is running (this would cause a check engine light).  Therefore, LiBCM resets the 4x20 LCD each time the car turns off, so that the screen can recover (until the next transmission error occurs).
+A: The 4x20 LCD will go away when the Open Beta period ends.
+A: A new touch screen ('LiDisplay') will be released at the same time. It won't suck.
+
+Q: Why do I sometimes get IMA error code P1648 while driving?
+A: P1648 means LiBCM isn't sending data to the MCM.
+A: If the P1648 error occurs infrequently, then it's probably an RF noise issue.  A beta tester noted that moving the 4x20 LCD cable further away from the main wire harness near the parking brake reduced the error rate.  The production LCD cables are shielded, and there's more signal conditioning on the conductors.  Production LiBCM units probably won't get RF-related P1648 errors.
+A: If the P1648 error occurs immediately and persists across several drive cycles, then LiBCM isn't powered, or the firmware isn't running.  Troubleshooting steps:
+-Verify the IMA switch is on.
+-Turn the IMA switch off and then on.
+-Update the firmware
+-Check the 5x20mm fuses located on the LiBCM PCB
+
+Q: Why do I sometimes get P1576(12) while driving?
+A: P1576(12) occurs when the MCM'E' voltage disagrees with the VPIN voltage by more than 10 volts for more than two seconds.  
+A: LiBCM spoofs both of these voltages.  However, in some cars the MCM's HVDC insulation resistance test routine ("Leakage Test") causes an additional (constant) voltage offset to occur, particularly when the pack is fully charged.
+A: Adjusting the MCME_VOLTAGE_OFFSET_ADJUST parameter in config.h can fix this issue.
+A: Most cars work well with the default '12' volt offset.
+A: Some cars require a different offset value.  To calculate this value, turn the car on and drive it until autostop activates.  The IMA light must NOT be on (because the Leakage Test routine is disabled whenever the IMA light is on).  Once autostop activates, record LiBCM's spoofed pack voltage (shown on the 4x20 display).  Next, record the IMA pack voltage observed on the OBDIIC&C.  If these values aren't identical, then you need to increase or decrease the MCME_VOLTAGE_OFFSET_ADJUST value until they are equal.
+A: Without an OBDIIC&C, you can "guess and check" different MCME_VOLTAGE_OFFSET_ADJUST values (e.g. 15, 9, 7, 17 volts, etc).  A logical way to do this would be to determine the lower and upper limits that cause an immediate P1576(12), and then calculate the midpoint between those limits.

@@ -1,0 +1,55 @@
+Q: What input voltages does the grid charger support?
+A: 100 Vac to 250 Vac
+A: 50 or 60 Hz
+
+Q: How do I grid charge LiBCM?  
+A: With the key off, plug LiBCM's NEMA 5-15P power cable into an extension cord.
+A: The LCD display will display the state-of-charge, max/min/delta cell voltages, and temperature.
+A: LiBCM automatically charges and balances the cells as needed.
+A: LiBCM's onboard fans automatically activate as needed to heat or cool the IMA battery.
+A: You can unplug the grid charger whenever you want.
+A: If the battery SoC is too low, LiBCM will turn off ten minutes after the key turns off.  In this case, you must plug the grid charger in before LiBCM turns off (or else the grid charger won't charge).
+
+Q: Can I leave the grid charger plugged in indefinitely?
+A: Yes.  LiBCM 100% handles grid charging, just like any other modern lithium device.
+
+Q: Why should I grid charge?
+A: Starting with a full IMA battery improves fuel economy.
+A: With the OEM NiMH cells, grid charging is primarily used to balance the cells.  Since LiBCM balances cells whenever the car is off, grid charging is never required to balance cells.
+
+Q: Is grid charging required?
+A: If the car is used regularly, grid charging is never required.
+A: For long term storage, grid charging is required if the IMA switch is left on.
+
+Q: How long can I leave my LiBCM-equipped Insight parked without driving or charging (e.g. at the airport)?
+A: If SoC drops below 9%, LiBCM will turn itself off, which reduces consumption to 0.1% SoC per month.  Therefore, you can park your car for several years without damaging the battery.  However, discharging the pack below 10% decreases overall battery lifetime, so ideally the pack shouldn't drop below 10% SoC.
+A: During the Open Beta, LiBCM power-on consumption is ~25% SoC per month.  Therefore, you should drive or grid charge the vehicle at least monthly (to keep the SoC above 10%). 
+A: A future firmware update should reduce power-on consumption to ~2% SoC per month.  Therefore, you should drive or grid charge the vehicle at least yearly (to keep the SoC above 10%).
+
+Q: I plan to park my vehicle for longer than the above-indicated time.  How can I prevent over-discharge?
+A: Turn the IMA switch off, which drops power consumption zero.  You can store the car indefinitely.  Ideal storage SoC is 50%.
+A: Leave the IMA switch on, and plug in the grid charger.  You can store the car indefinitely.
+A: Charge the pack prior to long-term parking (each 2% SoC increase adds another month to long term storage).
+
+Q: How long does it take to balance a lithium pack?
+A: When LiBCM is first installed in the car, if the SoC is drastically different between any two cells/modules, then it could take several days to balance the cells.  It's ok to drive the car with an unbalanced pack, but that will limit SoC range. 
+A: Healthy lithium packs spend at most a few hours balancing each month.
+A: Unhealthy packs should still rebalance completely overnight.
+A: Balancing occurs automatically whenever the car is off, as long as the pack is sufficiently charged.
+A: Plugging the grid charger in allows the modules to balance faster, as the fans can run continuously.
+
+Q: Why does it take so long to balance the lithium cells?
+A: LiBCM balances cells by connecting a 75 Ohm resistor in parallel to each 'full' cell.  LiBCM balances cells near 3.9 volts, hence LiBCM can only discharge full cells at 52 mA (200 mW/cell).  Since each 5 Ah EHW5 cell contains 18.5 Wh of energy, if you were to install one completely empty module (0% SoC) and another completely full module (100% SoC), then the worst-case balancing time would be 92 hours.
+
+Q: Why is the grid charger so slow?
+A: Cost.
+A: LiBCM supports the following grid chargers (charge times are for a 48S EHW5 pack from 10% to 75% SoC):
+-charge pack in 7.5 hours: PLED96W-213-C0450-D (included in LiBCM purchase price)
+-charge pack in 2.3 hours: HLG-320H-C1400B
+-charge pack in 1.5 hours: HLG-480H-C2100B (requires higher-current 5x20mm fuses)
+-charge pack in 0.7 hours: HVGC-1000A-M-AB (requires higher-current 5x20mm fuses and 240 volt mains)
+-charge pack in 0.3 hours: GEN200-16.5 (contact Linsight for full modification list).
+A: Other grid chargers might work if they meet the following criteria:
+	-constant current supply
+	-must output voltage between at least 139:207 volts (with 48S lithium cells)
+	-output current must be controllable via a PWM pulse train.
