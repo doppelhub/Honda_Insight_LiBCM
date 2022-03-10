@@ -8,7 +8,7 @@
 
 #include "libcm.h"
 
-char debugCharacter = '.';
+uint16_t cellBitmaps[TOTAL_IC] = {0};
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -33,19 +33,9 @@ void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-uint16_t cellBitmaps[TOTAL_IC] = {0};
-
 void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap)
 {
 	cellBitmaps[icNumber] = cellBitmap;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-
-void debugUSB_displayUptime_seconds(void)
-{
-	Serial.print(F("\nUptime(s): "));
-	Serial.print( String(millis() * 0.001) );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -57,6 +47,14 @@ void debugUSB_printCellBalanceStatus(void)
 	    Serial.print(String(cellBitmaps[ii], HEX));
 	   	Serial.print(',');
 	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void debugUSB_displayUptime_seconds(void)
+{
+	Serial.print(F("\nUptime(s): "));
+	Serial.print( String(millis() * 0.001) );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -171,11 +169,4 @@ uint8_t debugUSB_getUserInput(void)
 	}
 
 	return userEntry;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-
-void debugUSB_sendChar(char characterToSend)
-{
-	debugCharacter = characterToSend;
 }

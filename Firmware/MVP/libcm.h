@@ -41,5 +41,6 @@
   #include "SoC.h"
   #include "temperature.h"
   #include "eepromAccess.h"
+  #include "cellBalance.h"
 
 #endif

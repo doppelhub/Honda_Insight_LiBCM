@@ -100,9 +100,9 @@ void bringupTester_run(void)
 				//Turn 4x20 screen on
 				Serial.print(F("\nWriting Data to 4x20 LCD"));
 				serialUSB_waitForEmptyBuffer();
-				lcd_initialize();
+				lcd_begin();
 				lcd_printStaticText();
-				lcd_displayON();
+				lcd_displayOn();
 
 				//test if 4x20 screen dims when 5V buck turned off (USB powers at lower voltage)
 				for(int ii=0; ii<6; ii++)
@@ -271,7 +271,7 @@ void bringupTester_run(void)
 				serialUSB_waitForEmptyBuffer();
 				{
 					gpio_setFanSpeed_OEM('0'); //turn all FETs off (0A thru sensor)
-					gpio_setFanSpeed('0');     //turn all FETs off (0A thru sensor)
+					gpio_setFanSpeed('0', ABSOLUTE_FAN_SPEED);     //turn all FETs off (0A thru sensor)
 					delay(10);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
@@ -285,7 +285,7 @@ void bringupTester_run(void)
 				serialUSB_waitForEmptyBuffer();
 				{
 					gpio_setFanSpeed_OEM('L'); //test OEM fan low speed relay
-					gpio_setFanSpeed('0');
+					gpio_setFanSpeed('0', ABSOLUTE_FAN_SPEED);
 					delay(500);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
@@ -299,7 +299,7 @@ void bringupTester_run(void)
 				serialUSB_waitForEmptyBuffer();
 				{
 					gpio_setFanSpeed_OEM('H'); //test OEM fan low speed relay
-					gpio_setFanSpeed('0');
+					gpio_setFanSpeed('0', ABSOLUTE_FAN_SPEED);
 					delay(500);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
@@ -313,7 +313,7 @@ void bringupTester_run(void)
 				serialUSB_waitForEmptyBuffer();
 				{
 					gpio_setFanSpeed_OEM('0'); //test OEM fan low speed relay
-					gpio_setFanSpeed('H');
+					gpio_setFanSpeed('H', ABSOLUTE_FAN_SPEED);
 					delay(500);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
@@ -330,7 +330,7 @@ void bringupTester_run(void)
 					gpio_turnPowerSensors_off();
 					delay(500);
 
-					gpio_setFanSpeed('H'); //should already be here
+					gpio_setFanSpeed('H', ABSOLUTE_FAN_SPEED); //should already be here
 					delay(100);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
@@ -339,7 +339,7 @@ void bringupTester_run(void)
 				}
 
 				//turn all FETs off (so they don't overheat)
-				gpio_setFanSpeed('0');
+				gpio_setFanSpeed('0', ABSOLUTE_FAN_SPEED);
 				gpio_setFanSpeed_OEM('0');
 
 				/////////////////////////////////////////////////////////////////////
@@ -470,17 +470,17 @@ void bringupTester_run(void)
 					gpio_turnBuzzer_off();
 
 					uint16_t cellDischargeBitmap = 0b0000010101010101; //discharge cells 1/3/5/7/9/11
-					LTC68042configure_cellBalancing_setCells( (FIRST_IC_ADDR + ii), cellDischargeBitmap);
+					LTC68042configure_setBalanceResistors( (FIRST_IC_ADDR + ii), cellDischargeBitmap);
 					delay(1800); //wait for visual inspection
 
-					LTC68042configure_cellBalancing_disable(); //disable all discharge FETs
+					LTC68042configure_programVolatileDefaults(); //disables all discharge FETs
 					delay(1800); //wait for cool down
 
 					cellDischargeBitmap = 0b0000101010101010; //discharge cells 2/4/6/8/10/12
-					LTC68042configure_cellBalancing_setCells( (FIRST_IC_ADDR + ii), cellDischargeBitmap);
+					LTC68042configure_setBalanceResistors( (FIRST_IC_ADDR + ii), cellDischargeBitmap);
 					delay(1800); //wait for visual inspection
 
-					LTC68042configure_cellBalancing_disable(); //disable all discharge FETs
+					LTC68042configure_programVolatileDefaults(); //disables all discharge FETs
 					delay(1800); //wait for cool down
 				}
 			}

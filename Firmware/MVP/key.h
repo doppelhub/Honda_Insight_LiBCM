@@ -11,5 +11,6 @@
 	uint8_t key_getSampledState(void);
 	uint32_t key_latestTurnOnTime_ms_get(void);
 	uint32_t key_latestTurnOffTime_ms_get(void);
+	bool key_hasKeyOff_updatePeriodElapsed(void);
 
 #endif

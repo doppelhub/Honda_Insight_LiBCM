@@ -148,7 +148,7 @@ bool BATTSCI_isPackFull(void)
 
 bool BATTSCI_isPackEmpty(void)
 {
-  uint16_t currentAdjusted_Vmin = CELL_VMIN_ASSIST;
+  //uint16_t currentAdjusted_Vmin = CELL_VMIN_ASSIST;
 
   //account for additional cell voltage drop during assist
   //if(adc_getLatestBatteryCurrent_amps() > 0) { currentAdjusted_Vmin = CELL_VMIN_ASSIST - cellVoltageOffsetDueToESR(); }
@@ -172,8 +172,15 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
 
   uint8_t flags = 0;
 
-  if(BATTSCI_isPackEmpty() == true) { flags |= BATTSCI_DISABLE_ASSIST_FLAG; }
-  if(BATTSCI_isPackFull()  == true) { flags |= BATTSCI_DISABLE_REGEN_FLAG;  }
+  #ifndef DISABLE_ASSIST
+    if(BATTSCI_isPackEmpty() == true)
+  #endif
+    { flags |= BATTSCI_DISABLE_ASSIST_FLAG; }
+
+  #ifndef DISABLE_REGEN
+    if(BATTSCI_isPackFull()  == true)
+  #endif
+      { flags |= BATTSCI_DISABLE_REGEN_FLAG;  }
 
   return flags;
 }

@@ -1,0 +1,16 @@
+Running 3.5 amps thru TRIAC causes it to overheat
+Tested with HLG-480H-2100 charger
+
+TRIAC (T810-600B) is rated to handle 8 amps, but that requires a much larger copper pour.  Looks like there's room on the PCB for that.  Look at "Figure 12: DPAK and D2PAK thermal resistance junction to ambient versus copper surface under tab" (page 6/21) for theta j-a values.  Looks like we'd need at least 4 square cm to appreciably improve performance.
+
+
+Another option is to add gull-wing heatsink:
+
+V-1100-SMD/B
+V-1100-SMD/B-L
+ATS-PCBT1095
+573100D00010G
+
+Looking at "Figure 3: RMS on-state current versus ambient temperature" (page 4/21), the existing part isn't rated to carry more than 1.25 amps when the ambient temp is 55 degC.
+
+That's what the existing grid charger pulls... so probably can't use a larger grid charger unless the TRIAC itself is replaced.

@@ -14,9 +14,9 @@
 
 	uint8_t debugUSB_getUserInput(void);
 
-	void debugUSB_sendChar(char characterToSend);
-
 	void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap);
 
 	void debugUSB_displayUptime_seconds(void);
+
+	void debugUSB_printCellBalanceStatus(void);
 #endif

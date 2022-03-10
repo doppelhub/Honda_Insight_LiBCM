@@ -139,13 +139,13 @@
 	}
 	*/
 
-	void LTC68042configure_initialize();
+	void LTC68042configure_initialize(void);
 
-	void LTC6804configure_handleKeyOff(void);
+	void LTC68042configure_handleKeyStateChange(void);
 
-	void LTC68042configure_wakeupIsoSPI();
+	void LTC68042configure_wakeupIsoSPI(void);
 
-	void LTC68042configure_wakeupCore();
+	void LTC68042configure_wakeupCore(void);
 
 	uint16_t LTC68042configure_calcPEC15(uint8_t len, uint8_t *data);
 
@@ -153,8 +153,8 @@
 
 	void LTC68042configure_spiWriteRead(uint8_t *TxData, uint8_t TXlen, uint8_t *rx_data, uint8_t RXlen);
 
-	void LTC68042configure_cellBalancing_disable();
+	void LTC68042configure_programVolatileDefaults(void);
 	
-	void LTC68042configure_cellBalancing_setCells(uint8_t icAddress, uint16_t cellBitmap);
+	void LTC68042configure_setBalanceResistors(uint8_t icAddress, uint16_t cellBitmap);
 
 #endif

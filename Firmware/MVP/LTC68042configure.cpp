@@ -68,22 +68,23 @@ void LTC68042configure_writeConfigurationRegisters(uint8_t icAddress)
 
 //---------------------------------------------------------------------------------------
 
-void LTC68042configure_cellBalancing_setCells(uint8_t icAddress, uint16_t cellBitmap)
+//configure discharge resistor states on a single LTC6804 IC
+void LTC68042configure_setBalanceResistors(uint8_t icAddress, uint16_t cellBitmap)
 {
   //Each bit in cellBitmap corresponds to a specific cell's DCCn discharge bit
   //Example: cellBitmap = 0b0000 1000 0000 0011 enables discharge on cells 12, 2, and 1 //LSB is cell01
   //Example: cellBitmap = 0b0000 1111 1111 1111 enables discharge on all cells
   configurationRegisterData[4] = (uint8_t)(cellBitmap); //LSByte
-  configurationRegisterData[5] = (( (uint8_t)(cellBitmap >> 8) ) & 0b00001111); //MSByte's lower nibble
+  configurationRegisterData[5] = ( ((uint8_t)(cellBitmap >> 8)) & 0b00001111 ); //MSByte's lower nibble
 
   LTC68042configure_writeConfigurationRegisters(icAddress);
 }
 
 //---------------------------------------------------------------------------------------
 
-//Turn off discharge FETs, turn reference on and configure ADC LPF to '2 kHz mode' (1.7 kHz LPF)
+//program configuration register values onto each LTC6804 IC
 //configuration register data resets if LTC watchdog timer expires (~2000 milliseconds)
-void LTC68042configure_cellBalancing_disable()
+void LTC68042configure_programVolatileDefaults(void)
 {                                              // BIT7    BIT6    BIT5    BIT4    BIT3    BIT2    BIT1   BIT0                
                                                ///////////////////////////////////////////////////////////////
   configurationRegisterData[0] = 0b11111111 ;  //GPIO5   GPIO4   GPIO3   GPIO2   GPIO1   REFON   SWTRD  ADCOPT
@@ -92,8 +93,8 @@ void LTC68042configure_cellBalancing_disable()
   configurationRegisterData[3] = 0x00       ;  //VOV[11] VOV[10] VOV[9]  VOV[8]  VOV[7]  VOV[6]  VOV[5] VOV[4]
   configurationRegisterData[4] = 0x00       ;  //DCC8    DCC7    DCC6    DCC5    DCC4    DCC3    DCC2   DCC1
   configurationRegisterData[5] = 0x00       ;  //DCTO[3] DCTO[2] DCTO[1] DCTO[0] DCC12   DCC11   DCC10  DCC9
+  //Above values turn off all discharge FETs, turns reference on, and configure ADC LPF to '2 kHz mode' (1.7 kHz LPF)
 
-  //t=2.2 milliseconds (ICs initially off)
   for(int ii = FIRST_IC_ADDR; ii < (FIRST_IC_ADDR + TOTAL_IC); ii++)
   {
     LTC68042configure_writeConfigurationRegisters(ii); //t=450 us
@@ -112,7 +113,7 @@ void LTC68042configure_cellBalancing_disable()
 
 //---------------------------------------------------------------------------------------
 
-void LTC68042configure_initialize()
+void LTC68042configure_initialize(void)
 {
   spi_enable(SPI_CLOCK_DIV64); //JTS2doLater: See how fast we can use SPI without transmission errors
   //LTC6804configure_calculate_CFGRn();
@@ -121,7 +122,7 @@ void LTC68042configure_initialize()
 
 //---------------------------------------------------------------------------------------
 
-void LTC68042configure_wakeupIsoSPI()
+void LTC68042configure_wakeupIsoSPI(void)
 {
   const uint8_t T_IDLE_isoSPI_millis = 4; //'tidle' (absMIN) = 4.3 ms
 
@@ -136,7 +137,7 @@ void LTC68042configure_wakeupIsoSPI()
 //---------------------------------------------------------------------------------------
 
 //wake up LTC ICs after watchdog timeout
-void LTC68042configure_wakeupCore()
+void LTC68042configure_wakeupCore(void)
 {
   const uint16_t T_SLEEP_WATCHDOG_MILLIS = 1800; //'tsleep' (absMIN) = 1800 ms 
 
@@ -190,7 +191,7 @@ void LTC68042configure_spiWriteRead(uint8_t tx_Data[],//array of data to be writ
 
 //---------------------------------------------------------------------------------------
 
-void LTC6804configure_handleKeyOff(void)
+void LTC68042configure_handleKeyStateChange(void)
 {
   LTC68042result_errorCount_set(0);
   LTC68042result_maxEverCellVoltage_set(0);

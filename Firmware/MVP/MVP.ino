@@ -12,16 +12,15 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 	METSCI_begin();
 	BATTSCI_begin();
 	LiDisplay_begin();
+	lcd_begin();
 
 	LTC68042configure_initialize();
 
 	if( gpio_keyStateNow() == KEYON ){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while keyON (e.g. while driving)
 
-  	//JTS2doLater: Configure watchdog
+	gpio_safetyCoverCheck(); //this function never returns if safety cover isn't installed during initial powerup
 
-	#ifdef HW_REVB
-	  	gpio_turnBuzzer_on_lowFreq(); //enable buzzer if RevB firmware loaded onto RevC+ hardware (RevB hardware doesn't have a buzzer)
-	#endif
+  	//JTS2doLater: Configure watchdog
 
 	#ifdef RUN_BRINGUP_TESTER
 	  	bringupTester_run(); //this function never returns
@@ -33,13 +32,12 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 void loop()
 {
 	key_stateChangeHandler();
-	gridCharger_handler();
-	SoC_handler();
 	temperature_handler();
+	SoC_handler();
 
 	if( key_getSampledState() == KEYON )
 	{
-		if( gpio_isGridChargerPluggedInNow() == PLUGGED_IN ) { lcd_gridChargerWarning(); } //P1648 occurs if grid charger powered while keyON
+		if( gpio_isGridChargerPluggedInNow() == PLUGGED_IN ) { lcd_Warning_gridCharger(); } //P1648 occurs if grid charger powered while keyON
 		else if( EEPROM_firmwareStatus_get() != FIRMWARE_STATUS_EXPIRED ) { BATTSCI_sendFrames(); } //P1648 occurs if firmware is expired
 
 		LTC68042cell_nextVoltages(); //round-robin handler measures QTY3 cell voltages per call
@@ -56,7 +54,24 @@ void loop()
 	}
 	else if( key_getSampledState() == KEYOFF )
 	{
-		SoC_openCircuitVoltage_handler(); //periodically check pack voltage
+		// //JTS2doNow: Use this to control LTC6804 measurement rate
+		// if( gpio_isGridChargerPluggedInNow() == true ) { delayPeriodToReadCellVoltages_seconds =   1; }
+		//else /* grid charger unplugged */              { delayPeriodToReadCellVoltages_seconds = 600; }
+		
+		//JTS2doNow: Put this somewhere
+		if( LTC68042cell_nextVoltages() == PROCESSED_LTC6804_DATA )
+		{
+			//all cells measured
+			SoC_setBatteryStateNow_percent( SoC_estimateFromRestingCellVoltage_percent() );
+			SoC_turnOffLiBCM_ifPackEmpty();
+		}
+
+		//SoC_keyOff_cellMeasurement_handler();
+
+		gridCharger_handler();
+		
+		cellBalance_handler();
+		
 	}
 
 	//JTS2doLater: Check for Serial Input from user
@@ -69,9 +84,8 @@ void loop()
 	{
 		static uint32_t previousMillis = millis();
 
-		LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left //if off, exceeding LOOP_RATE_MILLISECONDS
-		while( (millis() - previousMillis) < LOOP_RATE_MILLISECONDS ) { ; } //wait here to start next loop //JTS2doLater: Determine Behavior after overflow (50 days)
-		//JTS2doLater: Feed watchdog
+		LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left //if off, code takes longer to run than LOOP_RATE_MILLISECONDS
+		while( (millis() - previousMillis) < LOOP_RATE_MILLISECONDS ) { ; } //wait here to start next loop //JTS2doLater: Determine behavior after overflow (50 days)
 		LED(4,LOW);
 		
 		previousMillis = millis(); //placed at end to prevent delay at keyON event
