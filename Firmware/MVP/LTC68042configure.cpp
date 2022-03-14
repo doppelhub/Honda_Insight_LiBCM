@@ -24,43 +24,36 @@ void LTC68042configure_writeConfigurationRegisters(uint8_t icAddress)
   LTC68042configure_wakeupCore();
 
   const uint8_t BYTES_IN_REG = 6;
-  const uint8_t CMD_LEN = 4+6+2;
+  const uint8_t CMD_LENGTH = 2+2+6+2; //("Write Configuration Registers" command) + (PEC) + ("configuration register" data) + (PEC)
   uint8_t *cmd;
 
   //JTS2doLater: Replace malloc with array init
-  cmd = (uint8_t *)malloc(CMD_LEN*sizeof(uint8_t));
+  cmd = (uint8_t *)malloc(CMD_LENGTH*sizeof(uint8_t));
 
-  //Load cmd array with the write configuration command and PEC
-  cmd[0] = 0x00;
-  cmd[1] = 0x01;
-  cmd[2] = 0x3d; //PEC
-  cmd[3] = 0x6e; //PEC
+  //Load cmd array with the  and PEC
+  cmd[0] = 0x80 + (icAddress << 3); //set IC address //see datasheet Tables 33 & 34
+  cmd[1] = 0x01; //send "write configuration registers" command ('WRCFG')
+  
+  uint16_t temp_pec = LTC68042configure_calcPEC15(2, cmd);
 
-  //Load the cmd with LTC6804 configuration data
-  uint8_t cmd_index = 4; //number of bytes to send
+  cmd[2] = (uint8_t)(temp_pec >> 8); //upper PEC byte
+  cmd[3] = (uint8_t)(temp_pec); //lower PEC byte
 
-  for (uint8_t current_byte = 0; current_byte < BYTES_IN_REG; current_byte++)
-  {
-    cmd[cmd_index] = configurationRegisterData[current_byte];    //add the config data byte to the array to send
-    cmd_index++;
-  }
+  uint8_t cmd_index = 4; //stored byte index in the cmd array
 
-  //Calculate the pec for the LTC6804 configuration data being transmitted
-  uint16_t temp_pec = (uint16_t)LTC68042configure_calcPEC15(BYTES_IN_REG, &configurationRegisterData[0]);// calculating the PEC for each IC
-  cmd[cmd_index] = (uint8_t)(temp_pec >> 8); //upper PEC byte
-  cmd[cmd_index + 1] = (uint8_t)temp_pec; //lower PEC byte
-  cmd_index = cmd_index + 2;
+  //add the "configuration register" bytes to the cmd array
+  for (uint8_t current_byte = 0; current_byte < BYTES_IN_REG; current_byte++) { cmd[cmd_index++] = configurationRegisterData[current_byte]; }
+
+  //Calculate the PEC for the LTC6804 configuration register bytes
+  temp_pec = (uint16_t)LTC68042configure_calcPEC15(BYTES_IN_REG, &configurationRegisterData[0]);// calculate the PEC
+  cmd[cmd_index++] = (uint8_t)(temp_pec >> 8); //upper PEC byte
+  cmd[cmd_index++] = (uint8_t)temp_pec; //lower PEC byte
 
   LTC68042configure_wakeupIsoSPI();
 
-  //Write configuration data to LTC6804
-  cmd[0] = 0x80 + (icAddress << 3); //set address
-  temp_pec = LTC68042configure_calcPEC15(2, cmd);
-  cmd[2] = (uint8_t)(temp_pec >> 8);
-  cmd[3] = (uint8_t)(temp_pec);
+  //Write cmd[] array to LTC6804
   digitalWrite(PIN_SPI_CS,LOW);
-  LTC68042configure_spiWrite(4,cmd);
-  LTC68042configure_spiWrite(8,&cmd[4]);
+  LTC68042configure_spiWrite(CMD_LENGTH,cmd);
   digitalWrite(PIN_SPI_CS,HIGH);
 
   free(cmd);
@@ -170,12 +163,9 @@ uint16_t LTC68042configure_calcPEC15(uint8_t len, //data array length
 void LTC68042configure_spiWrite(uint8_t len, // bytes to be written on the SPI port
                                 uint8_t data[] )//array of bytes to be written on the SPI port
 {
-  for (uint8_t i = 0; i < len; i++)
-  {
-    spi_write((char)data[i]);
-  }
+  for (uint8_t i = 0; i < len; i++) { spi_write((char)data[i]); } //all SPI writes occur here
 
-  lastTimeDataSent_millis = millis(); //all SPI writes occur here
+  lastTimeDataSent_millis = millis();
 }
 
 //---------------------------------------------------------------------------------------

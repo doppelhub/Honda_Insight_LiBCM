@@ -26,6 +26,7 @@ void cellBalance_configureDischargeResistors(void)
 
   uint16_t cellDischargeVoltageThreshold = 0; //cells above this value will get discharged
 
+  //JTS2doNow: Add a similar case (without alarm) that discharges pack down to 85% SoC (to maximize battery life)
   //determine cellDischargeVoltageThreshold       
   if (LTC68042result_hiCellVoltage_get() > CELL_VMAX_REGEN )
   {

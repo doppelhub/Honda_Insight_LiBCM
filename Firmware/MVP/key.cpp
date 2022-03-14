@@ -52,6 +52,7 @@ void key_handleKeyEvent_on(void)
 	gpio_turnPowerSensors_on();
 	lcd_displayOn();
 	gpio_setFanSpeed_OEM('L');
+	gpio_setFanSpeed('0', ABSOLUTE_FAN_SPEED);
 	gpio_turnGridCharger_off();
 	LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
 	//cellBalance_disableBalanceResistors(); //not required //handled by LTC68042configure_programVolatileDefaults()

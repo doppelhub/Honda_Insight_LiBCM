@@ -21,6 +21,7 @@ uint16_t maxEverCellVoltage_onScreen = 0;
 uint16_t minEverCellVoltage_onScreen = 0;
 uint8_t  SoC_onScreen = 0;
 int8_t   temp_onScreen = 99;
+uint8_t  gridChargerState_onScreen = 'g';
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -384,14 +385,16 @@ bool lcd_printGridChargerStatus(void)
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
 	#ifdef LCD_4X20_CONNECTED
-		static bool gridChargerState_onScreen = true;
-		if( gridChargerState_onScreen != gpio_isGridChargerChargingNow() )
+		static uint8_t gridChargerState = 0;
+		if( gpio_isGridChargerChargingNow() == true ) { gridChargerState = 'G'; }
+		else                                          { gridChargerState = '_'; }
+
+		if( gridChargerState_onScreen != gridChargerState )
 		{
-			gridChargerState_onScreen = gpio_isGridChargerChargingNow();
 			lcd2.setCursor(19,2); //grid charger status position
 
-			if(gpio_isGridChargerChargingNow() == true) { lcd2.print('G'); }
-			else                                        { lcd2.print(' '); }
+			if(gpio_isGridChargerChargingNow() == true) { lcd2.print('G'); gridChargerState_onScreen = 'G'; }
+			else                                        { lcd2.print('_'); gridChargerState_onScreen = '_'; }
 
 			didscreenUpdateOccur = SCREEN_UPDATED;
 		}
@@ -522,6 +525,7 @@ void lcd_displayOFF(void)
 		SoC_onScreen                = 0;
 		packVoltageSpoofed_onScreen = 0;
 		temp_onScreen               = 0;
+		gridChargerState_onScreen   = 'g';
 		LTC68042result_errorCount_set(0);
 	#endif
 }
