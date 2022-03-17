@@ -8,7 +8,10 @@
 
 //FYI: simple pin state read/writes take less than 10 us
 
-//JTS2doNow: Disable METSCI if safety cover isn't installed
+uint8_t previousGridChargerState = GPIO_CHARGER_INIT;
+
+////////////////////////////////////////////////////////////////////////////////////
+
 void gpio_begin(void)
 {
 	//Ensure 12V->5V DCDC stays on
@@ -41,7 +44,6 @@ void gpio_begin(void)
 	TCCR3B = (TCCR3B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D2() & D3() & D5(VPIN_OUT on RevC)
 	//TCCR5B is set in Buzzer functions
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -120,8 +122,27 @@ bool gpio_isGridChargerChargingNow(void)  { return   digitalRead(PIN_GRID_EN);  
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-void gpio_turnGridCharger_on( void) { digitalWrite(PIN_GRID_EN, HIGH); }
-void gpio_turnGridCharger_off(void) { digitalWrite(PIN_GRID_EN,  LOW); }
+void gpio_turnGridCharger_on( void)
+{
+	digitalWrite(PIN_GRID_EN, HIGH);
+	if(previousGridChargerState != GPIO_CHARGER_ON)
+	{ 
+		previousGridChargerState = GPIO_CHARGER_ON;
+		Serial.print(F("\nCharger: ON" ));
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void gpio_turnGridCharger_off(void)
+{ 
+	digitalWrite(PIN_GRID_EN, LOW);
+	if(previousGridChargerState != GPIO_CHARGER_OFF)
+	{
+		previousGridChargerState = GPIO_CHARGER_OFF;
+		Serial.print(F("\nCharger: OFF"));
+	}
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 

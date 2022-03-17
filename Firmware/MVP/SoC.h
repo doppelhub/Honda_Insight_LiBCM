@@ -14,7 +14,7 @@
 
 	uint8_t SoC_estimateFromRestingCellVoltage_percent(void);
 
-	void SoC_updateUsingOpenCircuitVoltage(void);
+	void SoC_updateUsingLatestOpenCircuitVoltage(void);
 
 	void SoC_turnOffLiBCM_ifPackEmpty(void);
 

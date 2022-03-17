@@ -56,16 +56,14 @@ void loop()
 	{	
 		if( time_toUpdate_keyOffValues() == true )
 		{ 
-			//JTS2doNow: Isn't this just LTC68042cell_sampleGatherAndProcessAllCellVoltages (but better)?
-			while( LTC68042cell_nextVoltages() != PROCESSED_LTC6804_DATA ) { ; } //measure & read all cell voltages
+			LTC68042cell_sampleGatherAndProcessAllCellVoltages();
 			
-			SoC_updateUsingOpenCircuitVoltage(); //JTS2doNow: Kludged!  Combine with above.
+			SoC_updateUsingLatestOpenCircuitVoltage();
 
-			SoC_setBatteryStateNow_percent( SoC_estimateFromRestingCellVoltage_percent() );
 			SoC_turnOffLiBCM_ifPackEmpty();
 
 			cellBalance_handler();
-
+			
 			debugUSB_printLatest_data_gridCharger();
 		}
 

@@ -7,6 +7,9 @@
 	#define TWO_DECIMAL_PLACES 2
 	#define FOUR_DECIMAL_PLACES 4
 
+	#define DEBUGUSB_TIMER_START true
+	#define DEBUGUSB_TIMER_STOP false
+
 	void debugUSB_printLatest_data_keyOn(void);
 	void debugUSB_printLatest_data_gridCharger(void);
 
@@ -19,4 +22,6 @@
 	void debugUSB_displayUptime_seconds(void);
 
 	void debugUSB_printCellBalanceStatus(void);
+
+	void debugUSB_Timer(bool timerAction);
 #endif

@@ -327,18 +327,10 @@ bool LTC68042cell_nextVoltages(void)
 
 //---------------------------------------------------------------------------------------
 
-//JTS2doNow: Can we do this differently?
-//flushes existing LTC68042 voltage data, then measures all cells, then reads all cell data.
-//This function takes too long to execute while the key is on (and will cause a check engine light).
-//After calling this function, valid cell voltages are stored are in "LTC68042_results.c"
+//Only call when keyOFF //takes too long to execute (causes check engine light)
+//Results are stored in "LTC68042_results.c"
 void LTC68042cell_sampleGatherAndProcessAllCellVoltages(void)
 {
-	//JTS2doNow: This is kludged... the point is to empty the previous (possibly stale) data.
-	//flush existing data, then start new cell conversion (all cells)
-	while( LTC68042cell_nextVoltages() != PROCESSED_LTC6804_DATA ) { LTC68042cell_nextVoltages(); }
-
-	//retrieve all cell data, then process new data
-	while( LTC68042cell_nextVoltages() != PROCESSED_LTC6804_DATA ) { LTC68042cell_nextVoltages(); }
-
-	//all cell voltages are now updated in LTC68042_results.c
+	while( LTC68042cell_nextVoltages() != PROCESSED_LTC6804_DATA ) { ; } //clear old data (if any) //increases measurement accuracy
+	while( LTC68042cell_nextVoltages() != PROCESSED_LTC6804_DATA ) { ; } //gather new data
 }

@@ -105,7 +105,7 @@ void LTC68042configure_programVolatileDefaults(void)
 
 void LTC68042configure_initialize(void)
 {
-  spi_enable(SPI_CLOCK_DIV64); //JTS2doLater: See how fast we can use SPI without transmission errors
+  spi_enable(SPI_CLOCK_DIV64); //JTS2doLater: increase clock speed //DIV16 & DIV32 work on bench
   Serial.print(F("\nLTC6804 BEGIN"));
 }
 

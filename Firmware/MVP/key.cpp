@@ -27,7 +27,8 @@ void key_handleKeyEvent_off(void)
     BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
     METSCI_disable();
     gpio_setFanSpeed_OEM('0');
-    SoC_updateUsingOpenCircuitVoltage();
+    LTC68042cell_sampleGatherAndProcessAllCellVoltages();
+    SoC_updateUsingLatestOpenCircuitVoltage();
     adc_calibrateBatteryCurrentSensorOffset();
     gpio_turnPowerSensors_off();
     LTC68042configure_handleKeyStateChange();

@@ -75,10 +75,8 @@ void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 //Estimate SoC based on resting cell voltage.
 //LiBCM uses this function to determine SoC while keyOFF
 //EHW5 cells settle to final 'resting' voltage in ten minutes, but are fairly close to that value after just one minute
-void SoC_updateUsingOpenCircuitVoltage(void)
+void SoC_updateUsingLatestOpenCircuitVoltage(void)
 {
-	LTC68042cell_sampleGatherAndProcessAllCellVoltages(); //get latest cell data
-
 	uint8_t batterySoC_percent = SoC_estimateFromRestingCellVoltage_percent(); //determine resting SoC
 
 	Serial.print(F("\nOld SoC: "));

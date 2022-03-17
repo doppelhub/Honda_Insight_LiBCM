@@ -31,7 +31,6 @@ void gridCharger_handleUnplugEvent(void)
   lcd_displayOFF();
   gpio_setGridCharger_powerLevel('H'); //reduces power consumption
   gpio_turnBuzzer_off(); //if issues persist, something else will turn buzzer back on
-  SoC_updateUsingOpenCircuitVoltage();
 }
 
 //////////////////////////////////////////////////////////////////////////////////

@@ -79,6 +79,7 @@ void debugUSB_displayUptime_seconds(void)
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 //This function can print more than 63 characters in a single call
+//t=29 ms in v0.7.2
 void debugUSB_printLatest_data_gridCharger(void)
 {	
 	static uint32_t previousMillisDebug = 0;
@@ -151,6 +152,25 @@ void debugUSB_printLatest_data_keyOn(void)
 		previousMillisCellVoltages += 0; //prevent "unused variable" compiler warning
 		icCellVoltagesToPrint += 0; //prevent "unused variable" compiler warning
 	#endif
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+//calculate delta between start and stop time
+//store start time: DEBUGUSB_TIMER_START
+//calculate delta:  DEBUGUSB_TIMER_STOP
+void debugUSB_Timer(bool timerAction)
+{
+  static uint32_t startTime = 0;
+
+  if(timerAction == DEBUGUSB_TIMER_START) { startTime = millis(); }
+  else
+  {
+      uint32_t stopTime = millis();
+      Serial.print(F("\nDelta: "));
+      Serial.print(stopTime - startTime);
+      Serial.print(F(" ms\n"));
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
