@@ -92,20 +92,6 @@ void SoC_updateUsingOpenCircuitVoltage(void)
 
 /////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Still used anywhere?
-//only call this function when the key is off (or you'll get a check engine light)
-void SoC_keyOff_cellMeasurement_handler(void)
-{
-	if( key_hasKeyOff_updatePeriodElapsed() == true )	
-	{	
-		SoC_updateUsingOpenCircuitVoltage();
-
-		
-	}
-}
-
-/////////////////////////////////////////////////////////////////////
-
 //turn LiBCM off if any cell voltage is too low
 //LiBCM remains off until the next keyON occurs
 //prevents over-discharge during extended keyOFF
@@ -115,9 +101,10 @@ void SoC_turnOffLiBCM_ifPackEmpty(void)
 		
 	#define NUM_CELLS_MEASURED_PER_LOOP  3	
 	#define NUM_CELLS_PER_IC            12
-	#define NUM_LOOPS_TO_MEASURE_ALL_CELLS (TOTAL_IC * NUM_CELLS_PER_IC / NUM_CELLS_MEASURED_PER_LOOP) //math handled by preprocessor	
+	#define NUM_LOOPS_TO_MEASURE_ALL_CELLS (TOTAL_IC * NUM_CELLS_PER_IC / NUM_CELLS_MEASURED_PER_LOOP) //math handled by preprocessor
 
-	if( LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF)
+	if( (LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //at least one cell voltage is too low
+		(time_hasKeyBeenOffLongEnough() == true )                ) //gives user time to plug in grid charger
 	{	
 		if(numConsecutiveTimesCellVoltageTooLow <= (NUM_LOOPS_TO_MEASURE_ALL_CELLS << 2) )
 		{ 

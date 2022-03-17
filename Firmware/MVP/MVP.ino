@@ -18,7 +18,7 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 
 	if( gpio_keyStateNow() == KEYON ){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while keyON (e.g. while driving)
 
-	gpio_safetyCoverCheck(); //this function never returns if safety cover isn't installed during initial powerup
+	gpio_safetyCoverCheck(); //this function hangs forever if safety cover isn't installed
 
   	//JTS2doLater: Configure watchdog
 
@@ -53,25 +53,23 @@ void loop()
 		lcd_refresh();
 	}
 	else if( key_getSampledState() == KEYOFF )
-	{
-		// //JTS2doNow: Use this to control LTC6804 measurement rate
-		// if( gpio_isGridChargerPluggedInNow() == true ) { delayPeriodToReadCellVoltages_seconds =   1; }
-		//else /* grid charger unplugged */              { delayPeriodToReadCellVoltages_seconds = 600; }
-		
-		//JTS2doNow: Put this somewhere
-		if( LTC68042cell_nextVoltages() == PROCESSED_LTC6804_DATA )
-		{
-			//all cells measured
+	{	
+		if( time_toUpdate_keyOffValues() == true )
+		{ 
+			//JTS2doNow: Isn't this just LTC68042cell_sampleGatherAndProcessAllCellVoltages (but better)?
+			while( LTC68042cell_nextVoltages() != PROCESSED_LTC6804_DATA ) { ; } //measure & read all cell voltages
+			
+			SoC_updateUsingOpenCircuitVoltage(); //JTS2doNow: Kludged!  Combine with above.
+
 			SoC_setBatteryStateNow_percent( SoC_estimateFromRestingCellVoltage_percent() );
 			SoC_turnOffLiBCM_ifPackEmpty();
+
+			cellBalance_handler();
+
+			debugUSB_printLatest_data_gridCharger();
 		}
 
-		//SoC_keyOff_cellMeasurement_handler();
-
 		gridCharger_handler();
-		
-		cellBalance_handler();
-		
 	}
 
 	//JTS2doLater: Check for Serial Input from user
@@ -80,14 +78,5 @@ void loop()
 
 	blinkLED2(); //Heartbeat
 
-	//wait here until next iteration
-	{
-		static uint32_t previousMillis = millis();
-
-		LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left //if off, code takes longer to run than LOOP_RATE_MILLISECONDS
-		while( (millis() - previousMillis) < LOOP_RATE_MILLISECONDS ) { ; } //wait here to start next loop //JTS2doLater: Determine behavior after overflow (50 days)
-		LED(4,LOW);
-		
-		previousMillis = millis(); //placed at end to prevent delay at keyON event
-	}
+	time_waitForLoopPeriod(); //wait here until next iteration
 }

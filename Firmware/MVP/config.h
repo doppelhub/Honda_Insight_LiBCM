@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.7.0b"
-    #define BUILD_DATE "2022MAR11"
+	#define FW_VERSION "0.7.1"
+    #define BUILD_DATE "2022MAR14"
 
 	#define CPU_MAP_MEGA2560
     #define HW_REVC
@@ -39,7 +39,8 @@
 		#define LED_NORMAL //enable "LED()" functions (see debug.c)
 		//#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
-	#define DEBUG_USB_UPDATE_PERIOD_MS 250 //250 = send data every 250 ms
+	#define DEBUG_USB_UPDATE_PERIOD_KEYON_mS 250 //250 = send data every 250 ms
+	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000
 
 	#define LOOP_RATE_MILLISECONDS 10 // Superloop execution rate: 1/LOOP_RATE_MILLISECONDS //'10' = 100 Hz
 
@@ -62,7 +63,12 @@
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda EHW5 lithium modules
 
+	//#define KEYOFF_TURNOFF_LIBCM_AFTER_HOURS 48 //LiBCM turns off this many hours after keyOFF. //JTS2doLater: Not implemented yet.
+	#define KEYOFF_TURNOFF_LIBCM_DELAY_MINUTES 10 //Even with low SoC, LiBCM will remain on for this many minutes after keyOFF.
+	//to turn LiBCM back on: turn ignition to 'ON', or turn IMA switch off and on, or plug in USB cable
+
 	#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
+
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
 #endif
 
@@ -71,19 +77,8 @@ Features to add later:
 
 #define DISPLAY_OEM_CURRENT_SIGN //JTS2doNow: add feature
 
-
-
-//Define realtime commands that are immediately picked off from the serial stream.
-//These characters are not passed to the serial parser, and are executed immediately.
-#define CMD_RESET '|'
-#define CMD_STATUS_REPORT
-
-//Define battery parameters
+//Define stack parameters
 #define STACK_CELLS_IN_SERIES 48
-#define STACK_CURRENT_MAX_ASSIST 140 //disable assist above this current
-#define STACK_CURRENT_MAX_REGEN 70 //disable regen above this current
-
-#define KEYOFF_TURNOFF_HOURS 4 //LiBCM turns off after this much time, -1 to disable
 
 //Configure fan behavior when key is off
 #define KEYOFF_FAN_COOLING_ALLOWED YES //'NO' to prevent fan usage when key is off
@@ -95,26 +90,6 @@ Features to add later:
 #define TEMP_OEMFAN_HIGH 40 //enable OEM fan at high speed above this value
 #define TEMP_FAN_MIN 30 //enable onboard fans at lowest speed
 #define TEMP_FAN_MAX 40 //enable onboard fans at highest speed
-
-//Define which parameters are reported over the USB serial bus
-#define USB_REPORT_ALLOWED YES	//if disabled, no data is reported
-#define USB_REPORT_CELL_VOLTAGE_MAX YES
-#define USB_REPORT_CELL_VOLTAGE_MIN YES
-#define USB_REPORT_CELL_VOLTAGE_ALL YES
-#define USB_REPORT_TEMP_MAX YES
-#define USB_REPORT_TEMP_MIN YES
-#define USB_REPORT_TEMP_ALL YES
-#define USB_REPORT_KEY_STATE YES
-#define USB_REPORT_METSCI_DATA YES
-#define USB_REPORT_BATTSCI_DATA NO
-#define USB_REPORT_CURRENT YES
-#define USB_REPORT_PACK_VOLTAGE YES
-#define USB_REPORT_PACK_POWER YES
-#define USB_REPORT_FAN_STATUS YES
-#define USB_REPORT_FANOEM_STATUS YES
-#define USB_REPORT_SoC YES
-
-//Grid charger behavior
 
 #define SERIAL_H_LINE_CONNECTED NO //H-Line wire connected to OEM BCM connector pin B01
 #define SERIAL_I2C_CONNECTED YES //Serial display connected to SDA/SDL lines

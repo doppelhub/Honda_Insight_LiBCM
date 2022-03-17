@@ -36,6 +36,6 @@
 	void gpio_turnLiBCM_off(void);
 
 	#define RAMP_FAN_SPEED 1
-	#define ABSOLUTE_FAN_SPEED 0
+	#define IMMEDIATE_FAN_SPEED 0
 
 #endif

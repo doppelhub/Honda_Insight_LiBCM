@@ -1,7 +1,0 @@
-Add (optional) inline power resistor to fan circuit
-This will allow LiBCM to use 15 volt HVDCDC converters
-
-Fans pull ~200 mA/each.  To get a 3 volt drop:
-3 volts / 600 mA = 5 Ohms
-
-5 Ohm resistor pulls 1.8 watts!

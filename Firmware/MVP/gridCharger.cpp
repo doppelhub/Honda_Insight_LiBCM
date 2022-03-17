@@ -30,7 +30,7 @@ void gridCharger_handleUnplugEvent(void)
   gpio_turnGridCharger_off();
   lcd_displayOFF();
   gpio_setGridCharger_powerLevel('H'); //reduces power consumption
-  gpio_turnBuzzer_off(); //if issue persists, something else will turn buzzer back on
+  gpio_turnBuzzer_off(); //if issues persist, something else will turn buzzer back on
   SoC_updateUsingOpenCircuitVoltage();
 }
 
@@ -49,8 +49,7 @@ void gridCharger_chargePack(void)
   static uint8_t cellState = CELLSTATE_UNINITIALIZED;
   static uint8_t cellStatePrevious = CELLSTATE_UNINITIALIZED;
 
-  lcd_refresh();  
-  debugUSB_printLatest_data_gridCharger();
+  lcd_refresh();
 
   if( LTC68042result_hiCellVoltage_get() > CELL_VREST_85_PERCENT_SoC )
   {

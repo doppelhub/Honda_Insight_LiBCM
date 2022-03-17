@@ -96,7 +96,7 @@ void gpio_setFanSpeed(uint8_t speed, bool isSpeedRamped)
 		if     (actualFanPWM  > goalFanPWM) { actualFanPWM--; }
 		else if(actualFanPWM  < goalFanPWM) { actualFanPWM++; }
 	}
-	else if(isSpeedRamped == ABSOLUTE_FAN_SPEED) { actualFanPWM = goalFanPWM; } //immediately adjust fan speed
+	else if(isSpeedRamped == IMMEDIATE_FAN_SPEED) { actualFanPWM = goalFanPWM; } //immediately adjust fan speed
 
 	if (actualFanPWM == 0) { pinMode(PIN_FAN_PWM, INPUT); } //saves power when fan is off
 	else                   { analogWrite(PIN_FAN_PWM, actualFanPWM); }

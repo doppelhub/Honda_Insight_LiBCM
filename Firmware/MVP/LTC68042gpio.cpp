@@ -36,12 +36,8 @@ void LTC6804_adax()
   cmd[2] = (uint8_t)(temp_pec >> 8);
   cmd[3] = (uint8_t)(temp_pec);
 
-  LTC68042configure_wakeupIsoSPI(); //Guarantees LTC6804 isoSPI port is awake.
-
   //send broadcast adax command to LTC6804 pack
-  digitalWrite(PIN_SPI_CS,LOW);
   LTC68042configure_spiWrite(4,cmd);
-  digitalWrite(PIN_SPI_CS,HIGH);
 }
 
 
@@ -138,8 +134,6 @@ void LTC6804_rdaux_reg(uint8_t reg, //GPIO voltage register to read back (1:A, 2
   cmd[2] = (uint8_t)(cmd_pec >> 8);
   cmd[3] = (uint8_t)(cmd_pec);
 
-  LTC68042configure_wakeupIsoSPI(); 
-
   //Send Global Command to LTC6804 pack
   for (int current_ic = 0; current_ic<total_ic; current_ic++)
   {
@@ -147,8 +141,7 @@ void LTC6804_rdaux_reg(uint8_t reg, //GPIO voltage register to read back (1:A, 2
     cmd_pec = LTC68042configure_calcPEC15(2, cmd);
     cmd[2] = (uint8_t)(cmd_pec >> 8);
     cmd[3] = (uint8_t)(cmd_pec);
-    digitalWrite(PIN_SPI_CS,LOW);
+
     LTC68042configure_spiWriteRead(cmd,4,&data[current_ic*8],8);
-    digitalWrite(PIN_SPI_CS,HIGH);
   }
 }

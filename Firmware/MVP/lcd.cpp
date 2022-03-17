@@ -13,7 +13,7 @@
 
 lcd_I2C_jts lcd2(0x27);
 
-//These variables are reset during key change
+//These variables are reset during key or grid charger state change
 uint8_t  packVoltageActual_onScreen = 0;
 uint8_t  packVoltageSpoofed_onScreen = 0;
 uint8_t  errorCount_onScreen = 99;
@@ -22,6 +22,8 @@ uint16_t minEverCellVoltage_onScreen = 0;
 uint8_t  SoC_onScreen = 0;
 int8_t   temp_onScreen = 99;
 uint8_t  gridChargerState_onScreen = 'g';
+uint16_t hiCellVoltage_onScreen = 0;
+uint16_t loCellVoltage_onScreen = 0;
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -178,7 +180,6 @@ bool lcd_printCellVoltage_hi(void)
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
 	#ifdef LCD_4X20_CONNECTED
-		static uint16_t hiCellVoltage_onScreen = 0;
 		if( hiCellVoltage_onScreen != LTC68042result_hiCellVoltage_get() )
 		{
 			hiCellVoltage_onScreen = LTC68042result_hiCellVoltage_get();
@@ -215,7 +216,6 @@ bool lcd_printCellVoltage_lo(void)
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
 	#ifdef LCD_4X20_CONNECTED
-		static uint16_t loCellVoltage_onScreen = 0;
 		if( loCellVoltage_onScreen != LTC68042result_loCellVoltage_get() )
 		{
 			loCellVoltage_onScreen = LTC68042result_loCellVoltage_get();
@@ -227,7 +227,7 @@ bool lcd_printCellVoltage_lo(void)
 
 		static bool isBacklightOn = true;
 
-		if( (LTC68042result_loCellVoltage_get() < 31500) || (isBacklightOn == false) )
+		if( (LTC68042result_loCellVoltage_get() < CELL_VMIN_ASSIST) || (isBacklightOn == false) )
 		{ //at least one cell undercharged
 			if ( isBacklightOn == true ) {
 				lcd2.noBacklight();
@@ -521,12 +521,16 @@ void lcd_displayOFF(void)
 		lcd2.noDisplay();
 
 		packVoltageActual_onScreen  = 0;
-		errorCount_onScreen         = 0;
-		SoC_onScreen                = 0;
 		packVoltageSpoofed_onScreen = 0;
-		temp_onScreen               = 0;
+		errorCount_onScreen         = 99;
+		SoC_onScreen                = 0;
+		temp_onScreen               = 99;
 		gridChargerState_onScreen   = 'g';
+		maxEverCellVoltage_onScreen = 0;
+		minEverCellVoltage_onScreen = 0;
 		LTC68042result_errorCount_set(0);
+		hiCellVoltage_onScreen = 0;
+		loCellVoltage_onScreen = 0;
 	#endif
 }
 

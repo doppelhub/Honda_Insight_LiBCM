@@ -7,8 +7,8 @@
 	#define BALANCING_DISABLED 0
 	#define BALANCING_ALLOWED  1
 
-	void cellBalance_handler(void);
+	bool cellBalance_wereCellsBalanced(void);
 
-	void cellBalance_disableBalanceResistors(void);
+	void cellBalance_handler(void);
 
 #endif

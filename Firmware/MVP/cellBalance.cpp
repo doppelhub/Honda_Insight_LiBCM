@@ -5,15 +5,7 @@
 
 #include "libcm.h"
 
-/////////////////////////////////////////////////////////////////////////////////////////////
-
-void cellBalance_disableBalanceResistors(void)
-{
-  for(uint8_t ic = 0; ic < TOTAL_IC; ic++)
-  { 
-    LTC68042configure_setBalanceResistors( (ic + FIRST_IC_ADDR), 0 );
-  }
-}
+bool cellsAreBalanced = true;
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -22,7 +14,7 @@ void cellBalance_configureDischargeResistors(void)
   uint16_t cellsToDischarge[TOTAL_IC] = {0}; //each uint16's QTY12 LSBs correspond to each LTC6804's QTY12 cells
   static uint8_t balanceHysteresis = CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT;
 
-  bool cellsAreBalanced = true;
+  cellsAreBalanced = true; //code below will set false if cells unbalanced
 
   uint16_t cellDischargeVoltageThreshold = 0; //cells above this value will get discharged
 
@@ -44,24 +36,29 @@ void cellBalance_configureDischargeResistors(void)
       if(LTC68042result_specificCellVoltage_get(ic, cell) > (cellDischargeVoltageThreshold + balanceHysteresis) )
       { 
         //this cell voltage is higher than the lowest cell voltage
-        cellsToDischarge[ic] |= (1 << cell);
+        cellsToDischarge[ic] |= (1 << cell); //this cell will be discharged
         cellsAreBalanced = false;
-        gpio_setFanSpeed('M', RAMP_FAN_SPEED);
         balanceHysteresis = CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT;
       }
     }
 
-    debugUSB_setCellBalanceStatus(ic, cellsToDischarge[ic]);
-    LTC68042configure_setBalanceResistors( (ic + FIRST_IC_ADDR), cellsToDischarge[ic] );
+    debugUSB_setCellBalanceStatus(ic, cellsToDischarge[ic], cellDischargeVoltageThreshold + balanceHysteresis);
+    LTC68042configure_setBalanceResistors((ic + FIRST_IC_ADDR), cellsToDischarge[ic], LTC6804_DISCHARGE_TIMEOUT_00_SECONDS);
   }
 
   if(cellsAreBalanced == true)
   { 
     balanceHysteresis = CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE;
-    gpio_setFanSpeed('0', RAMP_FAN_SPEED);
+    gpio_setFanSpeed('0', IMMEDIATE_FAN_SPEED);
+    //disable software timer (so LTCs turn off)
   }
-  else { gpio_setFanSpeed('H', RAMP_FAN_SPEED); } //cool discharge resistors
+  else { gpio_setFanSpeed('H', IMMEDIATE_FAN_SPEED); } //cool discharge resistors
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+//'cellsAreBalanced' variable is updated by calling cellBalance_configureDischargeResistors()
+bool cellBalance_wereCellsBalanced(void) { return cellsAreBalanced; }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -84,8 +81,9 @@ void cellBalance_handler(void)
     else if(balanceState == BALANCING_ALLOWED)
     {
       //pack SoC previously high enough to balance, but isn't now
-      cellBalance_disableBalanceResistors(); //only send this command once //saves power
-      gpio_setFanSpeed('0', ABSOLUTE_FAN_SPEED);
+      //this code only runs once (i.e. when the above if statement state changes) to save power
+      LTC68042configure_programVolatileDefaults(); //disable discharge resistors and software timer
+      gpio_setFanSpeed('0', IMMEDIATE_FAN_SPEED);
       balanceState = BALANCING_DISABLED;
     }
 }

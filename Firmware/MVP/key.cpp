@@ -27,7 +27,7 @@ void key_handleKeyEvent_off(void)
     BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
     METSCI_disable();
     gpio_setFanSpeed_OEM('0');
-    SoC_updateUsingOpenCircuitVoltage(); //JTS2doNow: Is this required?  I believe the goal is to make sure some SoC value exists when LiBCM first powers on.  See also: SoC_keyOff_cellMeasurement_handler()
+    SoC_updateUsingOpenCircuitVoltage();
     adc_calibrateBatteryCurrentSensorOffset();
     gpio_turnPowerSensors_off();
     LTC68042configure_handleKeyStateChange();
@@ -52,10 +52,9 @@ void key_handleKeyEvent_on(void)
 	gpio_turnPowerSensors_on();
 	lcd_displayOn();
 	gpio_setFanSpeed_OEM('L');
-	gpio_setFanSpeed('0', ABSOLUTE_FAN_SPEED);
+	gpio_setFanSpeed('0', IMMEDIATE_FAN_SPEED);
 	gpio_turnGridCharger_off();
 	LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
-	//cellBalance_disableBalanceResistors(); //not required //handled by LTC68042configure_programVolatileDefaults()
 	LTC68042configure_handleKeyStateChange();
 	LED(1,HIGH);
 
@@ -108,24 +107,4 @@ uint8_t key_getSampledState(void)
 {
 	if(keyState_previous == KEYOFF_JUSTOCCURRED) { return KEYON;            } //prevent noise from accidentally turning LiBCM off
 	else                                         { return keyState_sampled; }
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-
-bool key_hasKeyOff_updatePeriodElapsed(void)
-{
-	static uint32_t latestUpdate_milliseconds = 0;
-	uint32_t updatePeriod_milliseconds = 0;
-
-	if( gpio_isGridChargerPluggedInNow() == true ) { updatePeriod_milliseconds =   1000; }
-	else                                           { updatePeriod_milliseconds = 600000; } //600000 ms = 10 minutes
-
-	if( ( (millis() - latestUpdate_milliseconds     ) >= updatePeriod_milliseconds ) && //time has elapsed since last measurement
-		( (millis() - key_latestTurnOffTime_ms_get()) >= updatePeriod_milliseconds )  ) //time has elapsed since last key off
-	{
-		latestUpdate_milliseconds = millis();
-		return true;
-	}
-	
-	return false;
 }

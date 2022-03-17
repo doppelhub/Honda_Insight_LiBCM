@@ -29,12 +29,8 @@ void LTC6804_clrcell()
   cmd[2] = (uint8_t)(cmd_pec >> 8);
   cmd[3] = (uint8_t)(cmd_pec );
 
-  LTC68042configure_wakeupIsoSPI(); 
-
   //4
-  digitalWrite(PIN_SPI_CS,LOW);
   LTC68042configure_spiWriteRead(cmd,4,0,0);
-  digitalWrite(PIN_SPI_CS,HIGH);
 }
 
 //---------------------------------------------------------------------------------------
@@ -70,9 +66,6 @@ int8_t LTC6804_rdcfg(uint8_t total_ic, uint8_t r_config[][8], uint8_t addr_first
   cmd[1] = 0x02;
   cmd[2] = 0x2b;
   cmd[3] = 0x0A;
-
-  //2
-  LTC68042configure_wakeupIsoSPI();
   
   //read configuration of each LTC6804 on the pack
   for (int current_ic = 0; current_ic<total_ic; current_ic++)
@@ -81,9 +74,8 @@ int8_t LTC6804_rdcfg(uint8_t total_ic, uint8_t r_config[][8], uint8_t addr_first
     data_pec = LTC68042configure_calcPEC15(2, cmd);
     cmd[2] = (uint8_t)(data_pec >> 8);
     cmd[3] = (uint8_t)(data_pec);
-    digitalWrite(PIN_SPI_CS,LOW);
+
     LTC68042configure_spiWriteRead(cmd,4,&rx_data[current_ic*8],8);
-    digitalWrite(PIN_SPI_CS,HIGH);
   }
 
   for (uint8_t current_ic = 0; current_ic < total_ic; current_ic++) //executes for each LTC6804 in the pack
