@@ -113,7 +113,7 @@ void SoC_turnOffLiBCM_ifPackEmpty(void)
 		{
 			//cell remained below minimum voltage for several LTC6804 mesurement cycles
 			Serial.print(F("\nLow cell voltage"));
-			gpio_turnLiBCM_off(); //turn LiBCM off... game over, thanks for playing //JTS2doNow: Only turn off if more than ten minutes since last keyOFF
+			gpio_turnLiBCM_off(); //turn LiBCM off... game over, thanks for playing
 		}
 	}
 	else { numConsecutiveTimesCellVoltageTooLow = 0; } //pack is charged enough for LiBCM to stay on

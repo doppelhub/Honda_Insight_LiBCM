@@ -14,6 +14,7 @@
 
   //define standard libraries used by LiBCM
   #include <Arduino.h>
+  #include <avr/wdt.h>
 
   //Define LiBCM system include files.  Note: Do not alter order.
   #include "config.h"

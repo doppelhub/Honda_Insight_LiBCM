@@ -70,7 +70,6 @@ void spoofVoltage_VPINout(void)
 
 //---------------------------------------------------------------------------------------
 
-//JTS2doNow: Add User-Adjustable offset (to compensate pack voltage difference between LiBCM & OBDIIC&C)
 void spoofVoltage_calculateValue(void)
 {
 	//Hardware limitation: spoofedPackVoltage(max) must be less than (vPackActual - MCME_VOLTAGE_OFFSET_ADJUST volts)

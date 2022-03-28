@@ -8,6 +8,7 @@
 void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup or bootloader delay 
 {
 	gpio_begin();
+	wdt_disable(); //disable watchdog if running previously
 	Serial.begin(115200); //USB
 	METSCI_begin();
 	BATTSCI_begin();
@@ -25,6 +26,8 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 	#ifdef RUN_BRINGUP_TESTER
 	  	bringupTester_run(); //this function never returns
 	#endif
+
+	wdt_enable(WDTO_2S); //set watchdog reset vector to 2 seconds
 
 	Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION ", " BUILD_DATE "\n"));
 }
@@ -72,7 +75,7 @@ void loop()
 
 	//JTS2doLater: Check for Serial Input from user
 
-	//JTS2doNow: Feed watchdog!
+	wdt_reset(); //Feed watchdog
 
 	blinkLED2(); //Heartbeat
 

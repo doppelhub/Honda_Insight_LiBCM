@@ -52,7 +52,6 @@ void temperature_battery_measure(void)
 	if(numTempSensorFaults == NUM_BATTERY_TEMP_SENSORS)
 	{
 		Serial.print(F("\nConnect Batt Temp Sensors!"));
-		//JTS2doNow: Beep?  Fans full blast?  How to alert user?
 		battTemp = TEMPERATURE_SENSOR_FAULT;
 	}
 	else //at least one battery temperature sensor is working
@@ -298,7 +297,7 @@ int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow:
+//JTS2doLater:
 /*
 	-Monitor Temperature
 		-Read QTY4 temp pins (Temp_YEL/GRN/WHT/BLU_Pin)
