@@ -1,1 +1,1 @@
-Add to silkscreen: 6.3A fuse
+Add to silkscreen: 6.3A fuse or "8 amps MAX"

@@ -1,0 +1,15 @@
+This will allow LiBCM to use 15 volt HVDCDC converters
+
+Fans pull ~200 mA/each.
+
+Drive Fans with QTY3 NFETs in series:
+
++15V
+SGD NFET
+SGD NFET
+SGD NFET
+FAN FAN FAN FLYBACK DIODE C145 C26 C20
+CONTROL FET
+GND
+
+Add zero Ohm depop in case we get 12 volt supplies again

@@ -8,7 +8,10 @@
 
 //FYI: simple pin state read/writes take less than 10 us
 
-//JTS2doNow: Disable METSCI if safety cover isn't installed
+uint8_t previousGridChargerState = GPIO_CHARGER_INIT;
+
+////////////////////////////////////////////////////////////////////////////////////
+
 void gpio_begin(void)
 {
 	//Ensure 12V->5V DCDC stays on
@@ -42,7 +45,6 @@ void gpio_begin(void)
 	//TCCR5B is set in Buzzer functions
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////
 
 bool gpio_keyStateNow(void) { return digitalRead(PIN_IGNITION_SENSE); }
@@ -72,16 +74,34 @@ void gpio_setFanSpeed_OEM(char speed)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-void gpio_setFanSpeed(char speed)
+void gpio_setFanSpeed(uint8_t speed, bool isSpeedRamped)
 {
+	static uint8_t actualFanPWM = 0;
+	uint8_t goalFanPWM = 0;
+
+	const uint8_t RAMP_UPDATE_PERIOD_ms = 50;
+	static uint32_t millis_previous = 0;
+
 	switch(speed)
 	{
-		case '0': pinMode(PIN_FAN_PWM, INPUT);     break; //high impedance
-		case 'L': analogWrite(PIN_FAN_PWM, 30);    break;
-		case 'M': analogWrite(PIN_FAN_PWM, 75);    break;
-		case 'H': analogWrite(PIN_FAN_PWM, 255);   break;
-		default : analogWrite(PIN_FAN_PWM, speed); break;
+		case '0': goalFanPWM =     0; break;
+		case 'L': goalFanPWM =    30; break;
+		case 'M': goalFanPWM =    75; break;
+		case 'H': goalFanPWM =   255; break;
+		default : goalFanPWM = speed; break;
 	}
+
+	if ( (isSpeedRamped == RAMP_FAN_SPEED) &&
+		 ( millis() - millis_previous >= RAMP_UPDATE_PERIOD_ms) )
+	{
+		//slowly ramp fan speed
+		if     (actualFanPWM  > goalFanPWM) { actualFanPWM--; }
+		else if(actualFanPWM  < goalFanPWM) { actualFanPWM++; }
+	}
+	else if(isSpeedRamped == IMMEDIATE_FAN_SPEED) { actualFanPWM = goalFanPWM; } //immediately adjust fan speed
+
+	if (actualFanPWM == 0) { pinMode(PIN_FAN_PWM, INPUT); } //saves power when fan is off
+	else                   { analogWrite(PIN_FAN_PWM, actualFanPWM); }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -98,11 +118,31 @@ void gpio_turnHMI_off(void) { digitalWrite(PIN_HMI_EN,  LOW); }
 ////////////////////////////////////////////////////////////////////////////////////
 
 bool gpio_isGridChargerPluggedInNow(void) { return !(digitalRead(PIN_GRID_SENSE)); }
+bool gpio_isGridChargerChargingNow(void)  { return   digitalRead(PIN_GRID_EN);     }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-void gpio_turnGridCharger_on( void) { digitalWrite(PIN_GRID_EN, HIGH); }
-void gpio_turnGridCharger_off(void) { digitalWrite(PIN_GRID_EN,  LOW); }
+void gpio_turnGridCharger_on( void)
+{
+	digitalWrite(PIN_GRID_EN, HIGH);
+	if(previousGridChargerState != GPIO_CHARGER_ON)
+	{ 
+		previousGridChargerState = GPIO_CHARGER_ON;
+		Serial.print(F("\nCharger: ON" ));
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void gpio_turnGridCharger_off(void)
+{ 
+	digitalWrite(PIN_GRID_EN, LOW);
+	if(previousGridChargerState != GPIO_CHARGER_OFF)
+	{
+		previousGridChargerState = GPIO_CHARGER_OFF;
+		Serial.print(F("\nCharger: OFF"));
+	}
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -155,17 +195,28 @@ void gpio_playSound_firmwareUpdated(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef HW_REVB
-	//features unique to RevB
-#else
-	//RevC+ supports the following
-	bool gpio_isCoverInstalled(void)
-	{
-		if(digitalRead(PIN_COVER_SWITCH) == 1 ) {return  true;}
-		else                                    {return false;}
-	}
+bool gpio_isCoverInstalled(void)
+{
+	if(digitalRead(PIN_COVER_SWITCH) == 1 ) {return  true;}
+	else                                    {return false;}
+}
 
-#endif
+////////////////////////////////////////////////////////////////////////////////////
+
+void gpio_safetyCoverCheck(void)
+{
+	#ifdef	PREVENT_BOOT_WITHOUT_SAFETY_COVER
+		if( gpio_isCoverInstalled() == false)
+		{
+			gpio_turnBuzzer_on_lowFreq();
+			lcd_Warning_coverNotInstalled();
+			Serial.print(F("\nInstall safety cover, then power cycle.  LiBCM Disabled.\nSee config.h>>'PREVENT_BOOT_WITHOUT_SAFETY_COVER' to disable"));
+			delay(5000);
+			gpio_turnBuzzer_off();
+			while(1) { ; } //hang here forever
+		}
+	#endif
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 

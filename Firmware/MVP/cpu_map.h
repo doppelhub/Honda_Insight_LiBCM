@@ -9,57 +9,6 @@
 
   #ifdef CPU_MAP_MEGA2560
   
-    #ifdef HW_REVB
-      #define PIN_BATTCURRENT A0
-      #define PIN_FANOEM_LOW A1
-      #define PIN_FANOEM_HI A2
-      #define PIN_TEMP_YEL A3
-      #define PIN_TEMP_GRN A4
-      #define PIN_TEMP_WHT A5
-      #define PIN_TEMP_BLU A6
-      #define PIN_VPIN_IN A7
-      #define PIN_TURNOFFLiBCM A8
-      #define PIN_HMI_EN A9
-      #define PIN_BATTSCI_DE A10
-      #define PIN_BATTSCI_REn A11
-      #define PIN_LED1 A12
-      #define PIN_LED2 A13
-      #define PIN_LED3 A14
-      #define PIN_LED4 A15
-
-      #define PIN_METSCI_DE 2
-      #define PIN_METSCI_REn 3
-      #define PIN_VPIN_OUT_PWM 4
-      #define PIN_SPI_EXT_CS 5
-      #define PIN_TEMP_EN 6
-      #define PIN_MCME_PWM 7
-      #define PIN_GRID_PWM 8
-      #define PIN_GRID_SENSE 9
-      #define PIN_GRID_EN 10
-      #define PIN_FAN_PWM 11
-      #define PIN_SENSOR_EN 12
-      #define PIN_IGNITION_SENSE 13
-      #define PIN_SPI_CS SS
-      #define PIN_BUZZER_PWM 45 //RevB doesn't have a buzzer.  Added so that buzzer turns on if you try to load RevB fiwmare onto RevC+ hardware
-      #define PIN_GPIO1 48
-      #define PIN_USER_SW 49
-
-      //Serial3
-      #define METSCI_TX 14
-      #define METSCI_RX 15
-
-      //Serial2
-      #define BATTSCI_TX 16
-      #define BATTSCI_RX 17
-
-      //Serial1
-      #define HMI_TX 18
-      #define HMI_RX 19
-
-      #define DEBUG_SDA 20
-      #define DEBUG_CLK 21
-
-    #elif defined HW_REVC
       #define PIN_BATTCURRENT A0
       #define PIN_USER_SW A1
       #define PIN_VPIN_IN A2
@@ -117,15 +66,11 @@
       #define DEBUG_SDA 20
       #define DEBUG_CLK 21
 
-    #else
-      #error (Hardware Revision not selected in config.c)
-    #endif
-
   #endif
 
 #endif
 
-//JTS2doLater: Replace Arduino I/O functions as shown in example code below
+//JTS2doLater: Replace Arduino I/O functions
 /*
   #define DIRECTION_DDR     DDRD
   #define DIRECTION_PORT    PORTD

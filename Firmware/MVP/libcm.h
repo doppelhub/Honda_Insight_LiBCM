@@ -14,9 +14,7 @@
 
   //define standard libraries used by LiBCM
   #include <Arduino.h>
-  //#include <stdint.h>
-  //#include <SPI.h>
-  //#include <Wire.h>
+  #include <avr/wdt.h>
 
   //Define LiBCM system include files.  Note: Do not alter order.
   #include "config.h"
@@ -41,5 +39,7 @@
   #include "SoC.h"
   #include "temperature.h"
   #include "eepromAccess.h"
+  #include "cellBalance.h"
+  #include "time.h"
 
 #endif

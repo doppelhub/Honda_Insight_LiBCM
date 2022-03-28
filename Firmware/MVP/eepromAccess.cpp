@@ -133,7 +133,7 @@ void EEPROM_checkForExpiredFirmware(void)
     if(newUptime_hours == REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS) //newUptime_hours is bounded to REQUIRED_FW_UPDATE_PERIOD_HOURS 
     {
       Serial.print(F("\nOpen Beta ALERT: Firmware update required (linsight.org/downloads)\nLiBCM disabled until firmware is updated"));
-      lcd_firmwareUpdateWarning(); 
+      lcd_Warning_firmwareUpdate(); 
       EEPROM_firmwareStatus_set(FIRMWARE_STATUS_EXPIRED);
       delay(5000); //give user time to read display
     } 

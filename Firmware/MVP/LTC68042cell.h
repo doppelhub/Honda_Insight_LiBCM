@@ -4,9 +4,9 @@
 #ifndef LTC68042cell_h
 	#define LTC68042cell_h
 	
-	#define STATE_FIRSTRUN 0
-	#define STATE_GATHER  1
-	#define STATE_PROCESS 2
+	#define LTC_STATE_FIRSTRUN 0
+	#define LTC_STATE_GATHER  1
+	#define LTC_STATE_PROCESS 2
 
 	#define GATHERED_LTC6804_DATA  0
 	#define PROCESSED_LTC6804_DATA 1

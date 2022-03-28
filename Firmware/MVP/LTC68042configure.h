@@ -139,13 +139,36 @@
 	}
 	*/
 
-	void LTC68042configure_initialize();
+	//'DCTO' Discharge timeout values (inclusive) //see Table12
+	#define LTC6804_DISCHARGE_TIMEOUT_00_SECONDS  0x00 //software timer disabled
+	#define LTC6804_DISCHARGE_TIMEOUT_30_SECONDS  0x10 //0.5 minutes
+	#define LTC6804_DISCHARGE_TIMEOUT_01_MINUTE   0x20 //1 minute
+	#define LTC6804_DISCHARGE_TIMEOUT_02_MINUTES  0x30 //2 minutes
+	#define LTC6804_DISCHARGE_TIMEOUT_03_MINUTES  0x40 //3 minutes
+	#define LTC6804_DISCHARGE_TIMEOUT_04_MINUTES  0x50 //4 minutes
+	#define LTC6804_DISCHARGE_TIMEOUT_05_MINUTES  0x60 //5 minutes
+	#define LTC6804_DISCHARGE_TIMEOUT_10_MINUTES  0x70 //10 minutes
+	#define LTC6804_DISCHARGE_TIMEOUT_15_MINUTES  0x80 //15 minutes
+	#define LTC6804_DISCHARGE_TIMEOUT_20_MINUTES  0x90 //20 minutes
+	#define LTC6804_DISCHARGE_TIMEOUT_30_MINUTES  0xA0 //30 minutes
+	#define LTC6804_DISCHARGE_TIMEOUT_40_MINUTES  0xB0 //40 minutes
+	#define LTC6804_DISCHARGE_TIMEOUT_60_MINUTES  0xC0 //60 minutes
+	#define LTC6804_DISCHARGE_TIMEOUT_75_MINUTES  0xD0 //75 minutes
+	#define LTC6804_DISCHARGE_TIMEOUT_90_MINUTES  0xE0 //90 minutes
+	#define LTC6804_DISCHARGE_TIMEOUT_120_MINUTES 0xF0 //120 minutes
 
-	void LTC6804configure_handleKeyOff(void);
+	#define LTC6804_CORE_ALREADY_AWAKE true
+	#define LTC6804_CORE_JUST_WOKE_UP  false
 
-	void LTC68042configure_wakeupIsoSPI();
+	#define BROADCAST_TO_ALL_ICS 16 //valid LTC6804 addresses are 0:15
 
-	void LTC68042configure_wakeupCore();
+	#define LTC6804_MASK_REFON_BIT 0x02
+
+	void LTC68042configure_initialize(void);
+
+	void LTC68042configure_handleKeyStateChange(void);
+
+	bool LTC68042configure_wakeup(void);
 
 	uint16_t LTC68042configure_calcPEC15(uint8_t len, uint8_t *data);
 
@@ -153,8 +176,8 @@
 
 	void LTC68042configure_spiWriteRead(uint8_t *TxData, uint8_t TXlen, uint8_t *rx_data, uint8_t RXlen);
 
-	void LTC68042configure_cellBalancing_disable();
+	void LTC68042configure_programVolatileDefaults(void);
 	
-	void LTC68042configure_cellBalancing_setCells(uint8_t icAddress, uint16_t cellBitmap);
+	void LTC68042configure_setBalanceResistors(uint8_t icAddress, uint16_t cellBitmap, uint8_t softwareTimeout);
 
 #endif

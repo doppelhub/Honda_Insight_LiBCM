@@ -19,7 +19,7 @@ uint8_t SoC_getBatteryStateNow_percent(void) { return packCharge_Now_percent; }
 void    SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = (stackFull_Calculated_mAh * 0.01) * newSoC_percent; } //JTS2doNow: Is this cast correctly?
 
 //uses SoC percentage to update mAh value (LiBCM stores battery SoC in mAh, not %)
-void SoC_updateBatteryStateNow_percent(void) { packCharge_Now_percent = (uint8_t)(((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh); }
+void SoC_calculateBatteryStateNow_percent(void) { packCharge_Now_percent = (uint8_t)(((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh); }
 
 /////////////////////////////////////////////////////////////////////
 
@@ -75,10 +75,8 @@ void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 //Estimate SoC based on resting cell voltage.
 //LiBCM uses this function to determine SoC while keyOFF
 //EHW5 cells settle to final 'resting' voltage in ten minutes, but are fairly close to that value after just one minute
-void SoC_updateUsingOpenCircuitVoltage(void)
+void SoC_updateUsingLatestOpenCircuitVoltage(void)
 {
-	LTC68042cell_sampleGatherAndProcessAllCellVoltages(); //get latest cell data
-
 	uint8_t batterySoC_percent = SoC_estimateFromRestingCellVoltage_percent(); //determine resting SoC
 
 	Serial.print(F("\nOld SoC: "));
@@ -92,35 +90,33 @@ void SoC_updateUsingOpenCircuitVoltage(void)
 
 /////////////////////////////////////////////////////////////////////
 
-//only call this function when the key is off (or you'll get a check engine light)
-void SoC_openCircuitVoltage_handler(void)
+//turn LiBCM off if any cell voltage is too low
+//LiBCM remains off until the next keyON occurs
+//prevents over-discharge during extended keyOFF
+void SoC_turnOffLiBCM_ifPackEmpty(void)
 {
-	#define KEY_OFF_SoC_UPDATE_PERIOD_MINUTES 10
-	#define KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS (KEY_OFF_SoC_UPDATE_PERIOD_MINUTES * 60000)
-
-	static uint32_t SoC_latestUpdate_milliseconds = 0;
-
-	if( ( (millis() - SoC_latestUpdate_milliseconds ) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS ) && //more than ten minutes since last measurement
-		( (millis() - key_latestTurnOffTime_ms_get()) >= KEY_OFF_SoC_UPDATE_PERIOD_MILLISECONDS ) )  //more than ten minutes since key turned off
-		//JTS2doNow: Grid charger routine also updates SoC... so no need to run this function if grid charger plugged in (see gridCharger_chargePack())
-	{
-		SoC_latestUpdate_milliseconds = millis();
+	static uint8_t numConsecutiveTimesCellVoltageTooLow = 0; 
 		
-		debugUSB_displayUptime_seconds();
+	#define NUM_CELLS_MEASURED_PER_LOOP  3	
+	#define NUM_CELLS_PER_IC            12
+	#define NUM_LOOPS_TO_MEASURE_ALL_CELLS (TOTAL_IC * NUM_CELLS_PER_IC / NUM_CELLS_MEASURED_PER_LOOP) //math handled by preprocessor
 
-		SoC_updateUsingOpenCircuitVoltage();
-
-		static bool wasCellVoltagePreviouslyTooLow = false;
-
-		//turn LiBCM off if any cell voltage is too low
-		//LiBCM remains off until the next keyON occurs
-		if( LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF)
-		{	
-			if(wasCellVoltagePreviouslyTooLow == false) { wasCellVoltagePreviouslyTooLow = true; } //do nothing the first time cell voltage is too low
-			else /* second time voltage is too low */   { Serial.print(F("\nLow cell voltage")); gpio_turnLiBCM_off(); } //game over, thanks for playing	 
+	if( (LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //at least one cell voltage is too low
+		(time_hasKeyBeenOffLongEnough() == true )                ) //gives user time to plug in grid charger
+	{	
+		if(numConsecutiveTimesCellVoltageTooLow <= (NUM_LOOPS_TO_MEASURE_ALL_CELLS << 2) )
+		{ 
+			//verify voltage remains low for several LTC6804 measurement cycles 
+			numConsecutiveTimesCellVoltageTooLow++; 
 		}
-		else { wasCellVoltagePreviouslyTooLow = false; } //pack is charged enough for LiBCM to stay on
+		else
+		{
+			//cell remained below minimum voltage for several LTC6804 mesurement cycles
+			Serial.print(F("\nLow cell voltage"));
+			gpio_turnLiBCM_off(); //turn LiBCM off... game over, thanks for playing
+		}
 	}
+	else { numConsecutiveTimesCellVoltageTooLow = 0; } //pack is charged enough for LiBCM to stay on
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -246,17 +242,16 @@ uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
 
 void SoC_handler(void)
 {
-	SoC_updateBatteryStateNow_percent();
+	SoC_calculateBatteryStateNow_percent();
 }
 
 /////////////////////////////////////////////////////////////////////
 
 /*
 
+JTS2doLater:
 -Save SoC(RAM) to EEPROM
 -If value in RAM is more than 10% different from EEPROM value, update EEPROM.
 -Also store if key recently turned off (keyState_previous == on && keyState_now == off)
--EEPROM writes require 3.3. ms blocking time (interrupts must be disabled)
-	-Example EEPROM code p24 MEGA2560 manual
 
 */

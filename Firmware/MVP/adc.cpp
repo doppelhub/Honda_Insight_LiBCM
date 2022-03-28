@@ -66,16 +66,10 @@ int16_t adc_measureBatteryCurrent_amps(void)
 
 		SoC_integrateCharge_adcCounts(latest_battCurrent_counts);
 
-		//convert current sensor result into approximate amperage for MCM & user-display
-		#ifdef HW_REVB
-			//The approximation equation below is accurate to within 3.7 amps of actual value
-			latest_battCurrent_amps = ((int16_t)((((uint16_t)latest_battCurrent_counts) * 13) >> 6)) - 67;
-		#elif defined HW_REVC
-			//see SPICE simulation for complete derivation
-			//see "RevC/V&V/OEM Current Sensor.ods" for measured results
-			//The approximation equation below is accurate to within 1.0 amps of actual value
-			latest_battCurrent_amps = ((int16_t)((((uint16_t)latest_battCurrent_counts) * 55) >> 8)) - 71;
-		#endif
+		//see SPICE simulation for complete derivation
+		//see "RevC/V&V/OEM Current Sensor.ods" for measured results
+		//The approximation equation below is accurate to within 1.0 amps of actual value
+		latest_battCurrent_amps = ((int16_t)((((uint16_t)latest_battCurrent_counts) * 55) >> 8)) - 71;
 	}
 
 	return latest_battCurrent_amps;

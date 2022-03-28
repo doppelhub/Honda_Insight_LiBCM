@@ -27,11 +27,11 @@ void key_handleKeyEvent_off(void)
     BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
     METSCI_disable();
     gpio_setFanSpeed_OEM('0');
-    gpio_setFanSpeed('0');
-    SoC_updateUsingOpenCircuitVoltage();
+    LTC68042cell_sampleGatherAndProcessAllCellVoltages();
+    SoC_updateUsingLatestOpenCircuitVoltage();
     adc_calibrateBatteryCurrentSensorOffset();
     gpio_turnPowerSensors_off();
-    LTC6804configure_handleKeyOff();
+    LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
     gpio_turnHMI_off();
     gpio_turnTemperatureSensors_off();
@@ -51,11 +51,12 @@ void key_handleKeyEvent_on(void)
 	gpio_turnTemperatureSensors_on();
 	gpio_turnHMI_on();
 	gpio_turnPowerSensors_on();
-	lcd_displayON();
+	lcd_displayOn();
 	gpio_setFanSpeed_OEM('L');
-	LTC68042result_maxEverCellVoltage_set(0    ); //reset maxEver cell voltage
-	LTC68042result_minEverCellVoltage_set(65535); //reset minEver cell voltage
-	LTC68042configure_cellBalancing_disable();
+	gpio_setFanSpeed('0', IMMEDIATE_FAN_SPEED);
+	gpio_turnGridCharger_off();
+	LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
+	LTC68042configure_handleKeyStateChange();
 	LED(1,HIGH);
 
 	key_latestTurnOnTime_ms_set(millis()); //MUST RUN LAST!
@@ -78,8 +79,7 @@ bool key_didStateChange(void)
 	else if( (keyState_sampled == KEYON) && (keyState_previous == KEYOFF_JUSTOCCURRED) )
 	{	//key is now 'ON', but last time was 'OFF', and the time before that it was 'ON'
 		//therefore the previous 'OFF' reading was noise... the key was actually ON all along
-		//no need to do anything.
-		;
+		keyState_previous = KEYON;
 	}
 	else if(keyState_sampled != keyState_previous)
 	{
