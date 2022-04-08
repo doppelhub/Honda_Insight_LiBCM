@@ -12,6 +12,10 @@ const uint8_t COMPILE_DATE_PROGRAM[BYTES_IN_DATE]= __DATE__; //Format: Mmm DD YY
 const uint16_t EEPROM_ADDRESS_COMPILE_DATE       = 0x000; //EEPROM range is 0x000:0x00B (12B)
 const uint16_t EEPROM_ADDRESS_HOURS_SINCE_UPDATE = 0x00C; //EEPROM range is 0x00C:0x00D ( 2B)
 const uint16_t EEPROM_ADDRESS_FIRMWARE_STATUS    = 0x00E; //EEPROM range is 0x00E:0x00E ( 1B)
+const uint16_t EEPROM_ADDRESS_BATTSCI_REGEN      = 0x00F; //EEPROM range is 0x00F:0x00F ( 1B)
+const uint16_t EEPROM_ADDRESS_BATTSCI_ASSIST     = 0x010; //EEPROM range is 0x010:0x010 ( 1B)
+const uint16_t EEPROM_ADDRESS_KEYON_DELAY        = 0x011; //EEPROM range is 0x011:0x011 ( 1B)
+const uint16_t EEPROM_ADDRESS_LOOPRATE_TIMING    = 0x012; //EEPROM range is 0x012:0x012 ( 1B)
 
 //compile date previously stored in EEPROM (the last time the firmware was updated)
 uint8_t compileDateEEPROM[BYTES_IN_DATE] = {};
@@ -138,4 +142,64 @@ void EEPROM_checkForExpiredFirmware(void)
       delay(5000); //give user time to read display
     } 
   }
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t EEPROM_hasLibcmDisabledAssist_get(void) { return EEPROM.read(EEPROM_ADDRESS_BATTSCI_ASSIST); }
+void    EEPROM_hasLibcmDisabledAssist_set(uint8_t wasAssistLimited) { EEPROM.update(EEPROM_ADDRESS_BATTSCI_ASSIST, wasAssistLimited); }
+
+uint8_t EEPROM_hasLibcmDisabledRegen_get(void) { return EEPROM.read(EEPROM_ADDRESS_BATTSCI_REGEN); }
+void    EEPROM_hasLibcmDisabledRegen_set(uint8_t wasRegenLimited) { EEPROM.update(EEPROM_ADDRESS_BATTSCI_REGEN, wasRegenLimited); }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t EEPROM_delayKeyON_ms_get(void) { return EEPROM.read(EEPROM_ADDRESS_KEYON_DELAY); }
+void    EEPROM_delayKeyON_ms_set(uint8_t delay_ms) { EEPROM.update(EEPROM_ADDRESS_KEYON_DELAY, delay_ms); }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t EEPROM_hasLibcmFailedTiming_get(void) { return EEPROM.read(EEPROM_ADDRESS_LOOPRATE_TIMING); }
+void    EEPROM_hasLibcmFailedTiming_set(uint8_t timing) { EEPROM.update(EEPROM_ADDRESS_LOOPRATE_TIMING, timing); Serial.print('*'); }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void EEPROM_verifyDataValid(void)
+{
+  //verify all runtime-configurable data stored in EEPROM is valid.  If not, load default value(s)
+  if( !( (EEPROM_hasLibcmDisabledRegen_get() == EEPROM_LICBM_DISABLED_REGEN) || (EEPROM_hasLibcmDisabledRegen_get() == EEPROM_REGEN_NEVER_LIMITED) ) )
+  {
+    //invalid data in EEPROM
+    Serial.print(F("\nRestoring EEPROM value: EEPROM_LIBCM_DISABLED_REGEN"));
+    EEPROM_hasLibcmDisabledRegen_set(EEPROM_REGEN_NEVER_LIMITED);
+  }
+
+  if( !( (EEPROM_hasLibcmDisabledAssist_get() == EEPROM_LICBM_DISABLED_ASSIST) || (EEPROM_hasLibcmDisabledAssist_get() == EEPROM_ASSIST_NEVER_LIMITED) ) )
+  {
+    //invalid data in EEPROM
+    Serial.print(F("\nRestoring EEPROM value: EEPROM_LIBCM_DISABLED_ASSIST"));
+    EEPROM_hasLibcmDisabledAssist_set(EEPROM_ASSIST_NEVER_LIMITED);
+  }
+
+  if(EEPROM_delayKeyON_ms_get() == EEPROM_ADDRESS_FACTORY_VALUE)
+  {
+    Serial.print(F("\nRestoring EEPROM value: EEPROM_ADDRESS_KEYON_DELAY"));
+    EEPROM_delayKeyON_ms_set(0);
+  }
+
+  if( !( (EEPROM_hasLibcmFailedTiming_get() == EEPROM_LIBCM_LOOPRATE_MET) || (EEPROM_hasLibcmFailedTiming_get() == EEPROM_LIBCM_LOOPRATE_EXCEEDED) ) )
+  {
+    //invalid data in EEPROM
+    Serial.print(F("\nRestoring EEPROM value: EEPROM_LIBCM_LOOPRATE_MET"));
+    EEPROM_hasLibcmDisabledRegen_set(EEPROM_LIBCM_LOOPRATE_MET);
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void EEPROM_resetDebugValues(void)
+{
+  EEPROM_hasLibcmDisabledRegen_set(EEPROM_REGEN_NEVER_LIMITED);
+  EEPROM_hasLibcmDisabledAssist_set(EEPROM_ASSIST_NEVER_LIMITED);
+  EEPROM_hasLibcmFailedTiming_set(EEPROM_LIBCM_LOOPRATE_MET);
 }

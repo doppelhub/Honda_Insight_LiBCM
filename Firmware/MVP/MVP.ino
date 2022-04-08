@@ -1,8 +1,7 @@
-//Copyright 2021(c) John Sullivan
+//Copyright 2021-2022(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 //Lithium battery BMS for G1 Honda Insight.  Replaces OEM BCM module.
 
-//JTS2doLater: Make this the only line of code in this file:
 #include "libcm.h"
 
 void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup or bootloader delay 
@@ -21,15 +20,15 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 
 	gpio_safetyCoverCheck(); //this function hangs forever if safety cover isn't installed
 
-  	//JTS2doLater: Configure watchdog
-
 	#ifdef RUN_BRINGUP_TESTER
 	  	bringupTester_run(); //this function never returns
 	#endif
 
 	wdt_enable(WDTO_2S); //set watchdog reset vector to 2 seconds
 
-	Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION ", " BUILD_DATE "\n"));
+	EEPROM_verifyDataValid();
+
+	Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION ", " BUILD_DATE "\nType '$HELP' for more info\n"));
 }
 
 void loop()
@@ -73,7 +72,7 @@ void loop()
 		gridCharger_handler();
 	}
 
-	//JTS2doLater: Check for Serial Input from user
+	USB_userInterface_handler();
 
 	wdt_reset(); //Feed watchdog
 

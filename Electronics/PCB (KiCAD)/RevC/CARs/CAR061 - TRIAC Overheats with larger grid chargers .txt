@@ -3,14 +3,30 @@ Tested with HLG-480H-2100 charger
 
 TRIAC (T810-600B) is rated to handle 8 amps, but that requires a much larger copper pour.  Looks like there's room on the PCB for that.  Look at "Figure 12: DPAK and D2PAK thermal resistance junction to ambient versus copper surface under tab" (page 6/21) for theta j-a values.  Looks like we'd need at least 4 square cm to appreciably improve performance.
 
+Even after soldering a gullwing heatsink, the existing TRIAC was still too hot.
+Potential replacement TRIACs:
+BTA316B-600B0
+BTA312B-600CT,118
+497-18027-ND
+497-19692-2-ND
 
 Another option is to add gull-wing heatsink:
 
-V-1100-SMD/B
-V-1100-SMD/B-L
-ATS-PCBT1095
-573100D00010G
+
+V-1100-SMD/B (AE10774TR-ND)
+V-1100-SMD/B-L (AE10775-ND)
+ATS-PCBT1095 (ATS2137-ND)
+573100D00010G (used on GG).  
+
 
 Looking at "Figure 3: RMS on-state current versus ambient temperature" (page 4/21), the existing part isn't rated to carry more than 1.25 amps when the ambient temp is 55 degC.
 
 That's what the existing grid charger pulls... so probably can't use a larger grid charger unless the TRIAC itself is replaced.
+
+.........................
+
+Also, need to add additional copper to forward biased diode D18... it runs a bit hot even with the standard 450 mA charger.  Existing diode is only rated for 2A continuous, and at that amplitude we're looking at 80 degC/Watt thetaJA.  At 2.1 amps, and with a 0.95 volt max diode drop, we're looking at 2.1 * 0.95 = 2 watts as heat in a single diode, which is 160 degC rise... I observed this in testing.
+
+With the existing grid charger, we're looking at 0.85 volts drop * 0.450 amps = 383 mW as heat in a single diode, which is 31 degC rise.
+
+Replace with diode: VS-4EGH06-M3 (slightly larger footprint)

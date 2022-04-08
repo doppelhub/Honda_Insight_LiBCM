@@ -1,4 +1,4 @@
-//Copyright 2021(c) John Sullivan
+//Copyright 2021-2022(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //functions related to ignition (key) status
@@ -45,6 +45,7 @@ void key_handleKeyEvent_off(void)
 
 void key_handleKeyEvent_on(void)
 {
+	delay( EEPROM_delayKeyON_ms_get() ); //JTS2doNow: test tool to see if LiBCM is turning on fast enough
 	Serial.print(F("ON"));
 	BATTSCI_enable();
 	METSCI_enable();
