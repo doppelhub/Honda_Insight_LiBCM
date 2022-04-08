@@ -516,9 +516,9 @@ void lcd_displayOFF(void)
 			//1000 ms delay for operator to read firmware version //blocking
 			if(gpio_keyStateNow() == KEYON)
 			{
-				ii = 100; //immediately stop waiting
 				didKeyOnDebounceOccur = true; 
 				Serial.print(F("\nKeyON Bounce"));
+				break; //immediately stop waiting so LiBCM can turn back on
 			}
 			else { delay(10); }	//keep waiting until 1000 ms pass		
 		} 
