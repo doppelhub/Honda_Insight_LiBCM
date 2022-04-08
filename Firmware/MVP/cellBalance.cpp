@@ -1,4 +1,4 @@
-//Copyright 2021(c) John Sullivan
+//Copyright 2021-2022(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //cell balancing Functions
@@ -69,8 +69,8 @@ void cellBalance_handler(void)
   #ifdef ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN
     if( gpio_isGridChargerPluggedInNow() == PLUGGED_IN )
   #else 
-    if( (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) ||
-        (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC) )
+    if(   (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) ||
+        ( (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC) && (time_hasKeyBeenOffLongEnough() == true) ) )
   #endif
     {
       //balance cells (if needed)

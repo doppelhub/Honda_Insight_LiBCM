@@ -1,4 +1,4 @@
-//Copyright 2021(c) John Sullivan
+//Copyright 2021-2022(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //Handles serial debug data transfers from LIBCM to  host
@@ -9,7 +9,7 @@
 #include "libcm.h"
 
 uint16_t cellBalanceBitmaps[TOTAL_IC] = {0};
-uint16_t cellBalanceThreshold = 0;
+uint16_t cellBalanceThreshold = CELL_VMAX_REGEN; //no cells are reported as balancing until first balance status update occurs
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -38,7 +38,7 @@ void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces)
 
 void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap, uint16_t cellDischargeVoltageThreshold)
 {
-	//For readability, need to flip cellBitmap bit-order (e.g. '0b000010000101' becomes '0b101000010000')
+	//For readability, need to flip cellBitmap bit-order (e.g.'0b000010000101' becomes '0b101000010000'), so that LSB/MSB is cell12/cell01, respectively  
 	uint16_t bitUnderTest = 0;
 	uint16_t flippedBitmap = 0;
 
@@ -171,34 +171,4 @@ void debugUSB_Timer(bool timerAction)
       Serial.print(stopTime - startTime);
       Serial.print(F(" ms\n"));
   }
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-
-//user entry takes form LNNN (e.g. 's123', 's003', s019)
-//s: a single letter 's'
-//NNN: exactly three integer digits between 0 & 255 (e.g. '006', '100', '255')
-//This is not a well-written input handler... follow the above syntax EXACTLY!
-uint8_t debugUSB_getUserInput(void)
-{
-	static uint8_t userEntry = 0; //initial value (when user hasn't entered value)
-
-	uint8_t bytesSentFromUser = Serial.available();
-	if( bytesSentFromUser >= 4 )
-	{
-		uint8_t byteRead;
-
-		//scan USB serial until specific character encountered
-		do { byteRead = Serial.read(); } while( !(byteRead == 's') );
-
-		if( Serial.available() ) //verify there's still data to read
-		{			
-			uint8_t userInteger = Serial.parseInt();
-			if(byteRead == 's') { userEntry = userInteger; }
-			Serial.print(F(" User typed: "));
-			Serial.print(String(userEntry)); 
-		}
-	}
-
-	return userEntry;
 }

@@ -1,4 +1,4 @@
-//Copyright 2021(c) John Sullivan
+//Copyright 2021-2022(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //handles all communication with 4x20 lcd display
@@ -508,13 +508,30 @@ void lcd_displayOFF(void)
 		lcd2.print(F("FW Hours Left: "));
 		lcd2.print(String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - EEPROM_uptimeStoredInEEPROM_hours_get() ));
 
-		delay(1000); //allow time for operator to read firmware version //blocking
+		bool didKeyOnDebounceOccur = false;
 
-		//Refresh lcd (can't do this while key on)
-		Wire.end();
-		delay(50);
-		lcd_begin();
-		delay(50);
+		//JTS2doNow: Make this non-blocking
+		for(uint16_t ii=0; ii<100; ii++)
+		{
+			//1000 ms delay for operator to read firmware version //blocking
+			if(gpio_keyStateNow() == KEYON)
+			{
+				ii = 100; //immediately stop waiting
+				didKeyOnDebounceOccur = true; 
+				Serial.print(F("\nKeyON Bounce"));
+			}
+			else { delay(10); }	//keep waiting until 1000 ms pass		
+		} 
+
+		if(didKeyOnDebounceOccur == false)
+		{
+			//Refresh lcd (can't do this while key on)
+			Wire.end();
+			delay(50);
+			lcd_begin();
+			delay(50);
+		}
+
 		lcd_printStaticText();
 
 		lcd2.noBacklight();

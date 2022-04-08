@@ -1,0 +1,16 @@
+//Copyright 2021-2022(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
+
+#ifndef USB_userInterface_h
+	#define USB_userInterface_h
+	
+	#define USER_INPUT_BUFFER_SIZE 32
+	#define STRING_TERMINATION_CHARACTER 0
+
+	#define INPUT_FLAG_INSIDE_COMMENT 0x01
+
+	uint8_t USBrx_getUserInput(void);
+
+	void USBrx_handler(void);
+
+#endif

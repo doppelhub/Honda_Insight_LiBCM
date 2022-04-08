@@ -1,4 +1,4 @@
-//Copyright 2021(c) John Sullivan
+//Copyright 2021-2022(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 /*The MCM measures pack voltage in three different spots:

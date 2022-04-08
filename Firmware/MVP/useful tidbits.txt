@@ -78,3 +78,5 @@ uint8_t bytesSentFromUser = Serial.available();
 ///////////////////////////////////////////////////////////////////
 
 //Open wire test (to check for open cells): ADOW
+
+//JTS2doNow: Figure out intermittent (and immediate) backup starter.

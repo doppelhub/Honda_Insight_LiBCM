@@ -1,4 +1,4 @@
-//Copyright 2021(c) John Sullivan
+//Copyright 2021-2022(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 #ifndef debugUSB_h
@@ -15,8 +15,6 @@
 
 	void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces);
 
-	uint8_t debugUSB_getUserInput(void);
-
 	void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap, uint16_t cellDischargeVoltageThreshold);
 
 	void debugUSB_displayUptime_seconds(void);
@@ -24,4 +22,5 @@
 	void debugUSB_printCellBalanceStatus(void);
 
 	void debugUSB_Timer(bool timerAction);
+	
 #endif

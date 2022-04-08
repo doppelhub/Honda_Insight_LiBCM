@@ -1,4 +1,4 @@
-//Copyright 2021(c) John Sullivan
+//Copyright 2021-2022(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //stores various system millisecond timers
@@ -50,10 +50,14 @@ bool time_hasKeyBeenOffLongEnough(void)
 void time_waitForLoopPeriod(void)
 {
     static uint32_t timestamp_previousLoopStart_ms = millis();
+    uint16_t numLoopsWaited = 0;
 
     LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left
-    while( (millis() - timestamp_previousLoopStart_ms) < LOOP_RATE_MILLISECONDS ) { ; } //wait here to start next loop //JTS2doLater: Determine behavior after overflow (50 days)
+    while( (millis() - timestamp_previousLoopStart_ms ) < LOOP_RATE_MILLISECONDS ) { numLoopsWaited++; } //wait here to start next loop
     LED(4,LOW);
     
+    if( (key_getSampledState() == KEYON) && (numLoopsWaited == 0) ) { EEPROM_hasLibcmFailedTiming_set(EEPROM_LIBCM_LOOPRATE_EXCEEDED);}
+
     timestamp_previousLoopStart_ms = millis(); //placed at end to prevent delay at keyON event
+    //JTS2doLater: Determine millis() behavior after overflow (50 days)
 }

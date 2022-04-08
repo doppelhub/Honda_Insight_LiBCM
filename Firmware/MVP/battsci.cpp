@@ -1,4 +1,4 @@
-//Copyright 2021(c) John Sullivan
+//Copyright 2021-2022(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //BATTSCI Serial Functions
@@ -175,12 +175,12 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
   #ifndef DISABLE_ASSIST
     if(BATTSCI_isPackEmpty() == true)
   #endif
-    { flags |= BATTSCI_DISABLE_ASSIST_FLAG; }
+    { flags |= BATTSCI_DISABLE_ASSIST_FLAG; EEPROM_hasLibcmDisabledAssist_set(EEPROM_LICBM_DISABLED_ASSIST); }
 
   #ifndef DISABLE_REGEN
     if(BATTSCI_isPackFull()  == true)
   #endif
-      { flags |= BATTSCI_DISABLE_REGEN_FLAG;  }
+      { flags |= BATTSCI_DISABLE_REGEN_FLAG; EEPROM_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN); }
 
   return flags;
 }
