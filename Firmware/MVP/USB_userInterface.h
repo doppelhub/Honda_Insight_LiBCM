@@ -9,8 +9,8 @@
 
 	#define INPUT_FLAG_INSIDE_COMMENT 0x01
 
-	uint8_t USBrx_getUserInput(void);
+	uint8_t USB_userInterface_getUserInput(void);
 
-	void USBrx_handler(void);
+	void USB_userInterface_handler(void);
 
 #endif

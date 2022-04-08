@@ -72,7 +72,7 @@ void loop()
 		gridCharger_handler();
 	}
 
-	USBrx_handler();
+	USB_userInterface_handler();
 
 	wdt_reset(); //Feed watchdog
 

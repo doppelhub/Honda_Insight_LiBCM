@@ -35,7 +35,7 @@ void printDebug(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-void USBrx_runTestCode(uint8_t testToRun)
+void USB_userInterface_runTestCode(uint8_t testToRun)
 {
 	//Add whatever code you want to run whenever the user types '$TEST1'/2/3/etc into the Serial Monitor Window
 	if     (testToRun == STRING_TERMINATION_CHARACTER) { Serial.print(F("\nError: Test not specified")); }
@@ -81,7 +81,7 @@ void printHelp(void)
 	Serial.print(F("\n\nLiBCM supports the following commands:"
 		"\n -'$HELP' display this text."
 		"\n -'$BOOT' restart LiBCM."
-		"\n -'$TEST_' run test code.  '$TEST1'/2/3/4/etc (see 'USBrx_runTestCode()')"
+		"\n -'$TEST_' run test code.  '$TEST1'/2/3/4/etc (see 'USB_userInterface_runTestCode()')"
 		"\n -'$DEBUG' display debug info stored in EEPROM.  'DEBUG=CLR' to restore defaults."
 		"\n -'$KEYms' display LiBCM keyON delay in ms.  'KEYms=____' to set (0 to 254 ms)"
 		"\n"
@@ -103,7 +103,7 @@ void printHelp(void)
 		*/
 		));
 	//When adding new commands, make sure to add cases to the following functions:
-		//USBrx_executeUserInput()
+		//USB_userInterface_executeUserInput()
 		//EEPROM_resetDebugValues() //if debug data is stored in EEPROM
 		//EEPROM_verifyDataValid() //if data is stored in EEPROM
 }
@@ -134,7 +134,7 @@ uint8_t get_uint8_FromInput(uint8_t digit1, uint8_t digit2, uint8_t digit3)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-void USBrx_executeUserInput(void)
+void USB_userInterface_executeUserInput(void)
 {
 	if(line[0] == '$') //valid commands start with '$'
 	{
@@ -150,7 +150,7 @@ void USBrx_executeUserInput(void)
 		}
 
 		//$TEST
-		else if( (line[1] == 'T') && (line[2] == 'E') && (line[3] == 'S') && (line[4] == 'T') ) { USBrx_runTestCode(line[5]); }
+		else if( (line[1] == 'T') && (line[2] == 'E') && (line[3] == 'S') && (line[4] == 'T') ) { USB_userInterface_runTestCode(line[5]); }
 		
 		//$DEBUG
 		else if( (line[1] == 'D') && (line[2] == 'E') && (line[3] == 'B') && (line[4] == 'U') && (line[5] == 'G') )
@@ -189,7 +189,7 @@ void USBrx_executeUserInput(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-void USBrx_handler(void)
+void USB_userInterface_handler(void)
 {
 	uint8_t latestCharacterRead = 0; //c
 	static uint8_t numCharactersReceived = 0; //char_counter
@@ -210,7 +210,7 @@ void USBrx_handler(void)
 			printStringStoredInArray(line); //echo user input
 
 			if(numCharactersReceived >= USER_INPUT_BUFFER_SIZE)     { Serial.print(F("\nError: User typed too many characters")); }
-			else                                                    { USBrx_executeUserInput();                                   }
+			else                                                    { USB_userInterface_executeUserInput();                       }
 
 			numCharactersReceived = 0; //reset for next line
 		}
