@@ -16,6 +16,7 @@ int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2
 
 uint8_t framePeriod_ms = 100;
 
+//JTS2doLater: store in 'PROGMEM' to keep out of RAM (but note array elements must be indexed differently)
 //LUT remaps actual lithium battery SoC (unit: percent) to mimic OEM NiMH behavior (unit: deciPercent)
 //input: actual lithium SoC (unit: percent integer)
 //output: OEM NiMH SoC equivalent (unit: decipercent integer)
@@ -79,7 +80,8 @@ uint8_t BATTSCI_writeByte(uint8_t data)
   if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI)
   {
     if(data < 0x10) { Serial.print('0'); } //print leading zero for single digit hex
-    Serial.print(data,HEX); Serial.print(','); }
+    Serial.print(data,HEX);
+    Serial.print(','); }
   return data;
 }
 

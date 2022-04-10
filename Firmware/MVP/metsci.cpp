@@ -166,7 +166,12 @@ void METSCI_disable() { digitalWrite(PIN_METSCI_REn,HIGH); } //prevent backdrivi
 uint8_t METSCI_readByte(void)
 {
   uint8_t data = Serial3.read();
-  if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { Serial.print(data,HEX); Serial.print(','); }
+  if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI)
+  {
+    if(data < 0x10) { Serial.print('0'); } //print leading zero for single digit hex
+    Serial.print(data,HEX);
+    Serial.print(',');
+  }
   return data;
 }
 
