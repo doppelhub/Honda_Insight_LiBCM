@@ -71,7 +71,12 @@ uint8_t BATTSCI_bytesAvailableForWrite(void) { return Serial2.availableForWrite(
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t BATTSCI_writeByte(uint8_t data) { Serial2.write(data); return data; }
+uint8_t BATTSCI_writeByte(uint8_t data)
+{
+  Serial2.write(data);
+  if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { Serial.print(data,HEX); Serial.print(','); }
+  return data;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -178,7 +183,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
     { flags |= BATTSCI_DISABLE_ASSIST_FLAG; EEPROM_hasLibcmDisabledAssist_set(EEPROM_LICBM_DISABLED_ASSIST); }
 
   #ifndef DISABLE_REGEN
-    if(BATTSCI_isPackFull()  == true)
+    if(BATTSCI_isPackFull() == true)
   #endif
       { flags |= BATTSCI_DISABLE_REGEN_FLAG; EEPROM_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN); }
 
@@ -331,6 +336,8 @@ void BATTSCI_sendFrames(void)
     previousMillis = millis(); //stores the next frame start time
 
     static uint8_t frame2send = 0x87; //stores the next frame type to send
+
+    if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { Serial.print("\nBATTSCI: "); }
 
     if(frame2send == 0x87)
     {

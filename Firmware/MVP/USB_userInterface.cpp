@@ -78,12 +78,14 @@ void(* rebootLiBCM) (void) = 0;//declare reset function at address 0
 
 void printHelp(void)
 {
-	Serial.print(F("\n\nLiBCM supports the following commands:"
-		"\n -'$HELP' display this text."
-		"\n -'$BOOT' restart LiBCM."
-		"\n -'$TEST_' run test code.  '$TEST1'/2/3/4/etc (see 'USB_userInterface_runTestCode()')"
-		"\n -'$DEBUG' display debug info stored in EEPROM.  'DEBUG=CLR' to restore defaults."
-		"\n -'$KEYms' display LiBCM keyON delay in ms.  'KEYms=____' to set (0 to 254 ms)"
+	Serial.print(F("\n\nLiBCM commands:"
+		"\n -'$BOOT': restart LiBCM"
+		"\n -'$TEST1'/2/3/4: run test code. See 'USB_userInterface_runTestCode()')"
+		"\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
+		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
+		"\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"
+		"\n -'$DISP=PWR'/SCI/CELL/OFF: data to stream (power/BAT&METSCI/Vcell/none)"
+		"\n -'$RATE=__': USB updates per second (1 to 255)"
 		"\n"
 		/*
 		"\nFuture LiBCM commands (not presently supported"
@@ -134,6 +136,7 @@ uint8_t get_uint8_FromInput(uint8_t digit1, uint8_t digit2, uint8_t digit3)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
+//determine which command to run
 void USB_userInterface_executeUserInput(void)
 {
 	if(line[0] == '$') //valid commands start with '$'
@@ -179,7 +182,37 @@ void USB_userInterface_executeUserInput(void)
 			}
 		}
 
-	
+		//SoC
+		else if( (line[1] == 'S') && (line[2] == 'O') && (line[3] == 'C') )
+		{
+			if (line[4] == '=')
+			{
+				uint8_t newSoC_percent = get_uint8_FromInput(line[5],line[6],line[7]);
+				Serial.print("\nnewSoC is " + String(newSoC_percent) );
+				SoC_setBatteryStateNow_percent(newSoC_percent);
+			}
+			else if(line[4] == STRING_TERMINATION_CHARACTER)
+			{
+				Serial.print(F("\nBattery SoC is (%): "));
+				Serial.print( String( SoC_getBatteryStateNow_percent() ) );
+			}
+		}
+
+		//DISP
+		else if( (line[1] == 'D') && (line[2] == 'I') && (line[3] == 'S') && (line[4] == 'P') && (line[5] == '=') )
+		{
+			if     ( (line[6] == 'P') && (line[7] == 'W') && (line[8] == 'R') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_POWER);      }
+			else if( (line[6] == 'S') && (line[7] == 'C') && (line[8] == 'I') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_BATTMETSCI); } //JTS2doNow: add case
+			else if( (line[6] == 'C') && (line[7] == 'E') && (line[8] == 'L') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_CELL);       } //JTS2doNow: add case
+			else if( (line[6] == 'O') && (line[7] == 'F') && (line[8] == 'F') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_NONE);       }
+		}
+
+		//RATE
+		else if( (line[1] == 'R') && (line[2] == 'A') && (line[3] == 'T') && (line[4] == 'E') && (line[5] == '=') )
+		{
+			uint8_t newUpdatesPerSecond = get_uint8_FromInput(line[6],line[7],line[8]);
+			debugUSB_dataUpdatePeriod_ms_set( time_hertz_to_milliseconds(newUpdatesPerSecond) );
+		}
 
 		//$DEFAULT
 		else { Serial.print(F("\nInvalid Entry")); }
@@ -189,6 +222,8 @@ void USB_userInterface_executeUserInput(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
+//read user-typed input from serial buffer
+//user input executes at each newline character
 void USB_userInterface_handler(void)
 {
 	uint8_t latestCharacterRead = 0; //c

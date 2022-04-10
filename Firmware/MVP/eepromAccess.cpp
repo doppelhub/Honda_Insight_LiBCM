@@ -160,7 +160,7 @@ void    EEPROM_delayKeyON_ms_set(uint8_t delay_ms) { EEPROM.update(EEPROM_ADDRES
 ////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t EEPROM_hasLibcmFailedTiming_get(void) { return EEPROM.read(EEPROM_ADDRESS_LOOPRATE_TIMING); }
-void    EEPROM_hasLibcmFailedTiming_set(uint8_t timing) { EEPROM.update(EEPROM_ADDRESS_LOOPRATE_TIMING, timing); Serial.print('*'); }
+void    EEPROM_hasLibcmFailedTiming_set(uint8_t timing) { EEPROM.update(EEPROM_ADDRESS_LOOPRATE_TIMING, timing); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 

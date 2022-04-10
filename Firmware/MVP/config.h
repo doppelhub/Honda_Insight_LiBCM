@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.7.4"
-    #define BUILD_DATE "2022APR08"
+	#define FW_VERSION "0.7.5"
+    #define BUILD_DATE "2022APR09"
 
 	#define CPU_MAP_MEGA2560
     #define HW_REVC
@@ -29,8 +29,6 @@
 	//#define DISABLE_REGEN  //uncomment to (always) disable regen
 	//#define REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING //EXPERIMENTAL! //JTS2doNow: Make it better
 
-	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to print all cell voltages while driving //Grid charger always prints all cell voltages
-
 	#define MCME_VOLTAGE_OFFSET_ADJUST 12 //difference between OBDIIC&C and LiBCM spoofed pack voltage (Subtract LiBCM voltage from OBDIIC&C Bvo.  Default is 12.)
 
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
@@ -39,7 +37,6 @@
 		#define LED_NORMAL //enable "LED()" functions (see debug.c)
 		//#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
-	#define DEBUG_USB_UPDATE_PERIOD_KEYON_mS 250 //250 = send data every 250 ms
 	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000
 
 	#define LOOP_RATE_MILLISECONDS 10 // Superloop execution rate: 1/LOOP_RATE_MILLISECONDS //'10' = 100 Hz
@@ -67,7 +64,7 @@
 	#define KEYOFF_TURNOFF_LIBCM_DELAY_MINUTES 10 //Even with low SoC, LiBCM will remain on for this many minutes after keyOFF.
 	//to turn LiBCM back on: turn ignition to 'ON', or turn IMA switch off and on, or plug in USB cable
 
-	#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
+	//#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
 
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
 #endif
