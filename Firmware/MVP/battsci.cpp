@@ -14,6 +14,8 @@
 uint8_t spoofedVoltageToSend_Counts = 0; //formatted as MCM expects to see it (Vpack / 2) //2 volts per count
 int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2048 - amps * 20) //50 mA per count
 
+uint8_t framePeriod_ms = 100;
+
 //LUT remaps actual lithium battery SoC (unit: percent) to mimic OEM NiMH behavior (unit: deciPercent)
 //input: actual lithium SoC (unit: percent integer)
 //output: OEM NiMH SoC equivalent (unit: decipercent integer)
@@ -80,6 +82,11 @@ uint8_t BATTSCI_writeByte(uint8_t data)
     Serial.print(data,HEX); Serial.print(','); }
   return data;
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void BATTSCI_framePeriod_ms_set(uint8_t period) { framePeriod_ms = period; }
+uint8_t BATTSCI_framePeriod_ms_get(void) { return framePeriod_ms; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -333,7 +340,7 @@ void BATTSCI_sendFrames(void)
   static uint32_t previousMillis = 0;
 
   if( ( BATTSCI_bytesAvailableForWrite() > BATTSCI_BYTES_IN_FRAME ) && //Verify serial send ring buffer has room
-      ( (millis() - previousMillis) >= 100 )                        )  //Send a frame every 100 ms
+      ( (millis() - previousMillis) >= BATTSCI_framePeriod_ms_get() ) )
   {
     //time to send a BATTSCI frame!
     previousMillis = millis(); //stores the next frame start time

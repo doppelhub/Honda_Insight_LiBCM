@@ -22,4 +22,7 @@
 
 	uint8_t BATTSCI_writeByte(uint8_t data);
 
+	void BATTSCI_framePeriod_ms_set(uint8_t period);
+	uint8_t BATTSCI_framePeriod_ms_get(void);
+
 #endif

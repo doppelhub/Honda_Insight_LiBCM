@@ -86,7 +86,8 @@ void printHelp(void)
 		"\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"
 		"\n -'$DISP=PWR'/SCI/CELL/OFF: data to stream (power/BAT&METSCI/Vcell/none)"
 		"\n -'$RATE=___': USB updates per second (1 to 255 Hz)"
-		"\n -'$LOOP=___': set LiBCM loop period (1 to 255 ms)"
+		"\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
+		"\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)" 
 		"\n"
 		/*
 		"\nFuture LiBCM commands (not presently supported"
@@ -227,6 +228,21 @@ void USB_userInterface_executeUserInput(void)
 			{
 				Serial.print(F("Loop period is (ms): "));
 				Serial.print(time_loopPeriod_ms_get(),DEC);
+			}
+		}
+
+		//SCIms
+		else if( (line[1] == 'S') && (line[2] == 'C') && (line[3] == 'I') && (line[4] == 'M') && (line[5] == 'S') )
+		{
+			if(line[6] == '=')
+			{
+				uint8_t newPeriod_ms = get_uint8_FromInput(line[7],line[8],line[9]);
+				BATTSCI_framePeriod_ms_set(newPeriod_ms);
+			}
+			else if(line[6] == STRING_TERMINATION_CHARACTER)
+			{
+				Serial.print(F("BATTSCI period is (ms): "));
+				Serial.print(BATTSCI_framePeriod_ms_get(),DEC);
 			}
 		}
 
