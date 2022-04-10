@@ -29,8 +29,8 @@ void printDebug(void)
 	Serial.print(F("\n -Has LiBCM limited regen since last cleared?: "));
 	(EEPROM_hasLibcmDisabledRegen_get() == EEPROM_LICBM_DISABLED_REGEN) ? Serial.print(F("YES")) : Serial.print(F("NO"));
 
-	Serial.print(F("\n -LOOP_RATE_MILLISECONDS exceeded since last cleared?: "));
-	(EEPROM_hasLibcmFailedTiming_get() == EEPROM_LIBCM_LOOPRATE_EXCEEDED) ? Serial.print(F("YES")) : Serial.print(F("NO"));
+	Serial.print(F("\n -loopPeriod exceeded since last cleared?: "));
+	(EEPROM_hasLibcmFailedTiming_get() == EEPROM_LIBCM_LOOPPERIOD_EXCEEDED) ? Serial.print(F("YES")) : Serial.print(F("NO"));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -85,7 +85,8 @@ void printHelp(void)
 		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
 		"\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"
 		"\n -'$DISP=PWR'/SCI/CELL/OFF: data to stream (power/BAT&METSCI/Vcell/none)"
-		"\n -'$RATE=__': USB updates per second (1 to 255)"
+		"\n -'$RATE=___': USB updates per second (1 to 255 Hz)"
+		"\n -'$LOOP=___': set LiBCM loop period (1 to 255 ms)"
 		"\n"
 		/*
 		"\nFuture LiBCM commands (not presently supported"
@@ -194,7 +195,7 @@ void USB_userInterface_executeUserInput(void)
 			else if(line[4] == STRING_TERMINATION_CHARACTER)
 			{
 				Serial.print(F("\nBattery SoC is (%): "));
-				Serial.print( String( SoC_getBatteryStateNow_percent() ) );
+				Serial.print(SoC_getBatteryStateNow_percent(),DEC);
 			}
 		}
 
@@ -212,6 +213,21 @@ void USB_userInterface_executeUserInput(void)
 		{
 			uint8_t newUpdatesPerSecond = get_uint8_FromInput(line[6],line[7],line[8]);
 			debugUSB_dataUpdatePeriod_ms_set( time_hertz_to_milliseconds(newUpdatesPerSecond) );
+		}
+
+		//LOOP
+		else if( (line[1] == 'L') && (line[2] == 'O') && (line[3] == 'O') && (line[4] == 'P') )
+		{
+			if(line[5] == '=')
+			{
+				uint8_t newLooprate_ms = get_uint8_FromInput(line[6],line[7],line[8]);
+				time_loopPeriod_ms_set(newLooprate_ms);
+			}
+			else if(line[5] == STRING_TERMINATION_CHARACTER)
+			{
+				Serial.print(F("Loop period is (ms): "));
+				Serial.print(time_loopPeriod_ms_get(),DEC);
+			}
 		}
 
 		//$DEFAULT

@@ -32,8 +32,8 @@
     #define EEPROM_LICBM_DISABLED_ASSIST 0xCC
     #define EEPROM_ASSIST_NEVER_LIMITED  0x33
 
-    #define EEPROM_LIBCM_LOOPRATE_EXCEEDED 0xC3
-    #define EEPROM_LIBCM_LOOPRATE_MET      0x3C
+    #define EEPROM_LIBCM_LOOPPERIOD_EXCEEDED 0xC3
+    #define EEPROM_LIBCM_LOOPPERIOD_MET      0x3C
 
     #define EEPROM_ADDRESS_FACTORY_VALUE 0xFF //default EEPROM value if specific EEPROM address has never been written to
 

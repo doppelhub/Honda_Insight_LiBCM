@@ -12,6 +12,9 @@
 
 	uint16_t  time_hertz_to_milliseconds(uint8_t hertz);
 
+	void time_loopPeriod_ms_set(uint8_t period_ms);
+	uint8_t time_loopPeriod_ms_get(void);
+
 	#define START_TIMER true
 	#define STOP_TIMER false
 

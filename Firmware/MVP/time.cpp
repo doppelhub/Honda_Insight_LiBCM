@@ -5,6 +5,13 @@
 
 #include "libcm.h"
 
+uint8_t loopPeriod_ms = 10;
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void time_loopPeriod_ms_set(uint8_t period_ms) { loopPeriod_ms = period_ms; }
+uint8_t time_loopPeriod_ms_get(void) { return loopPeriod_ms; }
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 bool time_toUpdate_keyOffValues(void)
@@ -53,13 +60,13 @@ void time_waitForLoopPeriod(void)
     bool timingMet = false;
 
     LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left
-    while( (millis() - timestamp_previousLoopStart_ms ) < LOOP_RATE_MILLISECONDS ) { timingMet = true; } //wait here to start next loop
+    while( (millis() - timestamp_previousLoopStart_ms ) < time_loopPeriod_ms_get() ) { timingMet = true; } //wait here to start next loop
     LED(4,LOW);
     
     if( (key_getSampledState() == KEYON) && (timingMet == false) )
     {
       Serial.print('*');
-      EEPROM_hasLibcmFailedTiming_set(EEPROM_LIBCM_LOOPRATE_EXCEEDED);
+      EEPROM_hasLibcmFailedTiming_set(EEPROM_LIBCM_LOOPPERIOD_EXCEEDED);
     }
 
     timestamp_previousLoopStart_ms = millis(); //placed at end to prevent delay at keyON event

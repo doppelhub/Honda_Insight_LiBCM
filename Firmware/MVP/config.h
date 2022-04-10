@@ -39,8 +39,6 @@
 
 	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000
 
-	#define LOOP_RATE_MILLISECONDS 10 // Superloop execution rate: 1/LOOP_RATE_MILLISECONDS //'10' = 100 Hz
-
 	#define STACK_mAh_NOM 5000 //nominal pack size (0:100% SoC) //LiBCM uses this value until it determines the actual pack capacity
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled

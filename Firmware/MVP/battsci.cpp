@@ -74,7 +74,10 @@ uint8_t BATTSCI_bytesAvailableForWrite(void) { return Serial2.availableForWrite(
 uint8_t BATTSCI_writeByte(uint8_t data)
 {
   Serial2.write(data);
-  if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { Serial.print(data,HEX); Serial.print(','); }
+  if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI)
+  {
+    if(data < 0x10) { Serial.print('0'); } //print leading zero for single digit hex
+    Serial.print(data,HEX); Serial.print(','); }
   return data;
 }
 
@@ -337,7 +340,12 @@ void BATTSCI_sendFrames(void)
 
     static uint8_t frame2send = 0x87; //stores the next frame type to send
 
-    if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { Serial.print("\nBATTSCI: "); }
+    if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI)
+    { 
+      if(frame2send == 0x87) { Serial.print('\n'); }
+      else                   { Serial.print(' ');  }
+      Serial.print(F("BAT:"));
+    }
 
     if(frame2send == 0x87)
     {
