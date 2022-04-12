@@ -14,7 +14,7 @@
 uint8_t spoofedVoltageToSend_Counts = 0; //formatted as MCM expects to see it (Vpack / 2) //2 volts per count
 int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2048 - amps * 20) //50 mA per count
 
-uint8_t framePeriod_ms = 100;
+uint8_t framePeriod_ms = 33;
 
 //JTS2doLater: store in 'PROGMEM' to keep out of RAM (but note array elements must be indexed differently)
 //LUT remaps actual lithium battery SoC (unit: percent) to mimic OEM NiMH behavior (unit: deciPercent)

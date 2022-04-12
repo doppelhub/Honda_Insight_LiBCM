@@ -166,7 +166,8 @@ void METSCI_disable() { digitalWrite(PIN_METSCI_REn,HIGH); } //prevent backdrivi
 uint8_t METSCI_readByte(void)
 {
   uint8_t data = Serial3.read();
-  if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI)
+  if( (debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) &&
+      (data != 0xE6) ) //0xE6 is the start of the METSCI frame, which is printed out separately (in METSCI_processLatestFrame())
   {
     if(data < 0x10) { Serial.print('0'); } //print leading zero for single digit hex
     Serial.print(data,HEX);

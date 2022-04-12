@@ -7,7 +7,7 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.7.5prerelease"
+	#define FW_VERSION "0.7.5cALPHA"
     #define BUILD_DATE "2022APR09"
 
 	#define CPU_MAP_MEGA2560
@@ -37,7 +37,7 @@
 		#define LED_NORMAL //enable "LED()" functions (see debug.c)
 		//#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
-	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000
+	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000 //JTS2doNow: Model after "debugUSB_printLatestData_keyOn"
 
 	#define STACK_mAh_NOM 5000 //nominal pack size (0:100% SoC) //LiBCM uses this value until it determines the actual pack capacity
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
