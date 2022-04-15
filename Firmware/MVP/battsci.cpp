@@ -97,6 +97,7 @@ void BATTSCI_setPackVoltage(uint8_t spoofedVoltage) { spoofedVoltageToSend_Count
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: input needs more resolution.  Right now it's 1000 mA/count... should be at most 50 mA/count.
 //Convert battery current (unit: amps) into BATTSCI format (unit: 50 mA per count)
 void BATTSCI_setSpoofedCurrent(int16_t spoofedCurrent) { spoofedCurrentToSend_Counts = (2048 - (spoofedCurrent * 20)); }
 
