@@ -49,8 +49,11 @@ void cellBalance_configureDischargeResistors(void)
   if(cellsAreBalanced == true)
   { 
     balanceHysteresis = CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE;
-    gpio_setFanSpeed('0', IMMEDIATE_FAN_SPEED);
-    //disable software timer (so LTCs turn off)
+    //JTS2doNow: disable software timer (so LTCs turn off)
+
+    if(temperature_battery_getLatest() > WHEN_GRID_CHARGING_COOL_PACK_ABOVE_TEMP) { gpio_setFanSpeed('H', RAMP_FAN_SPEED); }
+    else                                                                          { gpio_setFanSpeed('0', RAMP_FAN_SPEED); }
+    //JTS2doNow: Need to add a bitmask so multiple sources can turn fan on/off... fan on unless all sources have cleared their respective bit.
   }
   else { gpio_setFanSpeed('H', IMMEDIATE_FAN_SPEED); } //cool discharge resistors
 }

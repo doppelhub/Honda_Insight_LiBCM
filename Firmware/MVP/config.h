@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.7.5cALPHA"
-    #define BUILD_DATE "2022APR09"
+	#define FW_VERSION "0.7.5dALPHA"
+    #define BUILD_DATE "2022APR16"
 
 	#define CPU_MAP_MEGA2560
     #define HW_REVC
@@ -63,6 +63,8 @@
 	//to turn LiBCM back on: turn ignition to 'ON', or turn IMA switch off and on, or plug in USB cable
 
 	//#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
+	
+	#define WHEN_GRID_CHARGING_COOL_PACK_ABOVE_TEMP 30
 
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
 #endif

@@ -201,6 +201,7 @@ void USB_userInterface_executeUserInput(void)
 		}
 
 		//DISP
+		//JTS2doNow: Make this function work while grid charging, too
 		else if( (line[1] == 'D') && (line[2] == 'I') && (line[3] == 'S') && (line[4] == 'P') && (line[5] == '=') )
 		{
 			if     ( (line[6] == 'P') && (line[7] == 'W') && (line[8] == 'R') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_POWER);      }
