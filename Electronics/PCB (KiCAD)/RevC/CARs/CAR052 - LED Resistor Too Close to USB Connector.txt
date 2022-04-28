@@ -1,3 +1,8 @@
 Resistor R5 needs to move left, for additional clearance from Arduino MEGA USB connector.
 
 Workaround: Manually verify no short, then apply conformal coating.
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Moved R5 below D4

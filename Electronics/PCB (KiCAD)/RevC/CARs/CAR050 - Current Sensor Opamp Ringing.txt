@@ -26,11 +26,13 @@ Result: SPICE shows this working well
 
 Another option is to reduce capacitance values to 100 pF (C22/C170/parallel_to_R67), so opamp can generally respond faster.
 
-...
+/////////////////////////////////////////////////////////////////////////////////
 
 Solution:
 C171: 100pF
 R334: 20 Ohms
 R067: 100k||100n (piggyback)
 C170: DNP
-(R056+0R57): 17.32k||100nF (simplest mechanical equivalent: 100nF from C170 to R66)
+(R056+R057): 17.32k||100nF (simplest mechanical equivalent: 100nF from C170 to R66)
+
+Done

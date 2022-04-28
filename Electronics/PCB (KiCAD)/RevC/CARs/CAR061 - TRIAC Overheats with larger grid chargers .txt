@@ -43,3 +43,13 @@ Ordered the following parts for RevD:
 BTA316B-600C,118
 573300D00010G
 S12MCV7GCT-ND
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+-Changed R73 from 75 Ohm (large footprint) to 100 Ohm (0805).  This doesn't affect MOC3023 triac's phase angle.
+-Removed R76 & C32 snubber
+-Removed R331 to increase LED drive current.
+-Changed D6 TRIAC footprint to D2PAK
+-Added heatsink
+-Changed D18 grid charger blocking diode footprint to DO-214AB (SMC)
