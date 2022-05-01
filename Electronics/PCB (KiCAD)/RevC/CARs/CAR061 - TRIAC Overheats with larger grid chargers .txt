@@ -53,3 +53,6 @@ Solution:
 -Changed D6 TRIAC footprint to D2PAK
 -Added heatsink
 -Changed D18 grid charger blocking diode footprint to DO-214AB (SMC)
+
+TODO:
+-Add more ground fill under grid charger HVDC blocking diode
