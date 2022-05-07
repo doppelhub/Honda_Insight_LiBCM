@@ -11,3 +11,5 @@ Solution:
 R130 changed to 1206
 Fixed silkscreen issues
 Didn't move temp connector, beeper, or cherry switch
+
+Done

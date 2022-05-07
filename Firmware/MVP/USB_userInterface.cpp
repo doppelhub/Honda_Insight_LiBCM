@@ -42,17 +42,26 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	else if(testToRun == '1')
 	{
 		Serial.print(F("\nRunning TEST1"));
-		EEPROM_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN);
+		Serial.print(F("\n GPIO1/2/3 states: "));
+		(gpio1_getState() == HIGH) ? Serial.print('H') : Serial.print('L');
+		(gpio2_getState() == HIGH) ? Serial.print('H') : Serial.print('L');
+		(gpio3_getState() == HIGH) ? Serial.print('H') : Serial.print('L');
 	}
 	else if(testToRun == '2')
 	{
 		Serial.print(F("\nRunning TEST2"));
-		EEPROM_hasLibcmDisabledRegen_set(EEPROM_REGEN_NEVER_LIMITED);
+		Serial.print(F("\nEnabling GPIO1/2/3 pullups"));
+		pinMode(PIN_GPIO1, INPUT_PULLUP);
+		pinMode(PIN_GPIO2, INPUT_PULLUP);
+		pinMode(PIN_GPIO3, INPUT_PULLUP);
 	}
 	else if(testToRun == '3')
 	{
 		Serial.print(F("\nRunning TEST3"));
-		EEPROM_hasLibcmDisabledAssist_set(EEPROM_LICBM_DISABLED_ASSIST);
+		Serial.print(F("\nDisabling GPIO1/2/3 pullups"));
+		pinMode(PIN_GPIO1, INPUT);
+		pinMode(PIN_GPIO2, INPUT);
+		pinMode(PIN_GPIO3, INPUT);
 	}
 	else if(testToRun == '4')
 	{

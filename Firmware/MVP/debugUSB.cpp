@@ -150,6 +150,7 @@ void debugUSB_printData_power(void)
 void debugUSB_printData_BATTMETSCI(void)
 {
 	transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE;
+	//BATTSCI and METSCI are printed per-byte within functions METSCI_readByte() and BATTSCI_writeByte()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -187,4 +188,15 @@ void debugUSB_printLatestData_keyOn(void)
 		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { debugUSB_printData_BATTMETSCI();     }
 		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_CELL)       { debugUSB_printData_cellVoltages(); }
 	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void debugUSB_printHardwareRevision(void)
+{
+	Serial.print(F("\nHW Rev: "));
+	if     (gpio_getHardwareRevision() == HW_REV_C) { Serial.print('C'); }
+	else if(gpio_getHardwareRevision() == HW_REV_D) { Serial.print('D'); }
+	else if(gpio_getHardwareRevision() == HW_REV_E) { Serial.print('E'); }
+	else if(gpio_getHardwareRevision() == HW_REV_F) { Serial.print('F'); }
 }

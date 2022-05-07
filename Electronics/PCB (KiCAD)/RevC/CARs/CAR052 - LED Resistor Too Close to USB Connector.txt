@@ -6,3 +6,5 @@ Workaround: Manually verify no short, then apply conformal coating.
 
 Solution:
 Moved R5 below D4
+
+Done

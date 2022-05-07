@@ -28,7 +28,10 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 
 	EEPROM_verifyDataValid();
 
+	debugUSB_printHardwareRevision();
+
 	Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION ", " BUILD_DATE "\nType '$HELP' for more info\n"));
+
 }
 
 void loop()

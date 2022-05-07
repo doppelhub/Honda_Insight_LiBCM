@@ -8,3 +8,5 @@ Another thought is that both these capacitor pairs should go to GND_CHASSIS (ins
 Solution:
 
 Added coupling capacitors from HVDC_POS_FUSED to 12NEG_RAW.
+
+Done
