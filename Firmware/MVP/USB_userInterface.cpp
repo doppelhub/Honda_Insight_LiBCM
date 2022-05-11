@@ -58,10 +58,18 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	else if(testToRun == '3')
 	{
 		Serial.print(F("\nRunning TEST3"));
-		Serial.print(F("\nDisabling GPIO1/2/3 pullups"));
-		pinMode(PIN_GPIO1, INPUT);
-		pinMode(PIN_GPIO2, INPUT);
-		pinMode(PIN_GPIO3, INPUT);
+		Serial.print(F("\nGrid PWM Test"));
+		pinMode(PIN_GRID_PWM, OUTPUT);
+
+		static uint8_t pwmValue_grid = 0;
+
+		if     (pwmValue_grid == 255) { pwmValue_grid =   0; }
+		else if(pwmValue_grid >= 200) { pwmValue_grid = 255; }
+		else                          { pwmValue_grid += 50; }
+		
+		Serial.print(F("\nSetting gridPWM to: "));
+		Serial.print(pwmValue_grid);
+		analogWrite(PIN_GRID_PWM, pwmValue_grid);
 	}
 	else if(testToRun == '4')
 	{
