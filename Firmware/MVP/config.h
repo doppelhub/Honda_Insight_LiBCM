@@ -7,7 +7,7 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.7.5dALPHA"
+	#define FW_VERSION "0.7.6dALPHA"
     #define BUILD_DATE "2022APR16"
 
 	#define CPU_MAP_MEGA2560
@@ -53,6 +53,7 @@
 	#define CELL_BALANCE_MIN_SoC                40    //when car is off, cell balancing is disabled below this percentage
 	#define CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE 20    //'20' = 2.0 mV //CANNOT exceed 255 counts (25.5 mV)
 	#define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 10    // '5' = 0.5 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
+	#define CELL_BALANCE_MAX_TEMP_C             35    //cell balancing is always disabled above this voltage //JTS2doNow: Change this to measure intake air temperature
 
 	//#define ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN //uncomment to prevent keyOFF cell balancing, unless the grid charger is plugged in  
 

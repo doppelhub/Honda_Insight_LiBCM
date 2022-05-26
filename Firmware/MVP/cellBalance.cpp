@@ -49,7 +49,7 @@ void cellBalance_configureDischargeResistors(void)
   if(cellsAreBalanced == true)
   { 
     balanceHysteresis = CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE;
-    //JTS2doNow: disable software timer (so LTCs turn off)
+    //JTS2doNow: disable software timer (so LTCs turn off after two seconds)
 
     if(temperature_battery_getLatest() > WHEN_GRID_CHARGING_COOL_PACK_ABOVE_TEMP) { gpio_setFanSpeed('H', RAMP_FAN_SPEED); }
     else                                                                          { gpio_setFanSpeed('0', RAMP_FAN_SPEED); }
@@ -69,11 +69,19 @@ void cellBalance_handler(void)
 {
   static uint8_t balanceState = BALANCING_DISABLED;
 
+  //JTS2doNow: If cabin air sensor is too high, don't allow cell balancing (for now we're looking at battery module temperature)
+  //running the fans will increase battery temp if cabin air temp is too high...
+  //...but the fans need to run to remove the waste heat from the discharge resistors
   #ifdef ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN
-    if( gpio_isGridChargerPluggedInNow() == PLUGGED_IN )
+    if( (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) &&
+        (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) )
   #else 
-    if(   (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) ||
-        ( (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC) && (time_hasKeyBeenOffLongEnough() == true) ) )
+    if(     (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) &&
+        (   (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) ||
+          ( (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC) && (time_hasKeyBeenOffLongEnough() == true)
+          )
+        )
+      )
   #endif
     {
       //balance cells (if needed)

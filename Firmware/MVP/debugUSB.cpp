@@ -164,7 +164,7 @@ void debugUSB_printData_cellVoltages(void)
 	for(uint8_t cellToPrint = 0; cellToPrint < CELLS_PER_IC; cellToPrint++)
 	{
 		Serial.print(',');
-		Serial.print( String( LTC68042result_specificCellVoltage_get(icToPrint,cellToPrint) * 0.0001, TWO_DECIMAL_PLACES) );
+		Serial.print( String( LTC68042result_specificCellVoltage_get(icToPrint,cellToPrint) * 0.0001, FOUR_DECIMAL_PLACES) );
 	}
 
 	if(++icToPrint < TOTAL_IC) { transmitStatus = TRANSMITTING_LARGE_MESSAGE; }
