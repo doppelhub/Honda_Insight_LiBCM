@@ -27,6 +27,7 @@ int16_t vPackSpoof_getPWMcounts_VPIN(void) { return pwmCounts_VPIN_out; }
 
 //---------------------------------------------------------------------------------------
 
+//JTS2doNow: Figure out if there's a better way to spoof MCMe to prevent P1576(12)
 void spoofVoltageMCMe(void)
 {
   //Derivation, empirically determined (see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods)

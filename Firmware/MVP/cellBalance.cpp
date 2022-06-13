@@ -9,6 +9,32 @@ bool cellsAreBalanced = true;
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Add an array that accumulates how long each cell is discharging
+//pseudocode:
+// uint16_t cellBalanceTimer_seconds[NUMCELLS]=0;
+// uint8_t balancingComplete = false;
+
+// if( gridChargerJustPluggedIn ) { clear cellBalanceTimer_seconds(); balancingComplete = false; } //set all array elements to zero
+
+// if( balancingFinished ) { balancingComplete = true; } //the first time balancing finishes, we stop accumulating the cell timers
+
+// if( hasOneSecondPassed && (balancingComplete == FALSE) ) {
+//    for(cellNumber=1; cellNumber<NUMCELLS; cellNumber++) {
+//       if(cellStatus[cellNumber] == BALANCING) { cellBalanceTimer_seconds[cellNumber]++; }
+// }} 
+
+//Allow LiBCM to print this array over USB
+// -if all cells are similar, then all array elements should have similar values (ideally they would all be 0).
+// -cells with less capacity will self-discharge more (at rest, at idle etc).
+// -cells with more capacity will span a narrower voltage range (compared to cells with less capacity).
+// -The absolute value stored for each cell in the cellBalanceTimer_seconds array isn't important, but the difference between the various cells is.
+// -Outlier cells (i.e. that spend more or less time balancing) are suspect.
+// -a weaker cell will tend to self-discharge more often than healthy cells.
+//Since healthy cells won't lose this energy (through self-discharge), they'll spend more time balancing.
+//(Theory) Therefore, weaker cells will likely tend to have lower stored values in the cellBalanceTimer_seconds array.
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
 void cellBalance_configureDischargeResistors(void)
 {   
   uint16_t cellsToDischarge[TOTAL_IC] = {0}; //each uint16's QTY12 LSBs correspond to each LTC6804's QTY12 cells
@@ -69,6 +95,7 @@ void cellBalance_handler(void)
 {
   static uint8_t balanceState = BALANCING_DISABLED;
 
+  //JTS2doNow: Should we only balance cells when the pack is nearly charged?  See post#1502833, comment#579 @ ic.net
   //JTS2doNow: If cabin air sensor is too high, don't allow cell balancing (for now we're looking at battery module temperature)
   //running the fans will increase battery temp if cabin air temp is too high...
   //...but the fans need to run to remove the waste heat from the discharge resistors
