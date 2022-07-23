@@ -13,6 +13,9 @@
 uint16_t cellVoltages_counts[TOTAL_IC][CELLS_PER_IC];
 
 
+//JTS2doLater: add the ability to determine when LTC6804 VREF1 has gone bad.  This could include measuring VREF2,
+//and also testing whether all QTY12 cells on any given IC have a similar offset from all other cells in the pack.
+
 //---------------------------------------------------------------------------------------
 
 
