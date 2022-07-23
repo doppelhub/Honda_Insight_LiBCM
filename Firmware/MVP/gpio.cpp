@@ -63,7 +63,8 @@ void gpio_begin(void)
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
 	TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D11(fan) & D12()
-	TCCR3B = (TCCR3B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D2() & D3() & D5(VPIN_OUT on RevC)
+	TCCR3B = (TCCR3B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D2() & D3() & D5(VPIN_OUT)
+	TCCR4B = (TCCR4B & B11111000) | B00000010; // Set F_PWM to  3921.16 Hz //pins D7(MCMe) & D8(gridPWM) & D9()
 	//TCCR5B is set in Buzzer functions
 }
 

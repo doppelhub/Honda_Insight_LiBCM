@@ -6,6 +6,9 @@
 
 //FYI: need to enable temperature sensors
 
+//JTS2doLater: Disable fans entirely if pack is too hot (e.g. above 75 degC).
+//Prevents spreading smoke into the passenger cabin if the modules catch on fire.
+
 #include "libcm.h"
 
 int8_t battTemp = ROOM_TEMP_DEGC;

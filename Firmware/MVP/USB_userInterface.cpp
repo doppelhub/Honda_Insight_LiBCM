@@ -84,6 +84,11 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 		EEPROM_hasLibcmDisabledAssist_set(0xFF);
 		EEPROM_hasLibcmDisabledRegen_set(0x00);
 	}
+	else if(testToRun == '6')
+	{
+		Serial.print(F("\nRunning TEST6.\nTurning off LiBCM (5V rail).\nLiBCM will stay on if USB 5V connected."));
+		gpio_turnLiBCM_off();
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -104,7 +109,9 @@ void printHelp(void)
 		"\n -'$DISP=PWR'/SCI/CELL/OFF: data to stream (power/BAT&METSCI/Vcell/none)"
 		"\n -'$RATE=___': USB updates per second (1 to 255 Hz)"
 		"\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
-		"\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)" 
+		"\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)"
+		"\n -'$MCMp=___': set manual MCMe PWM value (0:255)('123' for auto)"
+		"\n -'$MCMb=___': Override default MCME_VOLTAGE_OFFSET_ADJUST value"
 		"\n"
 		/*
 		"\nFuture LiBCM commands (not presently supported"
@@ -244,7 +251,7 @@ void USB_userInterface_executeUserInput(void)
 			}
 			else if(line[5] == STRING_TERMINATION_CHARACTER)
 			{
-				Serial.print(F("Loop period is (ms): "));
+				Serial.print(F("\nLoop period is (ms): "));
 				Serial.print(time_loopPeriod_ms_get(),DEC);
 			}
 		}
@@ -259,8 +266,43 @@ void USB_userInterface_executeUserInput(void)
 			}
 			else if(line[6] == STRING_TERMINATION_CHARACTER)
 			{
-				Serial.print(F("BATTSCI period is (ms): "));
+				Serial.print(F("\nBATTSCI period is (ms): "));
 				Serial.print(BATTSCI_framePeriod_ms_get(),DEC);
+			}
+		}
+		//$MCMp
+		else if( (line[1] == 'M') && (line[2] == 'C') && (line[3] == 'M') && (line[4] == 'P') )
+		{
+			if(line[5] == '=')
+			{
+				uint8_t newPWM_counts = get_uint8_FromInput(line[6],line[7],line[8]);
+				if(newPWM_counts == 123) { vPackSpoof_setModeMCMePWM(MCMe_USING_VPACK); } //special case: let LiBCM control MCMe PWM
+				else
+				{
+					//user manually controlling MCMe PWM value
+					vPackSpoof_setModeMCMePWM(MCMe_USER_DEFINED);
+					vPackSpoof_setPWMcounts_MCMe(newPWM_counts);
+				}
+			}
+			else if(line[5] == STRING_TERMINATION_CHARACTER)
+			{
+				Serial.print(F("\nMCMpwm is (counts): "));
+				Serial.print(vPackSpoof_getPWMcounts_MCMe(),DEC);
+			}
+		}
+
+		//$MCMb
+		else if( (line[1] == 'M') && (line[2] == 'C') && (line[3] == 'M') && (line[4] == 'B') )
+		{
+			if(line[5] == '=')
+			{
+				uint8_t newOffset_volts = get_uint8_FromInput(line[6],line[7],line[8]);
+				vPackSpoof_setMCMeOffsetVoltage(newOffset_volts);
+			}
+			else if(line[5] == STRING_TERMINATION_CHARACTER)
+			{
+				Serial.print(F("\nMCME_VOLTAGE_OFFSET_ADJUST is (volts): "));
+				Serial.print(vPackSpoof_getMCMeOffsetVoltage(),DEC);
 			}
 		}
 
