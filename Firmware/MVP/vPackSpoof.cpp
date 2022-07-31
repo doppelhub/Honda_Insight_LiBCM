@@ -229,7 +229,7 @@ void vPackSpoof_handleKeyON(void) { ; }
 void vPackSpoof_handleKeyOFF(void)
 {
 	pinMode(PIN_VPIN_OUT_PWM,INPUT); //set VPIN back to high impedance (to save power)
-  pinMode(PIN_MCME_PWM,    INPUT); //Set MCM'E' high impedance (to save power)
+	pinMode(PIN_MCME_PWM,    INPUT); //Set MCM'E' high impedance (to save power)
 }
 
 //---------------------------------------------------------------------------------------
