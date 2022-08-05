@@ -3,6 +3,10 @@
 
 //functions related to ignition (key) status
 
+//JTS2doLater: Add test to see if key is 'ON', but the engine isn't running for more than an hour.
+//this indicates the 12 volt system is still running on the IMA battery, but the engine isn't running.
+//So then LiBCM will turn itself off (which will cause an IMA/CEL), but this prevents over-discharging IMA battery.
+
 #include "libcm.h"
 
 uint8_t keyState_sampled  = KEYSTATE_UNINITIALIZED; //updated by key_didStateChange() to prevent mid-loop state changes
