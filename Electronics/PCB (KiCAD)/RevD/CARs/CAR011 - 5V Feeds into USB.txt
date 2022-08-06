@@ -1,0 +1,7 @@
+Simplest method to prevent backfeeding 5V into USB is to remove FET "T1" between USBVCC & +5V (on Arduino).  Another option might be to cut the gate trace on T1, which would allow USB +5V to power LiBCM (at 4.3 volts, which is enough to kick on the 12->5V buck), but wouldn't allow LiBCM to backfeed the USB+5V rail.
+
+Still need to verify this still allows USB to work... it should, but should test it.
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:

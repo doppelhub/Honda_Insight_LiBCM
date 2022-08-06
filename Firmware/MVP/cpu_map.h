@@ -38,6 +38,8 @@
       #define PIN_FAN_PWM 11
       #define PIN_HMI_EN 12
       #define PIN_IGNITION_SENSE 13
+      #define PIN_HW_VER1 38
+      #define PIN_HW_VER0 39
       #define PIN_BATTSCI_REn 40
       #define PIN_BATTSCI_DE 41
       #define PIN_COVER_SWITCH 42

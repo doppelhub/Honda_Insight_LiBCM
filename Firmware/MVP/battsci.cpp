@@ -14,6 +14,9 @@
 uint8_t spoofedVoltageToSend_Counts = 0; //formatted as MCM expects to see it (Vpack / 2) //2 volts per count
 int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2048 - amps * 20) //50 mA per count
 
+uint8_t framePeriod_ms = 33;
+
+//JTS2doLater: store in 'PROGMEM' to keep out of RAM (but note array elements must be indexed differently)
 //LUT remaps actual lithium battery SoC (unit: percent) to mimic OEM NiMH behavior (unit: deciPercent)
 //input: actual lithium SoC (unit: percent integer)
 //output: OEM NiMH SoC equivalent (unit: decipercent integer)
@@ -71,7 +74,21 @@ uint8_t BATTSCI_bytesAvailableForWrite(void) { return Serial2.availableForWrite(
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t BATTSCI_writeByte(uint8_t data) { Serial2.write(data); return data; }
+uint8_t BATTSCI_writeByte(uint8_t data)
+{
+  Serial2.write(data);
+  if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI)
+  {
+    if(data < 0x10) { Serial.print('0'); } //print leading zero for single digit hex
+    Serial.print(data,HEX);
+    Serial.print(','); }
+  return data;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void BATTSCI_framePeriod_ms_set(uint8_t period) { framePeriod_ms = period; }
+uint8_t BATTSCI_framePeriod_ms_get(void) { return framePeriod_ms; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -80,6 +97,7 @@ void BATTSCI_setPackVoltage(uint8_t spoofedVoltage) { spoofedVoltageToSend_Count
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: input needs more resolution.  Right now it's 1000 mA/count... should be at most 50 mA/count.
 //Convert battery current (unit: amps) into BATTSCI format (unit: 50 mA per count)
 void BATTSCI_setSpoofedCurrent(int16_t spoofedCurrent) { spoofedCurrentToSend_Counts = (2048 - (spoofedCurrent * 20)); }
 
@@ -178,7 +196,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
     { flags |= BATTSCI_DISABLE_ASSIST_FLAG; EEPROM_hasLibcmDisabledAssist_set(EEPROM_LICBM_DISABLED_ASSIST); }
 
   #ifndef DISABLE_REGEN
-    if(BATTSCI_isPackFull()  == true)
+    if(BATTSCI_isPackFull() == true)
   #endif
       { flags |= BATTSCI_DISABLE_REGEN_FLAG; EEPROM_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN); }
 
@@ -325,12 +343,19 @@ void BATTSCI_sendFrames(void)
   static uint32_t previousMillis = 0;
 
   if( ( BATTSCI_bytesAvailableForWrite() > BATTSCI_BYTES_IN_FRAME ) && //Verify serial send ring buffer has room
-      ( (millis() - previousMillis) >= 100 )                        )  //Send a frame every 100 ms
+      ( (millis() - previousMillis) >= BATTSCI_framePeriod_ms_get() ) )
   {
     //time to send a BATTSCI frame!
     previousMillis = millis(); //stores the next frame start time
 
     static uint8_t frame2send = 0x87; //stores the next frame type to send
+
+    if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI)
+    { 
+      if(frame2send == 0x87) { Serial.print('\n'); }
+      else                   { Serial.print(' ');  }
+      Serial.print(F("BAT:"));
+    }
 
     if(frame2send == 0x87)
     {

@@ -549,16 +549,6 @@ void LiDisplay_setPageNumber(uint8_t page) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/* void LiDisplay_sendCommand() {
-	Serial1.print(0x23);	// 0x23 is # and it means a command follows
-	Serial1.print(0x02);	// Second byte is command length
-	Serial1.print(0x50);	// 0x50 is P and denotes the nextion needs to change Page
-	Serial1.print(0x01);
-} */
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 uint8_t LiDisplay_bytesAvailableForWrite(void)
 {
   return Serial1.availableForWrite();

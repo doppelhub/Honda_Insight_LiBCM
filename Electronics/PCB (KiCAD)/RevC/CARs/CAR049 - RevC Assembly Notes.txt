@@ -5,3 +5,11 @@ Move middle (rear) temp connector so it doesn't hit ribbon cable's locking tab
 Move beeper and Cherry switch up ~1mm
 Silkscreen text overlaps near (right of) C95.
 
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+R130 changed to 1206
+Fixed silkscreen issues
+Didn't move temp connector, beeper, or cherry switch
+
+Done

@@ -132,7 +132,7 @@ struct packetTypes
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void METSCI_begin()
+void METSCI_begin(void)
 {
   pinMode(PIN_METSCI_DE, OUTPUT);
   digitalWrite(PIN_METSCI_DE,LOW);
@@ -146,15 +146,15 @@ void METSCI_begin()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void METSCI_enable()
+void METSCI_enable(void)
 {
   digitalWrite(PIN_METSCI_REn,LOW);
 
   //MCM throws CEL if old data sent when key first turned on
-  METSCI_Packets.latestB4Packet_engine = 24; //OEM BCM transmits 0x18 on BATTSCI until first valid B4 packet received on METSCI
-  METSCI_Packets.latestE6Packet_assistLevel = 64; // 0x40 is "zero bars assist/regen"
-  METSCI_Packets.latestB3Packet_engine = 6; //OEM BCM transmits 0x06 on BATTSCI until first valid B3 packet received on METSCI
-  METSCI_Packets.latestE1Packet_SoC = 0;
+  METSCI_Packets.latestB4Packet_engine = 0x18; //OEM BCM transmits 0x18 on BATTSCI until first valid B4 packet received on METSCI
+  METSCI_Packets.latestE6Packet_assistLevel = 0x40; // 0x40 is "zero bars assist/regen"
+  METSCI_Packets.latestB3Packet_engine = 0x06; //OEM BCM transmits 0x06 on BATTSCI until first valid B3 packet received on METSCI
+  METSCI_Packets.latestE1Packet_SoC = 0x00;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -163,11 +163,22 @@ void METSCI_disable() { digitalWrite(PIN_METSCI_REn,HIGH); } //prevent backdrivi
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t METSCI_readByte() { return Serial3.read(); }
+uint8_t METSCI_readByte(void)
+{
+  uint8_t data = Serial3.read();
+  if( (debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) &&
+      (data != 0xE6) ) //0xE6 is the start of the METSCI frame, which is printed out separately (in METSCI_processLatestFrame())
+  {
+    if(data < 0x10) { Serial.print('0'); } //print leading zero for single digit hex
+    Serial.print(data,HEX);
+    Serial.print(',');
+  }
+  return data;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t METSCI_bytesAvailableToRead() { return Serial3.available(); }
+uint8_t METSCI_bytesAvailableToRead(void) { return Serial3.available(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -180,10 +191,7 @@ void METSCI_processLatestFrame(void)
   while( METSCI_bytesAvailableToRead() > (METSCI_BYTES_IN_FRAME << 1) ) //True if two or more full frames are stored in serial ring buffer
   {
     Serial.print(F("\nMETSCI stale.  Discarding frame: "));
-    for(int ii=0; ii < METSCI_BYTES_IN_FRAME; ii++) //delete oldest frame
-    {
-      Serial.print(String(METSCI_readByte(), HEX) ); //Display discarded frame
-    }
+    for(int ii=0; ii < METSCI_BYTES_IN_FRAME; ii++) { Serial.print(String(METSCI_readByte(), HEX) ); } //Display (and delete) oldest frame
   }
 
   //At this point we should have ONLY the latest complete frame in queue (i.e. not more than 12 bytes in the serial receive buffer)
@@ -208,7 +216,12 @@ void METSCI_processLatestFrame(void)
     }
 
     //At this point we've read the first byte, which we know is 0xE6... now read the remaining five bytes in the frame
+<<<<<<< HEAD
 
+=======
+    if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { Serial.print(" MET:E6,"); }
+
+>>>>>>> main
     packetType = 0xE6;              //Byte0 (always 0xE6) (we discarded it above)
     packetData = METSCI_readByte(); //Byte1 (always number of bars assist/regen)
     packetCRC  = METSCI_readByte(); //Byte2 (checksum)
@@ -242,7 +255,7 @@ void METSCI_processLatestFrame(void)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t METSCI_isChecksumValid( uint8_t type, uint8_t data, uint8_t checksum )
+uint8_t METSCI_isChecksumValid(uint8_t type, uint8_t data, uint8_t checksum)
 {
   if( ( (type + data + checksum) & 0x7F ) == 0  )
   {

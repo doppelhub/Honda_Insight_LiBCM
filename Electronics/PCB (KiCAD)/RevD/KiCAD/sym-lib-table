@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name LiBCM-rescue)(type Legacy)(uri ${KIPRJMOD}/LiBCM-rescue.lib)(options "")(descr ""))
+  (lib (name LinsightComponents)(type Legacy)(uri "${KIPRJMOD}/Linsight Files/LinsightComponents.lib")(options "")(descr ""))
+)

@@ -6,6 +6,9 @@
 
 //FYI: need to enable temperature sensors
 
+//JTS2doLater: Disable fans entirely if pack is too hot (e.g. above 75 degC).
+//Prevents spreading smoke into the passenger cabin if the modules catch on fire.
+
 #include "libcm.h"
 
 int8_t battTemp = ROOM_TEMP_DEGC;
@@ -98,14 +101,20 @@ void temperature_handler(void)
 	else                      {temperatureUpdateInterval = TEMP_UPDATE_PERIOD_MILLIS_KEYOFF; }
 	
 	static uint32_t millis_previous = 0;
+	static uint32_t millis_latestSensorTurnon = 0;
 
 	if( (millis() - millis_previous) > temperatureUpdateInterval )
 	{
 		//time to measure temperature sensors
 		millis_previous = millis();
 
-		if     (tempSensorState == TEMP_SENSORS_ON)  { tempSensorState = TEMP_MEASURE_NOW;                                       }
-		else if(tempSensorState == TEMP_SENSORS_OFF) { tempSensorState = TEMP_SENSORS_POWERUP; gpio_turnTemperatureSensors_on(); }
+		if     (tempSensorState == TEMP_SENSORS_ON)  { tempSensorState = TEMP_MEASURE_NOW; }
+		else if(tempSensorState == TEMP_SENSORS_OFF)
+		{
+			tempSensorState = TEMP_SENSORS_POWERUP;
+			gpio_turnTemperatureSensors_on();
+			millis_latestSensorTurnon = millis();
+		}
 	}
 
 	else if(tempSensorState == TEMP_MEASURE_NOW)
@@ -123,18 +132,12 @@ void temperature_handler(void)
 		}
 	}	
 
-	else if (tempSensorState == TEMP_SENSORS_POWERUP)
+	else if ( (tempSensorState == TEMP_SENSORS_POWERUP) &&
+	          ( (millis() - millis_latestSensorTurnon) > TEMP_STABILIZATION_TIME_ms) ) //wait for temp sensor LPFs to stabilize
 	{
-		//wait for the temp sensor LPFs to stabilize
-		#define TEMP_STABILIZATION_TIME_mS 100
-		#define TEMP_NUM_CYCLES_TO_STABILIZE (TEMP_STABILIZATION_TIME_mS / LOOP_RATE_MILLISECONDS) //preprocessor handles this division
-		
-		static uint8_t numCyclesWaited = 0;
-		
-		if(numCyclesWaited < TEMP_NUM_CYCLES_TO_STABILIZE) { numCyclesWaited++; } //keep waiting
-		else        /* temp sensors stabilized */          { numCyclesWaited = 0; tempSensorState = TEMP_MEASURE_NOW; }
+		// temp sensors stabilized
+		tempSensorState = TEMP_MEASURE_NOW;
 	}
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

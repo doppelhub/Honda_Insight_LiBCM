@@ -1,3 +1,12 @@
 Existing hardware only has HVDC<->GND capacitors from HVDC- to GND_ENG.
 It's possible we need a complimentary pair going from HVDC+ to GND_ENG.
+
 Another thought is that both these capacitor pairs should go to GND_CHASSIS (instead of GND_ENG).  However, that would be difficult since GND_ENG is used inside LiBCM.
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+
+Added coupling capacitors from HVDC_POS_FUSED to 12NEG_RAW.
+
+Done

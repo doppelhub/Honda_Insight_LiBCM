@@ -46,6 +46,7 @@ void gridCharger_handlePluginEvent(void)
 
 //////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Measure current while grid charging.
 void gridCharger_chargePack(void)
 {
   static uint8_t cellStatePrevious = CELLSTATE_UNINITIALIZED;

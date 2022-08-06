@@ -1,0 +1,16 @@
+These screenshots are measured with differential probe connected across TRIAC's A1 & A2 terminals.  TRIAC is enabled (i.e. grid charger is charging).
+Grid charger is HLG-480H-C2100B (2.1 amps output @ 190 Vout, using 3.5 amps input @ 123.5 Vin).
+
+If this wave were sinusoidal, it would mean the TRIAC is sinking ~3.1 watts (3.5 A * 1.25 Vp / sqrt(2)).  However, the waveform isn't sinusoidal, so we need to use a true Vrms measurement:
+
+Vrms with trueRMS Fluke 100: 1.228 volts
+Vrms on scope: 1.20 volts.
+
+So the actual input power is 3.5 amps * 1.228 volts = 4.3 watts
+
+...
+
+R_TRIAC(on) decreases as TRIAC heats up:
+@Tcase = 206 degF ( 97 degC), R_TRIAC(on) = 1.022 Vrms, (RevD grid blocking diode is 200 degF).
+@Tcase = 225 degF (107 degC), R_TRIAC(on) = 1.015 Vrms, (RevD grid blocking diode is 206 degF).
+Tambient = 68 degF

@@ -3,6 +3,8 @@
 
 //LTC6804 configuration functions
 
+//JTS2doNow: Add 2nd reference measurement (to verify 1st reference is working properly)
+
 #include "libcm.h"
 
 uint32_t lastTimeDataSent_millis = 0; //LTC idle timer resets each time data is transferred

@@ -29,8 +29,8 @@ void printDebug(void)
 	Serial.print(F("\n -Has LiBCM limited regen since last cleared?: "));
 	(EEPROM_hasLibcmDisabledRegen_get() == EEPROM_LICBM_DISABLED_REGEN) ? Serial.print(F("YES")) : Serial.print(F("NO"));
 
-	Serial.print(F("\n -LOOP_RATE_MILLISECONDS exceeded since last cleared?: "));
-	(EEPROM_hasLibcmFailedTiming_get() == EEPROM_LIBCM_LOOPRATE_EXCEEDED) ? Serial.print(F("YES")) : Serial.print(F("NO"));
+	Serial.print(F("\n -loopPeriod exceeded since last cleared?: "));
+	(EEPROM_hasLibcmFailedTiming_get() == EEPROM_LIBCM_LOOPPERIOD_EXCEEDED) ? Serial.print(F("YES")) : Serial.print(F("NO"));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -42,17 +42,34 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	else if(testToRun == '1')
 	{
 		Serial.print(F("\nRunning TEST1"));
-		EEPROM_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN);
+		Serial.print(F("\n GPIO1/2/3 states: "));
+		(gpio1_getState() == HIGH) ? Serial.print('H') : Serial.print('L');
+		(gpio2_getState() == HIGH) ? Serial.print('H') : Serial.print('L');
+		(gpio3_getState() == HIGH) ? Serial.print('H') : Serial.print('L');
 	}
 	else if(testToRun == '2')
 	{
 		Serial.print(F("\nRunning TEST2"));
-		EEPROM_hasLibcmDisabledRegen_set(EEPROM_REGEN_NEVER_LIMITED);
+		Serial.print(F("\nEnabling GPIO1/2/3 pullups"));
+		pinMode(PIN_GPIO1, INPUT_PULLUP);
+		pinMode(PIN_GPIO2, INPUT_PULLUP);
+		pinMode(PIN_GPIO3, INPUT_PULLUP);
 	}
 	else if(testToRun == '3')
 	{
 		Serial.print(F("\nRunning TEST3"));
-		EEPROM_hasLibcmDisabledAssist_set(EEPROM_LICBM_DISABLED_ASSIST);
+		Serial.print(F("\nGrid PWM Test"));
+		pinMode(PIN_GRID_PWM, OUTPUT);
+
+		static uint8_t pwmValue_grid = 0;
+
+		if     (pwmValue_grid == 255) { pwmValue_grid =   0; }
+		else if(pwmValue_grid >= 200) { pwmValue_grid = 255; }
+		else                          { pwmValue_grid += 50; }
+		
+		Serial.print(F("\nSetting gridPWM to: "));
+		Serial.print(pwmValue_grid);
+		analogWrite(PIN_GRID_PWM, pwmValue_grid);
 	}
 	else if(testToRun == '4')
 	{
@@ -67,6 +84,11 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 		EEPROM_hasLibcmDisabledAssist_set(0xFF);
 		EEPROM_hasLibcmDisabledRegen_set(0x00);
 	}
+	else if(testToRun == '6')
+	{
+		Serial.print(F("\nRunning TEST6.\nTurning off LiBCM (5V rail).\nLiBCM will stay on if USB 5V connected."));
+		gpio_turnLiBCM_off();
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -78,12 +100,18 @@ void(* rebootLiBCM) (void) = 0;//declare reset function at address 0
 
 void printHelp(void)
 {
-	Serial.print(F("\n\nLiBCM supports the following commands:"
-		"\n -'$HELP' display this text."
-		"\n -'$BOOT' restart LiBCM."
-		"\n -'$TEST_' run test code.  '$TEST1'/2/3/4/etc (see 'USB_userInterface_runTestCode()')"
-		"\n -'$DEBUG' display debug info stored in EEPROM.  'DEBUG=CLR' to restore defaults."
-		"\n -'$KEYms' display LiBCM keyON delay in ms.  'KEYms=____' to set (0 to 254 ms)"
+	Serial.print(F("\n\nLiBCM commands:"
+		"\n -'$BOOT': restart LiBCM"
+		"\n -'$TEST1'/2/3/4: run test code. See 'USB_userInterface_runTestCode()')"
+		"\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
+		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
+		"\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"
+		"\n -'$DISP=PWR'/SCI/CELL/OFF: data to stream (power/BAT&METSCI/Vcell/none)"
+		"\n -'$RATE=___': USB updates per second (1 to 255 Hz)"
+		"\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
+		"\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)"
+		"\n -'$MCMp=___': set manual MCMe PWM value (0:255)('123' for auto)"
+		"\n -'$MCMb=___': Override default MCME_VOLTAGE_OFFSET_ADJUST value"
 		"\n"
 		/*
 		"\nFuture LiBCM commands (not presently supported"
@@ -134,6 +162,7 @@ uint8_t get_uint8_FromInput(uint8_t digit1, uint8_t digit2, uint8_t digit3)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
+//determine which command to run
 void USB_userInterface_executeUserInput(void)
 {
 	if(line[0] == '$') //valid commands start with '$'
@@ -179,7 +208,103 @@ void USB_userInterface_executeUserInput(void)
 			}
 		}
 
-	
+		//SoC
+		else if( (line[1] == 'S') && (line[2] == 'O') && (line[3] == 'C') )
+		{
+			if (line[4] == '=')
+			{
+				uint8_t newSoC_percent = get_uint8_FromInput(line[5],line[6],line[7]);
+				Serial.print("\nnewSoC is " + String(newSoC_percent) );
+				SoC_setBatteryStateNow_percent(newSoC_percent);
+			}
+			else if(line[4] == STRING_TERMINATION_CHARACTER)
+			{
+				Serial.print(F("\nBattery SoC is (%): "));
+				Serial.print(SoC_getBatteryStateNow_percent(),DEC);
+			}
+		}
+
+		//DISP
+		//JTS2doNow: Make this function work while grid charging, too
+		else if( (line[1] == 'D') && (line[2] == 'I') && (line[3] == 'S') && (line[4] == 'P') && (line[5] == '=') )
+		{
+			if     ( (line[6] == 'P') && (line[7] == 'W') && (line[8] == 'R') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_POWER);      }
+			else if( (line[6] == 'S') && (line[7] == 'C') && (line[8] == 'I') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_BATTMETSCI); } //JTS2doNow: add case
+			else if( (line[6] == 'C') && (line[7] == 'E') && (line[8] == 'L') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_CELL);       } //JTS2doNow: add case
+			else if( (line[6] == 'O') && (line[7] == 'F') && (line[8] == 'F') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_NONE);       }
+		}
+
+		//RATE
+		else if( (line[1] == 'R') && (line[2] == 'A') && (line[3] == 'T') && (line[4] == 'E') && (line[5] == '=') )
+		{
+			uint8_t newUpdatesPerSecond = get_uint8_FromInput(line[6],line[7],line[8]);
+			debugUSB_dataUpdatePeriod_ms_set( time_hertz_to_milliseconds(newUpdatesPerSecond) );
+		}
+
+		//LOOP
+		else if( (line[1] == 'L') && (line[2] == 'O') && (line[3] == 'O') && (line[4] == 'P') )
+		{
+			if(line[5] == '=')
+			{
+				uint8_t newLooprate_ms = get_uint8_FromInput(line[6],line[7],line[8]);
+				time_loopPeriod_ms_set(newLooprate_ms);
+			}
+			else if(line[5] == STRING_TERMINATION_CHARACTER)
+			{
+				Serial.print(F("\nLoop period is (ms): "));
+				Serial.print(time_loopPeriod_ms_get(),DEC);
+			}
+		}
+
+		//SCIms
+		else if( (line[1] == 'S') && (line[2] == 'C') && (line[3] == 'I') && (line[4] == 'M') && (line[5] == 'S') )
+		{
+			if(line[6] == '=')
+			{
+				uint8_t newPeriod_ms = get_uint8_FromInput(line[7],line[8],line[9]);
+				BATTSCI_framePeriod_ms_set(newPeriod_ms);
+			}
+			else if(line[6] == STRING_TERMINATION_CHARACTER)
+			{
+				Serial.print(F("\nBATTSCI period is (ms): "));
+				Serial.print(BATTSCI_framePeriod_ms_get(),DEC);
+			}
+		}
+		//$MCMp
+		else if( (line[1] == 'M') && (line[2] == 'C') && (line[3] == 'M') && (line[4] == 'P') )
+		{
+			if(line[5] == '=')
+			{
+				uint8_t newPWM_counts = get_uint8_FromInput(line[6],line[7],line[8]);
+				if(newPWM_counts == 123) { vPackSpoof_setModeMCMePWM(MCMe_USING_VPACK); } //special case: let LiBCM control MCMe PWM
+				else
+				{
+					//user manually controlling MCMe PWM value
+					vPackSpoof_setModeMCMePWM(MCMe_USER_DEFINED);
+					vPackSpoof_setPWMcounts_MCMe(newPWM_counts);
+				}
+			}
+			else if(line[5] == STRING_TERMINATION_CHARACTER)
+			{
+				Serial.print(F("\nMCMpwm is (counts): "));
+				Serial.print(vPackSpoof_getPWMcounts_MCMe(),DEC);
+			}
+		}
+
+		//$MCMb
+		else if( (line[1] == 'M') && (line[2] == 'C') && (line[3] == 'M') && (line[4] == 'B') )
+		{
+			if(line[5] == '=')
+			{
+				uint8_t newOffset_volts = get_uint8_FromInput(line[6],line[7],line[8]);
+				vPackSpoof_setMCMeOffsetVoltage(newOffset_volts);
+			}
+			else if(line[5] == STRING_TERMINATION_CHARACTER)
+			{
+				Serial.print(F("\nMCME_VOLTAGE_OFFSET_ADJUST is (volts): "));
+				Serial.print(vPackSpoof_getMCMeOffsetVoltage(),DEC);
+			}
+		}
 
 		//$DEFAULT
 		else { Serial.print(F("\nInvalid Entry")); }
@@ -189,6 +314,8 @@ void USB_userInterface_executeUserInput(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
+//read user-typed input from serial buffer
+//user input executes at each newline character
 void USB_userInterface_handler(void)
 {
 	uint8_t latestCharacterRead = 0; //c

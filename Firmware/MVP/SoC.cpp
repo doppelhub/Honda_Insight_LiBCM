@@ -37,14 +37,14 @@ void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 	// If we then divide both sides by 1 mA, we get:
 	// 1 [] = (1 [uCoulomb/ms] / 1 [mA])... the equation below includes this version of '1' (to help us cancel units)		
 	//then:
-	// deltaCharge_uCoulomb [uCoulomb] = (deltaCharge_counts [delta_Counts] / 1) * (ADC_MILLIAMPS_PER_COUNT [mA] / 1 [delta_Counts]) * (1 [uCoulomb/ms] / 1 [mA]) * (LOOP_RATE_MILLISECONDS [ms] / 1)
+	// deltaCharge_uCoulomb [uCoulomb] = (deltaCharge_counts [delta_Counts] / 1) * (ADC_MILLIAMPS_PER_COUNT [mA] / 1 [delta_Counts]) * (1 [uCoulomb/ms] / 1 [mA]) * (time_loopPeriod_ms_get() [ms] / 1)
 	//cancel units:
-	// deltaCharge_uCoulomb [uCoulomb] = (deltaCharge_counts [            ] / 1) * (ADC_MILLIAMPS_PER_COUNT [  ] / 1 [            ]) * (1 [uCoulomb/  ] / 1 [  ]) * (LOOP_RATE_MILLISECONDS [  ] / 1)
+	// deltaCharge_uCoulomb [uCoulomb] = (deltaCharge_counts [            ] / 1) * (ADC_MILLIAMPS_PER_COUNT [  ] / 1 [            ]) * (1 [uCoulomb/  ] / 1 [  ]) * (time_loopPeriod_ms_get() [  ] / 1)
 	//therefore:
-	// deltaCharge_uCoulomb            =  deltaCharge_counts                     *  ADC_MILLIAMPS_PER_COUNT                                                       *  LOOP_RATE_MILLISECONDS
-	//int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * (ADC_MILLIAMPS_PER_COUNT * LOOP_RATE_MILLISECONDS);
+	// deltaCharge_uCoulomb            =  deltaCharge_counts                     *  ADC_MILLIAMPS_PER_COUNT                                                       *  time_loopPeriod_ms_get()
+	//int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * (ADC_MILLIAMPS_PER_COUNT * time_loopPeriod_ms_get());
 	//One final change: The battery current sensor isn't updated every time through the loop... so multiply by the number of loops per result
-	int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * (ADC_MILLIAMPS_PER_COUNT * LOOP_RATE_MILLISECONDS * ADC_NUMLOOPS_PER_RESULT);
+	int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * time_loopPeriod_ms_get() * (ADC_MILLIAMPS_PER_COUNT * ADC_NUMLOOPS_PER_RESULT);
 
 	//Notes:
 	//5 Ah is 18.0E9 uCoulombs, whereas 2^32 is ~4.3E9 counts...

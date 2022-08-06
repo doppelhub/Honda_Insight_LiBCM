@@ -5,6 +5,13 @@
 
 #include "libcm.h"
 
+uint8_t loopPeriod_ms = 10;
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void time_loopPeriod_ms_set(uint8_t period_ms) { loopPeriod_ms = period_ms; }
+uint8_t time_loopPeriod_ms_get(void) { return loopPeriod_ms; }
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 bool time_toUpdate_keyOffValues(void)
@@ -37,7 +44,7 @@ bool time_hasKeyBeenOffLongEnough(void)
 {
   bool keyOffForLongEnough = false;
 
-  if( (millis() - key_latestTurnOffTime_ms_get() ) > (KEYOFF_TURNOFF_LIBCM_DELAY_MINUTES * 60000) )
+  if( (millis() - key_latestTurnOffTime_ms_get() ) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000) )
   {
     keyOffForLongEnough = true;
   }
@@ -50,14 +57,49 @@ bool time_hasKeyBeenOffLongEnough(void)
 void time_waitForLoopPeriod(void)
 {
     static uint32_t timestamp_previousLoopStart_ms = millis();
-    uint16_t numLoopsWaited = 0;
+    bool timingMet = false;
 
     LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left
-    while( (millis() - timestamp_previousLoopStart_ms ) < LOOP_RATE_MILLISECONDS ) { numLoopsWaited++; } //wait here to start next loop
+    while( (millis() - timestamp_previousLoopStart_ms ) < time_loopPeriod_ms_get() ) { timingMet = true; } //wait here to start next loop
     LED(4,LOW);
     
-    if( (key_getSampledState() == KEYON) && (numLoopsWaited == 0) ) { EEPROM_hasLibcmFailedTiming_set(EEPROM_LIBCM_LOOPRATE_EXCEEDED);}
+    if( (key_getSampledState() == KEYON) && (timingMet == false) )
+    {
+      Serial.print('*');
+      EEPROM_hasLibcmFailedTiming_set(EEPROM_LIBCM_LOOPPERIOD_EXCEEDED);
+    }
 
     timestamp_previousLoopStart_ms = millis(); //placed at end to prevent delay at keyON event
     //JTS2doLater: Determine millis() behavior after overflow (50 days)
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+//calculate delta between start and stop time
+//store start time: START_TIMER
+//calculate delta:  STOP_TIMER
+void time_stopwatch(bool timerAction)
+{
+  static uint32_t startTime = 0;
+
+  if(timerAction == START_TIMER) { startTime = millis(); }
+  else
+  {
+      uint32_t stopTime = millis();
+      Serial.print(F("\nDelta: "));
+      Serial.print(stopTime - startTime);
+      Serial.print(F(" ms\n"));
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+//only works from 1 to 255 Hz
+uint16_t time_hertz_to_milliseconds(uint8_t hertz)
+{
+  uint16_t milliseconds = 0;
+
+  if( (hertz != 0) ) { milliseconds = 1000 / hertz; } //division
+
+  return milliseconds;
 }

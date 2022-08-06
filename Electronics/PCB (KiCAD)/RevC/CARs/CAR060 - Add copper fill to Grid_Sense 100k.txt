@@ -1,2 +1,4 @@
 Add copper fill to help cool grid power sense input.
 QTY4 100k 250 mW resistors
+
+Done

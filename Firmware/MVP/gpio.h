@@ -39,7 +39,18 @@
 
 	void gpio_turnLiBCM_off(void);
 
+	bool gpio1_getState(void);
+	bool gpio2_getState(void);
+	bool gpio3_getState(void);
+
+	uint8_t gpio_getHardwareRevision(void);
+
 	#define RAMP_FAN_SPEED 1
 	#define IMMEDIATE_FAN_SPEED 0
+
+	#define HW_REV_C 0b00000011
+	#define HW_REV_D 0b00000010
+	#define HW_REV_E 0b00000001
+	#define HW_REV_F 0b00000000
 
 #endif

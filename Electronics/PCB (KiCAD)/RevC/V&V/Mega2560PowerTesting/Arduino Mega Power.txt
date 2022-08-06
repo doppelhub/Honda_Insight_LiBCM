@@ -1,0 +1,21 @@
+The Arduino Mega PCB isn't designed for power efficiency. Out of the box, the entire PCB consumes 80.5 mA (403 mW), which will drain a fully charged 48S pack in 91 days.
+No amount of code optimization on the ATMEGA2560 processor will reduce the power consumption below 62 mA (310 mW). This is determined by holding the ATMEGA in reset.
+
+The 16U2 chip - which handles the USB prototcol - is always powered and running at 16 MHz, even when USB isn't plugged in. Adding a pin to hold that IC in reset reduces total power consumption by 12 mA (60 mW).
+
+The Mega's power and D13 LEDs consume 5 mA (30 mW).
+
+Next I removed several components used to determine how the MEGA should power itself... in LiBCM it'll always be the same, so no need to have two opamps, two LDOs, diodes, etc. This saves 3 mA.
+
+Finally, I removed a PFET that allows the USB cable itself to power LiBCM. This didn't save any power, but prevents LiBCM from back-feeding into the host computer.
+
+Overall, I was able to reduce key 'OFF' power consumption from 403 to 240 mW, which increases standby time - starting with a full pack - from 91 to 154 days. Remember: LiBCM will automatically turn itself off when the pack gets low, so there's no risk that LiBCM will over-discharge the lithium pack.
+
+My first thought was to design out the Arduino PCB... this would allow me to design my own clocking circuit (to drastically reduce power).
+Alas, this doesn't end up saving much power, and actually ends up costing more:
+-the 16U2 cannot run below 8 MHz (USB requirement), so at most that's going to save a couple mA.
+-the ATMEGA2560 won't have enough processing power at a slower clock rate.
+-in the low quantity LiBCM will sell at, the ATMEGA2560 processor (used on the Arduino MEGA) actually costs more than the complete Arduino MEGA.
+-similarly, the "Arduinoless" components end up costing twice the complete Arduino PCB.
+
+So there actually isn't any appreciable benefit to designing out the Arduino PCB.

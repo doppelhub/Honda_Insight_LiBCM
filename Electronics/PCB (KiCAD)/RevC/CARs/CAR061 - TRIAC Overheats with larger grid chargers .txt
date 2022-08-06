@@ -5,14 +5,9 @@ TRIAC (T810-600B) is rated to handle 8 amps, but that requires a much larger cop
 
 Even after soldering a gullwing heatsink, the existing TRIAC was still too hot.
 Potential replacement TRIACs:
-BTA316B-600B0
-BTA312B-600CT,118
-497-18027-ND
-497-19692-2-ND
+BTA316B-600C,118
 
 Another option is to add gull-wing heatsink:
-
-
 V-1100-SMD/B (AE10774TR-ND)
 V-1100-SMD/B-L (AE10775-ND)
 ATS-PCBT1095 (ATS2137-ND)
@@ -21,7 +16,7 @@ ATS-PCBT1095 (ATS2137-ND)
 
 Looking at "Figure 3: RMS on-state current versus ambient temperature" (page 4/21), the existing part isn't rated to carry more than 1.25 amps when the ambient temp is 55 degC.
 
-That's what the existing grid charger pulls... so probably can't use a larger grid charger unless the TRIAC itself is replaced.
+That's what the existing grid charger pulls... so probably can't use a larger grid charger unless the TRIAC itself is replaced.  Tested with PLED200W-190-C1050-D (1.05 amp) grid charger and it caused 75 degF temp rise (147 degF in 72 degF ambient) on RevB PCB (when sinking at 120 volts into programmable load).
 
 .........................
 
@@ -30,3 +25,31 @@ Also, need to add additional copper to forward biased diode D18... it runs a bit
 With the existing grid charger, we're looking at 0.85 volts drop * 0.450 amps = 383 mW as heat in a single diode, which is 31 degC rise.
 
 Replace with diode: VS-4EGH06-M3 (slightly larger footprint)
+
+..........................
+
+Based on my testing today:
+-Remove R331, to increase LED drive current.  This doesn't reduce temp, but will prevent LED aging from becoming an issue.  R59 stays 100 Ohms.
+-Replace R73 (75 Ohm, large pads) with 100 Ohm resistor (0805).
+-Removing R78/R337 pulldowns didn't affect temperature performance.  Can probably remove.
+-Removing C33 didn't affect temperature performance.  Can probably remove.
+-Can remove C32/R76... not needed based on extensive testing.
+
+With the above changes, we'll have room for a larger TRIAC, with optional heat sink.  Don't put multiple TRIACs in parallel... they don't share current well.
+
+.........................
+
+Ordered the following parts for RevD:
+BTA316B-600C,118
+573300D00010G
+S12MCV7GCT-ND
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+-Changed R73 from 75 Ohm (large footprint) to 100 Ohm (0805).  This doesn't affect MOC3023 triac's phase angle.
+-Removed R76 & C32 snubber
+-Removed R331 to increase LED drive current.
+-Changed D6 TRIAC footprint to D2PAK
+-Added heatsink
+-Changed D18 grid charger blocking diode footprint to DO-214AB (SMC)
