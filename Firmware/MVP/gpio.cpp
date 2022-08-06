@@ -20,7 +20,7 @@ void gpio_begin(void)
 
 	//turn on lcd display
 	pinMode(PIN_HMI_EN,OUTPUT);
-	gpio_turnHMI_on();
+	//gpio_turnHMI_on();
 
 	//Controls BCM current sensor, constant 5V load, and BATTSCI/METSCI biasing
 	pinMode(PIN_SENSOR_EN,OUTPUT);
@@ -53,7 +53,7 @@ bool gpio_keyStateNow(void) { return digitalRead(PIN_IGNITION_SENSE); }
 
 //THIS FUNCTION DOES NOT RETURN!
 void gpio_turnLiBCM_off(void)
-{ 
+{
 	//JTS2doNow: Write SoC to EEPROM (so LiBCM can read it back at next keyON, if not enough time to calculate it)
 	Serial.print(F("\nLiBCM turning off"));
 	delay(20); //wait for the above message to transmit
@@ -127,7 +127,7 @@ void gpio_turnGridCharger_on( void)
 {
 	digitalWrite(PIN_GRID_EN, HIGH);
 	if(previousGridChargerState != GPIO_CHARGER_ON)
-	{ 
+	{
 		previousGridChargerState = GPIO_CHARGER_ON;
 		Serial.print(F("\nCharger: ON" ));
 	}
@@ -136,7 +136,7 @@ void gpio_turnGridCharger_on( void)
 ////////////////////////////////////////////////////////////////////////////////////
 
 void gpio_turnGridCharger_off(void)
-{ 
+{
 	digitalWrite(PIN_GRID_EN, LOW);
 	if(previousGridChargerState != GPIO_CHARGER_OFF)
 	{

@@ -33,12 +33,13 @@ void key_handleKeyEvent_off(void)
     gpio_turnPowerSensors_off();
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
-    gpio_turnHMI_off();
     gpio_turnTemperatureSensors_off();
     EEPROM_checkForExpiredFirmware(); //must occur before lcd_displayOFF()
     lcd_displayOFF();
+	LiDisplay_keyOff();
+	//LiDisplay_setPageNumber(1);	//	Set LiDisplay to show splash page
 
-    key_latestTurnOffTime_ms_set(millis()); //MUST RUN LAST!   
+    key_latestTurnOffTime_ms_set(millis()); //MUST RUN LAST!
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -50,7 +51,6 @@ void key_handleKeyEvent_on(void)
 	BATTSCI_enable();
 	METSCI_enable();
 	gpio_turnTemperatureSensors_on();
-	gpio_turnHMI_on();
 	gpio_turnPowerSensors_on();
 	lcd_displayOn();
 	gpio_setFanSpeed_OEM('L');
@@ -59,6 +59,8 @@ void key_handleKeyEvent_on(void)
 	LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
 	LTC68042configure_handleKeyStateChange();
 	LED(1,HIGH);
+	//LiDisplay_setPageNumber(1);	//	Set LiDisplay to show splash page
+	LiDisplay_keyOn();
 
 	key_latestTurnOnTime_ms_set(millis()); //MUST RUN LAST!
 }

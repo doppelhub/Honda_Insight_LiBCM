@@ -4,7 +4,7 @@
 
 #include "libcm.h"
 
-void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup or bootloader delay 
+void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup or bootloader delay
 {
 	gpio_begin();
 	wdt_disable(); //disable watchdog if running previously
@@ -53,20 +53,26 @@ void loop()
 		debugUSB_printLatest_data_keyOn();
 
 		lcd_refresh();
+
+		LiDisplay_refresh();
 	}
 	else if( key_getSampledState() == KEYOFF )
-	{	
+	{
 		if( time_toUpdate_keyOffValues() == true )
-		{ 
+		{
 			LTC68042cell_sampleGatherAndProcessAllCellVoltages();
-			
+
 			SoC_updateUsingLatestOpenCircuitVoltage();
 
 			SoC_turnOffLiBCM_ifPackEmpty();
 
 			cellBalance_handler();
-			
+
 			debugUSB_printLatest_data_gridCharger();
+		}
+
+		if(digitalRead(PIN_HMI_EN) == 1) {
+			LiDisplay_refresh();
 		}
 
 		gridCharger_handler();

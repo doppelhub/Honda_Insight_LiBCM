@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.7.4"
-    #define BUILD_DATE "2022APR08"
+	#define FW_VERSION "0.8.0"
+    #define BUILD_DATE "2022AUGUST06"
 
 	#define CPU_MAP_MEGA2560
     #define HW_REVC
@@ -33,7 +33,9 @@
 
 	#define MCME_VOLTAGE_OFFSET_ADJUST 12 //difference between OBDIIC&C and LiBCM spoofed pack voltage (Subtract LiBCM voltage from OBDIIC&C Bvo.  Default is 12.)
 
-	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
+//	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
+	#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands
+	#define LIDISPLAY_SPLASH_PAGE_MS 2000
 
 	//choose which functions control the LEDs
 		#define LED_NORMAL //enable "LED()" functions (see debug.c)
@@ -59,7 +61,7 @@
 	#define CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE 20    //'20' = 2.0 mV //CANNOT exceed 255 counts (25.5 mV)
 	#define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 10    // '5' = 0.5 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
 
-	//#define ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN //uncomment to prevent keyOFF cell balancing, unless the grid charger is plugged in  
+	//#define ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN //uncomment to prevent keyOFF cell balancing, unless the grid charger is plugged in
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda EHW5 lithium modules
 
