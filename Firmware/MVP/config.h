@@ -55,18 +55,18 @@
 	#define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 22    //'22' = 2.2 mV //LTC6804 total measurement error is 2.2 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
 	#define CELL_BALANCE_MAX_TEMP_C             35    //cell balancing is always disabled above this voltage //JTS2doNow: Change this to measure intake air temperature
 
+	#define WHEN_GRID_CHARGING_COOL_PACK_ABOVE_TEMP 30 //degC
+
 	//#define ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN //uncomment to prevent keyOFF cell balancing, unless the grid charger is plugged in  
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda EHW5 lithium modules
 
 	//#define KEYOFF_TURNOFF_LIBCM_AFTER_HOURS 48 //LiBCM turns off this many hours after keyOFF. //JTS2doLater: Not implemented yet.
-	#define KEYOFF_TURNOFF_LIBCM_DELAY_MINUTES 10 //Even with low SoC, LiBCM will remain on for this many minutes after keyOFF.
-	//to turn LiBCM back on: turn ignition to 'ON', or turn IMA switch off and on, or plug in USB cable
+	#define KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES 10 //Even with low SoC, LiBCM will remain on for this many minutes after keyOFF.
+		//to turn LiBCM back on: turn ignition to 'ON', or turn IMA switch off and on, or plug in USB cable
 
-	//#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
+	#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
 	
-	#define WHEN_GRID_CHARGING_COOL_PACK_ABOVE_TEMP 30
-
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
 #endif
 

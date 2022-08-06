@@ -44,7 +44,7 @@ bool time_hasKeyBeenOffLongEnough(void)
 {
   bool keyOffForLongEnough = false;
 
-  if( (millis() - key_latestTurnOffTime_ms_get() ) > (KEYOFF_TURNOFF_LIBCM_DELAY_MINUTES * 60000) )
+  if( (millis() - key_latestTurnOffTime_ms_get() ) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000) )
   {
     keyOffForLongEnough = true;
   }
