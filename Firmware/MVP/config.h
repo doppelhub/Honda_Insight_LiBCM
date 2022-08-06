@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.7.7dALPHA"
-    #define BUILD_DATE "2022JUL22"
+	#define FW_VERSION "0.7.8"
+    #define BUILD_DATE "2022AUG05"
 
 	#define CPU_MAP_MEGA2560
     #define HW_REVC
@@ -50,9 +50,9 @@
 	#define CELL_VMAX_GRIDCHARGER               39000 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
 	#define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
 	#define CELL_VMIN_KEYOFF                    CELL_VREST_10_PERCENT_SoC //when car is off, LiBCM turns off below this voltage  //JTS2doLater: Change to higher SoC
-	#define CELL_BALANCE_MIN_SoC                40    //when car is off, cell balancing is disabled below this percentage
-	#define CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE 20    //'20' = 2.0 mV //CANNOT exceed 255 counts (25.5 mV)
-	#define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 10    // '5' = 0.5 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
+	#define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled below this percentage
+	#define CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE 32    //'32' = 3.2 mV //CANNOT exceed 255 counts (25.5 mV)
+	#define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 22    //'22' = 2.2 mV //LTC6804 total measurement error is 2.2 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
 	#define CELL_BALANCE_MAX_TEMP_C             35    //cell balancing is always disabled above this voltage //JTS2doNow: Change this to measure intake air temperature
 
 	//#define ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN //uncomment to prevent keyOFF cell balancing, unless the grid charger is plugged in  
