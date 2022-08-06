@@ -8,20 +8,20 @@
   #define RUNNING 1
   #define STOPPED 0
 
-  void METSCI_begin();
+  void METSCI_begin(void);
 
-  void METSCI_enable();
+  void METSCI_enable(void);
 
-  void METSCI_disable();
+  void METSCI_disable(void);
 
-  uint8_t METSCI_getPacketB3();
-  uint8_t METSCI_getPacketB4();
-  uint8_t METSCI_getPacketE1();
-  uint8_t METSCI_getPacketE6();
+  uint8_t METSCI_getPacketB3(void);
+  uint8_t METSCI_getPacketB4(void);
+  uint8_t METSCI_getPacketE1(void);
+  uint8_t METSCI_getPacketE6(void);
 
-  uint8_t METSCI_readByte();
+  uint8_t METSCI_readByte(void);
 
-  uint8_t METSCI_bytesAvailableToRead();
+  uint8_t METSCI_bytesAvailableToRead(void);
 
   void METSCI_processLatestFrame(void);
 

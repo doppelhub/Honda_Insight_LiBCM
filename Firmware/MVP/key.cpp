@@ -3,6 +3,9 @@
 
 //functions related to ignition (key) status
 
+//JTS2doLater: If key is 'ON' but the engine isn't running for more than an hour, LiBCM needs to beep/CEL/etc,
+//to prevent over-discharging IMA battery.  @Thibble's IMA battery was pulled too low due to stuck-on 12V_Ignition
+
 #include "libcm.h"
 
 uint8_t keyState_sampled  = KEYSTATE_UNINITIALIZED; //updated by key_didStateChange() to prevent mid-loop state changes

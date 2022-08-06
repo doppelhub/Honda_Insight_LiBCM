@@ -13,4 +13,9 @@ PWM value | watts@12V | watts@15V
    015    |    4.80   |    7.50
    010    |   stall   |   stall
 
-should also add an inline resistor to reduce power consumption if we end up needing to use 15 volt power supplies.  QTY2 75 Ohm resistors should drop around 3 volts.  Would also need a 0 Ohm bypass so 12 volt supplies still work.
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Changed footprint and added capacitor
+
+Done

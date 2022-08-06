@@ -1,0 +1,23 @@
+LX68-10C790-G-PIA-3AB
+Module No: MP0217NS002A
+FoMoCo
+Samsung
+Used in:
+Ford Escape PHEV
+Jeep Wrangler 4xe
+
+
+Recalled module: LX68-10B759-R
+NHTSA Part 573 Filing: 21V-869
+NHTSA Campaign Number: 22E-005
+QTY1139 Ford and QTY24 Stellantis vehicles recalled, with 14% estimated to contain defect.
+HV busbar welding issues identified in Samsung SDI's manufacturing process.  Causes higher resistance between the cell terminal and busbar.
+
+The busbar pad wasn’t seated properly, or the power of the welding between the cell terminal and busbar was insufficient, thus increasing the risk of a sudden loss of drive power.
+
+"Samsung sdi co., ltd. (samsung sdi) is recalling certain high voltage battery packs, part numbers lx68-10c790-g-pia3ab, lx68-10c790-g-pia3ad, 05193168ag, 05193168ah, lx68-10c790-g-pia3ac, 05193168ae, and 05193168af. the high voltage battery may fail, resulting in a sudden loss of drive power. "
+
+Composed of Samsung prismatic cells (model MP0217NS002A)
+HS CODE: 8507 60
+
+Manufactured by Samsung SDI

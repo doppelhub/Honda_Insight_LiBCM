@@ -12,6 +12,28 @@ uint8_t previousGridChargerState = GPIO_CHARGER_INIT;
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+uint8_t gpio_getHardwareRevision(void)
+{
+	uint8_t hardwareRevision = 0;
+
+	//These pins are either tied to ground or left floating, depending on HW revision
+	pinMode(PIN_HW_VER0, INPUT_PULLUP);
+	pinMode(PIN_HW_VER1, INPUT_PULLUP);
+
+	if     ( (digitalRead(PIN_HW_VER1) == true ) && (digitalRead(PIN_HW_VER0) == true ) ) { hardwareRevision = HW_REV_C; }
+	else if( (digitalRead(PIN_HW_VER1) == true ) && (digitalRead(PIN_HW_VER0) == false) ) { hardwareRevision = HW_REV_D; }
+	else if( (digitalRead(PIN_HW_VER1) == false) && (digitalRead(PIN_HW_VER0) == true ) ) { hardwareRevision = HW_REV_E; } //future HW support
+	else if( (digitalRead(PIN_HW_VER1) == false) && (digitalRead(PIN_HW_VER0) == false) ) { hardwareRevision = HW_REV_F; } //future HW support
+
+	//disable pullups to save power
+	pinMode(PIN_HW_VER0, INPUT);
+	pinMode(PIN_HW_VER1, INPUT);
+
+	return hardwareRevision;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
 void gpio_begin(void)
 {
 	//Ensure 12V->5V DCDC stays on
@@ -41,7 +63,8 @@ void gpio_begin(void)
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
 	TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D11(fan) & D12()
-	TCCR3B = (TCCR3B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D2() & D3() & D5(VPIN_OUT on RevC)
+	TCCR3B = (TCCR3B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D2() & D3() & D5(VPIN_OUT)
+	TCCR4B = (TCCR4B & B11111000) | B00000010; // Set F_PWM to  3921.16 Hz //pins D7(MCMe) & D8(gridPWM) & D9()
 	//TCCR5B is set in Buzzer functions
 }
 
@@ -218,6 +241,12 @@ void gpio_safetyCoverCheck(void)
 		}
 	#endif
 }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+bool gpio1_getState(void) { return digitalRead(PIN_GPIO1); }
+bool gpio2_getState(void) { return digitalRead(PIN_GPIO2); }
+bool gpio3_getState(void) { return digitalRead(PIN_GPIO3); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 

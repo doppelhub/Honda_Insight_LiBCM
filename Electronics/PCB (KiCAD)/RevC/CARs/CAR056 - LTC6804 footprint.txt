@@ -1,4 +1,4 @@
-Existing LTC6804 (&6820) footprint:
+Existing LTC6804 footprint:
 
 |||||||    |||||||
 
@@ -18,3 +18,8 @@ Proposed footprint:
 |||||        |||||
 
 |||||        |||||
+
+6.2 mm gap between opposite pins
+This makes each pin 1 mm long (instead of 1.25 mm)
+
+Done

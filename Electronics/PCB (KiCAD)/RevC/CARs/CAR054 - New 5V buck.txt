@@ -1,1 +1,9 @@
 AP63205WU-7 is unobtanium... design something else in for RevD
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Added duplicate buck circuit using AP62301.
+Existing (AP63205) circuit is unchanged (just in case).
+
+Done

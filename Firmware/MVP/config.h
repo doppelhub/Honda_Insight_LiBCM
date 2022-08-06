@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.7.4"
-    #define BUILD_DATE "2022APR08"
+	#define FW_VERSION "0.7.8"
+    #define BUILD_DATE "2022AUG05"
 
 	#define CPU_MAP_MEGA2560
     #define HW_REVC
@@ -27,9 +27,7 @@
 
 	//#define DISABLE_ASSIST //uncomment to (always) disable assist
 	//#define DISABLE_REGEN  //uncomment to (always) disable regen
-	//#define REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING //EXPERIMENTAL! //JTS2doNow: Make it better
-
-	//#define PRINT_ALL_CELL_VOLTAGES_TO_USB //Uncomment to print all cell voltages while driving //Grid charger always prints all cell voltages
+	//#define REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING //EXPERIMENTAL! //JTS2doNow: Make this work (for Balto)
 
 	#define MCME_VOLTAGE_OFFSET_ADJUST 12 //difference between OBDIIC&C and LiBCM spoofed pack voltage (Subtract LiBCM voltage from OBDIIC&C Bvo.  Default is 12.)
 
@@ -39,10 +37,7 @@
 		#define LED_NORMAL //enable "LED()" functions (see debug.c)
 		//#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
-	#define DEBUG_USB_UPDATE_PERIOD_KEYON_mS 250 //250 = send data every 250 ms
-	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000
-
-	#define LOOP_RATE_MILLISECONDS 10 // Superloop execution rate: 1/LOOP_RATE_MILLISECONDS //'10' = 100 Hz
+	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000 //JTS2doNow: Model after "debugUSB_printLatestData_keyOn"
 
 	#define STACK_mAh_NOM 5000 //nominal pack size (0:100% SoC) //LiBCM uses this value until it determines the actual pack capacity
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
@@ -55,20 +50,23 @@
 	#define CELL_VMAX_GRIDCHARGER               39000 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
 	#define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
 	#define CELL_VMIN_KEYOFF                    CELL_VREST_10_PERCENT_SoC //when car is off, LiBCM turns off below this voltage  //JTS2doLater: Change to higher SoC
-	#define CELL_BALANCE_MIN_SoC                40    //when car is off, cell balancing is disabled below this percentage
-	#define CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE 20    //'20' = 2.0 mV //CANNOT exceed 255 counts (25.5 mV)
-	#define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 10    // '5' = 0.5 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
+	#define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled below this percentage
+	#define CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE 32    //'32' = 3.2 mV //CANNOT exceed 255 counts (25.5 mV)
+	#define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 22    //'22' = 2.2 mV //LTC6804 total measurement error is 2.2 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
+	#define CELL_BALANCE_MAX_TEMP_C             35    //cell balancing is always disabled above this voltage //JTS2doNow: Change this to measure intake air temperature
+
+	#define WHEN_GRID_CHARGING_COOL_PACK_ABOVE_TEMP 30 //degC
 
 	//#define ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN //uncomment to prevent keyOFF cell balancing, unless the grid charger is plugged in  
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda EHW5 lithium modules
 
 	//#define KEYOFF_TURNOFF_LIBCM_AFTER_HOURS 48 //LiBCM turns off this many hours after keyOFF. //JTS2doLater: Not implemented yet.
-	#define KEYOFF_TURNOFF_LIBCM_DELAY_MINUTES 10 //Even with low SoC, LiBCM will remain on for this many minutes after keyOFF.
-	//to turn LiBCM back on: turn ignition to 'ON', or turn IMA switch off and on, or plug in USB cable
+	#define KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES 10 //Even with low SoC, LiBCM will remain on for this many minutes after keyOFF.
+		//to turn LiBCM back on: turn ignition to 'ON', or turn IMA switch off and on, or plug in USB cable
 
 	#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
-
+	
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
 #endif
 

@@ -10,12 +10,26 @@
 
 uint16_t cellBalanceBitmaps[TOTAL_IC] = {0};
 uint16_t cellBalanceThreshold = CELL_VMAX_REGEN; //no cells are reported as balancing until first balance status update occurs
+uint8_t dataTypeToStream = DEBUGUSB_STREAM_POWER;
+uint32_t dataUpdatePeriod_ms = 250;
+uint8_t transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE;
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void    debugUSB_dataTypeToStream_set(uint8_t dataType) { dataTypeToStream = dataType; }
+uint8_t debugUSB_dataTypeToStream_get(void) { return dataTypeToStream; }
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void     debugUSB_dataUpdatePeriod_ms_set(uint16_t newPeriod) { dataUpdatePeriod_ms = newPeriod; }
+uint16_t debugUSB_dataUpdatePeriod_ms_get(void) { return dataUpdatePeriod_ms; }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 //print one IC's QTY12 cell voltages
 //the first IC's data is stored in the 0th array element, regardless of the first IC's actual address (e.g. 0x2),  
 //t=2.4 milliseconds worst case
+//JTS2doNow: Place inside debugUSB_printData_cellVoltages()
 void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces)
 {
 	if(icToPrint > TOTAL_IC) { return; } //illegal IC number entered
@@ -32,7 +46,6 @@ void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces)
 		}
 	}
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -53,6 +66,8 @@ void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap, uint16
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
+
+//JTS2doNow: Place inside debugUSB_printData_cellVoltages()?
 void debugUSB_printCellBalanceStatus(void)
 {
 	Serial.print(F("\nDischarging cells above "));
@@ -82,11 +97,11 @@ void debugUSB_displayUptime_seconds(void)
 //t=29 ms in v0.7.2
 void debugUSB_printLatest_data_gridCharger(void)
 {	
-	static uint32_t previousMillisDebug = 0;
+	static uint32_t previousMillisGrid = 0;
 
-	if( millis() - previousMillisDebug >= DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS)
+	if( millis() - previousMillisGrid >= DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS)
 	{
-		previousMillisDebug = millis();
+		previousMillisGrid = millis();
 
 		for( uint8_t ii = 0; ii < TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages(ii, FOUR_DECIMAL_PLACES); }
 
@@ -98,77 +113,90 @@ void debugUSB_printLatest_data_gridCharger(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-//This function MUST NOT print more than 63 characters in a single call (that's the maximum Serial buffer size)
-void debugUSB_printLatest_data_keyOn(void)
-{	
-	static uint32_t previousMillisDebug = 0;
-	static uint32_t previousMillisCellVoltages = 0;
-	static uint8_t icCellVoltagesToPrint = 0;
+void debugUSB_printData_power(void)
+{
+	//t= 1080 microseconds max
+	//comma delimiter to simplify data analysis 
+	//Complete string should be 63 characters or less (to prevent waiting for the buffer to empty)
+	//                        111111111122222222223333333333444444444455555555556666
+	//               123456789012345678901234567890123456789012345678901234567890123
+	//               ***************************************************************
+	//Serial.print(F("\n140,100,A, 170,156,V, 3.79,3.77,V, 34567,mAh, 28.5,kW, 23,C"  )); //use comma for easy parsing
+	Serial.print(F("\n"                                                             ));
+	Serial.print(String( adc_getLatestBatteryCurrent_amps()                         ));
+	Serial.print(F(     ","                                                         ));
+	Serial.print(String( adc_getLatestSpoofedCurrent_amps()                         ));
+	Serial.print(F(         ",A, "                                                  ));
+	Serial.print(String( LTC68042result_packVoltage_get()                           ));
+	Serial.print(F(                ","                                              ));
+	Serial.print(String( vPackSpoof_getSpoofedPackVoltage()                         ));
+	Serial.print(F(                    ",V, "                                       ));
+	Serial.print(String( (LTC68042result_hiCellVoltage_get() * 0.0001), 3           ));
+	Serial.print(F(                            ","                                  ));
+	Serial.print(String( (LTC68042result_loCellVoltage_get() * 0.0001), 3           ));
+	Serial.print(F(                                 ",V, "                          ));
+	Serial.print(String( SoC_getBatteryStateNow_mAh()                               ));		
+	Serial.print(F(                                          ",mAh, "               ));
+	Serial.print(String( (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001), 1 ));
+	Serial.print(F(                                                    ",kW, "      ));
+	Serial.print(String( temperature_battery_getLatest()                            ));		
+	Serial.print(F(                                                           ",C " ));
 
-	if( (millis() - previousMillisDebug >= DEBUG_USB_UPDATE_PERIOD_KEYON_mS) && /*enough time has passed*/
-	    (Serial.availableForWrite() > 62) ) //the transmit buffer can intake the entire message
-	{
-		previousMillisDebug = millis();
-		previousMillisCellVoltages = millis(); //prevent cell voltage printing at same time as debug packet
-
-		//t= 1080 microseconds max
-		//comma delimiter to simplify data analysis 
-		//Complete string should be 63 characters or less (to prevent waiting for the buffer to empty)
-		//                        111111111122222222223333333333444444444455555555556666
-		//               123456789012345678901234567890123456789012345678901234567890123
-	    //               ***************************************************************
-	  //Serial.print(F("\n140,100,A, 170,156,V, 3.79,3.77,V, 34567,mAh, 28.5,kW, 23,C"  )); //use comma for easy parsing
-		Serial.print(F("\n"                                                             ));
-		Serial.print(String( adc_getLatestBatteryCurrent_amps()                         ));
-		Serial.print(F(     ","                                                         ));
-		Serial.print(String( adc_getLatestSpoofedCurrent_amps()                         ));
-		Serial.print(F(         ",A, "                                                  ));
-		Serial.print(String( LTC68042result_packVoltage_get()                           ));
-		Serial.print(F(                ","                                              ));
-		Serial.print(String( vPackSpoof_getSpoofedPackVoltage()                         ));
-		Serial.print(F(                    ",V, "                                       ));
-		Serial.print(String( (LTC68042result_hiCellVoltage_get() * 0.0001), 3           ));
-		Serial.print(F(                            ","                                  ));
-		Serial.print(String( (LTC68042result_loCellVoltage_get() * 0.0001), 3           ));
-		Serial.print(F(                                 ",V, "                          ));
-		Serial.print(String( SoC_getBatteryStateNow_mAh()                               ));		
-		Serial.print(F(                                          ",mAh, "               ));
-		Serial.print(String( (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001), 1 ));
-		Serial.print(F(                                                    ",kW, "      ));
-		Serial.print(String( temperature_battery_getLatest()                            ));		
-		Serial.print(F(                                                           ",C " ));
-
-		icCellVoltagesToPrint = 0;
-	}
-
-	#ifdef PRINT_ALL_CELL_VOLTAGES_TO_USB
-		else if( (millis() - previousMillisCellVoltages >= (DEBUG_USB_UPDATE_PERIOD_KEYON_mS / (TOTAL_IC + 1) ) ) &&
-			     (icCellVoltagesToPrint < TOTAL_IC) ) //print all cell data 
-		{	 
-			previousMillisCellVoltages = millis();
-			debugUSB_printOneICsCellVoltages(icCellVoltagesToPrint++, TWO_DECIMAL_PLACES);
-		}
-	#else
-		previousMillisCellVoltages += 0; //prevent "unused variable" compiler warning
-		icCellVoltagesToPrint += 0; //prevent "unused variable" compiler warning
-	#endif
+	transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
 
-//calculate delta between start and stop time
-//store start time: DEBUGUSB_TIMER_START
-//calculate delta:  DEBUGUSB_TIMER_STOP
-void debugUSB_Timer(bool timerAction)
+void debugUSB_printData_BATTMETSCI(void)
 {
-  static uint32_t startTime = 0;
+	transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE;
+	//BATTSCI and METSCI are printed per-byte within functions METSCI_readByte() and BATTSCI_writeByte()
+}
 
-  if(timerAction == DEBUGUSB_TIMER_START) { startTime = millis(); }
-  else
-  {
-      uint32_t stopTime = millis();
-      Serial.print(F("\nDelta: "));
-      Serial.print(stopTime - startTime);
-      Serial.print(F(" ms\n"));
-  }
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void debugUSB_printData_cellVoltages(void)
+{
+	static uint8_t icToPrint = 0; //first IC's data is stored in the 0th array element, regardless of the first IC's actual address (e.g. 0x2),
+
+	Serial.print(F("\nIC"));
+	Serial.print(String(icToPrint));
+	for(uint8_t cellToPrint = 0; cellToPrint < CELLS_PER_IC; cellToPrint++)
+	{
+		Serial.print(',');
+		Serial.print( String( LTC68042result_specificCellVoltage_get(icToPrint,cellToPrint) * 0.0001, FOUR_DECIMAL_PLACES) );
+	}
+
+	if(++icToPrint < TOTAL_IC) { transmitStatus = TRANSMITTING_LARGE_MESSAGE; }
+	else                       { transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE; icToPrint = 0; Serial.print(F("\ncell voltages:")); }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+//Sending more than 63 characters per call makes this function blocking (until the buffer empties)!
+void debugUSB_printLatestData_keyOn(void)
+{	
+	static uint32_t previousMillis = 0;
+
+	//print message if it's time and there's room in the serial transmit buffer
+	if( ( (millis() - previousMillis >= debugUSB_dataUpdatePeriod_ms_get() ) || (transmitStatus == TRANSMITTING_LARGE_MESSAGE) ) &&
+			(Serial.availableForWrite() > 62) )
+	{
+		previousMillis = millis();
+
+		if     (debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_POWER)      { debugUSB_printData_power();          }
+		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { debugUSB_printData_BATTMETSCI();     }
+		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_CELL)       { debugUSB_printData_cellVoltages(); }
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void debugUSB_printHardwareRevision(void)
+{
+	Serial.print(F("\nHW Rev: "));
+	if     (gpio_getHardwareRevision() == HW_REV_C) { Serial.print('C'); }
+	else if(gpio_getHardwareRevision() == HW_REV_D) { Serial.print('D'); }
+	else if(gpio_getHardwareRevision() == HW_REV_E) { Serial.print('E'); }
+	else if(gpio_getHardwareRevision() == HW_REV_F) { Serial.print('F'); }
 }

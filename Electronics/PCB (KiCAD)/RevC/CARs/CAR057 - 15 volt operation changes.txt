@@ -13,3 +13,11 @@ CONTROL FET
 GND
 
 Add zero Ohm depop in case we get 12 volt supplies again
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+
+Added QTY3 NFETs between +12V (+15V) and existing circuit.
+
+Done

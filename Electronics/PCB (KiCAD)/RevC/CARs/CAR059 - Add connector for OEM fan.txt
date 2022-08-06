@@ -1,1 +1,6 @@
 Add OEM fan connector (possibly use existing screw terminals)?
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Solution:
+Did not add OEM fan connector
