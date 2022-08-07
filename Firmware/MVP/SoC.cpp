@@ -102,7 +102,7 @@ void SoC_turnOffLiBCM_ifPackEmpty(void)
 	#define NUM_LOOPS_TO_MEASURE_ALL_CELLS (TOTAL_IC * NUM_CELLS_PER_IC / NUM_CELLS_MEASURED_PER_LOOP) //math handled by preprocessor
 
 	if( (LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //at least one cell voltage is too low
-		(time_hasKeyBeenOffLongEnough() == true )                ) //gives user time to plug in grid charger
+		(time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true )                ) //gives user time to plug in grid charger
 	{	
 		if(numConsecutiveTimesCellVoltageTooLow <= (NUM_LOOPS_TO_MEASURE_ALL_CELLS << 2) )
 		{ 

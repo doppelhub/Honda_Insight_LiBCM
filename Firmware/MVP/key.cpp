@@ -56,8 +56,8 @@ void key_handleKeyEvent_on(void)
 	gpio_turnHMI_on();
 	gpio_turnPowerSensors_on();
 	lcd_displayOn();
-	gpio_setFanSpeed_OEM('L');
-	gpio_setFanSpeed('0', IMMEDIATE_FAN_SPEED);
+	gpio_setFanSpeed_OEM('L'); //JTS2doNow: Do this based on temperature
+	gpio_setFanSpeed_PCB('0');
 	gpio_turnGridCharger_off();
 	LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
 	LTC68042configure_handleKeyStateChange();

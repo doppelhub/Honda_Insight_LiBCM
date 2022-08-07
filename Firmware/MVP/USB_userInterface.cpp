@@ -41,21 +41,20 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	if     (testToRun == STRING_TERMINATION_CHARACTER) { Serial.print(F("\nError: Test not specified")); }
 	else if(testToRun == '1')
 	{
-		Serial.print(F("\nRunning TEST1"));
-		Serial.print(F("\n GPIO1/2/3 states: "));
-		(gpio1_getState() == HIGH) ? Serial.print('H') : Serial.print('L');
-		(gpio2_getState() == HIGH) ? Serial.print('H') : Serial.print('L');
-		(gpio3_getState() == HIGH) ? Serial.print('H') : Serial.print('L');
+		Serial.print(F("\nRunning TEST1: PCB Fan High"));
+		fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_KEY, FAN_HIGH);
 	}
 	else if(testToRun == '2')
 	{
-		Serial.print(F("\nRunning TEST2"));
-		Serial.print(F("\nEnabling GPIO1/2/3 pullups"));
-		pinMode(PIN_GPIO1, INPUT_PULLUP);
-		pinMode(PIN_GPIO2, INPUT_PULLUP);
-		pinMode(PIN_GPIO3, INPUT_PULLUP);
+		Serial.print(F("\nRunning TEST2: PCB Fan Low"));
+		fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_KEY, FAN_LOW);
 	}
 	else if(testToRun == '3')
+	{
+		Serial.print(F("\nRunning TEST2: PCB Fan off"));
+		fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_KEY, FAN_OFF);
+	}
+	else if(testToRun == '4')
 	{
 		Serial.print(F("\nRunning TEST3"));
 		Serial.print(F("\nGrid PWM Test"));
@@ -71,23 +70,38 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 		Serial.print(pwmValue_grid);
 		analogWrite(PIN_GRID_PWM, pwmValue_grid);
 	}
-	else if(testToRun == '4')
-	{
-		Serial.print(F("\nRunning TEST4"));
-		EEPROM_hasLibcmDisabledAssist_set(EEPROM_ASSIST_NEVER_LIMITED);
-	}
 	else if(testToRun == '5')
 	{
-		Serial.print(F("\nRunning TEST5"));
-
-		//load jibberish into EEPROM
-		EEPROM_hasLibcmDisabledAssist_set(0xFF);
-		EEPROM_hasLibcmDisabledRegen_set(0x00);
+		Serial.print(F("\nRunning TEST5:"));
 	}
 	else if(testToRun == '6')
 	{
-		Serial.print(F("\nRunning TEST6.\nTurning off LiBCM (5V rail).\nLiBCM will stay on if USB 5V connected."));
+		Serial.print(F("\nRunning TEST6: Turn off LiBCM (5V rail).\nLiBCM will stay on if USB 5V connected."));
 		gpio_turnLiBCM_off();
+	}
+	else if(testToRun == 'B')
+	{
+		gpio_turnTemperatureSensors_on();
+		Serial.print(F("\nBLU temp sensor is: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BLU));
+	}
+	else if(testToRun == 'G')
+	{
+		gpio_turnTemperatureSensors_on();
+		Serial.print(F("\nGRN temp sensor is: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
+	}
+	else if(testToRun == 'W')
+	{
+		gpio_turnTemperatureSensors_on();
+		Serial.print(F("\nWHT temp sensor is: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
+	}
+	else if(testToRun == 'Y')
+	{
+		gpio_turnTemperatureSensors_on();
+		Serial.print(F("\nYEL temp sensor is: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
 	}
 }
 

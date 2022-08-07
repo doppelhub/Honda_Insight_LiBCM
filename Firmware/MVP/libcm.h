@@ -42,5 +42,6 @@
   #include "cellBalance.h"
   #include "time.h"
   #include "USB_userInterface.h"
+  #include "fan.h"
 
 #endif

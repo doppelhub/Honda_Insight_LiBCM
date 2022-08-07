@@ -39,6 +39,7 @@ void loop()
 	key_stateChangeHandler();
 	temperature_handler();
 	SoC_handler();
+	fan_handler();
 
 	if( key_getSampledState() == KEYON )
 	{

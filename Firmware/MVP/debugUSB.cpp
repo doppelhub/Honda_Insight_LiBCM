@@ -70,17 +70,29 @@ void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap, uint16
 //JTS2doNow: Place inside debugUSB_printData_cellVoltages()?
 void debugUSB_printCellBalanceStatus(void)
 {
-	Serial.print(F("\nDischarging cells above "));
-	Serial.print(cellBalanceThreshold*0.0001,4);
-	Serial.print(F(" V (0x): "));
-
-	//print discharge resistor bitmap status
-	for(uint8_t ii = 0; ii < TOTAL_IC; ii++)
+	uint8_t anyCellsBalancing = YES;
+	for(uint8_t ii=0; ii<TOTAL_IC; ii++)
 	{
-	    Serial.print(String(cellBalanceBitmaps[ii], HEX));
-	   	Serial.print(',');
+		if(cellBalanceBitmaps[ii] == 0) { anyCellsBalancing = NO; }
 	}
 
+	if(anyCellsBalancing == YES)
+	{
+		Serial.print(F("\nDischarging cells above "));
+		Serial.print(cellBalanceThreshold*0.0001,4);
+		Serial.print(F(" V (0x): "));
+
+		//print discharge resistor bitmap status
+		for(uint8_t ii = 0; ii < TOTAL_IC; ii++)
+		{
+		    Serial.print(String(cellBalanceBitmaps[ii], HEX));
+		   	Serial.print(',');
+		}
+	}
+	else //(anyCellsBalancing == NO)
+	{
+		Serial.print(F("\nPack Balanced"));
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

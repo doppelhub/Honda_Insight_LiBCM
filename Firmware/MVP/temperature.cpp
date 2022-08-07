@@ -41,9 +41,9 @@ void temperature_battery_measure(void)
 
 	for(uint8_t ii = 1; ii <= NUM_BATTERY_TEMP_SENSORS; ii++)
 	{
-		if(batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT) //verify temperatures are in range
+		if( (batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_HI) || (batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_LO) )//verify temperatures are in range
 		{
-			batteryTemps[ii] =  ROOM_TEMP_DEGC; //ignore missing sensor
+			batteryTemps[ii] =  ROOM_TEMP_DEGC; //ignore missing sensor //JTS2doNow: Does this work at low temperatures?
 			numTempSensorFaults++;
 		}
 
@@ -55,7 +55,7 @@ void temperature_battery_measure(void)
 	if(numTempSensorFaults == NUM_BATTERY_TEMP_SENSORS)
 	{
 		Serial.print(F("\nConnect Batt Temp Sensors!"));
-		battTemp = TEMPERATURE_SENSOR_FAULT;
+		battTemp = TEMPERATURE_SENSOR_FAULT_HI;
 	}
 	else //at least one battery temperature sensor is working
 	{
@@ -173,10 +173,10 @@ int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
 		// uint16_t tempMeasured_kelvin = (THERMISTOR_BETA * THERMISTOR_RESISTANCE_23DEGC) / (THERMISTOR_BETA + (THERMISTOR_RESISTANCE_23DEGC * log(resistanceThermistor_ohms / TEMP_23DEGC_KELVIN) ) );
 		// int8_t tempMeasured_celsius = T_sensed_kelvin - 273
 	//
-	//Rather than do the above math, LiBCM uses a lookup table (determined by the above equations):
+	//Rather than do the above math, LiBCM uses a lookup table (derived from the above equations):
 
-	int8_t tempMeasured_celsius = 0;
-	if     (countsADC > 1000) { tempMeasured_celsius = TEMPERATURE_SENSOR_FAULT; } //sensor unplugged
+	int16_t tempMeasured_celsius = 0;
+	if     (countsADC > 1000) { tempMeasured_celsius = TEMPERATURE_SENSOR_FAULT_LO; } //sensor unplugged
 	else if(countsADC >  971) { tempMeasured_celsius = -30; } //MCM expecting uint8_t, where T_MCM = T_actual + 30 //So MCM can only receive down to -30 degC
 	else if(countsADC >  968) { tempMeasured_celsius = -29; }
 	else if(countsADC >  964) { tempMeasured_celsius = -28; }
@@ -293,9 +293,18 @@ int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
 	else if(countsADC >  128) { tempMeasured_celsius =  73; }
 	else if(countsADC >  124) { tempMeasured_celsius =  74; }
 	else if(countsADC >  121) { tempMeasured_celsius =  75; }
-	else                      { tempMeasured_celsius =  TEMPERATURE_SENSOR_FAULT; } //sensor shorted
+	else                      { tempMeasured_celsius =  TEMPERATURE_SENSOR_FAULT_HI; } //sensor shorted
 
-	return tempMeasured_celsius;
+	//correct for OEM temperature sensor's (unknown) k-coefficients
+	//empirical data: ~/GitHub/Honda_Insight_LiBCM/Firmware/MVP/Calculations/OEM thermistor scaling.ods
+	if( ((tempMeasured_celsius > TEMPERATURE_SENSOR_FAULT_LO ) && (tempMeasured_celsius < TEMPERATURE_SENSOR_FAULT_HI )) &&
+		((thermistorPin == PIN_TEMP_GRN) || (thermistorPin == PIN_TEMP_BLU) || (thermistorPin == PIN_TEMP_YEL) || (thermistorPin == PIN_TEMP_WHT)) ) 
+	{
+		tempMeasured_celsius = ((tempMeasured_celsius * 5) >> 2) - 5; //actual: countsADC = countsADC * 1.225 - 4;
+	}
+
+
+	return (uint8_t)tempMeasured_celsius;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

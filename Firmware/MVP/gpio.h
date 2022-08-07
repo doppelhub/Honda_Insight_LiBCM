@@ -10,7 +10,7 @@
 	bool gpio_keyStateNow(void);
 
 	void gpio_setFanSpeed_OEM(char speed);
-	void gpio_setFanSpeed(uint8_t speed, bool isSpeedRamped);
+	void gpio_setFanSpeed_PCB(char speed);
 
 	void gpio_turnPowerSensors_on( void);
 	void gpio_turnPowerSensors_off(void);

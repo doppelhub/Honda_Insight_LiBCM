@@ -271,7 +271,7 @@ void bringupTester_run(void)
 				serialUSB_waitForEmptyBuffer();
 				{
 					gpio_setFanSpeed_OEM('0'); //turn all FETs off (0A thru sensor)
-					gpio_setFanSpeed('0', IMMEDIATE_FAN_SPEED);     //turn all FETs off (0A thru sensor)
+					gpio_setFanSpeed_PCB('0');     //turn all FETs off (0A thru sensor)
 					delay(10);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
@@ -285,7 +285,7 @@ void bringupTester_run(void)
 				serialUSB_waitForEmptyBuffer();
 				{
 					gpio_setFanSpeed_OEM('L'); //test OEM fan low speed relay
-					gpio_setFanSpeed('0', IMMEDIATE_FAN_SPEED);
+					gpio_setFanSpeed_PCB('0');
 					delay(500);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
@@ -299,7 +299,7 @@ void bringupTester_run(void)
 				serialUSB_waitForEmptyBuffer();
 				{
 					gpio_setFanSpeed_OEM('H'); //test OEM fan low speed relay
-					gpio_setFanSpeed('0', IMMEDIATE_FAN_SPEED);
+					gpio_setFanSpeed_PCB('0');
 					delay(500);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
@@ -313,7 +313,7 @@ void bringupTester_run(void)
 				serialUSB_waitForEmptyBuffer();
 				{
 					gpio_setFanSpeed_OEM('0'); //test OEM fan low speed relay
-					gpio_setFanSpeed('H', IMMEDIATE_FAN_SPEED);
+					gpio_setFanSpeed_PCB('H');
 					delay(500);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
@@ -330,7 +330,7 @@ void bringupTester_run(void)
 					gpio_turnPowerSensors_off();
 					delay(500);
 
-					gpio_setFanSpeed('H', IMMEDIATE_FAN_SPEED); //should already be here
+					gpio_setFanSpeed_PCB('H'); //should already be here
 					delay(100);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
@@ -339,7 +339,7 @@ void bringupTester_run(void)
 				}
 
 				//turn all FETs off (so they don't overheat)
-				gpio_setFanSpeed('0', IMMEDIATE_FAN_SPEED);
+				gpio_setFanSpeed_PCB('0');
 				gpio_setFanSpeed_OEM('0');
 
 				/////////////////////////////////////////////////////////////////////
