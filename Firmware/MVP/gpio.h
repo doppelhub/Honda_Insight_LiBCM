@@ -1,6 +1,6 @@
 #ifndef gpio_h
 	#define gpio_h
-	
+
 	#define GPIO_CHARGER_INIT 0
 	#define GPIO_CHARGER_ON   1
 	#define GPIO_CHARGER_OFF  2
@@ -11,6 +11,7 @@
 
 	void gpio_setFanSpeed_OEM(char speed);
 	void gpio_setFanSpeed(uint8_t speed, bool isSpeedRamped);
+	String gpio_getFanSpeed(void);
 
 	void gpio_turnPowerSensors_on( void);
 	void gpio_turnPowerSensors_off(void);

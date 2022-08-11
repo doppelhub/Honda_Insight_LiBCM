@@ -8,7 +8,7 @@
 	#include "libcm.h"  //For Arduino IDE compatibility
 
 	#define FW_VERSION "0.8.0"
-    #define BUILD_DATE "2022AUG06"
+    #define BUILD_DATE "2022AUG11"
 
 	#define CPU_MAP_MEGA2560
     #define HW_REVC
@@ -49,7 +49,7 @@
 
 	#define CELL_VMAX_REGEN                     42000 //42000 = 4.2000 volts
 	#define CELL_VMIN_ASSIST                    31900 //allows for ESR-based voltage drop
-	#define CELL_VMAX_GRIDCHARGER               39000 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
+	#define CELL_VMAX_GRIDCHARGER               39600 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
 	#define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
 	#define CELL_VMIN_KEYOFF                    CELL_VREST_10_PERCENT_SoC //when car is off, LiBCM turns off below this voltage  //JTS2doLater: Change to higher SoC
 	#define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled below this percentage

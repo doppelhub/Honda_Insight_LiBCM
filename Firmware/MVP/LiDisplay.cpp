@@ -21,8 +21,8 @@ bool LiDisplayFirstOn = false;
 bool LiDisplayOnGridChargerConnected = false;
 
 static uint32_t hmi_power_millis = 0;
-static uint16_t gc_connected_millis = 0;
-static uint8_t gc_connected_seconds = 0;
+static uint32_t gc_connected_millis = 0;
+static uint16_t gc_connected_seconds = 0;
 static uint8_t gc_connected_minutes = 0;
 static uint8_t gc_connected_hours = 0;
 
@@ -88,47 +88,44 @@ void LiDisplay_updateElementText(uint8_t page, String elementName, uint8_t eleme
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_calculateGCTimeStr() {
-	static char gc_sec_prefix = "0";
-	static char gc_min_prefix = "0";
-	static char gc_hour_prefix = "0";
+	static String gc_sec_prefix = "0";
+	static String gc_min_prefix = "0";
+	static String gc_hour_prefix = "0";
 	static uint16_t temp_gc_millis = 0;
 
 	//gc_connected_millis_difference = (millis() - gc_connected_millis);
 
 	// Increment time only while charging
 	if (gpio_isGridChargerChargingNow()) {
-		// This function is only called every LIDISPLAY_UPDATE_RATE_MILLIS so we can use that to increment it
-		gc_connected_millis += LIDISPLAY_UPDATE_RATE_MILLIS;
+		// This function is only called every LIDISPLAY_UPDATE_RATE_MILLIS
+		gc_connected_hours = ((millis() - gc_connected_millis) / 3600000);
+		// gc_connected_minutes = (((millis() - gc_connected_millis) - ((millis() - gc_connected_millis) / 3600000) * 3600000) / 60000);
+		gc_connected_minutes = ((millis() - gc_connected_millis) / 60000) % 60;
+		// gc_connected_seconds = (((millis() - gc_connected_millis) - (((millis() - gc_connected_millis) - ((millis() - gc_connected_millis) / 3600000) * 3600000) / 60000) / 1000)/1000)%60;
+		gc_connected_seconds = ((millis() - gc_connected_millis) / 1000) % 60;
+		if (gc_connected_seconds > 9) {
+			gc_sec_prefix = "";
+		} else gc_sec_prefix = String(0);
+		if (gc_connected_minutes > 9) {
+			gc_min_prefix = "";
+		} else gc_min_prefix = String(0);
+		if (gc_connected_hours > 9) {
+			gc_hour_prefix = "";
+		} else gc_hour_prefix = String(0);
+
+		/*
+		Serial.print(F("\n"));
+		Serial.print("hour ");
+		Serial.print(gc_connected_hours);
+		Serial.print(" min ");
+		Serial.print(gc_connected_minutes);
+		Serial.print(" sec ");
+		Serial.print(gc_connected_seconds);
+		*/
+
+		//gc_time = String("M:") + String(gc_connected_minutes) + String(" S:") + String(gc_connected_seconds);
+		gc_time = String(gc_hour_prefix) + String(gc_connected_hours) + String(":") + String(gc_min_prefix) + String(gc_connected_minutes) + String(":") + String(gc_sec_prefix) + String(gc_connected_seconds);
 	}
-
-	temp_gc_millis = gc_connected_millis;
-
-	gc_connected_seconds = (gc_connected_millis / 1000);
-	/*avrdude: ser_open(): can't open device "/dev/cu.usbmodem143101": Resource busy
-	ioctl("TIOCMGET"): Inappropriate ioctl for device
-	ioctl("TIOCMGET"): Inappropriate ioctl for device*/
-
-	do {
-		gc_connected_seconds -= 60;
-		gc_connected_minutes += 1;
-	} while (gc_connected_seconds >= 60);
-	do {
-		gc_connected_minutes -= 60;
-		gc_connected_hours += 1;
-	} while (gc_connected_minutes >= 60);
-
-	if (gc_connected_seconds > 9) {
-		gc_sec_prefix = "";
-	} else gc_sec_prefix = "0";
-	if (gc_connected_minutes > 9) {
-		gc_min_prefix = "";
-	} else gc_min_prefix = "0";
-	if (gc_connected_hours > 9) {
-		gc_hour_prefix = "";
-	} else gc_hour_prefix = "0";
-
-	gc_time = String("S: ") + String(gc_connected_seconds);
-	//gc_time = gc_hour_prefix + String(gc_connected_hours) + String(":") + gc_min_prefix + String(gc_connected_minutes) + String(":") + gc_sec_prefix + String(gc_connected_seconds);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -373,6 +370,12 @@ void LiDisplay_refresh(void)
 		}
 
 		if (LiDisplayOnGridChargerConnected) {
+			if ((millis() - hmi_power_millis) < 100) { // ensure at least 100ms have passed since last refresh loop
+				return;
+			}
+			LiDisplaySetPageNum = 3;
+			LiDisplay_updatePage();
+			Serial.print(F("\nLiDisplay Grid Charger Connected"));
 			LiDisplayOnGridChargerConnected = false;
 		}
 
@@ -424,7 +427,7 @@ void LiDisplay_refresh(void)
 						case 3: LiDisplay_calculateSoCGaugeBars(); LiDisplay_updateElementNumeric(0, "p0", 2, String(LiDisplaySoCBarCount));	break;
 						case 4: LiDisplay_calculateChrgAsstGaugeBars(); LiDisplay_updateElementNumeric(0, "p1", 2, String(LiDisplayChrgAsstPicId));	break;
 						case 5: LiDisplay_updateElementText(0, "t4", 0, String(LTC68042result_packVoltage_get()));	break;	// Pack Voltage
-						case 6: /*LiDisplay_updateElement(1, 2, 3, 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - EEPROM_uptimeStoredInEEPROM_hours_get()));*/ break;
+						case 6: LiDisplay_updateElementText(0, "t1", 0, (String(SoC_getBatteryStateNow_percent()) + "%")); break;
 					}
 					break;
 					case 3:
@@ -442,6 +445,7 @@ void LiDisplay_refresh(void)
 						case 4: LiDisplay_updateElementText(3, "t8", 0, String(gc_time));	break;
 						case 5: LiDisplay_updateElementText(3, "t4", 0, String(LTC68042result_packVoltage_get()));	break;	// Pack Voltage
 						case 6: LiDisplay_updateElementText(3, "t10", 0, (String(gc_begin_soc_str))); break;
+						case 7: LiDisplay_updateElementText(3, "t12", 0, (String(gpio_getFanSpeed()))); break;
 					}
 					break;
 					default : break;
@@ -450,7 +454,7 @@ void LiDisplay_refresh(void)
 
 				LiDisplayElementToUpdate += 1;
 
-				if (LiDisplayElementToUpdate > 6) {
+				if (LiDisplayElementToUpdate > 7) {
 					LiDisplayElementToUpdate = 0;
 				}
 			}
@@ -514,7 +518,7 @@ void LiDisplay_gridChargerPluggedIn(void) {
 		}
 		LiDisplayOnGridChargerConnected = true;
 		LiDisplaySetPageNum = 3;
-		gc_connected_millis = 0;
+		gc_connected_millis = millis();
 		gc_connected_seconds = 0;
 		gc_connected_minutes = 0;
 		gc_connected_hours = 0;

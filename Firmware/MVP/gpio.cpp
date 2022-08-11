@@ -6,6 +6,8 @@
 
 #include "libcm.h"
 
+static uint8_t actualFanPWM = 0;
+
 //FYI: simple pin state read/writes take less than 10 us
 
 uint8_t previousGridChargerState = GPIO_CHARGER_INIT;
@@ -100,7 +102,6 @@ void gpio_setFanSpeed_OEM(char speed)
 
 void gpio_setFanSpeed(uint8_t speed, bool isSpeedRamped)
 {
-	static uint8_t actualFanPWM = 0;
 	uint8_t goalFanPWM = 0;
 
 	const uint8_t RAMP_UPDATE_PERIOD_ms = 50;
@@ -126,6 +127,18 @@ void gpio_setFanSpeed(uint8_t speed, bool isSpeedRamped)
 
 	if (actualFanPWM == 0) { pinMode(PIN_FAN_PWM, INPUT); } //saves power when fan is off
 	else                   { analogWrite(PIN_FAN_PWM, actualFanPWM); }
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+String gpio_getFanSpeed(void) {
+	if (actualFanPWM >= 100) {
+		return String("HIGH");
+	} else if (actualFanPWM >= 50) {
+		return String("MEDIUM");
+	} else if (actualFanPWM >= 5) {
+		return String("LOW");
+	} else return String("OFF");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
