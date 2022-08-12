@@ -260,7 +260,7 @@ const bootloaderType bootloaders [] PROGMEM =
   #else
         0, 0,
   #endif
-        0xEF,         // fuse low byte: external clock, max start-up time
+        0xEF,         // fuse low byte: external clock, max start-up time //JTS: originally 'FF'; new value boots faster
         0xD8,         // fuse high byte: SPI enable, boot into bootloader, 8192 byte bootloader
         0xFD,         // fuse extended byte: brown-out detection at 2.7V
         0x2F },       // lock bits: SPM is not allowed to write to the Boot Loader section.

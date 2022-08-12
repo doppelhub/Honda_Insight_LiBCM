@@ -82,7 +82,11 @@ void cellBalance_configureDischargeResistors(void)
         (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) )
     {
       fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_CELLBALANCE, FAN_HIGH);
-      //JTS2doNow: Only cool if air intake is less than battery temp
+      //JTS2doNow:
+      //A) cool a warm pack if intake air is cooler.
+      //B) warm a cool pack if intake air is warmer.
+      //C) only balance cells when grid charger plugged in.
+      //D) only balance cells when majorly imbalanced, unless grid charger plugged in.
     }
     else //grid charger not plugged in or battery isn't too hot
     { 
@@ -114,7 +118,7 @@ void cellBalance_handler(void)
     if( (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) &&
         (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) )
   #else 
-    if( (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) &&
+    if( (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) && //JTS2doNow: prevents fans from turning on //need to move fan logic to fan handler.
         ( (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) ||
           ((SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC) && (time_hasKeyBeenOffLongEnough_toEstimateSoC() == true))
         )
