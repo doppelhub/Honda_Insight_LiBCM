@@ -30,7 +30,7 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 
 	debugUSB_printHardwareRevision();
 
-	Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION ", " BUILD_DATE "\nType '$HELP' for more info\n"));
+	Serial.print(F("\n\nWelcome to LiBCM " FW_VERSION ", " BUILD_DATE "\nType '$HELP' for more info\n"));
 
 }
 

@@ -22,6 +22,7 @@ bool LiDisplayOnGridChargerConnected = false;
 
 static uint32_t hmi_power_millis = 0;
 static uint32_t gc_connected_millis = 0;
+static uint32_t gc_connected_millis_most_recent_diff = 0;
 static uint16_t gc_connected_seconds = 0;
 static uint8_t gc_connected_minutes = 0;
 static uint8_t gc_connected_hours = 0;
@@ -92,17 +93,24 @@ void LiDisplay_calculateGCTimeStr() {
 	static String gc_min_prefix = "0";
 	static String gc_hour_prefix = "0";
 	static uint16_t temp_gc_millis = 0;
+	static bool gc_was_paused = false;
 
 	//gc_connected_millis_difference = (millis() - gc_connected_millis);
 
 	// Increment time only while charging
 	if (gpio_isGridChargerChargingNow()) {
-		// This function is only called every LIDISPLAY_UPDATE_RATE_MILLIS
-		gc_connected_hours = ((millis() - gc_connected_millis) / 3600000);
+		if (gc_was_paused) {
+			gc_connected_millis = (millis() - gc_connected_millis_most_recent_diff);
+			gc_was_paused = false;
+		}
+
+		gc_connected_millis_most_recent_diff = (millis() - gc_connected_millis);
+
+		gc_connected_hours = (gc_connected_millis_most_recent_diff / 3600000);
 		// gc_connected_minutes = (((millis() - gc_connected_millis) - ((millis() - gc_connected_millis) / 3600000) * 3600000) / 60000);
-		gc_connected_minutes = ((millis() - gc_connected_millis) / 60000) % 60;
+		gc_connected_minutes = (gc_connected_millis_most_recent_diff / 60000) % 60;
 		// gc_connected_seconds = (((millis() - gc_connected_millis) - (((millis() - gc_connected_millis) - ((millis() - gc_connected_millis) / 3600000) * 3600000) / 60000) / 1000)/1000)%60;
-		gc_connected_seconds = ((millis() - gc_connected_millis) / 1000) % 60;
+		gc_connected_seconds = (gc_connected_millis_most_recent_diff / 1000) % 60;
 		if (gc_connected_seconds > 9) {
 			gc_sec_prefix = "";
 		} else gc_sec_prefix = String(0);
@@ -125,6 +133,14 @@ void LiDisplay_calculateGCTimeStr() {
 
 		//gc_time = String("M:") + String(gc_connected_minutes) + String(" S:") + String(gc_connected_seconds);
 		gc_time = String(gc_hour_prefix) + String(gc_connected_hours) + String(":") + String(gc_min_prefix) + String(gc_connected_minutes) + String(":") + String(gc_sec_prefix) + String(gc_connected_seconds);
+	} else {
+		// Still plugged in but not charging
+		/*
+		if (gc_was_paused == false) {
+			// First frame since the charger stopped
+		}
+		*/
+		gc_was_paused = true;
 	}
 }
 
@@ -370,13 +386,23 @@ void LiDisplay_refresh(void)
 		}
 
 		if (LiDisplayOnGridChargerConnected) {
-			if ((millis() - hmi_power_millis) < 100) { // ensure at least 100ms have passed since last refresh loop
+			if (digitalRead(PIN_HMI_EN) != 1) {
+				Serial.print(F("\nLiDisplayOnGridChargerConnected PIN_HMI_EN 0"));
+				Serial.print(F("\nLiDisplayOnGridChargerConnected Turning on LiDisplay"));
+				gpio_turnHMI_on();
+				hmi_power_millis = millis();
 				return;
 			}
-			LiDisplaySetPageNum = 3;
-			LiDisplay_updatePage();
-			Serial.print(F("\nLiDisplay Grid Charger Connected"));
-			LiDisplayOnGridChargerConnected = false;
+			if ((millis() - hmi_power_millis) < 100) { // ensure at least 100ms have passed since last refresh loop
+				Serial.print(F("\nLiDisplayOnGridChargerConnected millis - hmi_power_millis still < 100"));
+				return;
+			} else {
+				LiDisplaySetPageNum = 3;
+				LiDisplay_updatePage();
+				Serial.print(F("\nLiDisplayOnGridChargerConnected time > 100ms -- Changing to page 3"));
+				LiDisplayOnGridChargerConnected = false;
+				return;
+			}
 		}
 
 		if(millis() - millis_previous > LIDISPLAY_UPDATE_RATE_MILLIS)
@@ -534,6 +560,8 @@ void LiDisplay_gridChargerUnplugged(void) {
 		// Check if gpio HMI was already off
 		Serial.print(F("\ndigitalRead PIN_HMI_EN "));
 		Serial.print(String(digitalRead(PIN_HMI_EN)));
+
+		gc_connected_millis_most_recent_diff = 0;
 
 		if (digitalRead(PIN_HMI_EN) == 1) {
 			Serial.print(F("\nLiDisplay PIN_HMI_EN 1"));
