@@ -28,6 +28,9 @@
 	#define AIR_TEMP_DELTA_TO_RUN_FANS 4 //intake air must be this many degrees warmer/cooler than battery to run fans
 	#define FAN_HIGH_SPEED_degC        3 //this many additional degrees will enable fan at high speed (instead of low speed)
 
+	#define FORCE_FAN_UPDATE_PERIOD_MINUTES 5
+	#define FORCE_FAN_UPDATE_PERIOD_ms (FORCE_FAN_UPDATE_PERIOD_MINUTES * 60000)
+
 	void fan_handler(void);
 
 	void fan_requestSpeed(uint8_t whichFan, uint8_t requestor, char newFanSpeed); //request fan speed

@@ -108,18 +108,23 @@ void fan_handler(void)
 
 	static int8_t   battTemp_lastFanStateUpdate = ROOM_TEMP_DEGC;
 	static int8_t intakeTemp_lastFanStateUpdate = ROOM_TEMP_DEGC;
-
+	
 	int8_t deltaAbs_battTemp   = calculateAbsoluteDelta(battTemp,     battTemp_lastFanStateUpdate);
 	int8_t deltaAbs_intakeTemp = calculateAbsoluteDelta(intakeTemp, intakeTemp_lastFanStateUpdate);
 
+	static uint32_t timeSinceLastFanCheck_ms = 0;
+
 	if( (deltaAbs_battTemp   >= FAN_HYSTERESIS_degC) ||
-		(deltaAbs_intakeTemp >= FAN_HYSTERESIS_degC)  )
+		(deltaAbs_intakeTemp >= FAN_HYSTERESIS_degC) ||
+		((millis() - timeSinceLastFanCheck_ms) > FORCE_FAN_UPDATE_PERIOD_ms) )
 	{
 		//intake or battery temperature changed enough to check for possible new fan state
 
 		//store latest temperatures (for future comparisons)
 		  battTemp_lastFanStateUpdate = battTemp;
 		intakeTemp_lastFanStateUpdate = intakeTemp;
+
+		timeSinceLastFanCheck_ms = millis();
 
 		uint8_t fanSpeed = FAN_OFF;
 
