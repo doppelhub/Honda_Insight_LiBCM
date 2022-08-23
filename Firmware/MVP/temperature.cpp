@@ -54,9 +54,10 @@ void temperature_measureBattery(void)
 
 	for(uint8_t ii = 1; ii <= NUM_BATTERY_TEMP_SENSORS; ii++)
 	{
-		if( (batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_HI) || (batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_LO) )//verify temperatures are in range
+		if( (batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_HI) || (batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_LO) )
 		{
-			batteryTemps[ii] =  ROOM_TEMP_DEGC; //ignore missing sensor //JTS2doNow: Does this work at low temperatures?
+			//temperatures are in range
+			batteryTemps[ii] =  ROOM_TEMP_DEGC; //ignore missing sensor
 			numTempSensorFaults++;
 		}
 
