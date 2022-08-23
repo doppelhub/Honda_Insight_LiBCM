@@ -14,7 +14,7 @@
 	
 	void temperature_handler(void);
 
-	#define TEMPERATURE_SENSOR_FAULT_HI 127
+	#define TEMPERATURE_SENSOR_FAULT_HI 123
 	#define TEMPERATURE_SENSOR_FAULT_LO -31
 	#define ROOM_TEMP_DEGC 23
 	#define NUM_BATTERY_TEMP_SENSORS 3
