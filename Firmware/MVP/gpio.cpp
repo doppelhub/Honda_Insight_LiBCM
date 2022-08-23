@@ -151,6 +151,7 @@ void gpio_turnPowerSensors_off(void) { digitalWrite(PIN_SENSOR_EN,  LOW); }
 
 void gpio_turnHMI_on( void) { digitalWrite(PIN_HMI_EN, HIGH); }
 void gpio_turnHMI_off(void) { digitalWrite(PIN_HMI_EN,  LOW); }
+bool gpio_HMIStateNow(void) { return digitalRead(PIN_HMI_EN); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 

@@ -34,6 +34,7 @@
 
 	void gpio_turnHMI_on(void);
 	void gpio_turnHMI_off(void);
+	bool gpio_HMIStateNow(void);
 
 	void gpio_turnTemperatureSensors_on(void);
 	void gpio_turnTemperatureSensors_off(void);
