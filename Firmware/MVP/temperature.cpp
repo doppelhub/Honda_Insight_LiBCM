@@ -11,24 +11,37 @@
 
 #include "libcm.h"
 
-int8_t battTemp = ROOM_TEMP_DEGC;
+int8_t tempBattery = ROOM_TEMP_DEGC;
+int8_t tempIntake  = ROOM_TEMP_DEGC;
+int8_t tempExhaust = ROOM_TEMP_DEGC;
+int8_t tempCharger = ROOM_TEMP_DEGC;
+int8_t tempAmbient = ROOM_TEMP_DEGC;
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-int8_t temperature_battery_getLatest() { return battTemp; }
+int8_t temperature_battery_getLatest()        { return tempBattery; }
+int8_t temperature_intake_getLatest(void)     { return tempIntake;  } //GRN OEM temp sensor
+int8_t temperature_exhaust_getLatest(void)    { return tempExhaust; } //YEL OEM temp sensor
+int8_t temperature_gridCharger_getLatest(void){ return tempCharger; } //BLU OEM temp sensor
+int8_t temperature_ambient_getLatest(void)	  { return tempAmbient; } //WHT OEM temp sensor
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-int8_t temperature_airIntake(void)  { return temperature_measureOneSensor_degC(PIN_TEMP_GRN); }
-int8_t temperature_airExhaust(void) { return temperature_measureOneSensor_degC(PIN_TEMP_YEL); }
-int8_t temperature_gridCharger(void){ return temperature_measureOneSensor_degC(PIN_TEMP_BLU); }
-int8_t temperature_ambient(void)	{ return temperature_measureOneSensor_degC(PIN_TEMP_WHT); }
+//only call inside handler (to ensure sensors powered)
+void temperature_measureOEM(void)
+{
+	tempIntake  = temperature_measureOneSensor_degC(PIN_TEMP_GRN);
+	tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_YEL);
+	tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
+	tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//stores the most extreme battery temperature in battTemp
+//only call inside handler (to ensure sensors powered)
+//stores the most extreme battery temperature in tempBattery
 //LiBCM has QTY3 battery temperature sensors
-void temperature_battery_measure(void)
+void temperature_measureBattery(void)
 {
 	uint8_t numTempSensorFaults = 0;
 	int8_t batteryTemps[NUM_BATTERY_TEMP_SENSORS + 1] = {0}; //1-indexed ([1] = bay1 temp)
@@ -55,7 +68,7 @@ void temperature_battery_measure(void)
 	if(numTempSensorFaults == NUM_BATTERY_TEMP_SENSORS)
 	{
 		Serial.print(F("\nConnect Batt Temp Sensors!"));
-		battTemp = TEMPERATURE_SENSOR_FAULT_HI;
+		tempBattery = TEMPERATURE_SENSOR_FAULT_HI;
 	}
 	else //at least one battery temperature sensor is working
 	{
@@ -70,14 +83,13 @@ void temperature_battery_measure(void)
 		else                        { tempLoDelta = ROOM_TEMP_DEGC - tempLo; }
 
 		//figure out which magnitude is further from ROOM_TEMP_DEGC 
-		if(tempHiDelta > tempLoDelta) { battTemp = tempHi; }
-		else                          { battTemp = tempLo; }
+		if(tempHiDelta > tempLoDelta) { tempBattery = tempHi; }
+		else                          { tempBattery = tempLo; }
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Change behavior below 20 degC and below 0 degC
 void temperature_handler(void)
 {
 	#define TEMP_SENSORS_OFF     0
@@ -86,20 +98,20 @@ void temperature_handler(void)
 	#define TEMP_MEASURE_NOW     3
 	static uint8_t tempSensorState = TEMP_SENSORS_OFF; //state machine
 		
-	static uint8_t keyStatePrevious = KEYOFF;
+	static uint8_t keyStatePrevious = KEYSTATE_OFF;
 	uint8_t keyState_Now = key_getSampledState();
 
+	//turn temp sensors off whenever keyState changes
 	if(keyState_Now != keyStatePrevious) { tempSensorState = TEMP_SENSORS_OFF; } //key state just changed (keyON->OFF or keyOFF->ON)
-
 	keyStatePrevious = keyState_Now;
 
-	//determine how often temperature sensors are measured
-	#define TEMP_UPDATE_PERIOD_MILLIS_KEYON  500 
-	#define TEMP_UPDATE_PERIOD_MILLIS_KEYOFF 60000 // 60k = 1 minute //careful: uint16_t!
+	//determine how often to measure temperature sensors
 	uint16_t temperatureUpdateInterval = 0;
-	if(keyState_Now == KEYON) {temperatureUpdateInterval = TEMP_UPDATE_PERIOD_MILLIS_KEYON;  }
-	else                      {temperatureUpdateInterval = TEMP_UPDATE_PERIOD_MILLIS_KEYOFF; }
 	
+	if(keyState_Now == KEYSTATE_ON) {temperatureUpdateInterval = TEMP_UPDATE_PERIOD_MILLIS_KEYON;  }
+	else                            {temperatureUpdateInterval = TEMP_UPDATE_PERIOD_MILLIS_KEYOFF; }
+	
+	//see if it's time to measure temperature sensors
 	static uint32_t millis_previous = 0;
 	static uint32_t millis_latestSensorTurnon = 0;
 
@@ -120,15 +132,15 @@ void temperature_handler(void)
 	else if(tempSensorState == TEMP_MEASURE_NOW)
 	{
 		tempSensorState = TEMP_SENSORS_ON;
-		temperature_battery_measure();
-		//JTS2doNow: Add more temp sensor logic for fans/etc
+		temperature_measureBattery();
+		temperature_measureOEM();
 		
-		if(keyState_Now == KEYOFF)
+		if(keyState_Now == KEYSTATE_OFF)
 		{
 			tempSensorState = TEMP_SENSORS_OFF;
 			gpio_turnTemperatureSensors_off(); 
 			Serial.print(F("\ntemp:"));
-			Serial.print(String(battTemp));
+			Serial.print(String(tempBattery));
 		}
 	}	
 
@@ -302,7 +314,6 @@ int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
 	{
 		tempMeasured_celsius = ((tempMeasured_celsius * 5) >> 2) - 5; //actual: countsADC = countsADC * 1.225 - 4;
 	}
-
 
 	return (uint8_t)tempMeasured_celsius;
 }

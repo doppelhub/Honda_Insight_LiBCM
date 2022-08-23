@@ -183,6 +183,22 @@ void debugUSB_printData_cellVoltages(void)
 	else                       { transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE; icToPrint = 0; Serial.print(F("\ncell voltages:")); }
 }
 
+void debugUSB_printData_temperatures(void)
+{
+	Serial.print(F("\nT_batt:"));
+	Serial.print(String(temperature_battery_getLatest()));
+	Serial.print(F(", T_in:"));
+	Serial.print(String(temperature_intake_getLatest()));
+	Serial.print(F(", T_out:"));
+	Serial.print(String(temperature_exhaust_getLatest()));
+	Serial.print(F(", T_charger:"));
+	Serial.print(String(temperature_gridCharger_getLatest()));
+	Serial.print(F(", T_bay:"));
+	Serial.print(String(temperature_ambient_getLatest()));
+	Serial.print('C');
+
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 //Sending more than 63 characters per call makes this function blocking (until the buffer empties)!
@@ -196,9 +212,10 @@ void debugUSB_printLatestData_keyOn(void)
 	{
 		previousMillis = millis();
 
-		if     (debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_POWER)      { debugUSB_printData_power();          }
-		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { debugUSB_printData_BATTMETSCI();     }
+		if     (debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_POWER)      { debugUSB_printData_power();        }
+		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { debugUSB_printData_BATTMETSCI();   }
 		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_CELL)       { debugUSB_printData_cellVoltages(); }
+		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_TEMP)       { debugUSB_printData_temperatures(); }
 	}
 }
 

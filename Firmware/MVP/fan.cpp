@@ -9,7 +9,7 @@ uint8_t fanStates[NUM_FAN_CONTROLLERS] = {FAN_NOT_REQUESTED}; //each subsystem's
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//maintains the state of each fan speed controller (OEM & PCB fans)
+//prevents rapid fan speed changes //Each fan (OEM and PCB) has its own controller
 void fanSpeedController(uint8_t whichFan)
 {
 	static char actualSpeed[NUM_FAN_CONTROLLERS] = {'0'};
@@ -45,10 +45,33 @@ void fanSpeedController(uint8_t whichFan)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-void fan_handler(void)
+
+int8_t fan_getBatteryCoolSetpoint_C(void)
 {
-	fanSpeedController(FAN_OEM);
-	fanSpeedController(FAN_PCB);
+	int8_t coolBattAboveTemp_C = ROOM_TEMP_DEGC;
+
+	if     (key_getSampledState()         == KEYSTATE_ON)    { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_KEYON; }
+	else if(gpio_isGridChargerPluggedInNow() == PLUGGED_IN)  { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_GRIDCHARGING; }
+	else if( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_FANS_BELOW_SoC) &&
+		     (key_getSampledState() == KEYSTATE_OFF) )       { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_KEYOFF; }
+	else /*KEYOFF && SoC too low*/                           { coolBattAboveTemp_C = TEMPERATURE_SENSOR_FAULT_HI; }
+
+	return coolBattAboveTemp_C;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+int8_t fan_getBatteryHeatSetpoint_C(void)
+{
+	int8_t heatBattBelowTemp_C = ROOM_TEMP_DEGC;
+
+	if     (key_getSampledState() == KEYSTATE_ON)           { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_KEYON; }
+	else if(gpio_isGridChargerPluggedInNow() == PLUGGED_IN) { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING; }
+	else if( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_FANS_BELOW_SoC) &&
+		     (key_getSampledState() == KEYSTATE_OFF) )      { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_KEYOFF; }
+	else /*KEYOFF && SoC too low*/                          { heatBattBelowTemp_C = TEMPERATURE_SENSOR_FAULT_LO; }
+
+	return heatBattBelowTemp_C;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -62,3 +85,78 @@ void fan_requestSpeed(uint8_t whichFan, uint8_t requestor, char newFanSpeed)
 	else if(fanStates[whichFan] & FAN_LO_MASK) { goalSpeed[whichFan] = 'L'; } //at least one subsystem is requesting low speed
 	else                                       { goalSpeed[whichFan] = '0'; } //nobody is requesting fan
 }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+int8_t calculateAbsoluteDelta(int8_t temperatureA, int8_t temperatureB)
+{
+	int8_t absoluteDelta = 0;
+
+	if(temperatureA > temperatureB) { absoluteDelta = temperatureA - temperatureB; }
+	else                            { absoluteDelta = temperatureB - temperatureA; }
+
+	return absoluteDelta;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void fan_handler(void)
+{
+	
+	int8_t battTemp   = temperature_battery_getLatest();
+	int8_t intakeTemp = temperature_intake_getLatest();
+
+	static int8_t   battTemp_lastFanStateUpdate = ROOM_TEMP_DEGC;
+	static int8_t intakeTemp_lastFanStateUpdate = ROOM_TEMP_DEGC;
+
+	int8_t deltaAbs_battTemp   = calculateAbsoluteDelta(battTemp,     battTemp_lastFanStateUpdate);
+	int8_t deltaAbs_intakeTemp = calculateAbsoluteDelta(intakeTemp, intakeTemp_lastFanStateUpdate);
+
+	if( (deltaAbs_battTemp   >= FAN_HYSTERESIS_degC) ||
+		(deltaAbs_intakeTemp >= FAN_HYSTERESIS_degC)  )
+	{
+		//intake or battery temperature changed enough to check for possible new fan state
+
+		//store latest temperatures (for future comparisons)
+		  battTemp_lastFanStateUpdate = battTemp;
+		intakeTemp_lastFanStateUpdate = intakeTemp;
+
+		uint8_t fanSpeed = FAN_OFF;
+
+		//cool pack if too warm
+		if(battTemp > ROOM_TEMP_DEGC)
+		{
+			int8_t coolBatteryAboveTemp_C = fan_getBatteryCoolSetpoint_C();
+			
+			if(battTemp >= (temperature_intake_getLatest() + AIR_TEMP_DELTA_TO_RUN_FANS) )
+			{
+				//battery is warmer than intake air
+				if     (battTemp >= (coolBatteryAboveTemp_C + FAN_HIGH_SPEED_degC)) { fanSpeed = FAN_HIGH; }
+				else if(battTemp >= (coolBatteryAboveTemp_C                      )) { fanSpeed = FAN_LOW;  }
+			}
+		}
+		else //heat pack if too cold
+		{
+			int8_t heatBatteryBelowTemp_C = fan_getBatteryHeatSetpoint_C();
+
+			if(battTemp <= (temperature_intake_getLatest() - AIR_TEMP_DELTA_TO_RUN_FANS) )
+			{
+				//battery is cooler than intake air
+				if     (battTemp <= (heatBatteryBelowTemp_C - FAN_HIGH_SPEED_degC)) { fanSpeed = FAN_HIGH; }
+				else if(battTemp <= (heatBatteryBelowTemp_C                      )) { fanSpeed = FAN_LOW;  }
+			}
+		}
+
+		//request selected fan speed
+		fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_TEMPERATURE, fanSpeed);
+		#ifdef OEM_FAN_INSTALLED
+			//Fan positive is unpowered when keyOFF, so no need to check key state
+			fan_requestSpeed(FAN_OEM, FAN_REQUESTOR_TEMPERATURE, fanSpeed);
+		#endif
+	}
+
+	fanSpeedController(FAN_OEM);
+	fanSpeedController(FAN_PCB);
+}
+
+////////////////////////////////////////////////////////////////////////////////////

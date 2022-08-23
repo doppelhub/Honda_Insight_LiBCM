@@ -1,10 +1,10 @@
 #ifndef key_h
 	#define key_h
 
-	#define KEYOFF                 0
-	#define KEYON                  1
-	#define KEYSTATE_UNINITIALIZED 2
-	#define KEYOFF_JUSTOCCURRED    3
+	#define KEYSTATE_OFF              0
+	#define KEYSTATE_ON               1
+	#define KEYSTATE_UNINITIALIZED    2
+	#define KEYSTATE_OFF_JUSTOCCURRED 3
 
 	void key_stateChangeHandler(void);
 

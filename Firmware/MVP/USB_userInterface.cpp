@@ -120,7 +120,7 @@ void printHelp(void)
 		"\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
 		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
 		"\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"
-		"\n -'$DISP=PWR'/SCI/CELL/OFF: data to stream (power/BAT&METSCI/Vcell/none)"
+		"\n -'$DISP=PWR'/SCI/CELL/TEMP/OFF: data to stream (power/BAT&METSCI/Vcell/temperature/none)"
 		"\n -'$RATE=___': USB updates per second (1 to 255 Hz)"
 		"\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
 		"\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)"
@@ -246,6 +246,7 @@ void USB_userInterface_executeUserInput(void)
 			else if( (line[6] == 'S') && (line[7] == 'C') && (line[8] == 'I') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_BATTMETSCI); } //JTS2doNow: add case
 			else if( (line[6] == 'C') && (line[7] == 'E') && (line[8] == 'L') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_CELL);       } //JTS2doNow: add case
 			else if( (line[6] == 'O') && (line[7] == 'F') && (line[8] == 'F') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_NONE);       }
+			else if( (line[6] == 'T') && (line[7] == 'E') && (line[8] == 'M') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_TEMP);       }
 		}
 
 		//RATE

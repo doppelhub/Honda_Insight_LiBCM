@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.7.9"
-    #define BUILD_DATE "2022AUG06"
+	#define FW_VERSION "0.8.0"
+    #define BUILD_DATE "2022AUG22"
 
 	#define CPU_MAP_MEGA2560
     #define HW_REVC
@@ -53,11 +53,19 @@
 	#define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled below this percentage
 	#define CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE 32    //'32' = 3.2 mV //CANNOT exceed 255 counts (25.5 mV)
 	#define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 22    //'22' = 2.2 mV //LTC6804 total measurement error is 2.2 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
-	#define CELL_BALANCE_MAX_TEMP_C             35    //cell balancing is always disabled above this voltage //JTS2doNow: Change this to measure intake air temperature
+	#define CELL_BALANCE_MAX_TEMP_C             40
+	//#define ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN //uncomment to disable keyOFF cell balancing (unless the grid charger is plugged in)
 
-	#define WHEN_GRID_CHARGING_COOL_PACK_ABOVE_TEMP 30 //degC
-
-	//#define ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN //uncomment to prevent keyOFF cell balancing, unless the grid charger is plugged in  
+	//fan temp settings
+	#define COOL_BATTERY_ABOVE_TEMP_C_KEYOFF       50 //cabin air cooling
+	#define COOL_BATTERY_ABOVE_TEMP_C_GRIDCHARGING 30
+	#define COOL_BATTERY_ABOVE_TEMP_C_KEYON        28
+	#define HEAT_BATTERY_BELOW_TEMP_C_KEYON        18 //cabin air heating
+	#define HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING 16
+	#define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       00
+	//other fan settings
+	#define KEYOFF_DISABLE_FANS_BELOW_SoC 60 //set to 100 to disable fans entirely when keyOFF (unless grid charger plugged in)
+	#define OEM_FAN_INSTALLED //comment if OEM fan removed  
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda EHW5 lithium modules
 
@@ -66,29 +74,16 @@
 	#define KEYOFF_DELAY_ESTIMATE_SoC_MINUTES  10 //LiBCM will wait this long before estimating SoC (from resting cell voltage).
 		//to turn LiBCM back on: turn ignition to 'ON', or turn IMA switch off and on, or plug in USB cable
 
-	//#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
+	#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
 	
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
 #endif
 
 /*
-Features to add later:
-
+JTS2doLater:
 #define DISPLAY_OEM_CURRENT_SIGN //JTS2doNow: add feature
 
-//Define stack parameters
 #define STACK_CELLS_IN_SERIES 48
-
-//Configure fan behavior when key is off
-#define KEYOFF_FAN_COOLING_ALLOWED YES //'NO' to prevent fan usage when key is off
-#define KEYOFF_FAN_COOLING_MIN_SoC 60 //Fans are disabled below this SoC
-
-//Configure fan temperature setpoints
-//All temperatures are in Celsius
-#define TEMP_FAN_LOW 30  //enable OEM fan at low speed above this value
-#define TEMP_OEMFAN_HIGH 40 //enable OEM fan at high speed above this value
-#define TEMP_FAN_MIN 30 //enable onboard fans at lowest speed
-#define TEMP_FAN_MAX 40 //enable onboard fans at highest speed
 
 #define SERIAL_H_LINE_CONNECTED NO //H-Line wire connected to OEM BCM connector pin B01
 #define SERIAL_I2C_CONNECTED YES //Serial display connected to SDA/SDL lines

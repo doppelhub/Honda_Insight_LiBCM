@@ -76,26 +76,6 @@ void cellBalance_configureDischargeResistors(void)
   { 
     balanceHysteresis = CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE;
     //JTS2doNow: disable software timer (so LTCs turn off after two seconds) //possibly already implemented?
-
-    //JTS2doNow: Move to grid charger handler?
-    if( (temperature_battery_getLatest() > WHEN_GRID_CHARGING_COOL_PACK_ABOVE_TEMP) &&
-        (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) )
-    {
-      fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_CELLBALANCE, FAN_HIGH);
-      //JTS2doNow:
-      //A) cool a warm pack if intake air is cooler.
-      //B) warm a cool pack if intake air is warmer.
-      //C) only balance cells when grid charger plugged in.
-      //D) only balance cells when majorly imbalanced, unless grid charger plugged in.
-    }
-    else //grid charger not plugged in or battery isn't too hot
-    { 
-      fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_CELLBALANCE, FAN_OFF);
-    }
-  }
-  else //(cellsAreBalanced == false)
-  {
-    fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_CELLBALANCE, FAN_LOW); //cool discharge resistors
   } 
 }
 
@@ -110,20 +90,19 @@ void cellBalance_handler(void)
 {
   static uint8_t balanceState = BALANCING_DISABLED;
 
-  //JTS2doNow: Should we only balance cells when the pack is nearly charged?  See post#1502833, comment#579 @ ic.net
-  //JTS2doNow: If cabin air sensor is too high, don't allow cell balancing (for now we're looking at battery module temperature)
-  //running the fans will increase battery temp if cabin air temp is too high...
-  //...but the fans need to run to remove the waste heat from the discharge resistors
+  //JTS2doNow: Add option to only balance cells when majorly imbalanced, unless grid charger plugged in.
+  //JTS2doLater: Add per-cell SoC, to allow balancing at any SoC (see icn.net:post#1502833,comment#579)
   #ifdef ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN
     if( (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) &&
         (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) )
   #else 
-    if( (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) && //JTS2doNow: prevents fans from turning on //need to move fan logic to fan handler.
+    if( (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) &&
         ( (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) ||
           ((SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC) && (time_hasKeyBeenOffLongEnough_toEstimateSoC() == true))
         )
       )
   #endif
+    //Regardless of which function logic is used, the function body doesn't change:
     {
       //balance cells (if needed)
       cellBalance_configureDischargeResistors();
@@ -135,7 +114,6 @@ void cellBalance_handler(void)
       //pack SoC previously high enough to balance, but isn't now
       //this code only runs once (i.e. when the above if statement state changes) to save power
       LTC68042configure_programVolatileDefaults(); //disable discharge resistors and software timer
-      fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_CELLBALANCE, FAN_OFF);
       balanceState = BALANCING_DISABLED;
     }
 }

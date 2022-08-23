@@ -76,7 +76,7 @@ void time_waitForLoopPeriod(void)
     while( (millis() - timestamp_previousLoopStart_ms ) < time_loopPeriod_ms_get() ) { timingMet = true; } //wait here to start next loop
     LED(4,LOW);
     
-    if( (key_getSampledState() == KEYON) && (timingMet == false) )
+    if( (key_getSampledState() == KEYSTATE_ON) && (timingMet == false) )
     {
       Serial.print('*');
       EEPROM_hasLibcmFailedTiming_set(EEPROM_LIBCM_LOOPPERIOD_EXCEEDED);

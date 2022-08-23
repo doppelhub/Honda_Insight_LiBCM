@@ -29,7 +29,6 @@ void key_handleKeyEvent_off(void)
     LED(1,LOW);
     BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
     METSCI_disable();
-    gpio_setFanSpeed_OEM('0');
     LTC68042cell_sampleGatherAndProcessAllCellVoltages();
     SoC_updateUsingLatestOpenCircuitVoltage();
     adc_calibrateBatteryCurrentSensorOffset();
@@ -56,8 +55,6 @@ void key_handleKeyEvent_on(void)
 	gpio_turnHMI_on();
 	gpio_turnPowerSensors_on();
 	lcd_displayOn();
-	gpio_setFanSpeed_OEM('L'); //JTS2doNow: Do this based on temperature
-	gpio_setFanSpeed_PCB('0');
 	gpio_turnGridCharger_off();
 	LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
 	LTC68042configure_handleKeyStateChange();
@@ -74,16 +71,16 @@ bool key_didStateChange(void)
 
 	keyState_sampled = gpio_keyStateNow();
 
-	if( (keyState_sampled == KEYOFF) && ((keyState_previous == KEYON) || (keyState_previous == KEYSTATE_UNINITIALIZED)) )
+	if( (keyState_sampled == KEYSTATE_OFF) && ((keyState_previous == KEYSTATE_ON) || (keyState_previous == KEYSTATE_UNINITIALIZED)) )
 	{	//key state just changed from 'ON' to 'OFF'.
 		//don't immediately handle keyOFF event, in case this is due to noise.
 		//if the key is still off the next time thru the loop, then we'll handle keyOFF event
-		keyState_previous = KEYOFF_JUSTOCCURRED;
+		keyState_previous = KEYSTATE_OFF_JUSTOCCURRED;
 	}
-	else if( (keyState_sampled == KEYON) && (keyState_previous == KEYOFF_JUSTOCCURRED) )
+	else if( (keyState_sampled == KEYSTATE_ON) && (keyState_previous == KEYSTATE_OFF_JUSTOCCURRED) )
 	{	//key is now 'ON', but last time was 'OFF', and the time before that it was 'ON'
 		//therefore the previous 'OFF' reading was noise... the key was actually ON all along
-		keyState_previous = KEYON;
+		keyState_previous = KEYSTATE_ON;
 	}
 	else if(keyState_sampled != keyState_previous)
 	{
@@ -100,8 +97,8 @@ void key_stateChangeHandler(void)
 	if( key_didStateChange() == YES )
 	{
 		Serial.print(F("\nKey:"));
-		if( keyState_sampled == KEYON ) { key_handleKeyEvent_on() ; }
-		if( keyState_sampled == KEYOFF) { key_handleKeyEvent_off(); }
+		if( keyState_sampled == KEYSTATE_ON ) { key_handleKeyEvent_on() ; }
+		if( keyState_sampled == KEYSTATE_OFF) { key_handleKeyEvent_off(); }
 	}
 }
 
@@ -110,6 +107,6 @@ void key_stateChangeHandler(void)
 //only called outside this file
 uint8_t key_getSampledState(void)
 {
-	if(keyState_previous == KEYOFF_JUSTOCCURRED) { return KEYON;            } //prevent noise from accidentally turning LiBCM off
-	else                                         { return keyState_sampled; }
+	if(keyState_previous == KEYSTATE_OFF_JUSTOCCURRED) { return KEYSTATE_ON;      } //prevent noise from accidentally turning LiBCM off
+	else                                               { return keyState_sampled; }
 }
