@@ -7,11 +7,15 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.8.1"
-    #define BUILD_DATE "2022AUG22"
+	#define FW_VERSION "0.8.2"
+    #define BUILD_DATE "2022AUG24"
 
 	#define CPU_MAP_MEGA2560
     #define HW_REVC
+
+	//choose your battery type:
+		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
+		//#define BATTERY_TYPE_47AhFoMoCo
 
 	//choose ONE of the following:
 		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
@@ -39,11 +43,8 @@
 
 	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000 //JTS2doNow: Model after "debugUSB_printLatestData_keyOn"
 
-	#define STACK_mAh_NOM 5000 //nominal pack size (0:100% SoC) //LiBCM uses this value until it determines the actual pack capacity
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
-	#define CELL_VREST_85_PERCENT_SoC 40100 //for maximum life, resting cell voltage should remain below 85% SoC
-	#define CELL_VREST_10_PERCENT_SoC 34700 //for maximum life, resting cell voltage should remain above 10% SoC
 
 	#define CELL_VMAX_REGEN                     42000 //42000 = 4.2000 volts
 	#define CELL_VMIN_ASSIST                    31900 //allows for ESR-based voltage drop
