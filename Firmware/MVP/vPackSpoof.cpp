@@ -92,7 +92,7 @@ void spoofVoltage_VPINout(void)
 
 void spoofVoltage_calculateValue(void)
 {
-	//Hardware limitation: spoofedPackVoltage(max) must be less than (vPackActual - offsetVoltage_MCMe volts)
+	//Hardware limitation: spoofedPackVoltage(max) must be less than (vPackActual - 12 volts)
 
 	#if defined VOLTAGE_SPOOFING_DISABLE
 		//For those that don't want voltage spoofing, spoof maximum possible pack voltage
