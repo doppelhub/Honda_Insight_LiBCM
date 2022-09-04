@@ -35,6 +35,9 @@ bool cellsAreBalanced = true;
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: When balancing cells, we only need to check cell voltage every minute (to save power).
+//Need to add discharge software timeout (if not already present), as LTC ICs turn off after a couple seconds if we're not sending commands
+
 void cellBalance_configureDischargeResistors(void)
 {   
   uint16_t cellsToDischarge[TOTAL_IC] = {0}; //each uint16's QTY12 LSBs correspond to each LTC6804's QTY12 cells
@@ -91,6 +94,8 @@ void cellBalance_handler(void)
   static uint8_t balanceState = BALANCING_DISABLED;
 
   //JTS2doNow: Add option to only balance cells when majorly imbalanced, unless grid charger plugged in.
+  //Required because severely imbalanced pack might never enter balance mode (e.g. a cell above 3.9 volts disables charging, whereas SoC is based on lowest cell)
+
   //JTS2doLater: Add per-cell SoC, to allow balancing at any SoC (see icn.net:post#1502833,comment#579)
   #ifdef ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN
     if( (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) &&

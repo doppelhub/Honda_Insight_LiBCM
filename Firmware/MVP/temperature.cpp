@@ -27,6 +27,7 @@ int8_t temperature_ambient_getLatest(void)	  { return tempAmbient; } //WHT OEM t
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: 47Ah FoMoCo colors are different
 //only call inside handler (to ensure sensors powered)
 void temperature_measureOEM(void)
 {

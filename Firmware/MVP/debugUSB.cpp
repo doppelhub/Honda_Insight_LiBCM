@@ -91,7 +91,7 @@ void debugUSB_printCellBalanceStatus(void)
 	}
 	else //(anyCellsBalancing == NO)
 	{
-		//JTS2doNow: Until ten minutes after powerup, reports "pack balanced" even when not balanced
+		//JTS2doNow: Change text if pack is unbalanced, but something else is preventing balancing
 		Serial.print(F("\nPack Balanced"));
 	}
 }

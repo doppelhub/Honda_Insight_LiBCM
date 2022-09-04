@@ -100,6 +100,8 @@ int8_t calculateAbsoluteDelta(int8_t temperatureA, int8_t temperatureB)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Add option to turn fans on via USB
+//JTS2doNow: Add option to see who is requesting fan state
 void fan_handler(void)
 {
 	
