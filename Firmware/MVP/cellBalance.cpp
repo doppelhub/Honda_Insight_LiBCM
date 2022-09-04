@@ -69,7 +69,7 @@ void cellBalance_configureDischargeResistors(void)
     }
 
     debugUSB_setCellBalanceStatus(ic, cellsToDischarge[ic], cellDischargeVoltageThreshold);
-    LTC68042configure_setBalanceResistors((ic + FIRST_IC_ADDR), cellsToDischarge[ic], LTC6804_DISCHARGE_TIMEOUT_00_SECONDS);
+    LTC68042configure_setBalanceResistors((ic + FIRST_IC_ADDR), cellsToDischarge[ic], LTC6804_DISCHARGE_TIMEOUT_02_SECONDS);
   }
 
   if(cellsAreBalanced == true)
@@ -97,10 +97,7 @@ void cellBalance_handler(void)
         (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) )
   #else 
     if( (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) &&
-        ( (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) ||
-          ((SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC) && (time_hasKeyBeenOffLongEnough_toEstimateSoC() == true))
-        )
-      )
+        ((gpio_isGridChargerPluggedInNow() == PLUGGED_IN) || (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC)) )
   #endif
     //Regardless of which function logic is used, the function body doesn't change:
     {

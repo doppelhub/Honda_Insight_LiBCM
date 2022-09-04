@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.8.3"
-    #define BUILD_DATE "2022AUG25"
+	#define FW_VERSION "0.8.4"
+    #define BUILD_DATE "2022SEP03"
 
 	#define CPU_MAP_MEGA2560
     #define HW_REVC
@@ -16,6 +16,10 @@
 	//choose your battery type:
 		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
 		//#define BATTERY_TYPE_47AhFoMoCo
+
+	//choose how many cells in series
+		#define STACK_IS_48S
+		//#define STACK_IS_60S
 
 	//choose ONE of the following:
 		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
@@ -63,7 +67,7 @@
 	#define COOL_BATTERY_ABOVE_TEMP_C_KEYON        28
 	#define HEAT_BATTERY_BELOW_TEMP_C_KEYON        18 //cabin air heating
 	#define HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING 16
-	#define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       00
+	#define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       10
 	//other fan settings
 	#define KEYOFF_DISABLE_FANS_BELOW_SoC 60 //set to 100 to disable fans entirely when keyOFF (unless grid charger plugged in)
 	#define OEM_FAN_INSTALLED //comment if OEM fan removed  
@@ -83,8 +87,6 @@
 /*
 JTS2doLater:
 #define DISPLAY_OEM_CURRENT_SIGN //JTS2doNow: add feature
-
-#define STACK_CELLS_IN_SERIES 48
 
 #define SERIAL_H_LINE_CONNECTED NO //H-Line wire connected to OEM BCM connector pin B01
 #define SERIAL_I2C_CONNECTED YES //Serial display connected to SDA/SDL lines

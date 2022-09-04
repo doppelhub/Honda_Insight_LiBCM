@@ -152,13 +152,16 @@ void fan_handler(void)
 			}
 		}
 
-		//request selected fan speed
+		//request temperature based fan speed
 		fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_TEMPERATURE, fanSpeed);
 		#ifdef OEM_FAN_INSTALLED
 			//Fan positive is unpowered when keyOFF, so no need to check key state
 			fan_requestSpeed(FAN_OEM, FAN_REQUESTOR_TEMPERATURE, fanSpeed);
 		#endif
 	}
+
+	if(gpio_isGridChargerChargingNow() == true) { fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_GRIDCHARGER, FAN_HIGH); }
+	else                                        { fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_GRIDCHARGER, FAN_OFF ); }
 
 	fanSpeedController(FAN_OEM);
 	fanSpeedController(FAN_PCB);

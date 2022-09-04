@@ -70,10 +70,10 @@ void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap, uint16
 //JTS2doNow: Place inside debugUSB_printData_cellVoltages()?
 void debugUSB_printCellBalanceStatus(void)
 {
-	uint8_t anyCellsBalancing = YES;
+	uint8_t anyCellsBalancing = NO;
 	for(uint8_t ii=0; ii<TOTAL_IC; ii++)
 	{
-		if(cellBalanceBitmaps[ii] == 0) { anyCellsBalancing = NO; }
+		if(cellBalanceBitmaps[ii] != 0) { anyCellsBalancing = YES; }
 	}
 
 	if(anyCellsBalancing == YES)

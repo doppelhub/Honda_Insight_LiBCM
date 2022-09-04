@@ -291,7 +291,7 @@ void SoC_turnOffLiBCM_ifPackEmpty(void)
 			else if(restingCellVoltage >= 36640) { estimatedSoC =  54; }
 			else if(restingCellVoltage >= 36580) { estimatedSoC =  53; }
 			else if(restingCellVoltage >= 36520) { estimatedSoC =  52; }
-			else if(restingCellVoltage >= 33646) { estimatedSoC =  51; }
+			else if(restingCellVoltage >= 36460) { estimatedSoC =  51; }
 			else if(restingCellVoltage >= 36400) { estimatedSoC =  50; }
 			else if(restingCellVoltage >= 36360) { estimatedSoC =  49; }
 			else if(restingCellVoltage >= 36320) { estimatedSoC =  48; }

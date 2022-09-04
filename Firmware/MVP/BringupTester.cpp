@@ -470,14 +470,14 @@ void bringupTester_run(void)
 					gpio_turnBuzzer_off();
 
 					uint16_t cellDischargeBitmap = 0b0000010101010101; //discharge cells 1/3/5/7/9/11
-					LTC68042configure_setBalanceResistors( (FIRST_IC_ADDR + ii), cellDischargeBitmap, LTC6804_DISCHARGE_TIMEOUT_00_SECONDS);
+					LTC68042configure_setBalanceResistors( (FIRST_IC_ADDR + ii), cellDischargeBitmap, LTC6804_DISCHARGE_TIMEOUT_02_SECONDS);
 					delay(1800); //wait for visual inspection
 
 					LTC68042configure_programVolatileDefaults(); //disables all discharge FETs
 					delay(1800); //wait for cool down
 
 					cellDischargeBitmap = 0b0000101010101010; //discharge cells 2/4/6/8/10/12
-					LTC68042configure_setBalanceResistors( (FIRST_IC_ADDR + ii), cellDischargeBitmap, LTC6804_DISCHARGE_TIMEOUT_00_SECONDS);
+					LTC68042configure_setBalanceResistors( (FIRST_IC_ADDR + ii), cellDischargeBitmap, LTC6804_DISCHARGE_TIMEOUT_02_SECONDS);
 					delay(1800); //wait for visual inspection
 
 					LTC68042configure_programVolatileDefaults(); //disables all discharge FETs
