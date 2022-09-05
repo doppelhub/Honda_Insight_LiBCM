@@ -45,9 +45,9 @@ int16_t vPackSpoof_getPWMcounts_VPIN(void) { return pwmCounts_VPIN_out; }
 void spoofVoltageMCMe(void)
 {
   //Derivation, empirically determined (see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods)
-  //pwmCounts_MCMe = (               actualPackVoltage                 * 512) / spoofedPackVoltage       - 551
-  //pwmCounts_MCMe = (               actualPackVoltage                 * 256) / spoofedPackVoltage   * 2 - 551 //prevent 16b overflow
-  //pwmCounts_MCMe = (( ( ((uint16_t)actualPackVoltage               ) * 256) / spoofedPackVoltage)  * 2 - 551
+  //pwmCounts_MCMe = (               actualPackVoltage   * 512) / spoofedPackVoltage       - 551
+  //pwmCounts_MCMe = (               actualPackVoltage   * 256) / spoofedPackVoltage   * 2 - 551 //prevent 16b overflow
+  //pwmCounts_MCMe = (( ( ((uint16_t)actualPackVoltage ) * 256) / spoofedPackVoltage)  * 2 - 551
 
 	if(modeMCMePWM == MCMe_USING_VPACK)
 	{
@@ -77,8 +77,7 @@ void spoofVoltage_VPINout(void)
 	//      V_DIV_CORRECTION = 100k           / 10k
 	#define V_DIV_CORRECTION 1.1
 
-	pwmCounts_VPIN_out = (adc_packVoltage_VpinIn() * spoofedPackVoltage * V_DIV_CORRECTION )
-	                     / LTC68042result_packVoltage_get();
+	pwmCounts_VPIN_out = (adc_packVoltage_VpinIn() * spoofedPackVoltage * V_DIV_CORRECTION ) / LTC68042result_packVoltage_get();
 
 	//bounds checking
 	if     (pwmCounts_VPIN_out > 255) {pwmCounts_VPIN_out = 255;}
