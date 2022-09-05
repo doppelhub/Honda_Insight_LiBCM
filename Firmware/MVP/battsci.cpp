@@ -16,6 +16,7 @@ int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2
 
 uint8_t framePeriod_ms = 33;
 
+//JTS2doNow: Add different SoC profile for "charges at home" crew
 //JTS2doLater: store in 'PROGMEM' to keep out of RAM (but note array elements must be indexed differently)
 //LUT remaps actual lithium battery SoC (unit: percent) to mimic OEM NiMH behavior (unit: deciPercent)
 //input: actual lithium SoC (unit: percent integer)
