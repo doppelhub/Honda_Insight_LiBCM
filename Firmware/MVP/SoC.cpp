@@ -121,7 +121,7 @@ void SoC_turnOffLiBCM_ifPackEmpty(void)
 
 /////////////////////////////////////////////////////////////////////
 
-//Don't call this function when current is flowing through the current sensor
+//Calling this function when battery is sourcing/sinking current will cause estimation error
 //Wait at least ten minutes after keyOff for most accurate results
 #ifdef BATTERY_TYPE_5AhG3
 	uint8_t SoC_estimateFromRestingCellVoltage_percent(void)

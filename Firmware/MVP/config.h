@@ -76,7 +76,6 @@
 
 	//#define KEYOFF_TURNOFF_LIBCM_AFTER_HOURS 48 //LiBCM turns off this many hours after keyOFF. //JTS2doLater: Not implemented yet.
 	#define KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES 10 //Even with low SoC, LiBCM will remain on for this many minutes after keyOFF.
-	#define KEYOFF_DELAY_ESTIMATE_SoC_MINUTES  10 //LiBCM will wait this long before estimating SoC (from resting cell voltage).
 		//to turn LiBCM back on: turn ignition to 'ON', or turn IMA switch off and on, or plug in USB cable
 
 	#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover

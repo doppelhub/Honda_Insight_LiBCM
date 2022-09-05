@@ -39,20 +39,6 @@ bool time_toUpdate_keyOffValues(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-bool time_hasKeyBeenOffLongEnough_toEstimateSoC(void)
-{
-  bool keyOffForLongEnough = false;
-
-  if( (millis() - key_latestTurnOffTime_ms_get() ) > (KEYOFF_DELAY_ESTIMATE_SoC_MINUTES * 60000) )
-  {
-    keyOffForLongEnough = true;
-  }
-
-  return keyOffForLongEnough;
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-
 bool time_hasKeyBeenOffLongEnough_toTurnOffLiBCM(void)
 {
   bool keyOffForLongEnough = false;
