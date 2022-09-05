@@ -1,0 +1,3 @@
+silkscreen text for cell 1+ is incorrect:
+Existing: "CELL2+"
+Correct: "CELL1+"

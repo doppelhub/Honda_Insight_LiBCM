@@ -35,12 +35,15 @@ bool cellsAreBalanced = true;
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: When balancing cells, we only need to check cell voltage every minute (to save power).
+//Need to add discharge software timeout (if not already present), as LTC ICs turn off after a couple seconds if we're not sending commands
+
 void cellBalance_configureDischargeResistors(void)
 {   
   uint16_t cellsToDischarge[TOTAL_IC] = {0}; //each uint16's QTY12 LSBs correspond to each LTC6804's QTY12 cells
   static uint8_t balanceHysteresis = CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT;
 
-  cellsAreBalanced = true; //code below will set false if cells unbalanced
+  cellsAreBalanced = true; //code below will set false if any cell(s) unbalanced
 
   uint16_t cellDischargeVoltageThreshold = 0; //cells above this value will get discharged
 
@@ -52,42 +55,37 @@ void cellBalance_configureDischargeResistors(void)
     cellDischargeVoltageThreshold = CELL_VMAX_REGEN;
     Serial.print(F("\nDANGER: Cells Overcharged!!"));
   } 
-  else { cellDischargeVoltageThreshold = LTC68042result_loCellVoltage_get(); } //pack isn't overcharged //balance to minimum cell voltage
+  else { cellDischargeVoltageThreshold = LTC68042result_loCellVoltage_get() + balanceHysteresis; } //pack isn't overcharged
 
   //determine which cells to balance
   for(uint8_t ic = 0; ic < TOTAL_IC; ic++)
   {
     for (uint8_t cell = 0; cell < CELLS_PER_IC; cell++)
     {
-      if(LTC68042result_specificCellVoltage_get(ic, cell) > (cellDischargeVoltageThreshold + balanceHysteresis) )
+      if(LTC68042result_specificCellVoltage_get(ic, cell) > cellDischargeVoltageThreshold)
       { 
-        //this cell voltage is higher than the lowest cell voltage
+        //this cell voltage is higher than the lowest cell voltage + hysteresis
         cellsToDischarge[ic] |= (1 << cell); //this cell will be discharged
         cellsAreBalanced = false;
         balanceHysteresis = CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT;
       }
     }
 
-    debugUSB_setCellBalanceStatus(ic, cellsToDischarge[ic], cellDischargeVoltageThreshold + balanceHysteresis);
-    LTC68042configure_setBalanceResistors((ic + FIRST_IC_ADDR), cellsToDischarge[ic], LTC6804_DISCHARGE_TIMEOUT_00_SECONDS);
+    debugUSB_setCellBalanceStatus(ic, cellsToDischarge[ic], cellDischargeVoltageThreshold);
+    LTC68042configure_setBalanceResistors((ic + FIRST_IC_ADDR), cellsToDischarge[ic], LTC6804_DISCHARGE_TIMEOUT_02_SECONDS);
   }
 
   if(cellsAreBalanced == true)
   { 
     balanceHysteresis = CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE;
-    //JTS2doNow: disable software timer (so LTCs turn off after two seconds)
-
-    if(temperature_battery_getLatest() > WHEN_GRID_CHARGING_COOL_PACK_ABOVE_TEMP) { gpio_setFanSpeed('H', RAMP_FAN_SPEED); }
-    else                                                                          { gpio_setFanSpeed('0', RAMP_FAN_SPEED); }
-    //JTS2doNow: Need to add a bitmask so multiple sources can turn fan on/off... fan on unless all sources have cleared their respective bit.
-  }
-  else { gpio_setFanSpeed('H', IMMEDIATE_FAN_SPEED); } //cool discharge resistors
+    //JTS2doNow: disable software timer (so LTCs turn off after two seconds) //possibly already implemented?
+  } 
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 //'cellsAreBalanced' variable is updated by calling cellBalance_configureDischargeResistors()
-bool cellBalance_wereCellsBalanced(void) { return cellsAreBalanced; }
+bool cellBalance_areCellsBalanced(void) { return cellsAreBalanced; }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -95,21 +93,18 @@ void cellBalance_handler(void)
 {
   static uint8_t balanceState = BALANCING_DISABLED;
 
-  //JTS2doNow: Should we only balance cells when the pack is nearly charged?  See post#1502833, comment#579 @ ic.net
-  //JTS2doNow: If cabin air sensor is too high, don't allow cell balancing (for now we're looking at battery module temperature)
-  //running the fans will increase battery temp if cabin air temp is too high...
-  //...but the fans need to run to remove the waste heat from the discharge resistors
+  //JTS2doNow: Add option to only balance cells when majorly imbalanced, unless grid charger plugged in.
+  //Required because severely imbalanced pack might never enter balance mode (e.g. a cell above 3.9 volts disables charging, whereas SoC is based on lowest cell)
+
+  //JTS2doLater: Add per-cell SoC, to allow balancing at any SoC (see icn.net:post#1502833,comment#579)
   #ifdef ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN
     if( (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) &&
         (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) )
   #else 
-    if(     (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) &&
-        (   (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) ||
-          ( (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC) && (time_hasKeyBeenOffLongEnough() == true)
-          )
-        )
-      )
+    if( (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) &&
+        ((gpio_isGridChargerPluggedInNow() == PLUGGED_IN) || (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC)) )
   #endif
+    //Regardless of which function logic is used, the function body doesn't change:
     {
       //balance cells (if needed)
       cellBalance_configureDischargeResistors();
@@ -121,7 +116,6 @@ void cellBalance_handler(void)
       //pack SoC previously high enough to balance, but isn't now
       //this code only runs once (i.e. when the above if statement state changes) to save power
       LTC68042configure_programVolatileDefaults(); //disable discharge resistors and software timer
-      gpio_setFanSpeed('0', IMMEDIATE_FAN_SPEED);
       balanceState = BALANCING_DISABLED;
     }
 }

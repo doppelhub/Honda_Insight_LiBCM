@@ -7,7 +7,7 @@
 	#define BALANCING_DISABLED 0
 	#define BALANCING_ALLOWED  1
 
-	bool cellBalance_wereCellsBalanced(void);
+	bool cellBalance_areCellsBalanced(void);
 
 	void cellBalance_handler(void);
 

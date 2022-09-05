@@ -159,7 +159,9 @@ typedef struct {
 
 // For simplicity later one, we always include these two
 #include "bootloader_lilypad328.h"
-#include "bootloader_atmega328.h"
+//#include "bootloader_atmega328.h"
+#include "bootloader_atmega328_MuddersMIMA.h"
+
 
 #if USE_ATMEGA168
   #include "bootloader_atmega168.h"
@@ -212,7 +214,7 @@ const bootloaderType bootloaders [] PROGMEM =
         0x7E00,               // start address
         atmega328_optiboot,   // loader image
         sizeof atmega328_optiboot,
-        0xFF,         // fuse low byte: external clock, max start-up time
+        0xEF,         // fuse low byte: external clock, max start-up time //JTS: Originally 0xFF; new value boots faster 
         0xDE,         // fuse high byte: SPI enable, boot into bootloader, 512 byte bootloader
         0x05,         // fuse extended byte: brown-out detection at 2.7V
         0x2F },       // lock bits: SPM is not allowed to write to the Boot Loader section.
@@ -260,7 +262,7 @@ const bootloaderType bootloaders [] PROGMEM =
   #else
         0, 0,
   #endif
-        0xEF,         // fuse low byte: external clock, max start-up time
+        0xEF,         // fuse low byte: external clock, max start-up time //JTS: originally 'FF'; new value boots faster
         0xD8,         // fuse high byte: SPI enable, boot into bootloader, 8192 byte bootloader
         0xFD,         // fuse extended byte: brown-out detection at 2.7V
         0x2F },       // lock bits: SPM is not allowed to write to the Boot Loader section.

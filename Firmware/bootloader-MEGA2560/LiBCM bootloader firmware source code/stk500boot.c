@@ -233,7 +233,7 @@ int main(void)
 	// check if WDT generated the reset
 	if ( mcuStatusReg & _BV(WDRF) ) { app_start(); }
 
-	// check if keyON (PINB7 == HIGH)
+	// JTS: check if keyON (PINB7 == HIGH)
 	if ( (PINB & (1<<PINB7)) != 0 )
 	{	//jump directly to main firmware
 		asm volatile(

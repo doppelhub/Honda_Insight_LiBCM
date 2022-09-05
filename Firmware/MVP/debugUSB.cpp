@@ -70,17 +70,30 @@ void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap, uint16
 //JTS2doNow: Place inside debugUSB_printData_cellVoltages()?
 void debugUSB_printCellBalanceStatus(void)
 {
-	Serial.print(F("\nDischarging cells above "));
-	Serial.print(cellBalanceThreshold*0.0001,4);
-	Serial.print(F(" V (0x): "));
-
-	//print discharge resistor bitmap status
-	for(uint8_t ii = 0; ii < TOTAL_IC; ii++)
+	uint8_t anyCellsBalancing = NO;
+	for(uint8_t ii=0; ii<TOTAL_IC; ii++)
 	{
-	    Serial.print(String(cellBalanceBitmaps[ii], HEX));
-	   	Serial.print(',');
+		if(cellBalanceBitmaps[ii] != 0) { anyCellsBalancing = YES; }
 	}
 
+	if(anyCellsBalancing == YES)
+	{
+		Serial.print(F("\nDischarging cells above "));
+		Serial.print(cellBalanceThreshold*0.0001,4);
+		Serial.print(F(" V (0x): "));
+
+		//print discharge resistor bitmap status
+		for(uint8_t ii = 0; ii < TOTAL_IC; ii++)
+		{
+		    Serial.print(String(cellBalanceBitmaps[ii], HEX));
+		   	Serial.print(',');
+		}
+	}
+	else //(anyCellsBalancing == NO)
+	{
+		//JTS2doNow: Change text if pack is unbalanced, but something else is preventing balancing
+		Serial.print(F("\nPack Balanced"));
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -171,6 +184,22 @@ void debugUSB_printData_cellVoltages(void)
 	else                       { transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE; icToPrint = 0; Serial.print(F("\ncell voltages:")); }
 }
 
+void debugUSB_printData_temperatures(void)
+{
+	Serial.print(F("\nT_batt:"));
+	Serial.print(String(temperature_battery_getLatest()));
+	Serial.print(F(", T_in:"));
+	Serial.print(String(temperature_intake_getLatest()));
+	Serial.print(F(", T_out:"));
+	Serial.print(String(temperature_exhaust_getLatest()));
+	Serial.print(F(", T_charger:"));
+	Serial.print(String(temperature_gridCharger_getLatest()));
+	Serial.print(F(", T_bay:"));
+	Serial.print(String(temperature_ambient_getLatest()));
+	Serial.print('C');
+
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 //Sending more than 63 characters per call makes this function blocking (until the buffer empties)!
@@ -184,9 +213,10 @@ void debugUSB_printLatestData_keyOn(void)
 	{
 		previousMillis = millis();
 
-		if     (debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_POWER)      { debugUSB_printData_power();          }
-		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { debugUSB_printData_BATTMETSCI();     }
+		if     (debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_POWER)      { debugUSB_printData_power();        }
+		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { debugUSB_printData_BATTMETSCI();   }
 		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_CELL)       { debugUSB_printData_cellVoltages(); }
+		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_TEMP)       { debugUSB_printData_temperatures(); }
 	}
 }
 
