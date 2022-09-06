@@ -123,10 +123,6 @@ void gridCharger_handler(void)
     if (gridChargerState_sampled == UNPLUGGED ) { gridCharger_handleUnplugEvent(); }
   }
 
-<<<<<<< HEAD
-  if(gridChargerState_sampled == PLUGGED_IN) { gridCharger_chargePack(); }
-}
-=======
   //JTS2doLater: disable grid charging when batt temp too low or high
   if( (gridChargerState_sampled == PLUGGED_IN) &&
       (temperature_gridCharger_getLatest() < GRIDCHARGER_CASE_TEMP_TO_DISABLE_C) )
@@ -136,4 +132,3 @@ void gridCharger_handler(void)
 }
 
 //////////////////////////////////////////////////////////////////////////////////
->>>>>>> main

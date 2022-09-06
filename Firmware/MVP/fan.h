@@ -17,11 +17,11 @@
 	#define FAN_LO_MASK 0b01010101
 
 	#define FAN_NOT_REQUESTED 0
-	
+
 	//fan controller number
 	#define FAN_PCB 0
 	#define FAN_OEM 1
-	#define NUM_FAN_CONTROLLERS 2 //MUST equal number of fan controllers 
+	#define NUM_FAN_CONTROLLERS 2 //MUST equal number of fan controllers
 
 	#define FAN_HYSTERESIS_ms          10000 //period required before fan can turn off
 	#define FAN_HYSTERESIS_degC        2 //temperature delta required to change fan speed
@@ -35,5 +35,6 @@
 
 	void fan_requestSpeed(uint8_t whichFan, uint8_t requestor, char newFanSpeed); //request fan speed
 	//Example: fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_GRIDCHARGER, FAN_HIGH);
+	char fan_getCurrentSpeed(uint8_t whichFan);
 
 #endif

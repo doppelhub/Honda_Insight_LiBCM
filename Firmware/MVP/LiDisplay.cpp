@@ -32,9 +32,13 @@ static uint8_t gc_connected_hours = 0;
 
 static String gc_begin_soc_str = "0%";
 static String gc_time = "00:00:00";
+static uint8_t currentFanSpeed = 0;
 
 const String attrMap[3] = {
 	"txt", "val", "pic"
+};
+const String fanSpeedDisplay[3] = {
+	"FAN OFF", "FAN LOW", "FAN HIGH"
 };
 
 
@@ -320,6 +324,18 @@ void LiDisplay_calculateSoCGaugeBars() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void LiDisplay_calclateFanSpeedStr() {
+	if (fan_getCurrentSpeed(FAN_PCB) == 'H') {
+		currentFanSpeed = 2;
+	} else if (fan_getCurrentSpeed(FAN_PCB) == 'L') {
+		currentFanSpeed = 1;
+	} else {
+		currentFanSpeed = 0;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void LiDisplay_updatePage() {
 	#ifdef LIDISPLAY_CONNECTED
 		static String LiDisplay_Page_Str;
@@ -469,10 +485,11 @@ void LiDisplay_refresh(void)
 							case 1: LiDisplay_updateElementText(0, "t1", 0, (String(SoC_getBatteryStateNow_percent()) + "%")); break;
 							case 2: LiDisplay_updateElementText(0, "t3", 0, String(adc_getLatestBatteryCurrent_amps())); break;
 							case 3: LiDisplay_calculateSoCGaugeBars(); LiDisplay_updateElementNumeric(0, "p0", 2, String(LiDisplaySoCBarCount));	break;
-							case 4: LiDisplay_calculateChrgAsstGaugeBars(); LiDisplay_updateElementNumeric(0, "p1", 2, String(LiDisplayChrgAsstPicId));	break;
-							case 5: LiDisplay_updateElementText(0, "t4", 0, String(LTC68042result_packVoltage_get()));	break;
-							case 6: LiDisplay_updateElementText(0, "t9", 0, (String((LTC68042result_hiCellVoltage_get()/10)))); break;
-							case 7: LiDisplay_updateElementText(0, "t6", 0, (String((LTC68042result_loCellVoltage_get()/10)))); break;
+							case 4: LiDisplay_calclateFanSpeedStr(); LiDisplay_updateElementText(0, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed]))); break;
+							case 5: LiDisplay_calculateChrgAsstGaugeBars(); LiDisplay_updateElementNumeric(0, "p1", 2, String(LiDisplayChrgAsstPicId));	break;
+							case 6: LiDisplay_updateElementText(0, "t4", 0, String(LTC68042result_packVoltage_get()));	break;
+							case 7: LiDisplay_updateElementText(0, "t9", 0, (String((LTC68042result_hiCellVoltage_get()/10)))); break;
+							case 8: LiDisplay_updateElementText(0, "t6", 0, (String((LTC68042result_loCellVoltage_get()/10)))); break;
 						}
 					break;
 					case LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID:
@@ -502,7 +519,8 @@ void LiDisplay_refresh(void)
 							case 4: LiDisplay_updateElementText(3, "t8", 0, String(gc_time));	break;
 							case 5: LiDisplay_updateElementText(3, "t4", 0, String(LTC68042result_packVoltage_get()));	break;
 							case 6: LiDisplay_updateElementText(3, "t10", 0, (String(gc_begin_soc_str))); break;
-							case 7: LiDisplay_updateElementText(3, "t12", 0, (String(gpio_getFanSpeed()))); break;
+							case 7: LiDisplay_calclateFanSpeedStr(); LiDisplay_updateElementText(3, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed]))); break;
+							case 8: LiDisplay_calculateSoCGaugeBars(); LiDisplay_updateElementNumeric(3, "p0", 2, String(LiDisplaySoCBarCount));	break;
 						}
 					break;
 					default : break;
@@ -511,7 +529,7 @@ void LiDisplay_refresh(void)
 
 				LiDisplayElementToUpdate += 1;
 
-				if (LiDisplayElementToUpdate > 7) {
+				if (LiDisplayElementToUpdate > 8) {
 					LiDisplayElementToUpdate = 0;
 				}
 			}

@@ -4,6 +4,7 @@
 #include "libcm.h"
 
 char goalSpeed[NUM_FAN_CONTROLLERS] = {'0'}; //store desired fan speeds (for OEM and PCB fans)
+static char actualSpeed[NUM_FAN_CONTROLLERS] = {'0'};
 
 uint8_t fanStates[NUM_FAN_CONTROLLERS] = {FAN_NOT_REQUESTED}; //each subsystem's fan speed request is stored in 2 bits
 
@@ -12,7 +13,6 @@ uint8_t fanStates[NUM_FAN_CONTROLLERS] = {FAN_NOT_REQUESTED}; //each subsystem's
 //prevents rapid fan speed changes //Each fan (OEM and PCB) has its own controller
 void fanSpeedController(uint8_t whichFan)
 {
-	static char actualSpeed[NUM_FAN_CONTROLLERS] = {'0'};
 	static uint32_t timestamp_latestFanSpeedChange_ms[NUM_FAN_CONTROLLERS] = {0};
 
 	if(actualSpeed[whichFan] != goalSpeed[whichFan])
@@ -84,6 +84,12 @@ void fan_requestSpeed(uint8_t whichFan, uint8_t requestor, char newFanSpeed)
 	if     (fanStates[whichFan] & FAN_HI_MASK) { goalSpeed[whichFan] = 'H'; } //at least one subsystem is requesting high speed
 	else if(fanStates[whichFan] & FAN_LO_MASK) { goalSpeed[whichFan] = 'L'; } //at least one subsystem is requesting low speed
 	else                                       { goalSpeed[whichFan] = '0'; } //nobody is requesting fan
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+char fan_getCurrentSpeed(uint8_t whichFan) {
+	return actualSpeed[whichFan];
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
