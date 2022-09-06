@@ -109,12 +109,6 @@ void key_stateChangeHandler(void)
 //only called outside this file
 uint8_t key_getSampledState(void)
 {
-<<<<<<< HEAD
-	if(keyState_previous == KEYOFF_JUSTOCCURRED) { return KEYON;            } //prevent noise from accidentally turning LiBCM off
-	else                                         { return keyState_sampled; }
-}
-=======
 	if(keyState_previous == KEYSTATE_OFF_JUSTOCCURRED) { return KEYSTATE_ON;      } //prevent noise from accidentally turning LiBCM off
 	else                                               { return keyState_sampled; }
 }
->>>>>>> main

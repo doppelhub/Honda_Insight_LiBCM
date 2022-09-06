@@ -7,13 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-<<<<<<< HEAD
-	#define FW_VERSION "n0.8.0"
-    #define BUILD_DATE "2022AUG11"
-=======
 	#define FW_VERSION "0.8.4"
     #define BUILD_DATE "2022SEP03"
->>>>>>> main
 
 	#define CPU_MAP_MEGA2560
     #define HW_REVC
@@ -65,13 +60,6 @@
 	#define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled below this percentage
 	#define CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE 32    //'32' = 3.2 mV //CANNOT exceed 255 counts (25.5 mV)
 	#define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 22    //'22' = 2.2 mV //LTC6804 total measurement error is 2.2 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
-<<<<<<< HEAD
-	#define CELL_BALANCE_MAX_TEMP_C             35    //cell balancing is always disabled above this voltage //JTS2doNow: Change this to measure intake air temperature
-
-	#define WHEN_GRID_CHARGING_COOL_PACK_ABOVE_TEMP 30 //degC
-
-	//#define ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN //uncomment to prevent keyOFF cell balancing, unless the grid charger is plugged in
-=======
 	#define CELL_BALANCE_MAX_TEMP_C             40
 	//#define ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN //uncomment to disable keyOFF cell balancing (unless the grid charger is plugged in)
 
@@ -84,8 +72,7 @@
 	#define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       10
 	//other fan settings
 	#define KEYOFF_DISABLE_FANS_BELOW_SoC 60 //set to 100 to disable fans entirely when keyOFF (unless grid charger plugged in)
-	#define OEM_FAN_INSTALLED //comment if OEM fan removed  
->>>>>>> main
+	#define OEM_FAN_INSTALLED //comment if OEM fan removed
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda EHW5 lithium modules
 

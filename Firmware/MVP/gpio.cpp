@@ -103,14 +103,7 @@ void gpio_setFanSpeed_OEM(char speed)
 
 void gpio_setFanSpeed_PCB(char speed)
 {
-<<<<<<< HEAD
-	uint8_t goalFanPWM = 0;
-
-	const uint8_t RAMP_UPDATE_PERIOD_ms = 50;
-	static uint32_t millis_previous = 0;
-=======
-	uint8_t fanPWM = 0; 
->>>>>>> main
+	uint8_t fanPWM = 0;
 
 	switch(speed)
 	{

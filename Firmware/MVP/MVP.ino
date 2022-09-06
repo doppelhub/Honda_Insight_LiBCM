@@ -60,13 +60,8 @@ void loop()
 
 		LiDisplay_refresh();
 	}
-<<<<<<< HEAD
-	else if( key_getSampledState() == KEYOFF )
-	{
-=======
 	else if( key_getSampledState() == KEYSTATE_OFF )
-	{	
->>>>>>> main
+	{
 		if( time_toUpdate_keyOffValues() == true )
 		{
 			LTC68042cell_sampleGatherAndProcessAllCellVoltages();
