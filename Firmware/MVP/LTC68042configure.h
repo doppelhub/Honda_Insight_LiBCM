@@ -4,10 +4,13 @@
 #ifndef LTC68042configure_h
 	#define LTC68042configure_h
 
+	//choose number of LTC ICs in isoSPI network
 	#ifdef RUN_BRINGUP_TESTER
-		#define TOTAL_IC   5 //number of ICs in the isoSPI network
-	#else
-		#define TOTAL_IC   4 //number of ICs in the isoSPI network
+		#define TOTAL_IC 5
+	#elif defined STACK_IS_48S
+		#define TOTAL_IC 4
+	#elif defined STACK_IS_60S
+		#define TOTAL_IC 5
 	#endif
 
 	#define FIRST_IC_ADDR  2 //lowest address.  All additional IC addresses must be sequential
@@ -140,7 +143,7 @@
 	*/
 
 	//'DCTO' Discharge timeout values (inclusive) //see Table12
-	#define LTC6804_DISCHARGE_TIMEOUT_00_SECONDS  0x00 //software timer disabled
+	#define LTC6804_DISCHARGE_TIMEOUT_02_SECONDS  0x00 //software timer disabled
 	#define LTC6804_DISCHARGE_TIMEOUT_30_SECONDS  0x10 //0.5 minutes
 	#define LTC6804_DISCHARGE_TIMEOUT_01_MINUTE   0x20 //1 minute
 	#define LTC6804_DISCHARGE_TIMEOUT_02_MINUTES  0x30 //2 minutes

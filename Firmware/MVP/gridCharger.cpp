@@ -3,6 +3,7 @@
 #include "libcm.h"
 
 //updated by gridCharger_handler() //prevents mid-loop state changes from affecting loop logic
+//no need to retrieve this value outside this file... use gpio_isGridChargerPluggedInNow() instead
 bool gridChargerState_sampled = PLUGGED_IN;
 static uint8_t cellState = CELLSTATE_UNINITIALIZED;
 
@@ -122,5 +123,17 @@ void gridCharger_handler(void)
     if (gridChargerState_sampled == UNPLUGGED ) { gridCharger_handleUnplugEvent(); }
   }
 
+<<<<<<< HEAD
   if(gridChargerState_sampled == PLUGGED_IN) { gridCharger_chargePack(); }
 }
+=======
+  //JTS2doLater: disable grid charging when batt temp too low or high
+  if( (gridChargerState_sampled == PLUGGED_IN) &&
+      (temperature_gridCharger_getLatest() < GRIDCHARGER_CASE_TEMP_TO_DISABLE_C) )
+  {
+    gridCharger_chargePack();
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+>>>>>>> main

@@ -514,7 +514,7 @@ void lcd_displayOFF(void)
 		for(uint16_t ii=0; ii<100; ii++)
 		{
 			//1000 ms delay for operator to read firmware version //blocking
-			if(gpio_keyStateNow() == KEYON)
+			if(gpio_keyStateNow() == KEYSTATE_ON)
 			{
 				didKeyOnDebounceOccur = true; 
 				Serial.print(F("\nKeyON Bounce"));

@@ -16,7 +16,7 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 
 	LTC68042configure_initialize();
 
-	if( gpio_keyStateNow() == KEYON ){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while keyON (e.g. while driving)
+	if(gpio_keyStateNow() == KEYSTATE_ON){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while keyON (e.g. while driving)
 
 	gpio_safetyCoverCheck(); //this function hangs forever if safety cover isn't installed
 
@@ -39,8 +39,9 @@ void loop()
 	key_stateChangeHandler();
 	temperature_handler();
 	SoC_handler();
+	fan_handler();
 
-	if( key_getSampledState() == KEYON )
+	if( key_getSampledState() == KEYSTATE_ON )
 	{
 		if( gpio_isGridChargerPluggedInNow() == PLUGGED_IN ) { lcd_Warning_gridCharger(); } //P1648 occurs if grid charger powered while keyON
 		else if( EEPROM_firmwareStatus_get() != FIRMWARE_STATUS_EXPIRED ) { BATTSCI_sendFrames(); } //P1648 occurs if firmware is expired
@@ -59,8 +60,13 @@ void loop()
 
 		LiDisplay_refresh();
 	}
+<<<<<<< HEAD
 	else if( key_getSampledState() == KEYOFF )
 	{
+=======
+	else if( key_getSampledState() == KEYSTATE_OFF )
+	{	
+>>>>>>> main
 		if( time_toUpdate_keyOffValues() == true )
 		{
 			LTC68042cell_sampleGatherAndProcessAllCellVoltages();

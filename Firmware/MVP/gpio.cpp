@@ -64,6 +64,7 @@ void gpio_begin(void)
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
+	//JTS2doNow: Turn all this stuff off when the key is off
 	TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D11(fan) & D12()
 	TCCR3B = (TCCR3B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D2() & D3() & D5(VPIN_OUT)
 	TCCR4B = (TCCR4B & B11111000) | B00000010; // Set F_PWM to  3921.16 Hz //pins D7(MCMe) & D8(gridPWM) & D9()
@@ -100,33 +101,27 @@ void gpio_setFanSpeed_OEM(char speed)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-void gpio_setFanSpeed(uint8_t speed, bool isSpeedRamped)
+void gpio_setFanSpeed_PCB(char speed)
 {
+<<<<<<< HEAD
 	uint8_t goalFanPWM = 0;
 
 	const uint8_t RAMP_UPDATE_PERIOD_ms = 50;
 	static uint32_t millis_previous = 0;
+=======
+	uint8_t fanPWM = 0; 
+>>>>>>> main
 
 	switch(speed)
 	{
-		case '0': goalFanPWM =     0; break;
-		case 'L': goalFanPWM =    30; break;
-		case 'M': goalFanPWM =    75; break;
-		case 'H': goalFanPWM =   255; break;
-		default : goalFanPWM = speed; break;
+		case '0': fanPWM =     0; break;
+		case 'L': fanPWM =    30; break;
+		case 'H': fanPWM =   255; break;
+		default : fanPWM = speed; break;
 	}
 
-	if ( (isSpeedRamped == RAMP_FAN_SPEED) &&
-		 ( millis() - millis_previous >= RAMP_UPDATE_PERIOD_ms) )
-	{
-		//slowly ramp fan speed
-		if     (actualFanPWM  > goalFanPWM) { actualFanPWM--; }
-		else if(actualFanPWM  < goalFanPWM) { actualFanPWM++; }
-	}
-	else if(isSpeedRamped == IMMEDIATE_FAN_SPEED) { actualFanPWM = goalFanPWM; } //immediately adjust fan speed
-
-	if (actualFanPWM == 0) { pinMode(PIN_FAN_PWM, INPUT); } //saves power when fan is off
-	else                   { analogWrite(PIN_FAN_PWM, actualFanPWM); }
+	if (fanPWM == 0) { pinMode(PIN_FAN_PWM, INPUT); } //saves power when fan is off
+	else             { analogWrite(PIN_FAN_PWM, fanPWM); }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

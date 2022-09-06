@@ -9,9 +9,14 @@
 
 	bool gpio_keyStateNow(void);
 
+<<<<<<< HEAD
 	void gpio_setFanSpeed_OEM(char speed);
 	void gpio_setFanSpeed(uint8_t speed, bool isSpeedRamped);
 	String gpio_getFanSpeed(void);
+=======
+	void gpio_setFanSpeed_OEM(char speed); //don't call directly (use fan_requestSpeed() instead)
+	void gpio_setFanSpeed_PCB(char speed); //don't call directly (use fan_requestSpeed() instead)
+>>>>>>> main
 
 	void gpio_turnPowerSensors_on( void);
 	void gpio_turnPowerSensors_off(void);
@@ -46,9 +51,6 @@
 	bool gpio3_getState(void);
 
 	uint8_t gpio_getHardwareRevision(void);
-
-	#define RAMP_FAN_SPEED 1
-	#define IMMEDIATE_FAN_SPEED 0
 
 	#define HW_REV_C 0b00000011
 	#define HW_REV_D 0b00000010

@@ -1,0 +1,595 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L Connector_Generic:Conn_02x07_Odd_Even J13
+U 1 1 6302995F
+P 1750 2400
+F 0 "J13" H 1800 2917 50  0000 C CNN
+F 1 "Conn_02x07_Odd_Even" H 1800 2826 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_2x07_P2.54mm_Vertical" H 1750 2400 50  0001 C CNN
+F 3 "~" H 1750 2400 50  0001 C CNN
+	1    1750 2400
+	-1   0    0    -1  
+$EndComp
+$Comp
+L Connector_Generic:Conn_02x07_Odd_Even J14
+U 1 1 6302FA98
+P 8200 4050
+F 0 "J14" H 8250 3525 50  0000 C CNN
+F 1 "Conn_02x07_Odd_Even" H 8250 3616 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_2x07_P2.54mm_Vertical" H 8200 4050 50  0001 C CNN
+F 3 "~" H 8200 4050 50  0001 C CNN
+	1    8200 4050
+	1    0    0    1   
+$EndComp
+$Comp
+L Device:R R1
+U 1 1 630334F3
+P 2650 5250
+F 0 "R1" H 2720 5296 50  0000 L CNN
+F 1 "20" H 2720 5205 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 2580 5250 50  0001 C CNN
+F 3 "~" H 2650 5250 50  0001 C CNN
+	1    2650 5250
+	1    0    0    -1  
+$EndComp
+Text Notes 8050 3250 0    50   ~ 0
+SIDE WITH\nBATTERY\nNEGATIVE\nTERMINAL
+Text Notes 1500 3200 0    50   ~ 0
+SIDE WITH\nBATTERY\nPOSITIVE\nTERMINAL
+$Comp
+L Connector_Generic:Conn_01x01 J1n1
+U 1 1 6303D44D
+P 2650 6000
+F 0 "J1n1" V 2522 6080 50  0000 L CNN
+F 1 "Conn_01x01" V 2750 5800 50  0000 L CNN
+F 2 "47AhFoMoCo:BMS Hole_Wide" H 2650 6000 50  0001 C CNN
+F 3 "~" H 2650 6000 50  0001 C CNN
+	1    2650 6000
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x01 J1p1
+U 1 1 63043886
+P 2950 6350
+F 0 "J1p1" V 2822 6430 50  0000 L CNN
+F 1 "Conn_01x01" V 3050 6150 50  0000 L CNN
+F 2 "47AhFoMoCo:BMS Hole" H 2950 6350 50  0001 C CNN
+F 3 "~" H 2950 6350 50  0001 C CNN
+	1    2950 6350
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x01 J2p1
+U 1 1 63045576
+P 3250 6000
+F 0 "J2p1" V 3122 6080 50  0000 L CNN
+F 1 "Conn_01x01" V 3350 5800 50  0000 L CNN
+F 2 "47AhFoMoCo:BMS Hole" H 3250 6000 50  0001 C CNN
+F 3 "~" H 3250 6000 50  0001 C CNN
+	1    3250 6000
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x01 J3p1
+U 1 1 63045582
+P 3550 6350
+F 0 "J3p1" V 3422 6430 50  0000 L CNN
+F 1 "Conn_01x01" V 3650 6150 50  0000 L CNN
+F 2 "47AhFoMoCo:BMS Hole" H 3550 6350 50  0001 C CNN
+F 3 "~" H 3550 6350 50  0001 C CNN
+	1    3550 6350
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x01 J4p1
+U 1 1 6304697C
+P 3850 6000
+F 0 "J4p1" V 3722 6080 50  0000 L CNN
+F 1 "Conn_01x01" V 3950 5800 50  0000 L CNN
+F 2 "47AhFoMoCo:BMS Hole" H 3850 6000 50  0001 C CNN
+F 3 "~" H 3850 6000 50  0001 C CNN
+	1    3850 6000
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x01 J5p1
+U 1 1 63046988
+P 4150 6350
+F 0 "J5p1" V 4022 6430 50  0000 L CNN
+F 1 "Conn_01x01" V 4250 6150 50  0000 L CNN
+F 2 "47AhFoMoCo:BMS Hole" H 4150 6350 50  0001 C CNN
+F 3 "~" H 4150 6350 50  0001 C CNN
+	1    4150 6350
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x01 J6p1
+U 1 1 6304CD72
+P 4450 6000
+F 0 "J6p1" V 4322 6080 50  0000 L CNN
+F 1 "Conn_01x01" V 4550 5800 50  0000 L CNN
+F 2 "47AhFoMoCo:BMS Hole" H 4450 6000 50  0001 C CNN
+F 3 "~" H 4450 6000 50  0001 C CNN
+	1    4450 6000
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x01 J7p1
+U 1 1 6304CD7E
+P 4750 6350
+F 0 "J7p1" V 4622 6430 50  0000 L CNN
+F 1 "Conn_01x01" V 4850 6150 50  0000 L CNN
+F 2 "47AhFoMoCo:BMS Hole" H 4750 6350 50  0001 C CNN
+F 3 "~" H 4750 6350 50  0001 C CNN
+	1    4750 6350
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x01 J8p1
+U 1 1 6304CD8A
+P 5050 6000
+F 0 "J8p1" V 4922 6080 50  0000 L CNN
+F 1 "Conn_01x01" V 5150 5800 50  0000 L CNN
+F 2 "47AhFoMoCo:BMS Hole" H 5050 6000 50  0001 C CNN
+F 3 "~" H 5050 6000 50  0001 C CNN
+	1    5050 6000
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x01 J9p1
+U 1 1 6304CD96
+P 5350 6350
+F 0 "J9p1" V 5222 6430 50  0000 L CNN
+F 1 "Conn_01x01" V 5450 6150 50  0000 L CNN
+F 2 "47AhFoMoCo:BMS Hole" H 5350 6350 50  0001 C CNN
+F 3 "~" H 5350 6350 50  0001 C CNN
+	1    5350 6350
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x01 J10p1
+U 1 1 6304CDA2
+P 5650 6000
+F 0 "J10p1" V 5522 6080 50  0000 L CNN
+F 1 "Conn_01x01" V 5750 5800 50  0000 L CNN
+F 2 "47AhFoMoCo:BMS Hole" H 5650 6000 50  0001 C CNN
+F 3 "~" H 5650 6000 50  0001 C CNN
+	1    5650 6000
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x01 J11p1
+U 1 1 6304CDAE
+P 5950 6350
+F 0 "J11p1" V 5822 6430 50  0000 L CNN
+F 1 "Conn_01x01" V 6050 6150 50  0000 L CNN
+F 2 "47AhFoMoCo:BMS Hole" H 5950 6350 50  0001 C CNN
+F 3 "~" H 5950 6350 50  0001 C CNN
+	1    5950 6350
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x01 J12p1
+U 1 1 6304EC6E
+P 6250 6000
+F 0 "J12p1" V 6122 6080 50  0000 L CNN
+F 1 "Conn_01x01" V 6350 5800 50  0000 L CNN
+F 2 "47AhFoMoCo:BMS Hole_Wide" H 6250 6000 50  0001 C CNN
+F 3 "~" H 6250 6000 50  0001 C CNN
+	1    6250 6000
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	2650 5800 2650 5400
+Wire Wire Line
+	2950 6150 2950 5400
+Wire Wire Line
+	3250 5800 3250 5400
+Wire Wire Line
+	3550 6150 3550 5400
+Wire Wire Line
+	3850 5800 3850 5400
+Wire Wire Line
+	4150 6150 4150 5400
+Wire Wire Line
+	4450 5800 4450 5400
+Wire Wire Line
+	4750 6150 4750 5400
+Wire Wire Line
+	5050 5800 5050 5400
+Wire Wire Line
+	5350 6150 5350 5400
+Wire Wire Line
+	5650 5800 5650 5400
+Wire Wire Line
+	5950 6150 5950 5400
+Wire Wire Line
+	6250 5800 6250 5400
+$Comp
+L Device:R R2
+U 1 1 63052599
+P 2950 5250
+F 0 "R2" H 3020 5296 50  0000 L CNN
+F 1 "20" H 3020 5205 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 2880 5250 50  0001 C CNN
+F 3 "~" H 2950 5250 50  0001 C CNN
+	1    2950 5250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R3
+U 1 1 6305384A
+P 3250 5250
+F 0 "R3" H 3320 5296 50  0000 L CNN
+F 1 "20" H 3320 5205 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 3180 5250 50  0001 C CNN
+F 3 "~" H 3250 5250 50  0001 C CNN
+	1    3250 5250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R4
+U 1 1 63053850
+P 3550 5250
+F 0 "R4" H 3620 5296 50  0000 L CNN
+F 1 "20" H 3620 5205 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 3480 5250 50  0001 C CNN
+F 3 "~" H 3550 5250 50  0001 C CNN
+	1    3550 5250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R5
+U 1 1 63055454
+P 3850 5250
+F 0 "R5" H 3920 5296 50  0000 L CNN
+F 1 "20" H 3920 5205 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 3780 5250 50  0001 C CNN
+F 3 "~" H 3850 5250 50  0001 C CNN
+	1    3850 5250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R6
+U 1 1 6305545A
+P 4150 5250
+F 0 "R6" H 4220 5296 50  0000 L CNN
+F 1 "20" H 4220 5205 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 4080 5250 50  0001 C CNN
+F 3 "~" H 4150 5250 50  0001 C CNN
+	1    4150 5250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R7
+U 1 1 63055460
+P 4450 5250
+F 0 "R7" H 4520 5296 50  0000 L CNN
+F 1 "20" H 4520 5205 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 4380 5250 50  0001 C CNN
+F 3 "~" H 4450 5250 50  0001 C CNN
+	1    4450 5250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R8
+U 1 1 63055466
+P 4750 5250
+F 0 "R8" H 4820 5296 50  0000 L CNN
+F 1 "20" H 4820 5205 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 4680 5250 50  0001 C CNN
+F 3 "~" H 4750 5250 50  0001 C CNN
+	1    4750 5250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R9
+U 1 1 63056370
+P 5050 5250
+F 0 "R9" H 5120 5296 50  0000 L CNN
+F 1 "20" H 5120 5205 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 4980 5250 50  0001 C CNN
+F 3 "~" H 5050 5250 50  0001 C CNN
+	1    5050 5250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R10
+U 1 1 63056376
+P 5350 5250
+F 0 "R10" H 5420 5296 50  0000 L CNN
+F 1 "20" H 5420 5205 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 5280 5250 50  0001 C CNN
+F 3 "~" H 5350 5250 50  0001 C CNN
+	1    5350 5250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R11
+U 1 1 6305637C
+P 5650 5250
+F 0 "R11" H 5720 5296 50  0000 L CNN
+F 1 "20" H 5720 5205 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 5580 5250 50  0001 C CNN
+F 3 "~" H 5650 5250 50  0001 C CNN
+	1    5650 5250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R12
+U 1 1 63056382
+P 5950 5250
+F 0 "R12" H 6020 5296 50  0000 L CNN
+F 1 "20" H 6020 5205 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 5880 5250 50  0001 C CNN
+F 3 "~" H 5950 5250 50  0001 C CNN
+	1    5950 5250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R13
+U 1 1 630564EC
+P 6250 5250
+F 0 "R13" H 6320 5296 50  0000 L CNN
+F 1 "20" H 6320 5205 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 6180 5250 50  0001 C CNN
+F 3 "~" H 6250 5250 50  0001 C CNN
+	1    6250 5250
+	1    0    0    -1  
+$EndComp
+Text Label 2650 5750 1    50   ~ 0
+CELL01n
+Text Label 2950 5750 1    50   ~ 0
+CELL01p
+Text Label 3250 5750 1    50   ~ 0
+CELL02p
+Text Label 3550 5750 1    50   ~ 0
+CELL03p
+Text Label 3850 5750 1    50   ~ 0
+CELL04p
+Text Label 4150 5750 1    50   ~ 0
+CELL05p
+Text Label 4450 5750 1    50   ~ 0
+CELL06p
+Text Label 4750 5750 1    50   ~ 0
+CELL07p
+Text Label 5050 5750 1    50   ~ 0
+CELL08p
+Text Label 5350 5750 1    50   ~ 0
+CELL09p
+Text Label 5650 5750 1    50   ~ 0
+CELL10p
+Text Label 5950 5750 1    50   ~ 0
+CELL11p
+Text Label 6250 5750 1    50   ~ 0
+CELL12p
+Wire Wire Line
+	1950 2100 2650 2100
+Wire Wire Line
+	2650 2100 2650 4350
+Wire Wire Line
+	1450 2100 1200 2100
+Wire Wire Line
+	1200 2100 1200 1800
+Wire Wire Line
+	1200 1800 2950 1800
+Wire Wire Line
+	2950 1800 2950 4500
+Wire Wire Line
+	1950 2200 3250 2200
+Wire Wire Line
+	3250 2200 3250 4250
+Wire Wire Line
+	1450 2200 1100 2200
+Wire Wire Line
+	1100 2200 1100 1700
+Wire Wire Line
+	1100 1700 3550 1700
+Wire Wire Line
+	3550 1700 3550 4600
+Wire Wire Line
+	1950 2300 3850 2300
+Wire Wire Line
+	3850 2300 3850 4150
+Wire Wire Line
+	1450 2300 1000 2300
+Wire Wire Line
+	1000 2300 1000 1600
+Wire Wire Line
+	1000 1600 4150 1600
+Wire Wire Line
+	4150 1600 4150 4700
+Wire Wire Line
+	1950 2400 4450 2400
+Wire Wire Line
+	4450 2400 4450 4050
+Wire Wire Line
+	1450 2400 900  2400
+Wire Wire Line
+	900  2400 900  1500
+Wire Wire Line
+	900  1500 4750 1500
+Wire Wire Line
+	4750 1500 4750 4800
+Wire Wire Line
+	1950 2500 5050 2500
+Wire Wire Line
+	5050 2500 5050 3950
+Wire Wire Line
+	1450 2500 800  2500
+Wire Wire Line
+	800  2500 800  1400
+Wire Wire Line
+	800  1400 5350 1400
+Wire Wire Line
+	5350 1400 5350 4900
+Wire Wire Line
+	1950 2600 5650 2600
+Wire Wire Line
+	5650 2600 5650 3850
+Wire Wire Line
+	1450 2600 700  2600
+Wire Wire Line
+	700  2600 700  1300
+Wire Wire Line
+	700  1300 5950 1300
+Wire Wire Line
+	5950 1300 5950 5000
+Wire Wire Line
+	1950 2700 6250 2700
+Wire Wire Line
+	6250 2700 6250 3750
+Wire Wire Line
+	8000 4350 2650 4350
+Connection ~ 2650 4350
+Wire Wire Line
+	2650 4350 2650 5100
+Wire Wire Line
+	8000 4250 3250 4250
+Connection ~ 3250 4250
+Wire Wire Line
+	3250 4250 3250 5100
+Wire Wire Line
+	8000 4150 3850 4150
+Connection ~ 3850 4150
+Wire Wire Line
+	3850 4150 3850 5100
+Wire Wire Line
+	8000 4050 4450 4050
+Connection ~ 4450 4050
+Wire Wire Line
+	4450 4050 4450 5100
+Wire Wire Line
+	8000 3950 5050 3950
+Connection ~ 5050 3950
+Wire Wire Line
+	5050 3950 5050 5100
+Wire Wire Line
+	8000 3850 5650 3850
+Connection ~ 5650 3850
+Wire Wire Line
+	5650 3850 5650 5100
+Wire Wire Line
+	8000 3750 6250 3750
+Connection ~ 6250 3750
+Wire Wire Line
+	6250 3750 6250 5100
+Wire Wire Line
+	8500 4350 8600 4350
+Wire Wire Line
+	8600 4350 8600 4500
+Wire Wire Line
+	8600 4500 2950 4500
+Connection ~ 2950 4500
+Wire Wire Line
+	2950 4500 2950 5100
+Wire Wire Line
+	3550 4600 8700 4600
+Wire Wire Line
+	8700 4600 8700 4250
+Wire Wire Line
+	8700 4250 8500 4250
+Connection ~ 3550 4600
+Wire Wire Line
+	3550 4600 3550 5100
+Wire Wire Line
+	4150 4700 8800 4700
+Wire Wire Line
+	8800 4700 8800 4150
+Wire Wire Line
+	8800 4150 8500 4150
+Connection ~ 4150 4700
+Wire Wire Line
+	4150 4700 4150 5100
+Wire Wire Line
+	8500 4050 8900 4050
+Wire Wire Line
+	8900 4050 8900 4800
+Wire Wire Line
+	8900 4800 4750 4800
+Connection ~ 4750 4800
+Wire Wire Line
+	4750 4800 4750 5100
+Wire Wire Line
+	5350 4900 9000 4900
+Wire Wire Line
+	9000 4900 9000 3950
+Wire Wire Line
+	9000 3950 8500 3950
+Connection ~ 5350 4900
+Wire Wire Line
+	5350 4900 5350 5100
+Wire Wire Line
+	8500 3850 9100 3850
+Wire Wire Line
+	9100 3850 9100 5000
+Wire Wire Line
+	9100 5000 5950 5000
+Connection ~ 5950 5000
+Wire Wire Line
+	5950 5000 5950 5100
+NoConn ~ 8500 3750
+NoConn ~ 1450 2700
+Text Label 2650 3650 1    50   ~ 0
+CELL01n_CONN
+Text Label 2950 3650 1    50   ~ 0
+CELL01p_CONN
+Text Label 3250 3650 1    50   ~ 0
+CELL02p_CONN
+Text Label 3550 3650 1    50   ~ 0
+CELL03p_CONN
+Text Label 3850 3650 1    50   ~ 0
+CELL04p_CONN
+Text Label 4150 3650 1    50   ~ 0
+CELL05p_CONN
+Text Label 4450 3650 1    50   ~ 0
+CELL06p_CONN
+Text Label 5350 3650 1    50   ~ 0
+CELL09p_CONN
+Text Label 5050 3650 1    50   ~ 0
+CELL08p_CONN
+Text Label 4750 3650 1    50   ~ 0
+CELL07p_CONN
+Text Label 5650 3650 1    50   ~ 0
+CELL10p_CONN
+Text Label 5950 3650 1    50   ~ 0
+CELL11p_CONN
+Text Label 6250 3650 1    50   ~ 0
+CELL12p_CONN
+Text Notes 7100 7000 0    50   ~ 0
+For use with LiBCM PCB\ngithub.com/doppelhub/Honda_Insight_LiBCM
+Text Notes 10600 7650 0    50   ~ 0
+A
+Text Notes 8150 7650 0    50   ~ 0
+2022AUG21
+Text Notes 7350 7500 0    50   ~ 0
+47 Ah FoMoCo Adapter PCB
+NoConn ~ 1800 5800
+Text Notes 1600 6350 0    50   ~ 0
+MECHANICAL\nTAB HOLE
+$Comp
+L Connector_Generic:Conn_01x01 J_MECH_1
+U 1 1 63112A47
+P 1800 6000
+F 0 "J_MECH_1" V 1672 6080 50  0000 L CNN
+F 1 "Conn_01x01" V 1900 5800 50  0000 L CNN
+F 2 "47AhFoMoCo:BMS Hole" H 1800 6000 50  0001 C CNN
+F 3 "~" H 1800 6000 50  0001 C CNN
+	1    1800 6000
+	0    1    1    0   
+$EndComp
+$EndSCHEMATC
