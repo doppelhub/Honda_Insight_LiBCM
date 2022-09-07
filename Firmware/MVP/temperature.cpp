@@ -31,10 +31,17 @@ int8_t temperature_ambient_getLatest(void)	  { return tempAmbient; } //WHT OEM t
 //only call inside handler (to ensure sensors powered)
 void temperature_measureOEM(void)
 {
-	tempIntake  = temperature_measureOneSensor_degC(PIN_TEMP_GRN);
-	tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_YEL);
-	tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
-	tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
+	#ifdef BATTERY_TYPE_5AhG3
+		tempIntake  = temperature_measureOneSensor_degC(PIN_TEMP_GRN);
+		tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_YEL);
+		tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
+		tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
+	#elif defined BATTERY_TYPE_47AhFoMoCo
+		tempIntake  = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
+		tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
+		tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_GRN);
+		tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_YEL);
+	#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

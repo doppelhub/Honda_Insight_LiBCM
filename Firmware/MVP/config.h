@@ -7,11 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.8.4"
-    #define BUILD_DATE "2022SEP03"
-
-	#define CPU_MAP_MEGA2560
-    #define HW_REVC
+	#define FW_VERSION "0.8.4a"
+    #define BUILD_DATE "2022SEP06"
 
 	//choose your battery type:
 		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
@@ -28,16 +25,17 @@
 		//#define SET_CURRENT_HACK_60 //+60% //Note: LiBCM can only measure between 71 A regen & 147 A assist //higher current values will (safely) rail the ADC
 
 	//choose ONE of the following:
-		//#define VOLTAGE_SPOOFING_DISABLE              //closest to OEM IMA behavior
+		#define VOLTAGE_SPOOFING_DISABLE              //closest to OEM IMA behavior
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE //only spoof during assist, using variable voltage
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //only spoof during assist, using either 120 volts or (vPackActual-12)
-		#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //always spoof voltage (enables stronger regen)
+		//#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //always spoof voltage (enables stronger regen)
 
 	//#define DISABLE_ASSIST //uncomment to (always) disable assist
 	//#define DISABLE_REGEN  //uncomment to (always) disable regen
 	//#define REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING //EXPERIMENTAL! //JTS2doNow: Make this work (for Balto)
 
-	#define MCME_VOLTAGE_OFFSET_ADJUST 12 //difference between OBDIIC&C and LiBCM spoofed pack voltage (Subtract LiBCM voltage from OBDIIC&C Bvo.  Default is 12.)
+	//JTS2doLater: Remove this depricated feature
+	#define MCME_VOLTAGE_OFFSET_ADJUST 12 //difference between OBDIIC&C and LiBCM spoofed pack voltage (Subtract LiBCM voltage from OBDIIC&C Bvo.  Default is 12.
 
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
 
@@ -78,7 +76,7 @@
 	#define KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES 10 //Even with low SoC, LiBCM will remain on for this many minutes after keyOFF.
 		//to turn LiBCM back on: turn ignition to 'ON', or turn IMA switch off and on, or plug in USB cable
 
-	#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
+	//#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
 	
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
 #endif

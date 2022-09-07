@@ -239,3 +239,15 @@ bool gpio3_getState(void) { return digitalRead(PIN_GPIO3); }
 
 void gpio_turnTemperatureSensors_on( void) {digitalWrite(PIN_TEMP_EN,HIGH); }
 void gpio_turnTemperatureSensors_off(void) {digitalWrite(PIN_TEMP_EN,LOW ); }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+//JTS2doLater: Replace Arduino I/O functions
+/*
+  #define DIRECTION_DDR     DDRD
+  #define DIRECTION_PORT    PORTD
+  #define X_DIRECTION_BIT   5  // Uno Digital Pin 5
+  #define Y_DIRECTION_BIT   6  // Uno Digital Pin 6
+  #define Z_DIRECTION_BIT   7  // Uno Digital Pin 7
+  #define DIRECTION_MASK    ((1<<X_DIRECTION_BIT)|(1<<Y_DIRECTION_BIT)|(1<<Z_DIRECTION_BIT)) // All direction bits
+*/

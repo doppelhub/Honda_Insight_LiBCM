@@ -12,7 +12,7 @@
 	int16_t vPackSpoof_getPWMcounts_MCMe(void);
 	void    vPackSpoof_setPWMcounts_MCMe(uint8_t newCounts);
 
-	int16_t vPackSpoof_getPWMcounts_VPIN(void);
+	int16_t vPackSpoof_getPWMcounts_VPINout(void);
 
 	void vPackSpoof_setVoltage(void);
 

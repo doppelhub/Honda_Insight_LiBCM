@@ -7,6 +7,8 @@
 #ifndef cpu_map_h
 #define cpu_map_h
 
+  #define CPU_MAP_MEGA2560
+
   #ifdef CPU_MAP_MEGA2560
   
       #define PIN_BATTCURRENT A0
@@ -71,13 +73,3 @@
   #endif
 
 #endif
-
-//JTS2doLater: Replace Arduino I/O functions
-/*
-  #define DIRECTION_DDR     DDRD
-  #define DIRECTION_PORT    PORTD
-  #define X_DIRECTION_BIT   5  // Uno Digital Pin 5
-  #define Y_DIRECTION_BIT   6  // Uno Digital Pin 6
-  #define Z_DIRECTION_BIT   7  // Uno Digital Pin 7
-  #define DIRECTION_MASK    ((1<<X_DIRECTION_BIT)|(1<<Y_DIRECTION_BIT)|(1<<Z_DIRECTION_BIT)) // All direction bits
-*/
