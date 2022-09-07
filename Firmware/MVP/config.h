@@ -7,7 +7,7 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.8.4a"
+	#define FW_VERSION "0.8.4b"
     #define BUILD_DATE "2022SEP06"
 
 	//choose your battery type:

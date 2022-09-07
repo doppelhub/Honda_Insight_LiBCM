@@ -60,6 +60,15 @@ void spoofVoltageMCMe(void)
 	else if(pwmCounts_MCMe <   0) {pwmCounts_MCMe =   0;}
 
 	analogWrite(PIN_MCME_PWM, (uint8_t)pwmCounts_MCMe);
+
+	//JTSdebug
+	static uint8_t pwmCounts_MCMe_previous = 0;
+	if(pwmCounts_MCMe != pwmCounts_MCMe_previous)
+	{
+		Serial.print(F(", pwmCounts_MCMe:"));
+		Serial.print(pwmCounts_MCMe);
+		pwmCounts_MCMe_previous = pwmCounts_MCMe;
+	}
 }
 
 //---------------------------------------------------------------------------------------
@@ -78,14 +87,24 @@ void spoofVoltage_VPINout(void)
 	#define V_DIV_CORRECTION 1.1
 
 	//remap measured Vpin_in value ratiometrically to desired spoofed voltage
-	//It's important to look at VPIN_in, since V_PDU is different from the Vpack during keyON capacitor charging event 
-	pwmCounts_VPIN_out = (adc_packVoltage_VpinIn() * spoofedPackVoltage * V_DIV_CORRECTION ) / LTC68042result_packVoltage_get();
+	//It's important to look at VPIN_in, since V_PDU is different from the Vpack during keyON capacitor charging event
+	uint16_t intermediateMath = (uint16_t)(adc_packVoltage_VpinIn() * spoofedPackVoltage) * V_DIV_CORRECTION;
+	pwmCounts_VPIN_out = (int16_t)( (uint16_t)intermediateMath / LTC68042result_packVoltage_get() );
 
 	//bounds checking
 	if     (pwmCounts_VPIN_out > 255) {pwmCounts_VPIN_out = 255;}
 	else if(pwmCounts_VPIN_out <   0) {pwmCounts_VPIN_out =   0;}
 
 	analogWrite(PIN_VPIN_OUT_PWM, (uint8_t)pwmCounts_VPIN_out);
+
+	//JTSdebug
+	static uint8_t pwmCounts_VPIN_out_previous = 0;
+	if(pwmCounts_VPIN_out != pwmCounts_VPIN_out_previous)
+	{
+		Serial.print(F(", pwmCounts_VPIN_out:"));
+		Serial.print(pwmCounts_VPIN_out);
+		pwmCounts_VPIN_out_previous = pwmCounts_VPIN_out;
+	}
 }
 
 //---------------------------------------------------------------------------------------
@@ -124,6 +143,15 @@ uint8_t calculate_Vspoof_maxPossible(void)
 void spoofVoltage_calculateValue(void)
 {
 	uint8_t maxPossibleVspoof = calculate_Vspoof_maxPossible();
+
+	//JTSdebug
+	static uint8_t maxPossibleVspoof_previous = 0;
+	if(maxPossibleVspoof != maxPossibleVspoof_previous)
+	{
+		Serial.print(F("\nmaxPossibleVspoof: "));
+		Serial.print(maxPossibleVspoof);
+		maxPossibleVspoof_previous = maxPossibleVspoof;
+	}
 
 	#if defined VOLTAGE_SPOOFING_DISABLE
 		//For those that don't want voltage spoofing, spoof maximum possible pack voltage
