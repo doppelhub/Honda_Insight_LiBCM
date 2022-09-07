@@ -30,6 +30,8 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 
 	debugUSB_printHardwareRevision();
 
+	analogWrite(PIN_VPIN_OUT_PWM,143); //JTSdebug //Trying to see if MCM is preventing startup routine due to too high voltage on MCM'e'
+
 	Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION ", " BUILD_DATE "\nType '$HELP' for more info\n"));
 
 }
