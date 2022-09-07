@@ -93,7 +93,7 @@ void spoofVoltage_VPINout(void)
 
 	//bounds checking
 	if     (pwmCounts_VPIN_out > 255) {pwmCounts_VPIN_out = 255;}
-	else if(pwmCounts_VPIN_out <   0) {pwmCounts_VPIN_out =   0;}
+	else if(pwmCounts_VPIN_out <  26) {pwmCounts_VPIN_out =  26;} //MCM ADC rolls under if VPIN is less than 0.5 volts (0.5/5*256 = 25.6 ~= 26)
 
 	analogWrite(PIN_VPIN_OUT_PWM, (uint8_t)pwmCounts_VPIN_out);
 
