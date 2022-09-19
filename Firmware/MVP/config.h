@@ -25,10 +25,10 @@
 		//#define SET_CURRENT_HACK_60 //+60% //Note: LiBCM can only measure between 71 A regen & 147 A assist //higher current values will (safely) rail the ADC
 
 	//choose ONE of the following:
-		#define VOLTAGE_SPOOFING_DISABLE              //closest to OEM IMA behavior
+		//#define VOLTAGE_SPOOFING_DISABLE              //closest to OEM IMA behavior
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE //only spoof during assist, using variable voltage
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //only spoof during assist, using either 120 volts or (vPackActual-12)
-		//#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //always spoof voltage (enables stronger regen)
+		#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //always spoof voltage (enables stronger regen)
 
 	//#define DISABLE_ASSIST //uncomment to (always) disable assist
 	//#define DISABLE_REGEN  //uncomment to (always) disable regen
