@@ -124,7 +124,7 @@ void temperature_handler(void)
 	static uint32_t millis_previous = 0;
 	static uint32_t millis_latestSensorTurnon = 0;
 
-	if( (millis() - millis_previous) > temperatureUpdateInterval )
+	if( (uint32_t)(millis() - millis_previous) > temperatureUpdateInterval )
 	{
 		//time to measure temperature sensors
 		millis_previous = millis();
@@ -154,7 +154,7 @@ void temperature_handler(void)
 	}	
 
 	else if ( (tempSensorState == TEMP_SENSORS_POWERUP) &&
-	          ( (millis() - millis_latestSensorTurnon) > TEMP_STABILIZATION_TIME_ms) ) //wait for temp sensor LPFs to stabilize
+	          ( (uint32_t)(millis() - millis_latestSensorTurnon) > TEMP_STABILIZATION_TIME_ms) ) //wait for temp sensor LPFs to stabilize
 	{
 		// temp sensors stabilized
 		tempSensorState = TEMP_MEASURE_NOW;

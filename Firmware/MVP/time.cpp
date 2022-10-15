@@ -21,14 +21,15 @@ bool time_toUpdate_keyOffValues(void)
   bool isItTimeToUpdate = false;
 
   //determine period between LTC cell voltage reads (saves power)
-  if( (cellBalance_areCellsBalanced() == false) || (gpio_isGridChargerChargingNow() == true ) )
+  if( ((cellBalance_areCellsBalanced() == false) && (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC)) ||
+      (gpio_isGridChargerChargingNow() == true                                                               )  )
   { 
     keyOffUpdatePeriod_ms = 1000; //if over 1800 ms, LTC ICs will turn off (bad)
   } 
-  else { keyOffUpdatePeriod_ms = 60000; } //JTS2doNow: Change to 10 minutes
+  else { keyOffUpdatePeriod_ms = 600000; } //10 minutes
   
   //Has enough time passed yet?
-  if( (millis() - timestamp_lastUpdate_ms) > keyOffUpdatePeriod_ms )
+  if( (uint32_t)(millis() - timestamp_lastUpdate_ms) > keyOffUpdatePeriod_ms )
   { 
     isItTimeToUpdate = true;
     timestamp_lastUpdate_ms = millis();
@@ -43,7 +44,7 @@ bool time_hasKeyBeenOffLongEnough_toTurnOffLiBCM(void)
 {
   bool keyOffForLongEnough = false;
 
-  if( (millis() - key_latestTurnOffTime_ms_get() ) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000) )
+  if( (uint32_t)(millis() - key_latestTurnOffTime_ms_get() ) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000) )
   {
     keyOffForLongEnough = true;
   }
@@ -59,7 +60,7 @@ void time_waitForLoopPeriod(void)
     bool timingMet = false;
 
     LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left
-    while( (millis() - timestamp_previousLoopStart_ms ) < time_loopPeriod_ms_get() ) { timingMet = true; } //wait here to start next loop
+    while( (uint32_t)(millis() - timestamp_previousLoopStart_ms) < time_loopPeriod_ms_get() ) { timingMet = true; } //wait here to start next loop
     LED(4,LOW);
     
     if( (key_getSampledState() == KEYSTATE_ON) && (timingMet == false) )
@@ -69,7 +70,6 @@ void time_waitForLoopPeriod(void)
     }
 
     timestamp_previousLoopStart_ms = millis(); //placed at end to prevent delay at keyON event
-    //JTS2doLater: Determine millis() behavior after overflow (50 days)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

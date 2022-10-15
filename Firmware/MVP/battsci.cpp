@@ -50,7 +50,6 @@ void BATTSCI_begin(void)
   digitalWrite(PIN_BATTSCI_REn,HIGH);
 
   Serial2.begin(9600,SERIAL_8E1);
-  Serial.print(F("\nBATTSCI BEGIN"));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -344,7 +343,7 @@ void BATTSCI_sendFrames(void)
   static uint32_t previousMillis = 0;
 
   if( ( BATTSCI_bytesAvailableForWrite() > BATTSCI_BYTES_IN_FRAME ) && //Verify serial send ring buffer has room
-      ( (millis() - previousMillis) >= BATTSCI_framePeriod_ms_get() ) )
+      ( (uint32_t)(millis() - previousMillis) >= BATTSCI_framePeriod_ms_get() ) )
   {
     //time to send a BATTSCI frame!
     previousMillis = millis(); //stores the next frame start time

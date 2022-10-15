@@ -5,6 +5,8 @@
 //FYI:    Serial       data transfers from host  to LiBCM are handled elsewhere.
 
 //JTS2doLater: Gather all Serial Monitor transmissions here
+//JTS2doNow: Add new debug mode that sents LiBCM's modal states in realtime... to make it easier to troubleshoot odd behavior.
+
 
 #include "libcm.h"
 
@@ -76,7 +78,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	}
 	else if(testToRun == '6')
 	{
-		Serial.print(F("\nRunning TEST6: Turn off LiBCM (5V rail).\nLiBCM will stay on if USB 5V connected."));
+		Serial.print(F("\nRunning TEST6: Turn off LiBCM (5V rail).\nLiBCM will stay on if USB's +5V connected."));
 		gpio_turnLiBCM_off();
 	}
 	else if(testToRun == 'B')
@@ -120,12 +122,12 @@ void printHelp(void)
 		"\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
 		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
 		"\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"
-		"\n -'$DISP=PWR'/SCI/CELL/TEMP/OFF: data to stream (power/BAT&METSCI/Vcell/temperature/none)"
+		"\n -'$DISP=PWR'/SCI/CELL/TEMP/DBG/OFF: data to stream (power/BAT&METSCI/Vcell/temperature/none)"
 		"\n -'$RATE=___': USB updates per second (1 to 255 Hz)"
 		"\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
 		"\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)"
 		"\n -'$MCMp=___': set manual MCMe PWM value (0:255)('123' for auto)"
-		"\n -'$MCMb=___': Override default MCME_VOLTAGE_OFFSET_ADJUST value"
+		"\n -'$MCMb': Display offsetVoltage_MCMe value"
 		"\n"
 		/*
 		"\nFuture LiBCM commands (not presently supported"
@@ -247,6 +249,7 @@ void USB_userInterface_executeUserInput(void)
 			else if( (line[6] == 'C') && (line[7] == 'E') && (line[8] == 'L') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_CELL);       } //JTS2doNow: add case
 			else if( (line[6] == 'O') && (line[7] == 'F') && (line[8] == 'F') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_NONE);       }
 			else if( (line[6] == 'T') && (line[7] == 'E') && (line[8] == 'M') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_TEMP);       }
+			else if( (line[6] == 'D') && (line[7] == 'B') && (line[8] == 'G') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_DEBUG);      }
 		}
 
 		//RATE
@@ -309,14 +312,9 @@ void USB_userInterface_executeUserInput(void)
 		//$MCMb
 		else if( (line[1] == 'M') && (line[2] == 'C') && (line[3] == 'M') && (line[4] == 'B') )
 		{
-			if(line[5] == '=')
+			if(line[5] == STRING_TERMINATION_CHARACTER)
 			{
-				uint8_t newOffset_volts = get_uint8_FromInput(line[6],line[7],line[8]);
-				vPackSpoof_setMCMeOffsetVoltage(newOffset_volts);
-			}
-			else if(line[5] == STRING_TERMINATION_CHARACTER)
-			{
-				Serial.print(F("\nMCME_VOLTAGE_OFFSET_ADJUST is (volts): "));
+				Serial.print(F("\noffsetVoltage_MCMe is (volts): "));
 				Serial.print(vPackSpoof_getMCMeOffsetVoltage(),DEC);
 			}
 		}

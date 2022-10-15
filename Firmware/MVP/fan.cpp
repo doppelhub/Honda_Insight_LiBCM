@@ -27,7 +27,7 @@ void fanSpeedController(uint8_t whichFan)
 		}
 		else //(fan speed is decreasing)
 		{
-			if( (millis() - timestamp_latestFanSpeedChange_ms[whichFan]) > FAN_HYSTERESIS_ms)
+			if( (uint32_t)(millis() - timestamp_latestFanSpeedChange_ms[whichFan]) > FAN_HYSTERESIS_ms)
 			{
 				//hysteresis delay period has passed
 				changeFanSpeedNow = YES;
@@ -118,7 +118,7 @@ void fan_handler(void)
 
 	if( (deltaAbs_battTemp   >= FAN_HYSTERESIS_degC) ||
 		(deltaAbs_intakeTemp >= FAN_HYSTERESIS_degC) ||
-		((millis() - timeSinceLastFanCheck_ms) > FORCE_FAN_UPDATE_PERIOD_ms) )
+		((uint32_t)(millis() - timeSinceLastFanCheck_ms) > FORCE_FAN_UPDATE_PERIOD_ms) )
 	{
 		//intake or battery temperature changed enough to check for possible new fan state
 

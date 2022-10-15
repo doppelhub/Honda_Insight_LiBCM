@@ -108,7 +108,6 @@ void LTC68042configure_programVolatileDefaults(void)
 void LTC68042configure_initialize(void)
 {
   spi_enable(SPI_CLOCK_DIV64); //JTS2doLater: increase clock speed //DIV16 & DIV32 work on bench
-  Serial.print(F("\nLTC6804 BEGIN"));
 }
 
 //---------------------------------------------------------------------------------------
@@ -120,7 +119,7 @@ bool LTC68042configure_wakeupCore(void)
 
   bool wasCoreAlreadyAwake = LTC6804_CORE_ALREADY_AWAKE;
 
-  if( (millis() - lastTimeDataSent_millis) > T_SLEEP_WATCHDOG_MILLIS )
+  if( (uint32_t)(millis() - lastTimeDataSent_millis) > T_SLEEP_WATCHDOG_MILLIS )
   { 
     //LTC6804 core (probably) asleep
     digitalWrite(PIN_SPI_CS,LOW); //wake up core
@@ -140,7 +139,7 @@ void LTC68042configure_wakeupIsoSPI(void)
 {
   const uint8_t T_IDLE_isoSPI_MILLIS = 4; //'tIDLE' = 4.3 (min) to 6.7 (max) ms
 
-  if( (millis() - lastTimeDataSent_millis) > T_IDLE_isoSPI_MILLIS )
+  if( (uint32_t)(millis() - lastTimeDataSent_millis) > T_IDLE_isoSPI_MILLIS )
   { 
     //LTC6804 isoSPI might be asleep (tIDLE elapsed)
     digitalWrite(PIN_SPI_CS,LOW);

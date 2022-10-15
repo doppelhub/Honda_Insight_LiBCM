@@ -1,7 +1,14 @@
 Return shipping instructions:
 
 1: Remove lithium battery from each case.
-2: Place all shipping packaging back inside each case.
-3: Peel off or cover both "UN3480" labels.  They MUST NOT REMAIN VISIBLE!
+
+2: Place all shipping foam back inside each case.
+
+3: Peel off or cover the following items (MUST NOT BE VISIBLE):
+	-QTY2 "UN3480" labels.
+	-QTY1 "FedEx Hazardous Materials Shipping Papers Enclosed" pouch
+	-QTY1 "Hazardous Materials Description and Quantity" label.
+
 4: Place one prepaid USPS return shipping label onto each box.
+
 5: Drop off at any USPS facility.

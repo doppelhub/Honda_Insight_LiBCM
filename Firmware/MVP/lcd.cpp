@@ -43,7 +43,7 @@ bool lcd_printTime_seconds(void)
 
 	#ifdef LCD_4X20_CONNECTED
 		static uint16_t seconds_onScreen = 0;
-		uint32_t keyOnTime_ms = millis() - key_latestTurnOnTime_ms_get();
+		uint32_t keyOnTime_ms = (uint32_t)(millis() - key_latestTurnOnTime_ms_get());
 		uint16_t keyOnTime_seconds = (uint16_t)(keyOnTime_ms * 0.001); //rolls over after keyON for 18 hours
 
 		if(seconds_onScreen != keyOnTime_seconds)
@@ -450,7 +450,7 @@ void lcd_refresh(void)
 		//  Ex:( (1.0 / 32E-3                    ) / 14                 ) = worst case (all elements have changed), each screen element updates 2.2x/second
 
 		//Only update screen at a human-readable rate
-		if(millis() - millis_previous > SCREEN_UPDATE_RATE_MILLIS)
+		if((uint32_t)(millis() - millis_previous) > SCREEN_UPDATE_RATE_MILLIS)
 		{ 
 			millis_previous = millis();
 

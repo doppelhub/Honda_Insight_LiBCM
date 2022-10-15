@@ -13,7 +13,6 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 	BATTSCI_begin();
 	LiDisplay_begin();
 	lcd_begin();
-
 	LTC68042configure_initialize();
 
 	if(gpio_keyStateNow() == KEYSTATE_ON){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while keyON (e.g. while driving)
@@ -28,12 +27,9 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 
 	EEPROM_verifyDataValid();
 
+	Serial.print(F("\n\nLiBCM v" FW_VERSION ", " BUILD_DATE "\n'$HELP' for info\n"));
 	debugUSB_printHardwareRevision();
-
-	analogWrite(PIN_VPIN_OUT_PWM,143); //JTSdebug //Trying to see if MCM is preventing startup routine due to too high voltage on MCM'e'
-
-	Serial.print(F("\n\nWelcome to LiBCM v" FW_VERSION ", " BUILD_DATE "\nType '$HELP' for more info\n"));
-
+	debugUSB_printConfigParameters();
 }
 
 void loop()

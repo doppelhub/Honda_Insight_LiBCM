@@ -2,7 +2,7 @@
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //Handles serial debug data transfers from LIBCM to  host
-//FYI:    Serial       data transfers from host  to LiBCM are handled elsewhere.
+//FYI:    Serial       data transfers from host  to LiBCM are handled in USB_interface.c.
 
 //JTS2doLater: Gather all Serial Monitor transmissions here
 
@@ -112,7 +112,7 @@ void debugUSB_printLatest_data_gridCharger(void)
 {	
 	static uint32_t previousMillisGrid = 0;
 
-	if( millis() - previousMillisGrid >= DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS)
+	if( (uint32_t)(millis() - previousMillisGrid) >= DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS)
 	{
 		previousMillisGrid = millis();
 
@@ -184,6 +184,8 @@ void debugUSB_printData_cellVoltages(void)
 	else                       { transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE; icToPrint = 0; Serial.print(F("\ncell voltages:")); }
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////
+
 void debugUSB_printData_temperatures(void)
 {
 	Serial.print(F("\nT_batt:"));
@@ -202,14 +204,22 @@ void debugUSB_printData_temperatures(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Add debug data
+void debugUSB_printData_debug(void)
+{
+	status_printState();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
 //Sending more than 63 characters per call makes this function blocking (until the buffer empties)!
 void debugUSB_printLatestData_keyOn(void)
 {	
 	static uint32_t previousMillis = 0;
 
 	//print message if it's time and there's room in the serial transmit buffer
-	if( ( (millis() - previousMillis >= debugUSB_dataUpdatePeriod_ms_get() ) || (transmitStatus == TRANSMITTING_LARGE_MESSAGE) ) &&
-			(Serial.availableForWrite() > 62) )
+	if( ( ((uint32_t)(millis() - previousMillis) >= debugUSB_dataUpdatePeriod_ms_get()) || (transmitStatus == TRANSMITTING_LARGE_MESSAGE) ) &&
+		(Serial.availableForWrite() > 62) )
 	{
 		previousMillis = millis();
 
@@ -217,6 +227,7 @@ void debugUSB_printLatestData_keyOn(void)
 		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { debugUSB_printData_BATTMETSCI();   }
 		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_CELL)       { debugUSB_printData_cellVoltages(); }
 		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_TEMP)       { debugUSB_printData_temperatures(); }
+		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_DEBUG)      { debugUSB_printData_debug();        }
 	}
 }
 
@@ -224,9 +235,46 @@ void debugUSB_printLatestData_keyOn(void)
 
 void debugUSB_printHardwareRevision(void)
 {
-	Serial.print(F("\nHW Rev: "));
+	Serial.print(F("\nHW:"));
 	if     (gpio_getHardwareRevision() == HW_REV_C) { Serial.print('C'); }
 	else if(gpio_getHardwareRevision() == HW_REV_D) { Serial.print('D'); }
 	else if(gpio_getHardwareRevision() == HW_REV_E) { Serial.print('E'); }
 	else if(gpio_getHardwareRevision() == HW_REV_F) { Serial.print('F'); }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void debugUSB_printConfigParameters(void)
+{
+	#ifdef        SET_CURRENT_HACK_00
+		Serial.print(F("/+00%"));
+	#elif defined SET_CURRENT_HACK_20
+		Serial.print(F("/+20%"));
+	#elif defined SET_CURRENT_HACK_20
+		Serial.print(F("/+40%"));
+	#elif defined SET_CURRENT_HACK_20
+		Serial.print(F("/+60%"));
+	#endif
+
+	#ifdef        BATTERY_TYPE_5AhG3
+		Serial.print(F("/5AhG3"));
+	#elif defined BATTERY_TYPE_47AhFoMoCo
+		Serial.print(F("/FoMoCo"));
+	#endif
+
+	#ifdef        STACK_IS_48S
+		Serial.print(F("/48S"));
+	#elif defined STACK_IS_60S
+		Serial.print(F("/60S"));
+	#endif
+
+	#ifdef        VOLTAGE_SPOOFING_DISABLE
+		Serial.print(F("/Vs=off"));
+	#elif defined VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE
+		Serial.print(F("/Vs=ast"));
+	#elif defined VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY
+		Serial.print(F("/Vs=bin"));
+	#elif defined VOLTAGE_SPOOFING_ASSIST_AND_REGEN
+		Serial.print(F("/Vs=all"));
+	#endif
 }

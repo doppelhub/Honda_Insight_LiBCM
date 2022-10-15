@@ -19,7 +19,7 @@ uint8_t modeMCMePWM = MCMe_USING_VPACK;
 int16_t pwmCounts_MCMe = 0;
 int16_t pwmCounts_VPIN_out = 0;
 
-uint8_t offsetVoltage_MCMe = MCME_VOLTAGE_OFFSET_ADJUST; //constant offset voltage to account for MCM HV insulation test //JTS2doNow: Correlate this to actualPackVoltage
+uint8_t offsetVoltage_MCMe = MCME_VOLTAGE_OFFSET_ADJUST; //constant offset voltage to account for MCM HV insulation test
 
 //---------------------------------------------------------------------------------------
 
@@ -28,7 +28,6 @@ void vPackSpoof_setModeMCMePWM(uint8_t newMode) { modeMCMePWM = newMode; }
 //---------------------------------------------------------------------------------------
 
 uint8_t vPackSpoof_getMCMeOffsetVoltage(void) { return offsetVoltage_MCMe; }
-void    vPackSpoof_setMCMeOffsetVoltage(uint8_t newOffset) { offsetVoltage_MCMe = newOffset; }
 
 //---------------------------------------------------------------------------------------
 
@@ -60,15 +59,6 @@ void spoofVoltageMCMe(void)
 	else if(pwmCounts_MCMe <   0) {pwmCounts_MCMe =   0;}
 
 	analogWrite(PIN_MCME_PWM, (uint8_t)pwmCounts_MCMe);
-
-	//JTSdebug
-	static uint8_t pwmCounts_MCMe_previous = 0;
-	if(pwmCounts_MCMe != pwmCounts_MCMe_previous)
-	{
-		Serial.print(F(", pwmCounts_MCMe:"));
-		Serial.print(pwmCounts_MCMe);
-		pwmCounts_MCMe_previous = pwmCounts_MCMe;
-	}
 }
 
 //---------------------------------------------------------------------------------------
@@ -96,15 +86,6 @@ void spoofVoltage_VPINout(void)
 	else if(pwmCounts_VPIN_out <  26) {pwmCounts_VPIN_out =  26;} //MCM ADC rolls under if VPIN is less than 0.5 volts (0.5/5*256 = 25.6 ~= 26)
 
 	analogWrite(PIN_VPIN_OUT_PWM, (uint8_t)pwmCounts_VPIN_out);
-
-	//JTSdebug
-	static uint8_t pwmCounts_VPIN_out_previous = 0;
-	if(pwmCounts_VPIN_out != pwmCounts_VPIN_out_previous)
-	{
-		Serial.print(F(", pwmCounts_VPIN_out:"));
-		Serial.print(pwmCounts_VPIN_out);
-		pwmCounts_VPIN_out_previous = pwmCounts_VPIN_out;
-	}
 }
 
 //---------------------------------------------------------------------------------------
@@ -144,15 +125,6 @@ void spoofVoltage_calculateValue(void)
 {
 	uint8_t maxPossibleVspoof = calculate_Vspoof_maxPossible();
 
-	//JTSdebug
-	static uint8_t maxPossibleVspoof_previous = 0;
-	if(maxPossibleVspoof != maxPossibleVspoof_previous)
-	{
-		Serial.print(F("\nmaxPossibleVspoof: "));
-		Serial.print(maxPossibleVspoof);
-		maxPossibleVspoof_previous = maxPossibleVspoof;
-	}
-
 	#if defined VOLTAGE_SPOOFING_DISABLE
 		//For those that don't want voltage spoofing, spoof maximum possible pack voltage
 		
@@ -161,15 +133,7 @@ void spoofVoltage_calculateValue(void)
 			spoofedPackVoltage = maxPossibleVspoof;
 
 		#elif defined STACK_IS_60S
-			//60S pack voltage is almost always too high to pass directly to MCM
-			spoofedPackVoltage = 170; //this value always works with 60S pack
-			//Derivations:
-			//spoofedPackVoltage must be greater than (actualPackVoltage * 0.67)
-			//  If all cells are at Vmax, then Vpack = 4.20 * 60 = 252 volts //252 volts * 0.67 = 169 volts.  Since 169<170, we can spoof this voltage
-			//spoofedPackVoltage must be less than (maxPossibleVspoof)
-			//  If all cells are at Vmin, then Vpack = 3.18 * 60 = 191 volts //191 volts - 15 = 176 volts.  Since 176>170, we can spoof this voltage
-			//
-			//JTS2doLater: Figure out a non-constant Vspoof solution (to increase output power when pack voltage is low)
+			spoofedPackVoltage = LTC68042result_packVoltage_get() * 0.67; //Vspoof(60S)=136 @ Vcell=3.4 //Vspoof(60S)=169 @ Vcell=4.2
 		#endif
 
 	//JTS2doLater: Get these other cases working with 60S
@@ -295,8 +259,8 @@ void vPackSpoof_handleKeyON(void) { ; }
 
 void vPackSpoof_handleKeyOFF(void)
 {
-	//pinMode(PIN_VPIN_OUT_PWM,INPUT); //set VPIN back to high impedance (to save power) //JTSdebug
-	//pinMode(PIN_MCME_PWM,    INPUT); //Set MCM'E' high impedance (to save power) //JTSdebug
+	pinMode(PIN_VPIN_OUT_PWM,INPUT); //set VPIN back to high impedance (to save power)
+	pinMode(PIN_MCME_PWM,    INPUT); //Set MCM'E' high impedance (to save power)
 }
 
 //---------------------------------------------------------------------------------------

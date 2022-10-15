@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.8.4d"
-    #define BUILD_DATE "2022SEP06"
+	#define FW_VERSION "0.8.4f"
+    #define BUILD_DATE "2022OCT14"
 
 	//choose your battery type:
 		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
@@ -33,9 +33,6 @@
 	//#define DISABLE_ASSIST //uncomment to (always) disable assist
 	//#define DISABLE_REGEN  //uncomment to (always) disable regen
 	//#define REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING //EXPERIMENTAL! //JTS2doNow: Make this work (for Balto)
-
-	//JTS2doLater: Remove this depricated feature
-	#define MCME_VOLTAGE_OFFSET_ADJUST 12 //difference between OBDIIC&C and LiBCM spoofed pack voltage (Subtract LiBCM voltage from OBDIIC&C Bvo.  Default is 12.
 
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
 
