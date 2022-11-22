@@ -8,6 +8,17 @@
 	#define RUNNING 1
 	#define STOPPED 0
 
+	//BATTSCI chargeRequestByte values
+	#define BATTSCI_IMA_START_ALLOWED     0x40 //use IMA to start engine
+	#define BATTSCI_IMA_START_DISABLED    0x20 //use backup starter
+	#define BATTSCI_NO_CHARGE_REQUEST     0x12 //engine started
+	#define BATTSCI_REQUEST_REGEN_FLAG    0x20 //request strong background regen
+	#define BATTSCI_REQUEST_NO_REGEN_FLAG 0x40 //request no background regen
+
+	//BATTSCI disable regen/assist flags
+	#define BATTSCI_DISABLE_ASSIST_FLAG 0x10
+	#define BATTSCI_DISABLE_REGEN_FLAG  0x20
+
 	void BATTSCI_begin();
 
 	void BATTSCI_enable();

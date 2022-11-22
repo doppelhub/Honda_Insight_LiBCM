@@ -10,6 +10,8 @@
 /  **Some comparisons are actually 20 volts, but for simplicity this code treats them all as having to be within 10 volts.
 */
 
+//JTS2doNow: To prevent P1445 when the key first turns on, temporarily increase spoofed pack voltage for a few seconds, then dial down to the actual spoofed voltage.
+
 #include "libcm.h"
 
 uint8_t spoofedPackVoltage = 0;
@@ -40,16 +42,14 @@ int16_t vPackSpoof_getPWMcounts_VPINout(void) { return pwmCounts_VPIN_out; }
 
 //---------------------------------------------------------------------------------------
 
-//JTS2doNow: Figure out if there's a better way to spoof MCMe to prevent P1576(12)
 void spoofVoltageMCMe(void)
 {
-  //Derivation, empirically determined (see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods)
-  //pwmCounts_MCMe = (               actualPackVoltage   * 512) / spoofedPackVoltage       - 551
-  //pwmCounts_MCMe = (               actualPackVoltage   * 256) / spoofedPackVoltage  * 2  - 551 //prevent 16b overflow
-  //pwmCounts_MCMe = (( ( ((uint16_t)actualPackVoltage ) * 256) / spoofedPackVoltage) * 2) - 551 
-
 	if(modeMCMePWM == MCMe_USING_VPACK)
 	{
+	//Derivation, empirically determined (see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods)
+  //pwmCounts_MCMe = (               actualPackVoltage                 * 512) / spoofedPackVoltage         - 551
+  //pwmCounts_MCMe = (               actualPackVoltage                 * 256) / spoofedPackVoltage  * 2    - 551 //prevent 16b overflow
+  //pwmCounts_MCMe = (( ( ((uint16_t)actualPackVoltage )               * 256) / spoofedPackVoltage) * 2)   - 551 
 		pwmCounts_MCMe = (( ( ((uint16_t)LTC68042result_packVoltage_get()) << 8 ) / spoofedPackVoltage) << 1 ) - 551;
 	}
 	//else //user entered static PWM value (using '$MCMp' command)

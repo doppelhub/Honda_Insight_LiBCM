@@ -16,7 +16,7 @@ int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2
 
 uint8_t framePeriod_ms = 33;
 
-//JTS2doNow: Add different SoC profile for "charges at home" crew
+//JTS2doNow: Add different SoC profile for "charges every day" crew
 //JTS2doLater: store in 'PROGMEM' to keep out of RAM (but note array elements must be indexed differently)
 //LUT remaps actual lithium battery SoC (unit: percent) to mimic OEM NiMH behavior (unit: deciPercent)
 //input: actual lithium SoC (unit: percent integer)
@@ -168,6 +168,7 @@ bool BATTSCI_isPackEmpty(void)
 {
   //uint16_t currentAdjusted_Vmin = CELL_VMIN_ASSIST;
 
+  //JTS2doLater: Decide whether or not to include ESR Vcell offset
   //account for additional cell voltage drop during assist
   //if(adc_getLatestBatteryCurrent_amps() > 0) { currentAdjusted_Vmin = CELL_VMIN_ASSIST - cellVoltageOffsetDueToESR(); }
 
@@ -185,9 +186,6 @@ bool BATTSCI_isPackEmpty(void)
 //sternly demand no regen and/or assist from MCM
 uint8_t BATTSCI_calculateRegenAssistFlags(void)
 {
-  #define BATTSCI_DISABLE_ASSIST_FLAG 0x10
-  #define BATTSCI_DISABLE_REGEN_FLAG  0x20
-
   uint8_t flags = 0;
 
   #ifndef DISABLE_ASSIST
@@ -196,7 +194,8 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
     { flags |= BATTSCI_DISABLE_ASSIST_FLAG; EEPROM_hasLibcmDisabledAssist_set(EEPROM_LICBM_DISABLED_ASSIST); }
 
   #ifndef DISABLE_REGEN
-    if(BATTSCI_isPackFull() == true)
+    if( (BATTSCI_isPackFull() == true)       || //pack is full
+        (temperature_battery_getLatest() < 1) ) //pack is too cold to safely regen //JTS2doNow: Add hysteresis
   #endif
       { flags |= BATTSCI_DISABLE_REGEN_FLAG; EEPROM_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN); }
 
@@ -223,36 +222,27 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
 //kindly request regen and/or no regen from MCM
 uint8_t BATTSCI_calculateChargeRequestByte(void)
 {
-  #define BATTSCI_IMA_START_ALLOWED     0x40 //use IMA to start engine
-  #define BATTSCI_IMA_START_DISABLED    0x20 //use backup starter
-  #define BATTSCI_NO_CHARGE_REQUEST     0x12 //engine started
-  #define BATTSCI_REQUEST_REGEN_FLAG    0x20 //request strong background regen
-  #define BATTSCI_REQUEST_NO_REGEN_FLAG 0x40 //request no background regen
+  uint8_t chargeRequestByte = BATTSCI_NO_CHARGE_REQUEST;
 
   //has driver started car yet?
   if( (METSCI_getPacketB4() == 24) || (METSCI_getPacketB4() == 0) ) //if B4 packet is either 0 or 24, then car isn't started
   {
-    //car isn't started (key turned to 'ON' position, but not yet to 'START' position)
+    //key turned to 'ON' position, but not yet to 'START'
 
-    //is IMA battery charged enough for IMA start?
-    if(BATTSCI_isPackEmpty() == true) { return BATTSCI_IMA_START_DISABLED; } //pack empty
-    //JTS2doLater: 0x00 is a third case... probably means "pack neither empty nor full"
-    else                              { return BATTSCI_IMA_START_ALLOWED;  } //pack charged enough for IMA start
+    if(BATTSCI_isPackEmpty() == true) { chargeRequestByte = BATTSCI_IMA_START_DISABLED; } //IMA battery empty
+    else                              { chargeRequestByte = BATTSCI_IMA_START_ALLOWED;  } //IMA battery charged enough for IMA start
+    //JTS2doLater: chargeRequestByte=0x00 is a third case //probably means "pack neither empty nor full"
   }
   else
   {
-    //car is started (key previously turned to 'START', presently in 'ON' position)
+    //key previously turned to 'START', now in 'ON' position
 
-    uint8_t chargeRequestByte = BATTSCI_NO_CHARGE_REQUEST;
-
-    if(BATTSCI_isPackEmpty() == true) { chargeRequestByte |= BATTSCI_REQUEST_REGEN_FLAG; }
+    if(BATTSCI_isPackEmpty() == true) { chargeRequestByte |= BATTSCI_REQUEST_REGEN_FLAG;     }
     if(BATTSCI_isPackFull()  == true) { chargeRequestByte |= BATTSCI_REQUEST_NO_REGEN_FLAG ; }
-
-    return chargeRequestByte;
   }
 
-  //code should never get here
-  return BATTSCI_NO_CHARGE_REQUEST;
+  //JTS2doNow:add debug parameter: STATUS_BATTSCI_FLAGS_CHARGE_REQUEST
+  return chargeRequestByte;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -260,14 +250,8 @@ uint8_t BATTSCI_calculateChargeRequestByte(void)
 //Adjust final SoC value as needed to improve driving characteristics
 uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
 {
-  if (SoC_mappedToMCM_deciPercent > previousOutputSoC_deciPercent)
-  {
-    SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent + 1;
-  }
-  else if (SoC_mappedToMCM_deciPercent < previousOutputSoC_deciPercent)
-  {
-	  SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent - 1;
-  }
+  if      (SoC_mappedToMCM_deciPercent > previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent + 1; }
+  else if (SoC_mappedToMCM_deciPercent < previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent - 1; }
 
   previousOutputSoC_deciPercent = SoC_mappedToMCM_deciPercent;
 
@@ -276,7 +260,6 @@ uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
     //JTS2doNow: Need to increase spoofed pack voltage when this mode is activated
     //           Otherwise, MCM ignores LiBCM request when pack is discharged
     //           Need to verify MCM honors BATTSCI "disable assist" flag (so pack isn't over-discharged)
-
   #endif
 
   return SoC_mappedToMCM_deciPercent;

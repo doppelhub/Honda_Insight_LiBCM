@@ -1,12 +1,8 @@
 //Copyright 2021-2022(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
-//Handles serial debug data transfers from LIBCM to  host
-//FYI:    Serial       data transfers from host  to LiBCM are handled elsewhere.
-
-//JTS2doLater: Gather all Serial Monitor transmissions here
-//JTS2doNow: Add new debug mode that sents LiBCM's modal states in realtime... to make it easier to troubleshoot odd behavior.
-
+//Handles user interactions with LiBCM (data query/response)
+//see debugUSB.c for data LiBCM automatically generates (and also sends over USB)
 
 #include "libcm.h"
 
@@ -241,12 +237,12 @@ void USB_userInterface_executeUserInput(void)
 		}
 
 		//DISP
-		//JTS2doNow: Make this function work while grid charging, too
+		//JTS2doLater: Make this function work while grid charging, too
 		else if( (line[1] == 'D') && (line[2] == 'I') && (line[3] == 'S') && (line[4] == 'P') && (line[5] == '=') )
 		{
 			if     ( (line[6] == 'P') && (line[7] == 'W') && (line[8] == 'R') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_POWER);      }
-			else if( (line[6] == 'S') && (line[7] == 'C') && (line[8] == 'I') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_BATTMETSCI); } //JTS2doNow: add case
-			else if( (line[6] == 'C') && (line[7] == 'E') && (line[8] == 'L') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_CELL);       } //JTS2doNow: add case
+			else if( (line[6] == 'S') && (line[7] == 'C') && (line[8] == 'I') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_BATTMETSCI); }
+			else if( (line[6] == 'C') && (line[7] == 'E') && (line[8] == 'L') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_CELL);       }
 			else if( (line[6] == 'O') && (line[7] == 'F') && (line[8] == 'F') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_NONE);       }
 			else if( (line[6] == 'T') && (line[7] == 'E') && (line[8] == 'M') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_TEMP);       }
 			else if( (line[6] == 'D') && (line[7] == 'B') && (line[8] == 'G') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_DEBUG);      }
@@ -340,17 +336,16 @@ void USB_userInterface_handler(void)
 		//user-typed characters are waiting in serial buffer
 
 		latestCharacterRead = Serial.read(); //read next character in buffer
-		
-		if( (latestCharacterRead == '\n') || (latestCharacterRead == '\r') ) //EOL character retrieved
+	
+		if( (latestCharacterRead == '\n') || (latestCharacterRead == '\r'))
 		{
-			//line line is now complete
+			//line is now complete
 			line[numCharactersReceived] = STRING_TERMINATION_CHARACTER;
 
 			Serial.print(F("\necho: "));
 			printStringStoredInArray(line); //echo user input
 
-			if(numCharactersReceived >= USER_INPUT_BUFFER_SIZE)     { Serial.print(F("\nError: User typed too many characters")); }
-			else                                                    { USB_userInterface_executeUserInput();                       }
+			USB_userInterface_executeUserInput();
 
 			numCharactersReceived = 0; //reset for next line
 		}
@@ -365,12 +360,23 @@ void USB_userInterface_handler(void)
 				//not presently inside a comment and input buffer not exceeded
 				if     (latestCharacterRead == '(') { inputFlags |= INPUT_FLAG_INSIDE_COMMENT;    } //start of comment //ignores all characters until ')'
 				else if(latestCharacterRead == ' ') { ;                                           } //throw away whitespaces
-
 				else if( (latestCharacterRead >= 'a') && (latestCharacterRead <= 'z') )
 				{
 					line[numCharactersReceived++] = latestCharacterRead + ('A' - 'a'); //convert letters to uppercase
 				}
 				else {line[numCharactersReceived++] = latestCharacterRead; } //store everything else
+			}
+			else //numCharactersReceived too high
+			{
+				Serial.print(F("\nError: entry too long"));
+
+				while( Serial.available() )
+				{
+					//empty serial receive buffer
+					uint8_t byte = Serial.read();
+					if((byte == '\n') || (byte == '\r')) { break; } 
+				}
+				numCharactersReceived = 0;
 			}
 		}
 	}

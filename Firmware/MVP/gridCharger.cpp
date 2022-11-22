@@ -2,6 +2,8 @@
 //github.com/doppelhub/Honda_Insight_LiBCM
 #include "libcm.h"
 
+//JTS2doLater: Feature: If SoC greater than 70% when grid charger first plugged in, then charge to 85% SoC.
+
 //updated by gridCharger_handler() //prevents mid-loop state changes from affecting loop logic
 //no need to retrieve this value outside this file... use gpio_isGridChargerPluggedInNow() instead
 bool gridChargerState_sampled = PLUGGED_IN;

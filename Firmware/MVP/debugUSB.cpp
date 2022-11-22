@@ -213,12 +213,16 @@ void debugUSB_printData_debug(void)
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 //Sending more than 63 characters per call makes this function blocking (until the buffer empties)!
-void debugUSB_printLatestData_keyOn(void)
+void debugUSB_printLatestData(void)
 {	
 	static uint32_t previousMillis = 0;
 
+	//print debug data if enabled ('$DISP=DBG')
+	//this will overflow serial transmit buffer if too much data transmitted //necessary to capture all debug data, even though timing may exceed loopPeriod_ms
+	if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_DEBUG) { debugUSB_printData_debug(); }
+	
 	//print message if it's time and there's room in the serial transmit buffer
-	if( ( ((uint32_t)(millis() - previousMillis) >= debugUSB_dataUpdatePeriod_ms_get()) || (transmitStatus == TRANSMITTING_LARGE_MESSAGE) ) &&
+	else if( ( ((uint32_t)(millis() - previousMillis) >= debugUSB_dataUpdatePeriod_ms_get()) || (transmitStatus == TRANSMITTING_LARGE_MESSAGE) ) &&
 		(Serial.availableForWrite() > 62) )
 	{
 		previousMillis = millis();
@@ -227,7 +231,6 @@ void debugUSB_printLatestData_keyOn(void)
 		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { debugUSB_printData_BATTMETSCI();   }
 		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_CELL)       { debugUSB_printData_cellVoltages(); }
 		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_TEMP)       { debugUSB_printData_temperatures(); }
-		else if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_DEBUG)      { debugUSB_printData_debug();        }
 	}
 }
 

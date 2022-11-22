@@ -3,6 +3,8 @@
 
 //maintains battery state of charge
 
+//JTS2doLater: add "REMAP_ACTUAL_SoC_TO_FULL_SCALE_PERCENT" feature //remaps actual SoC and displays to user as "0%=empty" and "100%=full"
+
 #include "libcm.h"
 
 //These variables should only be used until the next "////////////////////" comment (after that, use these functions instead)
@@ -18,8 +20,22 @@ void     SoC_setBatteryStateNow_mAh(uint16_t newPackCharge_mAh) { packCharge_Now
 uint8_t SoC_getBatteryStateNow_percent(void) { return packCharge_Now_percent; }
 void    SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = (stackFull_Calculated_mAh * 0.01) * newSoC_percent; } //JTS2doNow: Is this cast correctly?
 
-//uses SoC percentage to update mAh value (LiBCM stores battery SoC in mAh, not %)
-void SoC_calculateBatteryStateNow_percent(void) { packCharge_Now_percent = (uint8_t)(((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh); }
+/////////////////////////////////////////////////////////////////////
+
+//calculate SoC percent from mAh value (LiBCM stores battery SoC in mAh, not %)
+void SoC_calculateBatteryStateNow_percent(void)
+{
+	static uint16_t packCharge_Previous_mAh = 0;
+
+	if(packCharge_Previous_mAh != packCharge_Now_mAh)
+	{
+		//only calculate if the pack mAh value just changed //division is expensive!
+		packCharge_Now_percent = (uint8_t)(((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh);
+		//JTS2doNow:add debug parameter: STATUS_SOC_PERCENT
+	}
+
+	packCharge_Previous_mAh = packCharge_Now_mAh;
+}
 
 /////////////////////////////////////////////////////////////////////
 

@@ -27,7 +27,6 @@ int8_t temperature_ambient_getLatest(void)	  { return tempAmbient; } //WHT OEM t
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: 47Ah FoMoCo colors are different
 //only call inside handler (to ensure sensors powered)
 void temperature_measureOEM(void)
 {
@@ -330,19 +329,4 @@ int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
 ////////////////////////////////////////////////////////////////////////////////////
 
 //JTS2doLater:
-/*
-	-Monitor Temperature
-		-Read QTY4 temp pins (Temp_YEL/GRN/WHT/BLU_Pin)
-		-Read QTY4 LTC6804 temps
-		-If temp warm (35 degC?) && ( tempCabin < max(tempBattery) )
-			-Onboard fans low (FanOnPWM_Pin)
-			-OEM Fan on low (FanOEMlow_Pin)
-		-If temp hot (45 degC?)
-			-OEM Fan on high (FanOEMhigh_Pin)
-			-Onboard fans full speed (FanOnPWM_Pin)
-		-If temp overheating (50 degC?)
-			-OEM Fans on high (FanOEMhigh_Pin)
-			-Onboard fans full speed (FanOnPWM_Pin)
-			-Send overtemp flag (METSCI@Serial2)
-
-*/
+//Read QTY5 onboard LTC6804 temps

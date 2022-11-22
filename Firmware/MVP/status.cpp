@@ -6,38 +6,28 @@
 
 #include "libcm.h"
 
-/////////////////////////////////////////////////////////////////////////////////////////////
-
-	//Message format:
-	//\n k
-
-	//Where:
-	//r: since last keyOFF, has LiBCM booted while key ON?
-	//k: keyState
-
-
-	//JTS2doNow: Finish implementing this feature
-	void status_printState(void)
-	{
-		static uint8_t numPeriodsPrinted = 0;
-		
-		Serial.print('.');
-
-		if(numPeriodsPrinted++ == 100)
-		{ 
-			Serial.print('\n');
-			numPeriodsPrinted = 0;
-		}
-
-	}
+uint8_t  parameters_8b [STATUS_NUM_PARAMETERS_8b]  = { 0 };
+uint16_t parameters_16b[STATUS_NUM_PARAMETERS_16b] = { 0 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-	void status_setValue(uint8_t parameterToSet, uint8_t value)
-	{
-		switch(parameterToSet)
-		{
-			case STATUS_IGNITION: ; break;
-			case STATUS_REBOOTED: ; break;
-		}
-	}
+//Message format:
+//\n k TBD
+
+//JTS2doNow: implement
+void status_printState(void)
+{	
+
+	//this is just throughput test code.  Looks like we can easily sent 6200 ascii characters per second... should be enough
+	static uint8_t numTimesPrinted = 0;
+
+	for( uint8_t ii=0; ii<62; ii++) { Serial.print('.'); }
+
+	numTimesPrinted++;
+	if(numTimesPrinted == 99) { Serial.print('\n'); numTimesPrinted = 0; }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void status_setValue_8b(uint8_t parameterToSet, uint8_t value) { parameters_8b[parameterToSet] = value; }
+

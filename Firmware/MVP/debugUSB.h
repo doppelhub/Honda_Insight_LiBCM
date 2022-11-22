@@ -7,7 +7,7 @@
 	#define TWO_DECIMAL_PLACES 2
 	#define FOUR_DECIMAL_PLACES 4
 
-	void debugUSB_printLatestData_keyOn(void);
+	void debugUSB_printLatestData(void);
 	void debugUSB_printLatest_data_gridCharger(void);
 
 	void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces);

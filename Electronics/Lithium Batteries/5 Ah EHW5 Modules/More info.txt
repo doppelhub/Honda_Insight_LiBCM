@@ -19,10 +19,3 @@ Cell voltages:
 3.7V = 70% SOC
 3.5V = 20% SOC (recommended min)
 3V = 0% SOC
-
-...
-
-18S Module weight:
--total: ~14 pounds
--cells: ~10 pounds
--everything else: ~4 pounds

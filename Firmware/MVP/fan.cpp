@@ -7,6 +7,8 @@ char goalSpeed[NUM_FAN_CONTROLLERS] = {'0'}; //store desired fan speeds (for OEM
 
 uint8_t fanStates[NUM_FAN_CONTROLLERS] = {FAN_NOT_REQUESTED}; //each subsystem's fan speed request is stored in 2 bits
 
+//JTS2doNow: Turn the fan on when the car is on and the battery temp isn't ideal (assumes cabin air temp is habitable)
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 //prevents rapid fan speed changes //Each fan (OEM and PCB) has its own controller
@@ -100,10 +102,38 @@ int8_t calculateAbsoluteDelta(int8_t temperatureA, int8_t temperatureB)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add option to turn fans on via USB
-//JTS2doNow: Add option to see who is requesting fan state
+//JTS2doLater: Add option to turn fans on via USB
+//JTS2doLater: Add option to see who is requesting fan state
 void fan_handler(void)
 {
+	//JTS2doNow: Rewrite this handler entirely... it's not good.  Proposed framework:
+	//If pack too warm or too cold, wait a minute after keyON, then turn fan on briefly to sample cabin air temp.
+	//           If cabin air temp undesirable, turn fan off and wait a few more minutes.
+	//           Once cabin air temp is good, turn fans on and heat/cool pack.
+
+	// if(getPackTemp() > (COOL_PACK_ABOVE_TEMP_DEGC + FAN_HIGH_SPEED_degC))
+	// {
+	// 	//pack is very hot
+	// 	timeSinceFansLastActivated_ms = millis();
+	// }
+
+	// else if (getPackTemp() < HEAT_PACK_BELOW_TEMP_DEGC)
+	// {
+	// 	//pack is too cold
+	// 	timeSinceFansLastActivated_ms = millis();
+	// }
+
+	// else
+	// {
+	// 	//pack temperature is "just right"
+
+	// 	if( (millis() - timeSinceFansLastActivated_ms) > FIVE_MINUTES_IN_MILLISECONDS)
+	// 	{
+	// 		if(fanSpeed == FAN_SPEED_HI) { fanSpeedSet(FAN_SPEED_LOW); }
+	// 		if(fanSpeed == FAN_SPEED_LO) { fanSpeedSet(FAN_SPEED_OFF); }
+
+	// 	} 
+	// }
 	
 	int8_t battTemp   = temperature_battery_getLatest();
 	int8_t intakeTemp = temperature_intake_getLatest();
@@ -116,8 +146,8 @@ void fan_handler(void)
 
 	static uint32_t timeSinceLastFanCheck_ms = 0;
 
-	if( (deltaAbs_battTemp   >= FAN_HYSTERESIS_degC) ||
-		(deltaAbs_intakeTemp >= FAN_HYSTERESIS_degC) ||
+	if( (deltaAbs_battTemp   >= FAN_HYSTERESIS_degC) || //battery temperature sensor value has changed more than a few degrees
+		(deltaAbs_intakeTemp >= FAN_HYSTERESIS_degC) || //intake  temperature sensor value has changed more than a few degrees
 		((uint32_t)(millis() - timeSinceLastFanCheck_ms) > FORCE_FAN_UPDATE_PERIOD_ms) )
 	{
 		//intake or battery temperature changed enough to check for possible new fan state

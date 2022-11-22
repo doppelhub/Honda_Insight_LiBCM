@@ -91,7 +91,7 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
 
 	do //repeats until PECs match (i.e. no data transmission errors) 
 	{
-		uint8_t *returnedData; //JTS2doLater: change to standard empty array
+		uint8_t *returnedData; //JTS2doLater: replace malloc with empty array
 		returnedData = (uint8_t *) malloc( NUM_RX_BYTES * sizeof(uint8_t) );
 
 		//Read single cell voltage register (QTY3 cell voltages) from specified IC
@@ -110,10 +110,7 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
 		attemptCounter++; //prevent while loop hang
 	} while( (received_pec != calculated_pec) && (attemptCounter < MAX_READ_ATTEMPTS) ); //retry if isoSPI error
 
-	if (attemptCounter > 1)
-	{ //PEC error occurred
-		LTC68042result_errorCount_increment();
-	} 
+	if (attemptCounter > 1) { LTC68042result_errorCount_increment(); } //log PEC error 
 	else //data transmitted correctly
 	{ //Determine which LTC cell voltages were read into returnedData
 		uint8_t cellX=0; //1st cell in returnedData (LTC cell 1, 4, 7, or 10)
@@ -137,8 +134,6 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
 
 //---------------------------------------------------------------------------------------
 
-
-//perform cell voltage calculations that require all cell voltages
 //results stored in LTC68042results.c
 void processAllCellVoltages(void)
 {
@@ -154,7 +149,7 @@ void processAllCellVoltages(void)
 		//
 		//Since LTC6804 'B' straddles two 18S modules, reading cell 19's voltage includes
 		//the voltage drop across the several-foot-long current cable connecting between the 18S modules.
-		//This causes the measured cell 19 voltage to differ from the actual voltage at the studs, proportional to the current sourced/sunk into the battery.
+		//This causes the measured cell 19 voltage to differ from the actual voltage at the cell terminals, proportional to the current sourced/sunk into the battery.
 		//Note that the additional voltage error is solely a function of the resistance in the cabling between the modules, and has nothing to do with the cell ESR.
 		//However, due to the high frequency chopping that occurs on the IGBT driver, the current might not actually be flowing the moment the LTC6804 samples the cells.
 		//If no current is flowing at the precise moment the LTC6804 ADC samples the cells, the current-proportional voltage correction (on cell 19) will actually
@@ -180,12 +175,7 @@ void processAllCellVoltages(void)
 		uint16_t cell19Voltage_measured = cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER]; //store cell 19 voltage for later
 		uint16_t cell19Voltage_adjusted = cell19Voltage_measured + adc_getLatestBatteryCurrent_amps() * LTC6804_COUNT_ADJUSTMENT_PER_AMP;
 
-		// Serial.print(F("\nC19_actual: "));
-		// Serial.print(String(cell19Voltage_measured));
-		// Serial.print(F(", C19_adjusted: "));
-		// Serial.print(String(cell19Voltage_adjusted));
-
-		//replace cell 19's voltage with cell 18's, to prevent cell 19's (possibly incorrect) voltage from being either the highest or lowest voltage
+		//temporarily replace cell 19's voltage with cell 18's, to prevent cell 19's (possibly incorrect) voltage from being either the highest or lowest voltage
 		cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER] = cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER - 1];
 		//we'll restore cell 19's voltage after we determine pack hi/lo (in the for loops below)
 	#endif
@@ -205,7 +195,7 @@ void processAllCellVoltages(void)
 			if( cellVoltageUnderTest > hiCellVoltage ) { hiCellVoltage = cellVoltageUnderTest; }
 
 			//check for new maxEver/minEver cells (if any)
-			//If LTC68042_ENABLE_C19_VOLTAGE_CORRECTION is defined, cell 19 voltage cannot become maxEver or minEver 
+			//If LTC68042_ENABLE_C19_VOLTAGE_CORRECTION is defined, cell 19 voltage cannot become maxEver or minEver right now, but we'll check again down below
 			if (cellVoltageUnderTest > LTC68042result_maxEverCellVoltage_get() ) {LTC68042result_maxEverCellVoltage_set(cellVoltageUnderTest); }
 			if (cellVoltageUnderTest < LTC68042result_minEverCellVoltage_get() ) {LTC68042result_minEverCellVoltage_set(cellVoltageUnderTest); }
 
@@ -242,9 +232,6 @@ void processAllCellVoltages(void)
 		//store whichever cell 19 voltage is closest to the other cells
 		LTC68042result_specificCellVoltage_set(CELL19_CHIP_NUMBER, CELL19_CELL_NUMBER, cell19Voltage_final);
 
-		// Serial.print(F(", C19_final: "));
-		// Serial.print(String(cell19Voltage_final));
-
 		//finally, we need to check if cell 19 is either the highest or lowest voltage
 		if(cell19Voltage_final > hiCellVoltage) { LTC68042result_hiCellVoltage_set(cell19Voltage_final); }
 		if(cell19Voltage_final < loCellVoltage) { LTC68042result_loCellVoltage_set(cell19Voltage_final); }
@@ -271,7 +258,6 @@ bool LTC68042cell_nextVoltages(void)
 	static uint8_t presentState = LTC_STATE_FIRSTRUN;
 	static bool actionPerformedThisCall = GATHERED_LTC6804_DATA;
 
-	//JTS2doNow: 
 	if(LTC68042configure_wakeup() == LTC6804_CORE_JUST_WOKE_UP) { presentState = LTC_STATE_FIRSTRUN; }
 
 	if(presentState == LTC_STATE_GATHER)

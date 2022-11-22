@@ -83,3 +83,10 @@ So yeah, this $440 battery is ~$2800 from Honda.
 '5AhG3' cell: 70c 5.5ah Panasonic cells UF121285h
 
 There is also a UF121285 which seems to be the CMAX, VW, and Honda fit cell with a rating 150A vs 375A for the h version
+
+...
+
+18S Module weight:
+-total: ~14 pounds
+-cells: ~10 pounds
+-everything else: ~4 pounds
