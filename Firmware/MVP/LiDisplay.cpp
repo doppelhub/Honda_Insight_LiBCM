@@ -24,11 +24,10 @@ static uint8_t  LiDisplayPackVoltageActual_onScreen = 100;
 static uint8_t  LiDisplaySoC_onScreen = 100;
 static uint8_t  LiDisplayFanSpeed_onScreen = 100;
 static uint8_t  LiDisplaySoCBars_onScreen = 100;
+static uint8_t	LiDisplayTemp_onScreen = 0;
 
 bool LiDisplaySplashPending = false;
 bool LiDisplayPowerOffPending = false;
-static uint16_t LiDisplayBaudRate = 9600;
-static uint32_t LiDisplay_setBaudMillis = 0;
 bool LiDisplayOnGridChargerConnected = false;
 bool LiDisplaySettingsPageRequested = false;
 
@@ -50,59 +49,19 @@ const String fanSpeedDisplay[3] = {
 	"FAN OFF", "FAN LOW", "FAN HIGH"
 };
 
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void LiDisplay_setBaud(uint16_t baudRate) {
-	if (!gpio_HMIStateNow()) {
-		Serial.print(F("\nLiDisplay_setBaud Waiting for LiDisplay Power On"));
-		return;
-	}
-	if (baudRate == LiDisplayBaudRate) {
-		Serial.print(F("\nLiDisplay_setBaud ERROR -- should never execute this line!"));
-		return;
-	}
-	static String LiDisplay_Baud_Str;
-	LiDisplay_Baud_Str = "baud=" + String(baudRate);
-
-	if (LiDisplay_setBaudMillis == 0) {
-		Serial.print(F("\nLiDisplay_setBaud   setbaudMillis = 0  baudRate = "));
-		Serial.print(String(baudRate));
-		LiDisplay_setBaudMillis = millis();
-
-		//Serial1.print(LiDisplay_Baud_Str);
-		Serial1.print("baud=38400");
-		Serial1.write(0xFF);
-		Serial1.write(0xFF);
-		Serial1.write(0xFF);
-	} else if ((millis() - LiDisplay_setBaudMillis) >= 250) {
-		Serial.print(F("\nLiDisplay_setBaud   setbaudMillis >= 250  baudRate = "));
- 		Serial.print(String(baudRate));
-		LiDisplay_setBaudMillis = 0;
-		LiDisplayBaudRate = baudRate;
-
-		Serial1.end();
-		Serial1.begin(9600);
-		Serial.print(F("\nLiDisplay_setBaud Serial1 baud rate should now be "));
-		Serial.print(String(baudRate));
-	 }
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_begin(void)
 {
 	#ifdef LIDISPLAY_CONNECTED
  		Serial.print(F("\nLiDisplay BEGIN"));
-		Serial1.begin(9600,SERIAL_8E1);
+		//Serial1.begin(9600,SERIAL_8E1);
+		Serial1.begin(38400,SERIAL_8E1);
 
 		LiDisplayElementToUpdate = 0;
 
 		LiDisplaySplashPending = false;
 		LiDisplayPowerOffPending = false;
-		if (LiDisplayBaudRate == 9600) {
-			LiDisplay_setBaud(38400);
-		}
 	#endif
 }
 
@@ -421,19 +380,7 @@ void LiDisplay_refresh(void)
 		static uint8_t cmd = 0;
 		static String cmd_str = "";
 
-		if (LiDisplayBaudRate != 38400) {
-			LiDisplay_setBaud(38400);
-			return;
-		}
-
-		if ((LiDisplayBaudRate == 38400) && (cmd = LiDisplay_bytesAvailableToRead())) {
-			cmd_str  = Serial1.readString();
-			Serial.print(F("\ncmd_str: "));
-			Serial.print(cmd_str);
-			cmd_str = "";
-		}
-
-		/*if (cmd = LiDisplay_bytesAvailableToRead()) {
+		if (cmd = LiDisplay_bytesAvailableToRead()) {
 			cmd_str = cmd;
 			cmd_str = cmd_str + " " + String(LiDisplay_readByte());
 			cmd_str = cmd_str + " " + String(LiDisplay_readByte());
@@ -444,29 +391,7 @@ void LiDisplay_refresh(void)
 
 			Serial.print(F("\ncmd_str: "));
 			Serial.print(cmd_str);
-			//
-			//cmd_str: 3 112 2 98 255 255 255   // 3 P 2 b
-
-			//cmd_str: 1 112 255 255 255 255 2  // 1 P
-
-			//cmd_str: 1 98 255 255 255 255 255 // 1 B
-
-			//cmd_str: 3 112 2 98 255 255 255	// 3 P 2 b
-
-			//cmd_str: 2 112 2 98 255 255 255	// 2 P b
-
-			//cmd_str: 2 112 2 98 255 255 255	// 2 P 2 b
-
-			//cmd_str: 3 112 2 98 255 255 255	// 3 P 2 b
-
-			//cmd_str: 1 254 255 255 255 255 255
-
-			//cmd_str: 4 112 2 98 254 255 255	// 4 P 2 b
-
-			//cmd_str: 4 112 2 98 254 255 255
-
-			//cmd_str: 3 112 2 98 254 255 255
-		}*/
+		}
 		// Above stuff doesn't work properly yet.
 
 		LiDisplay_calculateCorrectPage();
@@ -586,6 +511,9 @@ void LiDisplay_refresh(void)
 								} else if (LiDisplayPackVoltageActual_onScreen != LTC68042result_packVoltage_get()) {
 									LiDisplay_updateStringVal(0, "t4", 0, String(LTC68042result_packVoltage_get()));
 									LiDisplayPackVoltageActual_onScreen = LTC68042result_packVoltage_get();
+								} else if (LiDisplayTemp_onScreen != temperature_battery_getLatest()) {
+									LiDisplay_updateStringVal(0, "t11", 0, (String(temperature_battery_getLatest()) + "C"));
+									LiDisplayPackVoltageActual_onScreen = temperature_battery_getLatest();
 								} else {
 									// Nothing else needed to update so we will update the chrg asst bar display again instead.
 									LiDisplay_calculateChrgAsstGaugeBars();
