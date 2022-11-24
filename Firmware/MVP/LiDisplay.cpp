@@ -11,7 +11,7 @@
 #define LIDISPLAY_GRIDCHARGE_PAGE_ID 3
 #define LIDISPLAY_SETTINGS_PAGE_ID 4
 // #define CMD 0x23								// May be used when reading from nextion.  0x23 = "#"
-#define LIDISPLAY_UPDATE_RATE_MILLIS 100		// One element is updated each time
+#define LIDISPLAY_UPDATE_RATE_MILLIS 80		// One element is updated each time
 
 uint8_t LiDisplayElementToUpdate = 0;
 uint8_t LiDisplayCurrentPageNum = 0;
