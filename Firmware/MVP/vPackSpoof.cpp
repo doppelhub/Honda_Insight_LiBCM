@@ -134,6 +134,7 @@ void spoofVoltage_calculateValue(void)
 
 		#elif defined STACK_IS_60S
 			spoofedPackVoltage = LTC68042result_packVoltage_get() * 0.67; //Vspoof(60S)=136 @ Vcell=3.4 //Vspoof(60S)=169 @ Vcell=4.2
+			if(spoofedPackVoltage < 155) { spoofedPackVoltage = 155; } //prevent P1440 during heavy assist (due to MCM increasing current as voltage drops)
 		#endif
 
 	//JTS2doLater: Get these other cases working with 60S
