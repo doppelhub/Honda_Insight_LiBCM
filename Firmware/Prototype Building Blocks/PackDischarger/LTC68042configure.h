@@ -6,7 +6,8 @@
 
 	//number of LTC ICs in isoSPI network
 
-	#define TOTAL_IC 5
+	//JTS2doNow: Choose number of ICs based on mechanical switch location
+	#define TOTAL_IC 4
 
 
 	#define FIRST_IC_ADDR  2 //lowest address.  All additional IC addresses must be sequential

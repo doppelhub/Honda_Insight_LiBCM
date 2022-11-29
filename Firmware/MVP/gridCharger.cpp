@@ -8,6 +8,8 @@
 //no need to retrieve this value outside this file... use gpio_isGridChargerPluggedInNow() instead
 bool gridChargerState_sampled = PLUGGED_IN;
 
+//JTS2doNow: Prevent grid charging when cells below freezing
+
 //////////////////////////////////////////////////////////////////////////////////
 
 bool gridCharger_didStateChange(void)

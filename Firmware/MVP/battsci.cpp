@@ -3,6 +3,8 @@
 
 //BATTSCI Serial Functions
 
+//JTS2doNow: applying moderate assist (1:30 amps) above ~3100 RPM causes rapid current hunting.  Probably due to METSCI/BATTSCI formatting issue
+
 /************************************************************************************************************************
  * The BCM constantly sends two different 12 Byte frames to the MCM.
  *
