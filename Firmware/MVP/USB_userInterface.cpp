@@ -77,29 +77,25 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 		Serial.print(F("\nRunning TEST6: Turn off LiBCM (5V rail).\nLiBCM will stay on if USB's +5V connected."));
 		gpio_turnLiBCM_off();
 	}
-	else if(testToRun == 'B')
+	else if(testToRun == 'T')
 	{
 		gpio_turnTemperatureSensors_on();
-		Serial.print(F("\nBLU temp sensor is: "));
+		delay(1);
+		Serial.print(F("\nTemperatures:"));
+		Serial.print(F("\nBLU: "));
 		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BLU));
-	}
-	else if(testToRun == 'G')
-	{
-		gpio_turnTemperatureSensors_on();
-		Serial.print(F("\nGRN temp sensor is: "));
+		Serial.print(F("\nGRN: "));
 		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
-	}
-	else if(testToRun == 'W')
-	{
-		gpio_turnTemperatureSensors_on();
-		Serial.print(F("\nWHT temp sensor is: "));
+		Serial.print(F("\nWHT: "));
 		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
-	}
-	else if(testToRun == 'Y')
-	{
-		gpio_turnTemperatureSensors_on();
-		Serial.print(F("\nYEL temp sensor is: "));
+		Serial.print(F("\nYEL: "));
 		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
+		Serial.print(F("\nBAY1: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY1));
+		Serial.print(F("\nBAY2: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
+		Serial.print(F("\nBAY3: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));				
 	}
 }
 
