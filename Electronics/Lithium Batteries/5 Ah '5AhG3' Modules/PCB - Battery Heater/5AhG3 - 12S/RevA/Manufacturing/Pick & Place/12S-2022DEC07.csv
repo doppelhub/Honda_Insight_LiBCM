@@ -96,7 +96,7 @@
 %Rotation positive is CW from reel,,,,,,,,,
 ,,,,,,,,,
 %Part Num,Nozzle,Reel,X(mm),Y(mm),Rotation,Height(mm),Skip,Reference,Comment
-1,1,19,233,7,0,0.9,0,D1,0805/LED
+1,1,19,233,7,180,0.9,0,D1,0805/LED
 2,2,24,18.5,38,90,0.7,0,R1,R_2010/2k?R
 3,2,24,18.5,43,90,0.7,0,R2,R_2010/2k?R
 4,2,24,18.5,48,90,0.7,0,R3,R_2010/2k?R
