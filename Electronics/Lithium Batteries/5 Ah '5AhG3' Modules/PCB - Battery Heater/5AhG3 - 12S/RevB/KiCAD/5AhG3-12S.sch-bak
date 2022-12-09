@@ -1903,46 +1903,46 @@ Wire Wire Line
 Connection ~ 5850 3600
 Wire Wire Line
 	5850 3600 5850 3850
-$Comp
-L Connector_Generic:Conn_01x02 J1
-U 1 1 63AED1DF
-P 2800 2700
-F 0 "J1" H 2718 2375 50  0000 C CNN
-F 1 "Conn_01x02" H 2718 2466 50  0000 C CNN
-F 2 "" H 2800 2700 50  0001 C CNN
-F 3 "~" H 2800 2700 50  0001 C CNN
-	1    2800 2700
-	-1   0    0    1   
-$EndComp
+Text Label 3600 2700 2    50   ~ 0
+TEMP_NEG
+Text Label 3600 2600 2    50   ~ 0
+TEMP_POS
+Wire Wire Line
+	3900 2850 3900 2800
+Wire Wire Line
+	3650 2850 3900 2850
+Wire Wire Line
+	3650 2700 3650 2850
+Wire Wire Line
+	2950 2700 3650 2700
+Wire Wire Line
+	3650 2600 2950 2600
+Wire Wire Line
+	3650 2450 3650 2600
+Wire Wire Line
+	3900 2450 3650 2450
+Wire Wire Line
+	3900 2500 3900 2450
 $Comp
 L Device:Thermistor_NTC TH1
 U 1 1 63AFB7FF
-P 3950 2650
-F 0 "TH1" H 4048 2696 50  0000 L CNN
-F 1 "Thermistor_NTC" H 4048 2605 50  0000 L CNN
-F 2 "" H 3950 2700 50  0001 C CNN
-F 3 "~" H 3950 2700 50  0001 C CNN
-	1    3950 2650
+P 3900 2650
+F 0 "TH1" H 3998 2696 50  0000 L CNN
+F 1 "Thermistor_NTC" H 3998 2605 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" H 3900 2700 50  0001 C CNN
+F 3 "~" H 3900 2700 50  0001 C CNN
+	1    3900 2650
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	3950 2500 3950 2450
-Wire Wire Line
-	3950 2450 3700 2450
-Wire Wire Line
-	3700 2450 3700 2600
-Wire Wire Line
-	3700 2600 3000 2600
-Wire Wire Line
-	3000 2700 3700 2700
-Wire Wire Line
-	3700 2700 3700 2850
-Wire Wire Line
-	3700 2850 3950 2850
-Wire Wire Line
-	3950 2850 3950 2800
-Text Label 3650 2600 2    50   ~ 0
-TEMP_POS
-Text Label 3650 2700 2    50   ~ 0
-TEMP_NEG
+$Comp
+L Connector_Generic:Conn_01x02 J5
+U 1 1 63AED1DF
+P 2750 2700
+F 0 "J5" H 2668 2375 50  0000 C CNN
+F 1 "Conn_01x02" H 2668 2466 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" H 2750 2700 50  0001 C CNN
+F 3 "~" H 2750 2700 50  0001 C CNN
+	1    2750 2700
+	-1   0    0    1   
+$EndComp
 $EndSCHEMATC

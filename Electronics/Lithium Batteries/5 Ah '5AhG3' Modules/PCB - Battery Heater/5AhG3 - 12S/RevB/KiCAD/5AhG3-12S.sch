@@ -1662,56 +1662,24 @@ Wire Wire Line
 	2850 4550 2750 4550
 Text Notes 4700 6050 0    50   ~ 0
 IPD70R360P7SAUMA1
-$Comp
-L Connector:Screw_Terminal_01x03 J3
-U 1 1 63B2CCAD
-P 10200 1650
-F 0 "J3" H 10150 1450 50  0000 L CNN
-F 1 "Screw_Terminal_01x03" H 9800 1850 50  0000 L CNN
-F 2 "Connector_Phoenix_MC:PhoenixContact_MCV_1,5_3-G-3.5_1x03_P3.50mm_Vertical" H 10200 1650 50  0001 C CNN
-F 3 "~" H 10200 1650 50  0001 C CNN
-	1    10200 1650
-	1    0    0    -1  
-$EndComp
-$Comp
-L Connector:Screw_Terminal_01x03 J4
-U 1 1 63B2E862
-P 10200 5550
-F 0 "J4" H 10150 5750 50  0000 L CNN
-F 1 "Screw_Terminal_01x03" H 9800 5350 50  0000 L CNN
-F 2 "Connector_Phoenix_MC:PhoenixContact_MCV_1,5_3-G-3.5_1x03_P3.50mm_Vertical" H 10200 5550 50  0001 C CNN
-F 3 "~" H 10200 5550 50  0001 C CNN
-	1    10200 5550
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	9700 5450 9900 5450
-Wire Wire Line
-	10000 5650 9900 5650
-Wire Wire Line
-	9900 5650 9900 5550
 Connection ~ 9900 5450
 Wire Wire Line
 	9900 5450 10000 5450
 Wire Wire Line
 	10000 5550 9900 5550
-Connection ~ 9900 5550
 Wire Wire Line
 	9900 5550 9900 5450
 Wire Wire Line
 	9700 1750 9900 1750
 Wire Wire Line
 	9900 1750 9900 1650
-Wire Wire Line
-	9900 1550 10000 1550
 Connection ~ 9900 1750
 Wire Wire Line
 	9900 1750 10000 1750
 Wire Wire Line
 	10000 1650 9900 1650
-Connection ~ 9900 1650
-Wire Wire Line
-	9900 1650 9900 1550
 Wire Wire Line
 	3300 6050 2650 6050
 Wire Wire Line
@@ -1767,7 +1735,7 @@ Connection ~ 5850 1750
 Text Label 1750 1750 0    50   ~ 0
 HVDC_POS_UNFUSED
 Text Notes 10250 1800 0    59   ~ 0
-HVDC+\nHVDC+\nHVDC+
+HVDC+\nHVDC+
 $Comp
 L Connector:Screw_Terminal_01x02 J2
 U 1 1 63B2A148
@@ -1779,8 +1747,8 @@ F 3 "~" H 1000 3900 50  0001 C CNN
 	1    1000 3900
 	-1   0    0    1   
 $EndComp
-Text Notes 10250 5700 0    59   ~ 0
-HVDC_NEG_SWITCHED\nHVDC_NEG_SWITCHED\nHVDC_NEG_SWITCHED
+Text Notes 10250 5600 0    59   ~ 0
+HVDC_NEG_SWITCHED\nHVDC_NEG_SWITCHED
 Wire Wire Line
 	5850 3350 5850 3600
 $Comp
@@ -1944,5 +1912,27 @@ F 2 "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" H 2750 2700 50 
 F 3 "~" H 2750 2700 50  0001 C CNN
 	1    2750 2700
 	-1   0    0    1   
+$EndComp
+$Comp
+L Connector:Screw_Terminal_01x02 J3
+U 1 1 63935938
+P 10200 1650
+F 0 "J3" H 10150 1450 50  0000 L CNN
+F 1 "Screw_Terminal_01x02" H 9750 1750 50  0000 L CNN
+F 2 "Connector_Phoenix_MC:PhoenixContact_MCV_1,5_2-G-3.5_1x02_P3.50mm_Vertical" H 10200 1650 50  0001 C CNN
+F 3 "~" H 10200 1650 50  0001 C CNN
+	1    10200 1650
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:Screw_Terminal_01x02 J4
+U 1 1 63943E3B
+P 10200 5450
+F 0 "J4" H 10150 5250 50  0000 L CNN
+F 1 "Screw_Terminal_01x02" H 9750 5550 50  0000 L CNN
+F 2 "Connector_Phoenix_MC:PhoenixContact_MCV_1,5_2-G-3.5_1x02_P3.50mm_Vertical" H 10200 5450 50  0001 C CNN
+F 3 "~" H 10200 5450 50  0001 C CNN
+	1    10200 5450
+	1    0    0    -1  
 $EndComp
 $EndSCHEMATC
