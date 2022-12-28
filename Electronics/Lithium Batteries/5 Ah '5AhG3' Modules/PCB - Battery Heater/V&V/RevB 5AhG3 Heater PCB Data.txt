@@ -1,0 +1,150 @@
+18S+- (18S PCBs next to each other)
+
+16:38:11.044 -> LiBCM v0.8.4j, 2022NOV28
+16:38:11.081 -> '$HELP' for info
+16:38:11.081 -> 
+16:38:11.081 -> HW:C/5AhG3/48S/Vs=all
+16:38:11.081 -> Key:OFF
+16:38:11.115 -> Old SoC: 60%, New SoC:0%
+16:38:11.115 -> Current Sensor 0A set to (counts): 331
+16:38:11.148 -> Total hours since firmware last uploaded: 0 (960 Hours MAX)
+16:39:13.192 -> temp:18 (outside: 8)(pack previously inside)
+16:48:18.597 -> temp:17 (outside: 8)
+17:11:12.001 -> temp:16 (outside: 8)
+17:36:12.572 -> temp:15 (outside: 8)
+18:04:13.250 -> temp:14 (outside: 8)
+18:36:14.000 -> temp:13 (outside: 8)
+19:09:14.745 -> temp:12 (outside: 8)
+19:54:15.787 -> temp:11 (outside: 8)
+20:55:17.153 -> temp:10 (outside: 8)
+22:14:18.946 -> temp:9  (outside: 8)
+00:14:21.675 -> temp:8  (outside: 6)
+00:56:23.808 -> temp:7  (outside: 2)
+01:32:28.966 -> temp:6  (outside:-1)
+02:00:23.619 -> temp:5  
+02:21:36.273 -> temp:4
+02:46:24.263 -> temp:3
+03:10:24.585 -> temp:2
+03:37:24.911 -> temp:1
+04:02:45.444 -> temp:0
+04:28:26.273 -> temp:-1
+04:57:45.681 -> temp:-2
+05:25:46.006 -> temp:-3
+05:56:45.416 -> temp:-4
+06:24:29.582 -> temp:-5 (outside:-11)
+
+Heaters Enabled @ 6:30AM: 134 V @ 385 mA (51.6 W)
+@ 12:01PM: 134 V @ 383 mA (51.3 W)
+
+06:32:30.670 -> temp:-4
+06:33:37.138 -> temp:-3
+06:37:47.332 -> temp:-2
+06:42:36.367 -> temp:-1
+06:50:45.080 -> temp:0
+06:59:45.471 -> temp:1
+07:13:45.944 -> temp:2
+07:24:46.229 -> temp:3
+07:37:28.987 -> temp:4
+07:58:45.140 -> temp:5
+08:16:46.715 -> temp:6
+08:32:46.287 -> temp:7
+08:50:44.772 -> temp:8
+09:16:39.473 -> temp:9
+09:42:47.288 -> temp:10
+10:14:45.976 -> temp:11
+10:48:47.414 -> temp:12
+
+11:42:36.388 -> temp:12
+11:43:36.404 -> temp:34
+11:44:36.454 -> temp:34
+11:45:36.433 -> temp:12
+
+12:09:38.267 -> Temperatures:
+12:09:38.267 -> BAY1: 13
+12:09:38.267 -> BAY2: 34
+12:09:38.267 -> BAY3: 26
+
+Stopped Test here.  Is this wind?
+
+...
+
+Next test:
+18S--
+Better Wind Blocking (box bottom closed)
+QTY3 power supplies
+2022DEC23
+
+14:31:26.363 -> Rebooting LiBCM
+14:31:26.436 -> 
+14:31:26.436 -> LiBCM v0.8.4j, 2022NOV28
+14:31:26.436 -> '$HELP' for info
+
+14:32:26.534 -> temp:3
+14:40:31.719 -> temp:2
+14:51:29.029 -> temp:1
+
+15:06: Turned all three supplies on:
+12S: 134V@ 95mA = 12.7 W
+18S: 134V@142mA = 19.0 W
+18S: 134V@15xmA = 19.0 W (using larger lambda gen with lower resolution)
+
+15:12:27.100 -> temp:2
+15:18:27.175 -> temp:3
+15:24:27.230 -> temp:4
+15:35:30.770 -> temp:5
+15:51:30.524 -> temp:6
+16:10:41.066 -> temp:7
+16:25:32.465 -> temp:8
+16:44:28.070 -> temp:9
+17:11:34.440 -> temp:10
+17:38:44.002 -> temp:11
+18:10:43.935 -> temp:12
+19:01:29.519 -> temp:13
+20:06:30.197 -> temp:14
+21:56:31.356 -> temp:14
+
+...
+
+Test3 started at 10:14PM 2022DEC23, immediately after text2 finished.
+
+Still using 18S-- configuration.
+
+We know the temperatures shown below are 12S, because 18S modules are warmer
+
+22:28:31.669 -> temp:15
+22:41:31.783 -> temp:16
+23:26:32.222 -> temp:17
+00:12:32.654 -> temp:18
+01:07:33.960 -> temp:18
+
+...
+
+Test4 starts immediately following Test3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

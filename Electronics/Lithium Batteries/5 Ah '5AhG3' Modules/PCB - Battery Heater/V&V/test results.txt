@@ -1,0 +1,466 @@
+18S+- (First Test):
+
+19:34:18.868 -> Temperatures:
+19:34:18.907 -> BAY1: 12
+19:34:18.907 -> BAY2: 14
+19:34:18.907 -> BAY3: 14
+
+00:27:25.229 -> Temperatures:
+00:27:25.229 -> BAY1: 8
+00:27:25.229 -> BAY2: 9
+00:27:25.229 -> BAY3: 9
+
+01:19:13.405 -> Temperatures:
+01:19:13.405 -> BAY1: 7
+01:19:13.405 -> BAY2: 8
+01:19:13.405 -> BAY3: 8
+
+06:27:52.200 -> Temperatures:
+06:27:52.200 -> BAY1: -4
+06:27:52.200 -> BAY2: -2
+06:27:52.200 -> BAY3: -2
+
+...
+
+18S-- (2nd Test):
+
+Outside, heaters off:
+14:31:34.278 -> Temperatures:
+14:31:34.278 -> BAY1: 4
+14:31:34.278 -> BAY2: 6
+14:31:34.278 -> BAY3: 5
+
+15:04:47.184 -> Temperatures:
+15:04:47.184 -> BAY1: 1
+15:04:47.184 -> BAY2: 4
+15:04:47.184 -> BAY3: 2
+
+15:06: Turned all three supplies on:
+12S: 134V@ 95mA = 12.7 W
+18S: 134V@142mA = 19.0 W
+18S: 134V@15xmA = 19.0 W (using larger lambda gen with lower resolution)
+
+16:29:22.471 -> Temperatures:
+16:29:22.471 -> BAY1: 8
+16:29:22.471 -> BAY2: 14
+16:29:22.471 -> BAY3: 14
+
+17:00:12.899 -> Temperatures:
+17:00:12.899 -> BAY1: 9
+17:00:12.899 -> BAY2: 17
+17:00:12.899 -> BAY3: 16
+
+17:18:36.120 -> Temperatures:
+17:18:36.120 -> BAY1: 9
+17:18:36.120 -> BAY2: 18
+17:18:36.120 -> BAY3: 17
+
+18:27:33.235 -> Temperatures:
+18:27:33.235 -> BAY1: 12
+18:27:33.235 -> BAY2: 22
+18:27:33.235 -> BAY3: 21
+
+19:16:43.270 -> Temperatures:
+19:16:43.270 -> BAY1: 13
+19:16:43.270 -> BAY2: 23
+19:16:43.270 -> BAY3: 22
+
+21:56:14.406 -> Temperatures:
+21:56:14.406 -> BAY1: 14
+21:56:14.406 -> BAY2: 27 (outside: -12)
+21:56:14.406 -> BAY3: 25
+
+Test 2 conclusions:
+In 18S-- configuration, both 18S modules have similar temp, and much higher than needed.  For some reason, the 12S module is still lagging far behind.  So we need to increase 12S module power, and also need to decrease 18S module power; there's no reason we need to head pack up to 27 degC when it's -12 outside... that's a 39 degree delta!
+
+So we're going to test the following with 18S--:
+-Decrease power in both 18S modules.  Since they're tracking the same, probably decrease them uniformly.
+-Increase power in 12S module.
+-Retest 18S+- configuration (with better wind shielding).
+-I'm going to try setting all three modules to the same power: 17 W
+
+12S ESR (3k9 installed): 1410.5 Ohms
+12S V_new: 154.9 volts (17 watts)
+Average power into each 12S cell: 1.42 W
+
+18S ESR (3k9 installed): 943.7 Ohms
+18S V_new: 126.7 volts 17 watts
+Average power into each 18S cell: 0.94 W
+
+Implemented this change at 10:14PM 2022DEC23
+
+...
+
+Test 3: All heater PCBs @ 17 watts (3k9 resistors installed)
+The goal of this test is to get the temp sensors in the middle of each module to read the same temperature.  We also need to increase power at each end of all modules, to better balance the temperature gradient.  This will require removing the modules again (which will be test #4).
+
+Test3 started at 10:14PM 2022DEC23, immediately after text2 finished.
+Still using 18S-- configuration.
+
+22:23:34.358 -> Temperatures:
+22:23:34.358 -> BAY1: 15
+22:23:34.358 -> BAY2: 27
+22:23:34.358 -> BAY3: 24
+
+22:28:04.323 -> Temperatures:
+22:28:04.323 -> BAY1: 15
+22:28:04.323 -> BAY2: 27
+22:28:04.323 -> BAY3: 25
+
+22:37:58.917 -> Temperatures:
+22:37:58.917 -> BAY1: 15
+22:37:58.917 -> BAY2: 27
+22:37:58.917 -> BAY3: 24
+
+00:56:31.580 -> Temperatures:
+00:56:31.580 -> BAY1: 18
+00:56:31.580 -> BAY2: 26
+00:56:31.580 -> BAY3: 24
+00:56:33.066 -> temp:18
+
+After 2.5 hours, 12S only warmed up 3 degC... so 12S needs even more power (relative to 18S).  I'm gonna give 12S 5 more watts:
+12S ESR (3k9 installed): 1410.5 Ohms
+12S V_new: 176.0 volts (22 watts)
+Average power into each 12S cell: 1.83 W
+
+18S ESR (3k9 installed): 943.7 Ohms
+18S V_new: 119.0 volts 15 watts
+Average power into each 18S cell: 0.83 W
+
+Implemented this change at 10:14PM 2022DEC23
+
+...
+
+Test 4: Each 12S cell is getting +1 watt more than each 18S cell (1.83 vs 0.83 W).  This doesn't make any sense.
+
+Test4 begins immediately after Test3. 18S--.
+
+12S: 176V@126mA = 22.2 W
+18S: 119V@126mA = 15.0 W
+18S: 119V@13xmA = 15.0 W (using larger lambda gen with lower resolution)
+
+Shortly after starting Test4, installed NI fan blowing straight up.
+
+01:09:29.359 -> Temperatures:
+01:09:29.359 -> BAY1: 18
+01:09:29.359 -> BAY2: 26 (outside: -14)
+01:09:29.393 -> BAY3: 23 
+
+04:02:20.145 -> Temperatures:
+04:02:20.145 -> BAY1: 21
+04:02:20.145 -> BAY2: 22
+04:02:20.145 -> BAY3: 19
+
+04:33:16.959 -> Temperatures:
+04:33:16.959 -> BAY1: 21
+04:33:16.959 -> BAY2: 22
+04:33:16.959 -> BAY3: 18
+
+...
+
+Test5:
+-12S power stays the same
+-Middle 18S power decreases slightly
+-Outer 18S power increases slightly
+
+12S: 176V@126mA = 22.2 W
+18S: 115V@122mA = 14.0 W
+18S: 125V@132mA = 16.6 W (using larger lambda gen with lower resolution)
+
+Changed voltages at 4:38AM 2022DEC24
+
+04:39:31.711 -> Temperatures:
+04:39:31.711 -> BAY1: 21
+04:39:31.711 -> BAY2: 22
+04:39:31.711 -> BAY3: 18
+
+04:41:57.512 -> Temperatures:
+04:41:57.548 -> BAY1: 21
+04:41:57.548 -> BAY2: 21
+04:41:57.548 -> BAY3: 19
+
+11:21:16.166 -> Temperatures:
+11:21:16.166 -> BAY1: 23
+11:21:16.166 -> BAY2: 19
+11:21:16.199 -> BAY3: 19
+
+...
+
+Test6:
+12S power reduced slightly:
+
+12S: 170V@121mA = 20.6 W
+18S: 115V@122mA = 14.0 W
+18S: 125V@132mA = 16.6 W (using larger lambda gen with lower resolution)
+
+11:23:49.200 -> Temperatures:
+11:23:49.200 -> BAY1: 24
+11:23:49.200 -> BAY2: 20 (outside:-8)
+11:23:49.200 -> BAY3: 19
+
+15:24:04.461 -> Temperatures:
+15:24:04.461 -> BAY1: 26
+15:24:04.461 -> BAY2: 23 (outside:-3)
+15:24:04.461 -> BAY3: 23
+
+...
+
+Test7:
+12S power reduced slightly:
+12S: 166V@118mA = 19.6 W
+18S: 115V@122mA = 14.0 W
+18S: 125V@132mA = 16.6 W (using larger lambda gen with lower resolution)
+
+15:27:48.814 -> BAY1: 26
+15:27:48.814 -> BAY2: 23
+15:27:48.814 -> BAY3: 23
+
+15:49:47.501 -> BAY1: 26
+15:49:47.501 -> BAY2: 23
+15:49:47.501 -> BAY3: 24
+
+16:14:57.432 -> BAY1: 26
+16:14:57.432 -> BAY2: 24
+16:14:57.432 -> BAY3: 24
+
+...
+
+Test8:
+12S power reduced slightly:
+12S: 163V@116mA = 18.9 W
+18S: 115V@122mA = 14.0 W
+18S: 125V@132mA = 16.6 W (using larger lambda gen with lower resolution)
+
+16:16:59.295 -> BAY1: 26
+16:16:59.295 -> BAY2: 24
+16:16:59.295 -> BAY3: 24
+
+16:42:33.764 -> BAY1: 26
+16:42:33.764 -> BAY2: 24
+16:42:33.764 -> BAY3: 24
+
+18:15:28.160 -> BAY1: 27
+18:15:28.160 -> BAY2: 26
+18:15:28.160 -> BAY3: 26
+
+20:51:38.459 -> BAY1: 26
+20:51:38.459 -> BAY2: 26
+20:51:38.459 -> BAY3: 25
+
+05:22:03.682 -> BAY1: 25
+05:22:03.717 -> BAY2: 25
+05:22:03.717 -> BAY3: 25
+
+Above was 18S--
+
+...
+
+Test9:
+Same power as above, but now in 18S+- configuration (to see if middle module gets too hot again).
+
+05:49:18.844 -> LiBCM v0.8.4j, 2022NOV28
+
+05:53:05.587 -> BAY1: 21
+05:53:05.587 -> BAY2: 23
+05:53:05.587 -> BAY3: 23
+
+12:15:11.992 -> BAY1: 27
+12:15:11.992 -> BAY2: 35 (outside: -2)
+12:15:11.992 -> BAY3: 28
+
+12:54:33.085 -> BAY1: 28
+12:54:33.085 -> BAY2: 35
+12:54:33.085 -> BAY3: 29
+
+...
+
+Test10:
+2022DEC25
+
+Back to 18S-- configuration (we'll deal with 18S+- later).
+Quite a few changes:
+-Each 18S heater PCB has:
+	QTY2 fewer resistors on the 1st closest cell to LiBCM
+	QTY2 fewer resistors on the 2nd closest cell to LiBCM
+	QTY1 fewer resistor  on the 3rd closest cell to LiBCM
+-Each 12S heater PCB is unmodified from previous tests.
+-There's a 10 watt resistor bolted to the aluminum plate on each module.
+
+Cells were inside for four hours, giving them time to heat back up.
+Verified cells were all the same temperature with thermal imager.
+
+12S: 163V@116mA = 18.9W
+18S: 115V@127mA = 14.6W
+18S: 125V@138mA = 17.3W
+Plate Resistors: 30V@1A = 30.0W
+-------------------------------
+Total power: 80.8W
+
+16:23:41.756 -> LiBCM v0.8.4j, 2022NOV28
+
+16:23:47.530 -> Temperatures:
+16:23:47.530 -> BAY1: 17
+16:23:47.530 -> BAY2: 18
+16:23:47.530 -> BAY3: 17
+
+17:18:51.863 -> BAY1: 24
+17:18:51.863 -> BAY2: 23
+17:18:51.863 -> BAY3: 22
+
+18:14:35.803 -> BAY1: 27
+18:14:35.803 -> BAY2: 26
+18:14:35.803 -> BAY3: 24
+
+21:22:42.738 -> BAY1: 31
+21:22:42.738 -> BAY2: 31
+21:22:42.738 -> BAY3: 27
+
+21:43:56.721 -> BAY1: 31
+21:43:56.721 -> BAY2: 31
+21:43:56.721 -> BAY3: 27
+
+00:14:18.760 -> BAY1: 32
+00:14:18.760 -> BAY2: 32 (outside: -7)
+00:14:18.760 -> BAY3: 28
+
+...
+
+Test11:
+2022DEC26
+
+Same as above, except this time I've stuffed both sides with foam (btwn junction board and 12S, and on opposite side btwn 18S and plastic cover)
+
+12S: 163V@116mA = 18.9W
+18S: 115V@127mA = 14.6W
+18S: 125V@138mA = 17.3W
+Plate Resistors: 30V@1A = 30.0W
+-------------------------------
+Total power: 80.8W
+
+00:50:15.067 -> LiBCM v0.8.4j, 2022NOV28
+
+(cells previously warm)
+00:54:23.460 -> BAY1: 27
+00:54:23.460 -> BAY2: 27
+00:54:23.460 -> BAY3: 26
+
+01:31:42.474 -> BAY1: 34
+01:31:42.474 -> BAY2: 30
+01:31:42.474 -> BAY3: 31
+
+01:47:02.189 -> BAY1: 35
+01:47:02.189 -> BAY2: 30
+01:47:02.189 -> BAY3: 32
+
+Wow, adding that foam really helps!
+
+...
+
+Test 12:
+Reduced 12S and outer 18S power:
+12S: 148V@105mA = 15.5W
+18S: 115V@127mA = 14.6W
+18S: 115V@127mA = 14.6W
+Plate Resistors: 28V@930mA = 26.0W
+-------------------------------
+Total power: 71.2W
+
+Test12 begins immediately after Test11.
+
+02:00:18.676 -> BAY1: 36
+02:00:18.676 -> BAY2: 30
+02:00:18.676 -> BAY3: 33
+
+02:07:44.149 -> BAY1: 35
+02:07:44.149 -> BAY2: 30
+02:07:44.149 -> BAY3: 33
+
+03:25:06.935 -> BAY1: 36
+03:25:06.935 -> BAY2: 31 (outside: -7)
+03:25:06.935 -> BAY3: 35
+
+05:34:40.762 -> BAY1: 36
+05:34:40.762 -> BAY2: 32 (outside: -7)
+05:34:40.762 -> BAY3: 37
+
+
+...
+
+Test13:
+Decrease all power, except bay2 (odd)
+12S: 136V@096mA = 13.0W (-2.5W)
+18S: 115V@127mA = 14.6W
+18S: 104V@115mA = 12.0W (-2.6W)
+Plate Resistors: 27V@900mA = 24.3W (-1.7W)
+-------------------------------
+Total power: 63.9W
+
+Turned fan off, which was previously sitting on top of battery, in middle, directly above middle module, blowing upwards.  This might have been cooling down middle module more than others.
+
+05:44:30.933 -> BAY1: 36
+05:44:30.933 -> BAY2: 32
+05:44:30.933 -> BAY3: 37
+
+05:48:57.816 -> BAY1: 36
+05:48:57.816 -> BAY2: 31
+05:48:57.816 -> BAY3: 37
+
+13:42:20.667 -> BAY1: 36
+13:42:20.667 -> BAY2: 36
+13:42:20.702 -> BAY3: 37
+
+...
+
+Test14:
+
+Same as Test13, except we're now using 18S+- configuration (real 18S+)
+12S: 136V@096mA = 13.0W
+18S: 115V@127mA = 14.6W
+18S: 104V@115mA = 12.0W
+Plate Resistors: 27V@900mA = 24.3W
+-------------------------------
+Total power: 63.9W
+
+Modules starting at low temperature.
+
+19:19:33.439 -> LiBCM v0.8.4j, 2022NOV28
+
+19:20:22.785 -> BAY1: 16
+19:20:22.785 -> BAY2: 17
+19:20:22.785 -> BAY3: 16
+
+20:20:19.713 -> BAY1: 25
+20:20:19.747 -> BAY2: 26
+20:20:19.747 -> BAY3: 23
+
+20:26:41.932 -> BAY1: 25
+20:26:41.932 -> BAY2: 26
+20:26:41.932 -> BAY3: 24
+
+20:46:06.765 -> BAY1: 27
+20:46:06.765 -> BAY2: 28
+20:46:06.765 -> BAY3: 25
+
+21:46:34.927 -> BAY1: 30
+21:46:34.927 -> BAY2: 32
+21:46:34.927 -> BAY3: 28
+
+22:26:22.753 -> BAY1: 32
+22:26:22.753 -> BAY2: 34
+22:26:22.753 -> BAY3: 30
+
+01:00:00.590 -> BAY1: 36
+01:00:00.590 -> BAY2: 39
+01:00:00.590 -> BAY3: 34
+
+01:56:08.657 -> BAY1: 37
+01:56:08.657 -> BAY2: 40
+01:56:08.694 -> BAY3: 35
+
+03:15:32.694 -> BAY1: 38
+03:15:32.694 -> BAY2: 41
+03:15:32.694 -> BAY3: 37
+
+07:07:03.360 -> BAY1: 39
+07:07:03.360 -> BAY2: 43
+07:07:03.360 -> BAY3: 39
