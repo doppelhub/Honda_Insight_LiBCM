@@ -406,13 +406,15 @@ Turned fan off, which was previously sitting on top of battery, in middle, direc
 05:48:57.816 -> BAY3: 37
 
 13:42:20.667 -> BAY1: 36
-13:42:20.667 -> BAY2: 36
+13:42:20.667 -> BAY2: 36 (outside: -1)
 13:42:20.702 -> BAY3: 37
+
+Note: Looks like I didn't wait long enough for temp to settle (see higher temperatures during next test)
 
 ...
 
 Test14:
-
+2022DEC27
 Same as Test13, except we're now using 18S+- configuration (real 18S+)
 12S: 136V@096mA = 13.0W
 18S: 115V@127mA = 14.6W
@@ -462,5 +464,37 @@ Modules starting at low temperature.
 03:15:32.694 -> BAY3: 37
 
 07:07:03.360 -> BAY1: 39
-07:07:03.360 -> BAY2: 43
+07:07:03.360 -> BAY2: 43 (outside: -2)
 07:07:03.360 -> BAY3: 39
+
+//
+
+Overall results:
+
+12S:
+-PCB sinks around 13 watts.
+-Total PCB ESR is 1417 Ohms with 2k0 resistors populated.
+Therefore, if we want 13.0 watts with 187 volts (3.9*48), then each discrete resistor on the 12S PCB should be 3781 ohms. Derivation for 13 watts total sunk into 12S:
+(136 volts)^2 / (QTY9 * 2000 ohms = (187 volts)^2 / (QTY9 * 3781 ohms) 
+We'll use a 3900 ohm resistor (+3.1%), because I already have a reel.
+
+18S: 
+-Both 18S PBCs are identical.
+-Each PCB sinks around 13 watts.
+-QTY2 75 Ohm resistors on two strings closest to LiBCM
+-QTY1 75 Ohm resistor on next-closest string
+-Total PCB ESR is 905 Ohms with 2k0 resistors populated (including 75 Ohms above).
+Therefore, if we want 13 watts with 187 volts (3.9*48), then each discrete resistor on the 18S PCB should be 5941 ohms.  Derivation for 13 watts total sunk into 18S:
+x^2/905 = 13, so x is 108.5 volts.
+(108.5 volts)^2 / (QTY9 * 2000 ohms) = (187 volts)^2 / (QTY9 * 5941 ohms)
+-To match the 12S resistance, we want a 6124 ohm resistor (5941 + 3.1%) 
+We'll use a 6200 ohm resistor (+4.4%), because that's what's in stock.  FML.
+
+Bolt on resistors:
+-Identical construction for both 18S+- & 18S--
+-In total sinks 24 watts (8W/resistor).
+-At 187 volts (3.9*48), total string resistance is ideally 1457 ohms.
+-Each discrete resistor is ideally 485 Ohms. 
+-We'll use QTY3 500 Ohm bolt on resistors in series, which yields 1500 Ohm ESR.
+-Discrete resistors sink 23.4 watts @ 3.9 V/cell (combined).
+-Discrete resistors sink 17.8 watts @ 3.4 V/cell )combined).
