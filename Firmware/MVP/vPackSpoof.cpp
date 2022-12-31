@@ -25,6 +25,10 @@ uint8_t offsetVoltage_MCMe = MCME_VOLTAGE_OFFSET_ADJUST; //constant offset volta
 
 //---------------------------------------------------------------------------------------
 
+uint8_t vPackSpoof_getSpoofedPackVoltage(void) { return spoofedPackVoltage; }
+
+//---------------------------------------------------------------------------------------
+
 void vPackSpoof_setModeMCMePWM(uint8_t newMode) { modeMCMePWM = newMode; }
 
 //---------------------------------------------------------------------------------------
@@ -116,7 +120,7 @@ uint8_t calculate_Vspoof_maxPossible(void)
 	else if(actualPackVoltage < 245) { maxAllowedVspoof = actualPackVoltage - 20; }
 	else                             { maxAllowedVspoof = actualPackVoltage - 21; }
 
-	
+
 
 	return maxAllowedVspoof;
 }
@@ -259,10 +263,6 @@ void vPackSpoof_handleKeyON(void) { ; }
 
 void vPackSpoof_handleKeyOFF(void)
 {
-	pinMode(PIN_VPIN_OUT_PWM,INPUT); //set VPIN back to high impedance (to save power)
-	pinMode(PIN_MCME_PWM,    INPUT); //Set MCM'E' high impedance (to save power)
+	pinMode(PIN_VPIN_OUT_PWM,INPUT); //set VPIN high impedance (to save power)
+	pinMode(PIN_MCME_PWM,    INPUT); //Set MCMe high impedance (to save power)
 }
-
-//---------------------------------------------------------------------------------------
-
-uint8_t vPackSpoof_getSpoofedPackVoltage(void) { return spoofedPackVoltage; }
