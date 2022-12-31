@@ -280,13 +280,14 @@ void USB_userInterface_executeUserInput(void)
 				Serial.print(BATTSCI_framePeriod_ms_get(),DEC);
 			}
 		}
+
 		//$MCMp
 		else if( (line[1] == 'M') && (line[2] == 'C') && (line[3] == 'M') && (line[4] == 'P') )
 		{
 			if(line[5] == '=')
 			{
 				uint8_t newPWM_counts = get_uint8_FromInput(line[6],line[7],line[8]);
-				if(newPWM_counts == 123) { vPackSpoof_setModeMCMePWM(MCMe_USING_VPACK); } //special case: let LiBCM control MCMe PWM
+				if(newPWM_counts == 123) { vPackSpoof_setModeMCMePWM(MCMe_USING_VPACK); } //special case: let LiBCM control MCMe PWM //JTS2doLater: Remove once P1576(12) issue gone
 				else
 				{
 					//user manually controlling MCMe PWM value
@@ -301,6 +302,7 @@ void USB_userInterface_executeUserInput(void)
 			}
 		}
 
+		//JTS2doLater: Delete once the P1576(12) issue is no longer reported
 		//$MCMb
 		else if( (line[1] == 'M') && (line[2] == 'C') && (line[3] == 'M') && (line[4] == 'B') )
 		{

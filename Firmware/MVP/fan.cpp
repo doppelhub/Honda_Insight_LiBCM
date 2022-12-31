@@ -7,7 +7,7 @@ char goalSpeed[NUM_FAN_CONTROLLERS] = {'0'}; //store desired fan speeds (for OEM
 
 uint8_t fanStates[NUM_FAN_CONTROLLERS] = {FAN_NOT_REQUESTED}; //each subsystem's fan speed request is stored in 2 bits
 
-//JTS2doNow: Turn the fan on when the car is on and the battery temp isn't ideal (assumes cabin air temp is habitable)
+//JTS2doLater: Turn the fan on when the car is on and the battery temp isn't ideal (assumes cabin air temp is habitable)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -106,7 +106,7 @@ int8_t calculateAbsoluteDelta(int8_t temperatureA, int8_t temperatureB)
 //JTS2doLater: Add option to see who is requesting fan state
 void fan_handler(void)
 {
-	//JTS2doNow: Rewrite this handler entirely... it's not good.  Proposed framework:
+	//JTS2doLater: Rewrite this handler entirely... it's not good.  Proposed framework:
 	//If pack too warm or too cold, wait a minute after keyON, then turn fan on briefly to sample cabin air temp.
 	//           If cabin air temp undesirable, turn fan off and wait a few more minutes.
 	//           Once cabin air temp is good, turn fans on and heat/cool pack.

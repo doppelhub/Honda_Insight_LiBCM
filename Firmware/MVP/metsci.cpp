@@ -198,7 +198,7 @@ void METSCI_processLatestFrame(void)
   {
     uint8_t resyncAttempt = 0; //prevents endless loop by bailing after N tries
   
-    while( (METSCI_readByte() != 0xE6) )  //Ensure the first byte is 0xE6 //JTS2doNow: See if keyONinitial pattern "E6,E6,E1,E6" occurs with LiBCM installed
+    while( (METSCI_readByte() != 0xE6) )  //Ensure the first byte is 0xE6 //JTS2doLater: See if keyONinitial pattern "E6,E6,E1,E6" occurs with LiBCM installed
     {
       //throw away data until the next frame starts (0xE6 byte)
       if(resyncAttempt == 0) { Serial.print( F("\nMETSCI buffer sync") ); } 

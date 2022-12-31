@@ -3,7 +3,7 @@
 
 //BATTSCI Serial Functions
 
-//JTS2doNow: applying moderate assist (1:30 amps) above ~3100 RPM causes rapid current hunting.  Probably due to METSCI/BATTSCI formatting issue
+//JTS2doLater: 60S: applying moderate assist (1:30 amps) above ~3100 RPM causes rapid current hunting. Does this occur with 48S?  BATTSCI formatting issue?
 
 /************************************************************************************************************************
  * The BCM constantly sends two different 12 Byte frames to the MCM.
@@ -18,7 +18,7 @@ int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2
 
 uint8_t framePeriod_ms = 33;
 
-//JTS2doNow: Add different SoC profile for "charges every day" crew
+//JTS2doLater: Add different SoC profile for "charges every day" crew
 //JTS2doLater: store in 'PROGMEM' to keep out of RAM (but note array elements must be indexed differently)
 //LUT remaps actual lithium battery SoC (unit: percent) to mimic OEM NiMH behavior (unit: deciPercent)
 //input: actual lithium SoC (unit: percent integer)
@@ -99,7 +99,6 @@ void BATTSCI_setPackVoltage(uint8_t spoofedVoltage) { spoofedVoltageToSend_Count
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: input needs more resolution.  Right now it's 1000 mA/count... should be at most 50 mA/count.
 //Convert battery current (unit: amps) into BATTSCI format (unit: 50 mA per count)
 void BATTSCI_setSpoofedCurrent(int16_t spoofedCurrent) { spoofedCurrentToSend_Counts = (2048 - (spoofedCurrent * 20)); }
 
@@ -121,7 +120,7 @@ uint8_t BATTSCI_calculateTemperatureByte(void)
   uint8_t tempBATTSCI = temperature_battery_getLatest() + BATTSCI_TEMP_OFFSET;
   if(tempBATTSCI < BATTSCI_TEMP_21DEGC) { tempBATTSCI = BATTSCI_TEMP_21DEGC; } //spoof temps below 21 degC to 21 degC //allows IMA start and max assist
 
-  //JTS2doNow: EHW5 power density drops off below freezing... need to spoof lower temperatures to limit assist at cold temperatures.
+  //JTS2doLater: EHW5 power density drops off below freezing... need to spoof lower temperatures to limit assist at cold temperatures.
 
   return tempBATTSCI;
 }
@@ -150,7 +149,7 @@ int16_t cellVoltageOffsetDueToESR(void)
 bool BATTSCI_isPackFull(void)
 {
   // uint16_t currentAdjustedCellVoltage_max = CELL_VMAX_REGEN;
-  // JTS2doNow: Determine regen cell ESR
+  // JTS2doLater: Determine regen cell ESR
   // if(adc_getLatestBatteryCurrent_amps() < 0)
   // {
   //   //regen, need to account for ESR-related cell voltage increase
@@ -158,7 +157,7 @@ bool BATTSCI_isPackFull(void)
   // }
 
   if( (LTC68042result_hiCellVoltage_get() < CELL_VMAX_REGEN               ) && //below hard voltage limit (if SoC estimator is wrong)
-      //(LTC68042result_hiCellVoltage_get() < currentAdjustedCellVoltage_max) && //below ESR-adjusted voltage limit (due to IMA current) //JTS2doNow: required?
+      //(LTC68042result_hiCellVoltage_get() < currentAdjustedCellVoltage_max) && //below ESR-adjusted voltage limit (due to IMA current) //JTS2doLater: required?
       (  SoC_getBatteryStateNow_percent() < STACK_SoC_MAX                 ) )  //below SoC limit
        { return false; } //pack is good
   else { return true;  } //pack is overcharged
@@ -183,7 +182,7 @@ bool BATTSCI_isPackEmpty(void)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add hysteresis and/or different SoC setpoints
+//JTS2doLater: Add hysteresis and/or different SoC setpoints
 
 //sternly demand no regen and/or assist from MCM
 uint8_t BATTSCI_calculateRegenAssistFlags(void)
@@ -197,7 +196,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
 
   #ifndef DISABLE_REGEN
     if( (BATTSCI_isPackFull() == true)       || //pack is full
-        (temperature_battery_getLatest() < 1) ) //pack is too cold to safely regen //JTS2doNow: Add hysteresis
+        (temperature_battery_getLatest() < 1) ) //pack is too cold to safely regen
   #endif
       { flags |= BATTSCI_DISABLE_REGEN_FLAG; EEPROM_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN); }
 
@@ -206,7 +205,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add hysteresis and/or different SoC setpoints
+//JTS2doLater: Add hysteresis and/or different SoC setpoints
 
 // Byte06 ("charge request byte"):
 // Initial keyON values (first ~100 BATTSCI frames, ~7 seconds... until METSCI B4 is neither 24 nor 0):
@@ -259,9 +258,9 @@ uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
 
   #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING
     if( (SoC_mappedToMCM_deciPercent < 720) && (SoC_mappedToMCM_deciPercent > 250) ) { SoC_mappedToMCM_deciPercent = 720; }
-    //JTS2doNow: Need to increase spoofed pack voltage when this mode is activated
-    //           Otherwise, MCM ignores LiBCM request when pack is discharged
-    //           Need to verify MCM honors BATTSCI "disable assist" flag (so pack isn't over-discharged)
+    //JTS2doLater: Increase spoofed pack voltage when this mode is activated
+    //             Otherwise, MCM ignores LiBCM request when pack is discharged
+    //             Need to verify MCM honors BATTSCI "disable assist" flag (so pack isn't over-discharged)
   #endif
 
   return SoC_mappedToMCM_deciPercent;
@@ -312,7 +311,7 @@ uint16_t BATTSCI_convertSoC_deciPercent_toBytes(uint16_t SoC_deciPercent) //deci
 uint16_t BATTSCI_calculateSpoofedSoC(void)
 {
   uint16_t SoC_toMCM_deciPercent = 0;
-  if     (BATTSCI_isPackFull()  == true) { SoC_toMCM_deciPercent = 820; } //disable regen  //JTS2doNow: See if this is actually required (also sent as flag)
+  if     (BATTSCI_isPackFull()  == true) { SoC_toMCM_deciPercent = 820; } //disable regen  //JTS2doLater: See if this is actually required (also sent as flag)
   else if(BATTSCI_isPackEmpty() == true) { SoC_toMCM_deciPercent = 200; } //disable assist //TODO_NATALYA (not urgent as of 2022JAN21) watch SoC gauge behaviour at 20% MCM SoC vs 19% MCM SoC to see if we should use 20% or 19%
   else { SoC_toMCM_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; } //get MCM-remapped SoC value
 

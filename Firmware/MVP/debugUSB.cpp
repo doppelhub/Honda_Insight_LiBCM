@@ -29,7 +29,7 @@ uint16_t debugUSB_dataUpdatePeriod_ms_get(void) { return dataUpdatePeriod_ms; }
 //print one IC's QTY12 cell voltages
 //the first IC's data is stored in the 0th array element, regardless of the first IC's actual address (e.g. 0x2),  
 //t=2.4 milliseconds worst case
-//JTS2doNow: Place inside debugUSB_printData_cellVoltages()
+//JTS2doLater: Place inside debugUSB_printData_cellVoltages()
 void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces)
 {
 	if(icToPrint > TOTAL_IC) { return; } //illegal IC number entered
@@ -67,7 +67,7 @@ void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap, uint16
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Place inside debugUSB_printData_cellVoltages()?
+//JTS2doLater: Place inside debugUSB_printData_cellVoltages()?
 void debugUSB_printCellBalanceStatus(void)
 {
 	uint8_t anyCellsBalancing = NO;
@@ -91,7 +91,7 @@ void debugUSB_printCellBalanceStatus(void)
 	}
 	else //(anyCellsBalancing == NO)
 	{
-		//JTS2doNow: Change text if pack is unbalanced, but something else is preventing balancing
+		//JTS2doLater: Change text if pack is unbalanced, but something else is preventing balancing
 		Serial.print(F("\nPack Balanced"));
 	}
 }

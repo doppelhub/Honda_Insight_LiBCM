@@ -8,7 +8,7 @@
 //no need to retrieve this value outside this file... use gpio_isGridChargerPluggedInNow() instead
 bool gridChargerState_sampled = PLUGGED_IN;
 
-//JTS2doNow: Prevent grid charging when cells below freezing
+//JTS2doLater: Prevent grid charging when cells below freezing
 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -48,7 +48,6 @@ void gridCharger_handlePluginEvent(void)
 
 //////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Measure current while grid charging.
 void gridCharger_chargePack(void)
 {
   static uint8_t cellState = CELLSTATE_UNINITIALIZED;
@@ -62,7 +61,7 @@ void gridCharger_chargePack(void)
     cellState = CELLSTATE_OVERCHARGED;
     gpio_turnGridCharger_off();
     gpio_setGridCharger_powerLevel('0');
-    //JTS2doNow: display Warning on LCD
+    //JTS2doLater: display Warning on LCD
     gpio_turnBuzzer_on_highFreq();
   }
 
@@ -72,7 +71,7 @@ void gridCharger_chargePack(void)
     cellState = CELLSTATE_OVERDISCHARGED;
     gpio_turnGridCharger_off();
     gpio_setGridCharger_powerLevel('0');
-    //JTS2doNow: display Warning on LCD
+    //JTS2doLater: display Warning on LCD
     gpio_turnBuzzer_on_highFreq();
   }
 

@@ -62,7 +62,7 @@ void gpio_begin(void)
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
-	//JTS2doNow: Turn all this stuff off when the key is off
+	//JTS2doLater: Turn all this stuff off when the key is off
 	TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D11(fan) & D12()
 	TCCR3B = (TCCR3B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D2() & D3() & D5(VPIN_OUT)
 	TCCR4B = (TCCR4B & B11111000) | B00000010; // Set F_PWM to  3921.16 Hz //pins D7(MCMe) & D8(gridPWM) & D9()
@@ -78,7 +78,7 @@ bool gpio_keyStateNow(void) { return digitalRead(PIN_IGNITION_SENSE); }
 //THIS FUNCTION DOES NOT RETURN!
 void gpio_turnLiBCM_off(void)
 { 
-	//JTS2doNow: Write SoC to EEPROM (so LiBCM can read it back at next keyON, if not enough time to calculate it)
+	//JTS2doLater: Write SoC to EEPROM (so LiBCM can read it back at next keyON, if not enough time to calculate it)
 	Serial.print(F("\nLiBCM turning off"));
 	delay(20); //wait for the above message to transmit
 	digitalWrite(PIN_TURNOFFLiBCM,HIGH);

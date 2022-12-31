@@ -3,7 +3,7 @@
 
 //LTC6804 configuration functions
 
-//JTS2doNow: Add 2nd reference measurement (to verify 1st reference is working properly)
+//JTS2doLater: Add 2nd reference measurement (to verify 1st reference is working properly)
 
 #include "libcm.h"
 

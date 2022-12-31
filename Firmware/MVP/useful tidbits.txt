@@ -42,4 +42,4 @@
 
 //Open wire test (to check for open cells): ADOW
 
-//JTS2doNow: Figure out intermittent (and immediate) backup starter.
+//JTS2doLater: Figure out intermittent (and immediate) backup starter.

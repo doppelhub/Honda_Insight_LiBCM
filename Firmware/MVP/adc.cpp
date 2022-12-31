@@ -69,7 +69,7 @@ int16_t adc_measureBatteryCurrent_amps(void)
 		//see SPICE simulation for complete derivation
 		//see "RevC/V&V/OEM Current Sensor.ods" for measured results
 		//The approximation equation below is accurate to within 1.0 amps of actual value
-		latest_battCurrent_amps = ((int16_t)((((uint16_t)latest_battCurrent_counts) * 55) >> 8)) - 72; //JTS2doNow: change to mA to reduce Calpod background regen
+		latest_battCurrent_amps = ((int16_t)((((uint16_t)latest_battCurrent_counts) * 55) >> 8)) - 72; //JTS2doLater: change to mA to reduce Calpod background regen
 	}
 
 	return latest_battCurrent_amps;
@@ -85,7 +85,6 @@ int16_t adc_getLatestBatteryCurrent_counts(void) { return latest_battCurrent_cou
 
 /////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add more resolution to prevent background charging when Calpod switch engaged
 int16_t adc_getLatestSpoofedCurrent_amps(void) { return packCurrent_spoofed; }
 
 /////////////////////////////////////////////////////////////////////
