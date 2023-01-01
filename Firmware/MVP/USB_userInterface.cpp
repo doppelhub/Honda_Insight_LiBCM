@@ -118,8 +118,6 @@ void printHelp(void)
 		"\n -'$RATE=___': USB updates per second (1 to 255 Hz)"
 		"\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
 		"\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)"
-		"\n -'$MCMp=___': set manual MCMe PWM value (0:255)('123' for auto)"
-		"\n -'$MCMb': Display offsetVoltage_MCMe value"
 		"\n"
 		/*
 		"\nFuture LiBCM commands (not presently supported"
@@ -131,7 +129,6 @@ void printHelp(void)
 		"\n -'$ASSIST_ON' enable assist until LiBCM resets."
 		"\n -'$REGEN_OFF' disable regen until LiBCM resets."
 		"\n -'$REGEN_ON' enable regen until LiBCM resets."
-		"\n -'MCME_VDELTA' display MCM'E' voltage offset.  'MCME_VDELTA=__' to set."
 		"\n -'BATTmAh' display battery capacity in mAh.  'BATTmAh=____' to set."
 		"\n -'SoC_MAX' display max allowed SoC.  'SoC_MAX=__' to set."
 		"\n -'SoC_MIN' display min allowed SoC.  'SoC_MIN=__' to set."
@@ -278,38 +275,6 @@ void USB_userInterface_executeUserInput(void)
 			{
 				Serial.print(F("\nBATTSCI period is (ms): "));
 				Serial.print(BATTSCI_framePeriod_ms_get(),DEC);
-			}
-		}
-
-		//$MCMp
-		else if( (line[1] == 'M') && (line[2] == 'C') && (line[3] == 'M') && (line[4] == 'P') )
-		{
-			if(line[5] == '=')
-			{
-				uint8_t newPWM_counts = get_uint8_FromInput(line[6],line[7],line[8]);
-				if(newPWM_counts == 123) { vPackSpoof_setModeMCMePWM(MCMe_USING_VPACK); } //special case: let LiBCM control MCMe PWM //JTS2doLater: Remove once P1576(12) issue gone
-				else
-				{
-					//user manually controlling MCMe PWM value
-					vPackSpoof_setModeMCMePWM(MCMe_USER_DEFINED);
-					vPackSpoof_setPWMcounts_MCMe(newPWM_counts);
-				}
-			}
-			else if(line[5] == STRING_TERMINATION_CHARACTER)
-			{
-				Serial.print(F("\nMCMpwm is (counts): "));
-				Serial.print(vPackSpoof_getPWMcounts_MCMe(),DEC);
-			}
-		}
-
-		//JTS2doLater: Delete once the P1576(12) issue is no longer reported
-		//$MCMb
-		else if( (line[1] == 'M') && (line[2] == 'C') && (line[3] == 'M') && (line[4] == 'B') )
-		{
-			if(line[5] == STRING_TERMINATION_CHARACTER)
-			{
-				Serial.print(F("\noffsetVoltage_MCMe is (volts): "));
-				Serial.print(vPackSpoof_getMCMeOffsetVoltage(),DEC);
 			}
 		}
 

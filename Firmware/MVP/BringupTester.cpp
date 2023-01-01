@@ -128,9 +128,9 @@ void bringupTester_run(void)
 
 				for(int ii=0; ii<6; ii++)
 				{
-					spoofVoltageMCMe_setSpecificPWM(0); //LED should be full brightness
+					analogWrite(PIN_MCME_PWM, 0); //LED should be full brightness
 					delay(200);
-					spoofVoltageMCMe_setSpecificPWM(255); //LED should be dim
+					analogWrite(PIN_MCME_PWM, 255); //LED should be dim
 					delay(200);
 				}
 

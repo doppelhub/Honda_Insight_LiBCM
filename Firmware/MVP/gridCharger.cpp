@@ -125,7 +125,7 @@ void gridCharger_handler(void)
 
   //JTS2doLater: disable grid charging when batt temp too low or high
   if( (gridChargerState_sampled == PLUGGED_IN) &&
-      (temperature_gridCharger_getLatest() < GRIDCHARGER_CASE_TEMP_TO_DISABLE_C) )
+      (temperature_gridCharger_getLatest() < GRIDCHARGER_CASE_TEMP_TO_DISABLE_C) ) //JTS2doNow: Disable grid charging below freezing
   {
     gridCharger_chargePack();
   }
