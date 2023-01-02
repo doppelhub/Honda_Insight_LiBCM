@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.8.4m"
-    #define BUILD_DATE "2022DEC31"
+	#define FW_VERSION "0.8.4n"
+    #define BUILD_DATE "2023JAN01"
 
 	//choose your battery type:
 		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
@@ -50,11 +50,11 @@
 	#define COOL_BATTERY_ABOVE_TEMP_C_KEYOFF       50 //cabin air cooling
 	#define COOL_BATTERY_ABOVE_TEMP_C_GRIDCHARGING 30
 	#define COOL_BATTERY_ABOVE_TEMP_C_KEYON        28
-	#define HEAT_BATTERY_BELOW_TEMP_C_KEYON        18 //cabin air heating
+	#define HEAT_BATTERY_BELOW_TEMP_C_KEYON        18 //cabin air heating, or heater PCB (if installed) 
 	#define HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING 16
 	#define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       10
 	//other fan settings
-	#define KEYOFF_DISABLE_FANS_BELOW_SoC 60 //set to 100 to disable fans entirely when keyOFF (unless grid charger plugged in)
+	#define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 60 //set to 100 to disable fans entirely when keyOFF (unless grid charger plugged in)
 	#define OEM_FAN_INSTALLED //comment if OEM fan removed  
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda EHW5 lithium modules

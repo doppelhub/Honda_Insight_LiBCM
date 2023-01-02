@@ -5,6 +5,10 @@
 	#define GPIO_CHARGER_ON   1
 	#define GPIO_CHARGER_OFF  2
 
+	#define GPIO_HEATER_INIT      0
+	#define GPIO_HEATER_CONNECTED 1
+	#define GPIO_HEATER_ABSENT    2
+
 	void gpio_begin(void);
 
 	bool gpio_keyStateNow(void);
@@ -42,6 +46,10 @@
 	bool gpio1_getState(void);
 	bool gpio2_getState(void);
 	bool gpio3_getState(void);
+
+	void gpio_turnHeaterPCB_on(void);
+	void gpio_turnHeaterPCB_off(void);
+	uint8_t gpio_isPackHeaterInstalled(void);
 
 	uint8_t gpio_getHardwareRevision(void);
 

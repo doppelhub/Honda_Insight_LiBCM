@@ -280,4 +280,8 @@ void debugUSB_printConfigParameters(void)
 	#elif defined VOLTAGE_SPOOFING_ASSIST_AND_REGEN
 		Serial.print(F("/Vs=all"));
 	#endif
+
+	Serial.print(F("/Heat:"));
+	if(gpio_isPackHeaterInstalled() == GPIO_HEATER_CONNECTED) { Serial.print('Y'); }
+	else                                                      { Serial.print('N'); }
 }

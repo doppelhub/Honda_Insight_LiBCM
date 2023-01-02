@@ -9,6 +9,7 @@
 //FYI: simple pin state read/writes take less than 10 us
 
 uint8_t previousGridChargerState = GPIO_CHARGER_INIT;
+uint8_t packHeaterStatus = GPIO_HEATER_INIT;
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -30,6 +31,21 @@ uint8_t gpio_getHardwareRevision(void)
 	pinMode(PIN_HW_VER1, INPUT);
 
 	return hardwareRevision;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+//only call this function at powerup
+//pin floats when called, which can cause switching FET to continuously operate in active region (bad)
+void gpio_powerOn_packHeaterCheck(void)
+{
+	pinMode(PIN_GPIO3,INPUT_PULLUP);
+
+	if(digitalRead(PIN_GPIO3) == false) { packHeaterStatus = GPIO_HEATER_CONNECTED; } //if connected, the isolated driver on the heater PCB will pull signal low
+	else                                { packHeaterStatus = GPIO_HEATER_ABSENT;    } //if heater PCB disconnected, the CPU pullup will pull signal high
+
+	pinMode(PIN_GPIO3,INPUT); //turn heater PCB off for safety
+	digitalWrite(PIN_GPIO3,LOW); //disable pullup (redundant)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -61,6 +77,8 @@ void gpio_begin(void)
 	pinMode(PIN_TEMP_EN,OUTPUT);
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
+
+	gpio_powerOn_packHeaterCheck();
 
 	//JTS2doLater: Turn all this stuff off when the key is off
 	TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D11(fan) & D12()
@@ -239,6 +257,12 @@ bool gpio3_getState(void) { return digitalRead(PIN_GPIO3); }
 
 void gpio_turnTemperatureSensors_on( void) {digitalWrite(PIN_TEMP_EN,HIGH); }
 void gpio_turnTemperatureSensors_off(void) {digitalWrite(PIN_TEMP_EN,LOW ); }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void gpio_turnHeaterPCB_on(void) { pinMode(PIN_GPIO3,OUTPUT); digitalWrite(PIN_GPIO3,HIGH); }
+void gpio_turnHeaterPCB_off(void){ pinMode(PIN_GPIO3,INPUT);  digitalWrite(PIN_GPIO3,LOW);  }
+uint8_t gpio_isPackHeaterInstalled(void) { return packHeaterStatus; }
 
 ////////////////////////////////////////////////////////////////////////////////////
 

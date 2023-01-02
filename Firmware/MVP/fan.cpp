@@ -54,7 +54,7 @@ int8_t fan_getBatteryCoolSetpoint_C(void)
 
 	if     (key_getSampledState()         == KEYSTATE_ON)    { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_KEYON; }
 	else if(gpio_isGridChargerPluggedInNow() == PLUGGED_IN)  { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_GRIDCHARGING; }
-	else if( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_FANS_BELOW_SoC) &&
+	else if( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC) &&
 		     (key_getSampledState() == KEYSTATE_OFF) )       { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_KEYOFF; }
 	else /*KEYOFF && SoC too low*/                           { coolBattAboveTemp_C = TEMPERATURE_SENSOR_FAULT_HI; }
 
@@ -69,7 +69,7 @@ int8_t fan_getBatteryHeatSetpoint_C(void)
 
 	if     (key_getSampledState() == KEYSTATE_ON)           { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_KEYON; }
 	else if(gpio_isGridChargerPluggedInNow() == PLUGGED_IN) { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING; }
-	else if( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_FANS_BELOW_SoC) &&
+	else if( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC) &&
 		     (key_getSampledState() == KEYSTATE_OFF) )      { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_KEYOFF; }
 	else /*KEYOFF && SoC too low*/                          { heatBattBelowTemp_C = TEMPERATURE_SENSOR_FAULT_LO; }
 
@@ -102,7 +102,6 @@ int8_t calculateAbsoluteDelta(int8_t temperatureA, int8_t temperatureB)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doLater: Add option to turn fans on via USB
 //JTS2doLater: Add option to see who is requesting fan state
 void fan_handler(void)
 {

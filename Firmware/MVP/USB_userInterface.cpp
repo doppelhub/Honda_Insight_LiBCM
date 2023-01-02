@@ -70,17 +70,27 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	}
 	else if(testToRun == '5')
 	{
-		Serial.print(F("\nRunning TEST5:"));
+		Serial.print(F("\nRunning TEST5: Is Heater PCB Connected?"));
+		gpio_isPackHeaterInstalled();
 	}
 	else if(testToRun == '6')
 	{
 		Serial.print(F("\nRunning TEST6: Turn off LiBCM (5V rail).\nLiBCM will stay on if USB's +5V connected."));
 		gpio_turnLiBCM_off();
 	}
+	else if(testToRun == '7')
+	{
+		Serial.print(F("\nRunning TEST7: Turn off Heater PCB."));
+		gpio_turnHeaterPCB_off();
+	}
+	else if(testToRun == '8')
+	{
+		Serial.print(F("\nRunning TEST8: Turn on Heater PCB."));
+		gpio_turnHeaterPCB_on();
+	}
 	else if(testToRun == 'T')
 	{
 		gpio_turnTemperatureSensors_on();
-		delay(1);
 		Serial.print(F("\nTemperatures:"));
 		Serial.print(F("\nBLU: "));
 		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BLU));
