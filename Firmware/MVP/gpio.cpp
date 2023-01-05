@@ -9,6 +9,7 @@
 //FYI: simple pin state read/writes take less than 10 us
 
 uint8_t previousGridChargerState = GPIO_CHARGER_INIT;
+uint8_t packHeaterStatus = GPIO_HEATER_INIT;
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -30,6 +31,21 @@ uint8_t gpio_getHardwareRevision(void)
 	pinMode(PIN_HW_VER1, INPUT);
 
 	return hardwareRevision;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+//only call this function at powerup
+//pin floats when called, which can cause switching FET to continuously operate in active region (bad)
+void gpio_powerOn_packHeaterCheck(void)
+{
+	pinMode(PIN_GPIO3,INPUT_PULLUP);
+
+	if(digitalRead(PIN_GPIO3) == false) { packHeaterStatus = GPIO_HEATER_CONNECTED; } //if connected, the isolated driver on the heater PCB will pull signal low
+	else                                { packHeaterStatus = GPIO_HEATER_ABSENT;    } //if heater PCB disconnected, the CPU pullup will pull signal high
+
+	pinMode(PIN_GPIO3,INPUT); //turn heater PCB off for safety
+	digitalWrite(PIN_GPIO3,LOW); //disable pullup (redundant)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -62,7 +78,9 @@ void gpio_begin(void)
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
-	//JTS2doNow: Turn all this stuff off when the key is off
+	gpio_powerOn_packHeaterCheck();
+
+	//JTS2doLater: Turn all this stuff off when the key is off
 	TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D11(fan) & D12()
 	TCCR3B = (TCCR3B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D2() & D3() & D5(VPIN_OUT)
 	TCCR4B = (TCCR4B & B11111000) | B00000010; // Set F_PWM to  3921.16 Hz //pins D7(MCMe) & D8(gridPWM) & D9()
@@ -78,7 +96,7 @@ bool gpio_keyStateNow(void) { return digitalRead(PIN_IGNITION_SENSE); }
 //THIS FUNCTION DOES NOT RETURN!
 void gpio_turnLiBCM_off(void)
 { 
-	//JTS2doNow: Write SoC to EEPROM (so LiBCM can read it back at next keyON, if not enough time to calculate it)
+	//JTS2doLater: Write SoC to EEPROM (so LiBCM can read it back at next keyON, if not enough time to calculate it)
 	Serial.print(F("\nLiBCM turning off"));
 	delay(20); //wait for the above message to transmit
 	digitalWrite(PIN_TURNOFFLiBCM,HIGH);
@@ -239,3 +257,21 @@ bool gpio3_getState(void) { return digitalRead(PIN_GPIO3); }
 
 void gpio_turnTemperatureSensors_on( void) {digitalWrite(PIN_TEMP_EN,HIGH); }
 void gpio_turnTemperatureSensors_off(void) {digitalWrite(PIN_TEMP_EN,LOW ); }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void gpio_turnHeaterPCB_on(void) { pinMode(PIN_GPIO3,OUTPUT); digitalWrite(PIN_GPIO3,HIGH); }
+void gpio_turnHeaterPCB_off(void){ pinMode(PIN_GPIO3,INPUT);  digitalWrite(PIN_GPIO3,LOW);  }
+uint8_t gpio_isPackHeaterInstalled(void) { return packHeaterStatus; }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+//JTS2doLater: Replace Arduino I/O functions
+/*
+  #define DIRECTION_DDR     DDRD
+  #define DIRECTION_PORT    PORTD
+  #define X_DIRECTION_BIT   5  // Uno Digital Pin 5
+  #define Y_DIRECTION_BIT   6  // Uno Digital Pin 6
+  #define Z_DIRECTION_BIT   7  // Uno Digital Pin 7
+  #define DIRECTION_MASK    ((1<<X_DIRECTION_BIT)|(1<<Y_DIRECTION_BIT)|(1<<Z_DIRECTION_BIT)) // All direction bits
+*/

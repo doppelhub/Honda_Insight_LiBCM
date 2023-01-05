@@ -1,10 +1,8 @@
 //Copyright 2021-2022(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
-//Handles serial debug data transfers from LIBCM to  host
-//FYI:    Serial       data transfers from host  to LiBCM are handled elsewhere.
-
-//JTS2doLater: Gather all Serial Monitor transmissions here
+//Handles user interactions with LiBCM (data query/response)
+//see debugUSB.c for data LiBCM automatically generates (and also sends over USB)
 
 #include "libcm.h"
 
@@ -72,36 +70,42 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	}
 	else if(testToRun == '5')
 	{
-		Serial.print(F("\nRunning TEST5:"));
+		Serial.print(F("\nRunning TEST5: Is Heater PCB Connected?"));
+		gpio_isPackHeaterInstalled();
 	}
 	else if(testToRun == '6')
 	{
-		Serial.print(F("\nRunning TEST6: Turn off LiBCM (5V rail).\nLiBCM will stay on if USB 5V connected."));
+		Serial.print(F("\nRunning TEST6: Turn off LiBCM (5V rail).\nLiBCM will stay on if USB's +5V connected."));
 		gpio_turnLiBCM_off();
 	}
-	else if(testToRun == 'B')
+	else if(testToRun == '7')
+	{
+		Serial.print(F("\nRunning TEST7: Turn off Heater PCB."));
+		gpio_turnHeaterPCB_off();
+	}
+	else if(testToRun == '8')
+	{
+		Serial.print(F("\nRunning TEST8: Turn on Heater PCB."));
+		gpio_turnHeaterPCB_on();
+	}
+	else if(testToRun == 'T')
 	{
 		gpio_turnTemperatureSensors_on();
-		Serial.print(F("\nBLU temp sensor is: "));
+		Serial.print(F("\nTemperatures:"));
+		Serial.print(F("\nBLU: "));
 		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BLU));
-	}
-	else if(testToRun == 'G')
-	{
-		gpio_turnTemperatureSensors_on();
-		Serial.print(F("\nGRN temp sensor is: "));
+		Serial.print(F("\nGRN: "));
 		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
-	}
-	else if(testToRun == 'W')
-	{
-		gpio_turnTemperatureSensors_on();
-		Serial.print(F("\nWHT temp sensor is: "));
+		Serial.print(F("\nWHT: "));
 		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
-	}
-	else if(testToRun == 'Y')
-	{
-		gpio_turnTemperatureSensors_on();
-		Serial.print(F("\nYEL temp sensor is: "));
+		Serial.print(F("\nYEL: "));
 		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
+		Serial.print(F("\nBAY1: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY1));
+		Serial.print(F("\nBAY2: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
+		Serial.print(F("\nBAY3: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));				
 	}
 }
 
@@ -120,12 +124,10 @@ void printHelp(void)
 		"\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
 		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
 		"\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"
-		"\n -'$DISP=PWR'/SCI/CELL/TEMP/OFF: data to stream (power/BAT&METSCI/Vcell/temperature/none)"
+		"\n -'$DISP=PWR'/SCI/CELL/TEMP/DBG/OFF: data to stream (power/BAT&METSCI/Vcell/temperature/none)"
 		"\n -'$RATE=___': USB updates per second (1 to 255 Hz)"
 		"\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
 		"\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)"
-		"\n -'$MCMp=___': set manual MCMe PWM value (0:255)('123' for auto)"
-		"\n -'$MCMb=___': Override default MCME_VOLTAGE_OFFSET_ADJUST value"
 		"\n"
 		/*
 		"\nFuture LiBCM commands (not presently supported"
@@ -137,7 +139,6 @@ void printHelp(void)
 		"\n -'$ASSIST_ON' enable assist until LiBCM resets."
 		"\n -'$REGEN_OFF' disable regen until LiBCM resets."
 		"\n -'$REGEN_ON' enable regen until LiBCM resets."
-		"\n -'MCME_VDELTA' display MCM'E' voltage offset.  'MCME_VDELTA=__' to set."
 		"\n -'BATTmAh' display battery capacity in mAh.  'BATTmAh=____' to set."
 		"\n -'SoC_MAX' display max allowed SoC.  'SoC_MAX=__' to set."
 		"\n -'SoC_MIN' display min allowed SoC.  'SoC_MIN=__' to set."
@@ -239,14 +240,15 @@ void USB_userInterface_executeUserInput(void)
 		}
 
 		//DISP
-		//JTS2doNow: Make this function work while grid charging, too
+		//JTS2doLater: Make this function work while grid charging, too
 		else if( (line[1] == 'D') && (line[2] == 'I') && (line[3] == 'S') && (line[4] == 'P') && (line[5] == '=') )
 		{
 			if     ( (line[6] == 'P') && (line[7] == 'W') && (line[8] == 'R') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_POWER);      }
-			else if( (line[6] == 'S') && (line[7] == 'C') && (line[8] == 'I') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_BATTMETSCI); } //JTS2doNow: add case
-			else if( (line[6] == 'C') && (line[7] == 'E') && (line[8] == 'L') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_CELL);       } //JTS2doNow: add case
+			else if( (line[6] == 'S') && (line[7] == 'C') && (line[8] == 'I') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_BATTMETSCI); }
+			else if( (line[6] == 'C') && (line[7] == 'E') && (line[8] == 'L') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_CELL);       }
 			else if( (line[6] == 'O') && (line[7] == 'F') && (line[8] == 'F') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_NONE);       }
 			else if( (line[6] == 'T') && (line[7] == 'E') && (line[8] == 'M') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_TEMP);       }
+			else if( (line[6] == 'D') && (line[7] == 'B') && (line[8] == 'G') ) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_DEBUG);      }
 		}
 
 		//RATE
@@ -285,41 +287,6 @@ void USB_userInterface_executeUserInput(void)
 				Serial.print(BATTSCI_framePeriod_ms_get(),DEC);
 			}
 		}
-		//$MCMp
-		else if( (line[1] == 'M') && (line[2] == 'C') && (line[3] == 'M') && (line[4] == 'P') )
-		{
-			if(line[5] == '=')
-			{
-				uint8_t newPWM_counts = get_uint8_FromInput(line[6],line[7],line[8]);
-				if(newPWM_counts == 123) { vPackSpoof_setModeMCMePWM(MCMe_USING_VPACK); } //special case: let LiBCM control MCMe PWM
-				else
-				{
-					//user manually controlling MCMe PWM value
-					vPackSpoof_setModeMCMePWM(MCMe_USER_DEFINED);
-					vPackSpoof_setPWMcounts_MCMe(newPWM_counts);
-				}
-			}
-			else if(line[5] == STRING_TERMINATION_CHARACTER)
-			{
-				Serial.print(F("\nMCMpwm is (counts): "));
-				Serial.print(vPackSpoof_getPWMcounts_MCMe(),DEC);
-			}
-		}
-
-		//$MCMb
-		else if( (line[1] == 'M') && (line[2] == 'C') && (line[3] == 'M') && (line[4] == 'B') )
-		{
-			if(line[5] == '=')
-			{
-				uint8_t newOffset_volts = get_uint8_FromInput(line[6],line[7],line[8]);
-				vPackSpoof_setMCMeOffsetVoltage(newOffset_volts);
-			}
-			else if(line[5] == STRING_TERMINATION_CHARACTER)
-			{
-				Serial.print(F("\nMCME_VOLTAGE_OFFSET_ADJUST is (volts): "));
-				Serial.print(vPackSpoof_getMCMeOffsetVoltage(),DEC);
-			}
-		}
 
 		//$DEFAULT
 		else { Serial.print(F("\nInvalid Entry")); }
@@ -342,17 +309,16 @@ void USB_userInterface_handler(void)
 		//user-typed characters are waiting in serial buffer
 
 		latestCharacterRead = Serial.read(); //read next character in buffer
-		
-		if( (latestCharacterRead == '\n') || (latestCharacterRead == '\r') ) //EOL character retrieved
+	
+		if( (latestCharacterRead == '\n') || (latestCharacterRead == '\r'))
 		{
-			//line line is now complete
+			//line is now complete
 			line[numCharactersReceived] = STRING_TERMINATION_CHARACTER;
 
 			Serial.print(F("\necho: "));
 			printStringStoredInArray(line); //echo user input
 
-			if(numCharactersReceived >= USER_INPUT_BUFFER_SIZE)     { Serial.print(F("\nError: User typed too many characters")); }
-			else                                                    { USB_userInterface_executeUserInput();                       }
+			USB_userInterface_executeUserInput();
 
 			numCharactersReceived = 0; //reset for next line
 		}
@@ -367,12 +333,23 @@ void USB_userInterface_handler(void)
 				//not presently inside a comment and input buffer not exceeded
 				if     (latestCharacterRead == '(') { inputFlags |= INPUT_FLAG_INSIDE_COMMENT;    } //start of comment //ignores all characters until ')'
 				else if(latestCharacterRead == ' ') { ;                                           } //throw away whitespaces
-
 				else if( (latestCharacterRead >= 'a') && (latestCharacterRead <= 'z') )
 				{
 					line[numCharactersReceived++] = latestCharacterRead + ('A' - 'a'); //convert letters to uppercase
 				}
 				else {line[numCharactersReceived++] = latestCharacterRead; } //store everything else
+			}
+			else //numCharactersReceived too high
+			{
+				Serial.print(F("\nError: entry too long"));
+
+				while( Serial.available() )
+				{
+					//empty serial receive buffer
+					uint8_t byte = Serial.read();
+					if((byte == '\n') || (byte == '\r')) { break; } 
+				}
+				numCharactersReceived = 0;
 			}
 		}
 	}

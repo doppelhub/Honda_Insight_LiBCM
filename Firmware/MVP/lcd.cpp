@@ -43,7 +43,7 @@ bool lcd_printTime_seconds(void)
 
 	#ifdef LCD_4X20_CONNECTED
 		static uint16_t seconds_onScreen = 0;
-		uint32_t keyOnTime_ms = millis() - key_latestTurnOnTime_ms_get();
+		uint32_t keyOnTime_ms = (uint32_t)(millis() - key_latestTurnOnTime_ms_get());
 		uint16_t keyOnTime_seconds = (uint16_t)(keyOnTime_ms * 0.001); //rolls over after keyON for 18 hours
 
 		if(seconds_onScreen != keyOnTime_seconds)
@@ -142,7 +142,7 @@ bool lcd_printTempBattery(void)
 			temp_onScreen = batteryTempNow;
 			lcd2.setCursor(12,2);
 			if((batteryTempNow >= 0) && (batteryTempNow < 10) ) { lcd2.print(' '); } //leading space on " 0" to " 9" degC
-			if(batteryTempNow < -9 ) { lcd2.print(-9); } //JTS2doNow: Add additional digit for temperatures "-10" and lower
+			if(batteryTempNow < -9 ) { lcd2.print(-9); } //JTS2doLater: Add additional digit for temperatures "-10" and lower
 			else                     { lcd2.print(batteryTempNow); }
 
 			didscreenUpdateOccur = SCREEN_UPDATED;
@@ -268,7 +268,7 @@ bool lcd_printCellVoltage_delta(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Flip sign
+//JTS2doLater: Flip sign
 bool lcd_printCurrent(void)
 {
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
@@ -450,7 +450,7 @@ void lcd_refresh(void)
 		//  Ex:( (1.0 / 32E-3                    ) / 14                 ) = worst case (all elements have changed), each screen element updates 2.2x/second
 
 		//Only update screen at a human-readable rate
-		if(millis() - millis_previous > SCREEN_UPDATE_RATE_MILLIS)
+		if((uint32_t)(millis() - millis_previous) > SCREEN_UPDATE_RATE_MILLIS)
 		{ 
 			millis_previous = millis();
 
@@ -468,7 +468,7 @@ void lcd_refresh(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Implement proposed format
+//JTS2doLater: Implement proposed format
 // 		//                                          1111111111
 // 		//                                01234567890123456789
 // 		//4x20 screen text display format:********************
@@ -510,7 +510,7 @@ void lcd_displayOFF(void)
 
 		bool didKeyOnDebounceOccur = false;
 
-		//JTS2doNow: Make this non-blocking
+		//JTS2doLater: Make this non-blocking
 		for(uint16_t ii=0; ii<100; ii++)
 		{
 			//1000 ms delay for operator to read firmware version //blocking

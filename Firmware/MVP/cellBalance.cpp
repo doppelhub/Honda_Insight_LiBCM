@@ -9,7 +9,7 @@ bool cellsAreBalanced = true;
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add an array that accumulates how long each cell is discharging
+//JTS2doLater: Add an array that accumulates how long each cell is discharging
 //pseudocode:
 // uint16_t cellBalanceTimer_seconds[NUMCELLS]=0;
 // uint8_t balancingComplete = false;
@@ -35,7 +35,7 @@ bool cellsAreBalanced = true;
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: When balancing cells, we only need to check cell voltage every minute (to save power).
+//JTS2doLater: When balancing cells, we only need to check cell voltage every minute (to save power).
 //Need to add discharge software timeout (if not already present), as LTC ICs turn off after a couple seconds if we're not sending commands
 
 void cellBalance_configureDischargeResistors(void)
@@ -47,7 +47,7 @@ void cellBalance_configureDischargeResistors(void)
 
   uint16_t cellDischargeVoltageThreshold = 0; //cells above this value will get discharged
 
-  //JTS2doNow: Add a similar case (without alarm) that discharges pack down to 85% SoC (to maximize battery life)
+  //JTS2doLater: Add a similar case (without alarm) that discharges pack down to 85% SoC (to maximize battery life)
   //determine cellDischargeVoltageThreshold       
   if (LTC68042result_hiCellVoltage_get() > CELL_VMAX_REGEN )
   {
@@ -78,7 +78,7 @@ void cellBalance_configureDischargeResistors(void)
   if(cellsAreBalanced == true)
   { 
     balanceHysteresis = CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE;
-    //JTS2doNow: disable software timer (so LTCs turn off after two seconds) //possibly already implemented?
+    //JTS2doLater: disable software timer (so LTCs turn off after two seconds) //possibly already implemented?
   } 
 }
 
@@ -93,7 +93,7 @@ void cellBalance_handler(void)
 {
   static uint8_t balanceState = BALANCING_DISABLED;
 
-  //JTS2doNow: Add option to only balance cells when majorly imbalanced, unless grid charger plugged in.
+  //JTS2doLater: Add option to only balance cells when majorly imbalanced, unless grid charger plugged in.
   //Required because severely imbalanced pack might never enter balance mode (e.g. a cell above 3.9 volts disables charging, whereas SoC is based on lowest cell)
 
   //JTS2doLater: Add per-cell SoC, to allow balancing at any SoC (see icn.net:post#1502833,comment#579)

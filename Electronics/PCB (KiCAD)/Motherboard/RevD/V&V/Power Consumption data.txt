@@ -1,0 +1,20 @@
+LiBCM consumes on average 1.4 watts with grid charger plugged in.
+
+LiBCM consumes 1% SoC/month with IMA switch off, due to LTC6804 power draw (28 mW).
+
+When LiBCM 5V off, LiBCM consumes:
+171 uA @ Vin=120
+210 uA @ Vin=100
+265 uA @ Vin= 80
+440 uA @ Vin= 50
+788 uA @ Vin= 30
+2240uA @ Vin= 13
+Turns off @ Vin ~9V
+
+...
+
+When LiBCM 5V on and keyOFF, LiBCM consumes:
+4.5 mA @ Vin=120.0 (540 mW)
+3.3 mA @ Vin=183.5 (606 mW)
+This includes both HVDCDC and LTC6804
+ 

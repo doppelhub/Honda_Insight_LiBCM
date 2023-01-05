@@ -1,0 +1,1 @@
+Add fan tachometer, to detect stalled fan.

@@ -7,11 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.8.4"
-    #define BUILD_DATE "2022SEP03"
-
-	#define CPU_MAP_MEGA2560
-    #define HW_REVC
+	#define FW_VERSION "0.8.5"
+    #define BUILD_DATE "2023JAN02"
 
 	//choose your battery type:
 		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
@@ -28,29 +25,17 @@
 		//#define SET_CURRENT_HACK_60 //+60% //Note: LiBCM can only measure between 71 A regen & 147 A assist //higher current values will (safely) rail the ADC
 
 	//choose ONE of the following:
-		//#define VOLTAGE_SPOOFING_DISABLE              //closest to OEM IMA behavior
-		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE //only spoof during assist, using variable voltage
-		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //only spoof during assist, using either 120 volts or (vPackActual-12)
-		#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //always spoof voltage (enables stronger regen)
-
-	//#define DISABLE_ASSIST //uncomment to (always) disable assist
-	//#define DISABLE_REGEN  //uncomment to (always) disable regen
-	//#define REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING //EXPERIMENTAL! //JTS2doNow: Make this work (for Balto)
-
-	#define MCME_VOLTAGE_OFFSET_ADJUST 12 //difference between OBDIIC&C and LiBCM spoofed pack voltage (Subtract LiBCM voltage from OBDIIC&C Bvo.  Default is 12.)
+		//#define VOLTAGE_SPOOFING_DISABLE              //spoof maximum possible pack voltage at all times //closest to OEM behavior
+		#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE   //increase assist power by variably   spoofing pack voltage during assist
+		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //increase assist power by statically spoofing pack voltage during heavy assist
+		//#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //increase assist and regen power by variably spoofing pack voltage //DEPRECATED (regen too strong)
 
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
-
-	//choose which functions control the LEDs
-		#define LED_NORMAL //enable "LED()" functions (see debug.c)
-		//#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
-
-	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000 //JTS2doNow: Model after "debugUSB_printLatestData_keyOn"
 
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
 
-	#define CELL_VMAX_REGEN                     42000 //42000 = 4.2000 volts
+	#define CELL_VMAX_REGEN                     42500 //42500 = 4.2500 volts
 	#define CELL_VMIN_ASSIST                    31900 //allows for ESR-based voltage drop
 	#define CELL_VMAX_GRIDCHARGER               39000 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
 	#define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
@@ -65,30 +50,40 @@
 	#define COOL_BATTERY_ABOVE_TEMP_C_KEYOFF       50 //cabin air cooling
 	#define COOL_BATTERY_ABOVE_TEMP_C_GRIDCHARGING 30
 	#define COOL_BATTERY_ABOVE_TEMP_C_KEYON        28
-	#define HEAT_BATTERY_BELOW_TEMP_C_KEYON        18 //cabin air heating
+	#define HEAT_BATTERY_BELOW_TEMP_C_KEYON        18 //cabin air heating, or heater PCB (if installed) 
 	#define HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING 16
 	#define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       10
 	//other fan settings
-	#define KEYOFF_DISABLE_FANS_BELOW_SoC 60 //set to 100 to disable fans entirely when keyOFF (unless grid charger plugged in)
+	#define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 60 //set to 100 to disable fans entirely when keyOFF (unless grid charger plugged in)
 	#define OEM_FAN_INSTALLED //comment if OEM fan removed  
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda EHW5 lithium modules
 
-	//#define KEYOFF_TURNOFF_LIBCM_AFTER_HOURS 48 //LiBCM turns off this many hours after keyOFF. //JTS2doLater: Not implemented yet.
 	#define KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES 10 //Even with low SoC, LiBCM will remain on for this many minutes after keyOFF.
-	#define KEYOFF_DELAY_ESTIMATE_SoC_MINUTES  10 //LiBCM will wait this long before estimating SoC (from resting cell voltage).
-		//to turn LiBCM back on: turn ignition to 'ON', or turn IMA switch off and on, or plug in USB cable
+		//to turn LiBCM back on: turn ignition 'ON', or turn IMA switch off and on, or plug in USB cable
+
+	//////////////////////////////////////////////////////////////////
+
+	//All remaining settings are for debug testing only:
+
+	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
 
 	#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
 	
-	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
+	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000 //JTS2doLater: Model after "debugUSB_printLatestData"
+
+	//#define DISABLE_ASSIST //uncomment to (always) disable assist
+	//#define DISABLE_REGEN  //uncomment to (always) disable regen
+	//#define REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING //EXPERIMENTAL! //JTS2doLater: Make this work (for Balto)
+
+	//choose which functions control the LEDs
+		#define LED_NORMAL //enable "LED()" functions (see debug.c)
+		//#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 #endif
 
 /*
 JTS2doLater:
-#define DISPLAY_OEM_CURRENT_SIGN //JTS2doNow: add feature
-
-#define SERIAL_H_LINE_CONNECTED NO //H-Line wire connected to OEM BCM connector pin B01
-#define SERIAL_I2C_CONNECTED YES //Serial display connected to SDA/SDL lines
-#define SERIAL_HMI_CONNECTED NO //Nextion touch screen connected to J14
+	#define SERIAL_H_LINE_CONNECTED NO //H-Line wire connected to OEM BCM connector pin B01
+	#define SERIAL_HMI_CONNECTED NO //Nextion touch screen connected to J14
+	#define KEYOFF_TURNOFF_LIBCM_AFTER_HOURS 48 //LiBCM turns off this many hours after keyOFF. //JTS2doLater: Not implemented yet.
 */

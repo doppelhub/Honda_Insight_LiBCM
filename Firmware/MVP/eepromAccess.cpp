@@ -99,7 +99,7 @@ uint16_t EEPROM_calculateTotalHoursSinceLastFirmwareUpdate(void)
 {
   #define MILLISECONDS_PER_HOUR 3600000
 
-  uint32_t timeSincePreviousKeyOff_ms = millis() - key_latestTurnOffTime_ms_get();
+  uint32_t timeSincePreviousKeyOff_ms = (uint32_t)(millis() - key_latestTurnOffTime_ms_get());
   uint16_t timeSincePreviousKeyOff_hours = (uint16_t)(timeSincePreviousKeyOff_ms / MILLISECONDS_PER_HOUR);
   
   uint16_t totalHours = EEPROM_uptimeStoredInEEPROM_hours_get() + timeSincePreviousKeyOff_hours;
