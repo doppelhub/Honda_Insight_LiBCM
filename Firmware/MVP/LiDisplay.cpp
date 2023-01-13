@@ -11,13 +11,15 @@
 #define LIDISPLAY_GRIDCHARGE_PAGE_ID 3
 #define LIDISPLAY_SETTINGS_PAGE_ID 4
 // #define CMD 0x23								// May be used when reading from nextion.  0x23 = "#"
-#define LIDISPLAY_UPDATE_RATE_MILLIS 80		// One element is updated each time
+#define LIDISPLAY_UPDATE_RATE_MILLIS 40		// One element is updated each time
 
 uint8_t LiDisplayElementToUpdate = 0;
 uint8_t LiDisplayCurrentPageNum = 0;
 uint8_t LiDisplaySetPageNum = 0;
 uint8_t LiDisplaySoCBarCount = 0;
 uint8_t LiDisplayChrgAsstPicId = 22;
+bool LiDisplayDebugMode = false;
+uint8_t LiDisplayWaitingForCommand = 0;
 
 // Initializing to 100 (absurd number for all 4 variables) so that on first run they will be updated on screen
 static uint8_t  LiDisplayPackVoltageActual_onScreen = 100;
@@ -88,6 +90,8 @@ void LiDisplay_calculateCorrectPage() {
 		} else if (LiDisplaySplashPending) {
 			LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID;
 		} else if (LiDisplaySettingsPageRequested) {
+			LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID;
+		} else if (LiDisplayDebugMode) {
 			LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID;
 		}
 	}
@@ -378,19 +382,36 @@ void LiDisplay_refresh(void)
 
 		// Below stuff doesn't work properly yet.
 		static uint8_t cmd = 0;
+		static uint8_t buffer = 0;
 		static String cmd_str = "";
 
-		if (cmd = LiDisplay_bytesAvailableToRead()) {
-			cmd_str = cmd;
-			cmd_str = cmd_str + " " + String(LiDisplay_readByte());
-			cmd_str = cmd_str + " " + String(LiDisplay_readByte());
-			cmd_str = cmd_str + " " + String(LiDisplay_readByte());
-			cmd_str = cmd_str + " " + String(LiDisplay_readByte());
-			cmd_str = cmd_str + " " + String(LiDisplay_readByte());
-			cmd_str = cmd_str + " " + String(LiDisplay_readByte());
+		if (LiDisplayWaitingForCommand > 0) {
+			LiDisplayWaitingForCommand -= 1;
+		}
 
-			Serial.print(F("\ncmd_str: "));
-			Serial.print(cmd_str);
+		if (LiDisplayWaitingForCommand == 1) {
+
+			LiDisplayWaitingForCommand -= 1;
+
+			Serial.print(Serial1.read());
+			Serial.print(' ');
+			Serial.print(Serial1.read());
+			Serial.print(' ');
+			Serial.print(Serial1.read());
+			Serial.print(' ');
+			Serial.print(Serial1.read());
+			Serial.print(' ');
+			Serial.print(Serial1.read());
+			Serial.print(' ');
+			Serial.print(Serial1.read());
+			Serial.print(' ');
+
+			buffer = 0;
+		}
+
+		if (Serial1.available() && (LiDisplayWaitingForCommand == 0)) {
+			Serial.print(F("\nSerial1 Available: "));
+			LiDisplayWaitingForCommand = 100;
 		}
 		// Above stuff doesn't work properly yet.
 
@@ -402,6 +423,9 @@ void LiDisplay_refresh(void)
 				Serial.print(F("\nLiDisplayPowerOffPending CANCELLED because grid charger was plugged in."));
 				LiDisplaySplashPending = false;
 				LiDisplayPowerOffPending = false;
+			} else if (LiDisplayDebugMode) {
+				LiDisplayPowerOffPending = false;
+				LiDisplaySplashPending = false;
 			} else if ((millis() - hmi_power_millis) < 100) { // ensure at least 100ms have passed since last refresh loop
 				return;
 			} else if (LiDisplaySplashPending) {
@@ -608,6 +632,7 @@ void LiDisplay_keyOn(void) {
 		LiDisplaySoC_onScreen = 100;
 		LiDisplayFanSpeed_onScreen = 100;
 		LiDisplaySoCBars_onScreen = 100;
+		LiDisplayDebugMode = false;
 	#endif
 }
 
@@ -616,8 +641,10 @@ void LiDisplay_keyOn(void) {
 void LiDisplay_keyOff(void) {
 	#ifdef LIDISPLAY_CONNECTED
 		// Check if gpio HMI was already off
-		Serial.print(F("\nnLiDisplay_keyOff:  gpio_HMIStateNow = "));
+		Serial.print(F("\nLiDisplay_keyOff:  gpio_HMIStateNow = "));
 		Serial.print(String(gpio_HMIStateNow()));
+
+		LiDisplayDebugMode = false;
 
 		if (gpio_HMIStateNow()) {
 			if (!gpio_isGridChargerPluggedInNow()) {
@@ -647,6 +674,7 @@ void LiDisplay_gridChargerPluggedIn(void) {
 		gc_connected_minutes = 0;
 		gc_connected_hours = 0;
 		gc_begin_soc_str = (String(SoC_getBatteryStateNow_percent()) + "%");
+		LiDisplayDebugMode = false;
 	#endif
 }
 
@@ -675,6 +703,34 @@ void LiDisplay_setPageNumber(uint8_t page) {
 	LiDisplaySetPageNum = page;
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+void LiDisplay_setDebugMode(uint8_t mode) {
+	Serial.print(F("\nLiDisplay_setDebugMode = "));
+	Serial.print(String((char)mode));
+	if (mode == 49) {
+
+		LiDisplayDebugMode = true;
+		if (!gpio_HMIStateNow()) {
+			// If screen power is off we need to turn on LiDisplay
+			Serial.print(F("\nLiDisplay Turning On for Debug Mode"));
+			gpio_turnHMI_on();
+		}
+	} else {
+		LiDisplayDebugMode = false;
+		Serial.print(F("\nLiDisplay Exiting Debug Mode"));
+		if (gpio_HMIStateNow()) {
+			Serial.print(F("\nLiDisplay Screen Still On"));
+			if (!gpio_keyStateNow() && !gpio_isGridChargerPluggedInNow()) {
+				gpio_turnHMI_off();
+				Serial.print(F("\nLiDisplay Turning Off Screen"));
+			} else {
+				LiDisplay_calculateCorrectPage();
+			}
+		}
+	}
+}
+*/
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t LiDisplay_bytesAvailableForWrite(void)
