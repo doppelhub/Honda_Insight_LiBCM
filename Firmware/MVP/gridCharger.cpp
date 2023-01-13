@@ -2,10 +2,14 @@
 //github.com/doppelhub/Honda_Insight_LiBCM
 #include "libcm.h"
 
+//JTS2doLater: Feature: If SoC greater than 70% when grid charger first plugged in, then charge to 85% SoC.
+
 //updated by gridCharger_handler() //prevents mid-loop state changes from affecting loop logic
 //no need to retrieve this value outside this file... use gpio_isGridChargerPluggedInNow() instead
 bool gridChargerState_sampled = PLUGGED_IN;
 static uint8_t cellState = CELLSTATE_UNINITIALIZED;
+
+//JTS2doLater: Prevent grid charging when cells below freezing
 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -47,7 +51,6 @@ void gridCharger_handlePluginEvent(void)
 
 //////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Measure current while grid charging.
 void gridCharger_chargePack(void)
 {
   static uint8_t cellStatePrevious = CELLSTATE_UNINITIALIZED;
@@ -61,7 +64,7 @@ void gridCharger_chargePack(void)
     cellState = CELLSTATE_OVERCHARGED;
     gpio_turnGridCharger_off();
     gpio_setGridCharger_powerLevel('0');
-    //JTS2doNow: display Warning on LCD
+    //JTS2doLater: display Warning on LCD
     gpio_turnBuzzer_on_highFreq();
   }
 
@@ -71,7 +74,7 @@ void gridCharger_chargePack(void)
     cellState = CELLSTATE_OVERDISCHARGED;
     gpio_turnGridCharger_off();
     gpio_setGridCharger_powerLevel('0');
-    //JTS2doNow: display Warning on LCD
+    //JTS2doLater: display Warning on LCD
     gpio_turnBuzzer_on_highFreq();
   }
 
@@ -125,7 +128,7 @@ void gridCharger_handler(void)
 
   //JTS2doLater: disable grid charging when batt temp too low or high
   if( (gridChargerState_sampled == PLUGGED_IN) &&
-      (temperature_gridCharger_getLatest() < GRIDCHARGER_CASE_TEMP_TO_DISABLE_C) )
+      (temperature_gridCharger_getLatest() < GRIDCHARGER_CASE_TEMP_TO_DISABLE_C) ) //JTS2doNow: Disable grid charging below freezing
   {
     gridCharger_chargePack();
   }

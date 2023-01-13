@@ -43,5 +43,6 @@
   #include "time.h"
   #include "USB_userInterface.h"
   #include "fan.h"
+  #include "status.h"
 
 #endif

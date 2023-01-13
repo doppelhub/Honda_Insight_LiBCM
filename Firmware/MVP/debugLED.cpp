@@ -42,7 +42,7 @@ void blinkLED1()
 {
 	#ifdef LED_NORMAL
 		static uint32_t previousMillis = 0;
-		if(millis() - previousMillis >= 100)
+		if( (uint32_t)(millis() - previousMillis) >= 100)
 		{
 			previousMillis = millis();  //JTS2doLater: Handle millis() overflow (~50 days)
 			digitalWrite(PIN_LED1, !digitalRead(PIN_LED1) );
@@ -54,7 +54,7 @@ void blinkLED2()
 {
 	#ifdef LED_NORMAL
 		static uint32_t previousMillis = 0;
-		if(millis() - previousMillis >= 100)
+		if( (uint32_t)(millis() - previousMillis) >= 100)
 		{
 			previousMillis = millis();
 			digitalWrite(PIN_LED2, !digitalRead(PIN_LED2) );
@@ -66,7 +66,7 @@ void blinkLED3()
 {
 	#ifdef LED_NORMAL
 		static uint32_t previousMillis = 0;
-		if(millis() - previousMillis >= 100)
+		if( (uint32_t)(millis() - previousMillis) >= 100)
 		{
 			previousMillis = millis();
 			digitalWrite(PIN_LED3, !digitalRead(PIN_LED3) );
@@ -78,7 +78,7 @@ void blinkLED4()
 {
 	#ifdef LED_NORMAL
 		static uint32_t previousMillis = 0;
-		if(millis() - previousMillis >= 100)
+		if( (uint32_t)(millis() - previousMillis) >= 100)
 		{
 			previousMillis = millis();
 			digitalWrite(PIN_LED4, !digitalRead(PIN_LED4) );

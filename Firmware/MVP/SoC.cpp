@@ -3,6 +3,8 @@
 
 //maintains battery state of charge
 
+//JTS2doLater: add "REMAP_ACTUAL_SoC_TO_FULL_SCALE_PERCENT" feature //remaps actual SoC and displays to user as "0%=empty" and "100%=full"
+
 #include "libcm.h"
 
 //These variables should only be used until the next "////////////////////" comment (after that, use these functions instead)
@@ -16,10 +18,24 @@ void     SoC_setBatteryStateNow_mAh(uint16_t newPackCharge_mAh) { packCharge_Now
 
 //SoC calculation is slower when the unit is % 
 uint8_t SoC_getBatteryStateNow_percent(void) { return packCharge_Now_percent; }
-void    SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = (stackFull_Calculated_mAh * 0.01) * newSoC_percent; } //JTS2doNow: Is this cast correctly?
+void    SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = (uint16_t)(stackFull_Calculated_mAh * 0.01) * newSoC_percent; }
 
-//uses SoC percentage to update mAh value (LiBCM stores battery SoC in mAh, not %)
-void SoC_calculateBatteryStateNow_percent(void) { packCharge_Now_percent = (uint8_t)(((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh); }
+/////////////////////////////////////////////////////////////////////
+
+//calculate SoC percent from mAh value (LiBCM stores battery SoC in mAh, not %)
+void SoC_calculateBatteryStateNow_percent(void)
+{
+	static uint16_t packCharge_Previous_mAh = 0;
+
+	if(packCharge_Previous_mAh != packCharge_Now_mAh)
+	{
+		//only calculate if the pack mAh value just changed //division is expensive!
+		packCharge_Now_percent = (uint8_t)(((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh);
+		//JTS2doNow:add debug parameter: STATUS_SOC_PERCENT
+	}
+
+	packCharge_Previous_mAh = packCharge_Now_mAh;
+}
 
 /////////////////////////////////////////////////////////////////////
 
@@ -102,7 +118,7 @@ void SoC_turnOffLiBCM_ifPackEmpty(void)
 	#define NUM_LOOPS_TO_MEASURE_ALL_CELLS (TOTAL_IC * NUM_CELLS_PER_IC / NUM_CELLS_MEASURED_PER_LOOP) //math handled by preprocessor
 
 	if( (LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //at least one cell voltage is too low
-		(time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true )                ) //gives user time to plug in grid charger
+		(time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true ) ) //gives user time to plug in grid charger
 	{	
 		if(numConsecutiveTimesCellVoltageTooLow <= (NUM_LOOPS_TO_MEASURE_ALL_CELLS << 2) )
 		{ 
@@ -121,12 +137,12 @@ void SoC_turnOffLiBCM_ifPackEmpty(void)
 
 /////////////////////////////////////////////////////////////////////
 
-//Don't call this function when current is flowing through the current sensor
+//Calling this function when battery is sourcing/sinking current will cause estimation error
 //Wait at least ten minutes after keyOff for most accurate results
 #ifdef BATTERY_TYPE_5AhG3
 	uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
 	{
-		uint16_t restingCellVoltage = LTC68042result_loCellVoltage_get(); //JTS2doNow: need an algorithm to look at hi cell, too.
+		uint16_t restingCellVoltage = LTC68042result_loCellVoltage_get(); //JTS2doLater: need an algorithm to look at hi cell, too.
 		uint8_t estimatedSoC = 0;
 
 		if     (restingCellVoltage >= 42000) { estimatedSoC = 100; }
@@ -238,7 +254,7 @@ void SoC_turnOffLiBCM_ifPackEmpty(void)
 
 	uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
 		{
-			uint16_t restingCellVoltage = LTC68042result_loCellVoltage_get(); //JTS2doNow: need an algorithm to look at hi cell, too.
+			uint16_t restingCellVoltage = LTC68042result_loCellVoltage_get();
 			uint8_t estimatedSoC = 0;
 
 			//~/Honda_Insight_LiBCM/Electronics/Lithium Batteries/47 Ah FoMoCo Modules/Resting SoC Discharge Curve

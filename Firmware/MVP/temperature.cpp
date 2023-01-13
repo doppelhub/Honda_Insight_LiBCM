@@ -27,14 +27,20 @@ int8_t temperature_ambient_getLatest(void)	  { return tempAmbient; } //WHT OEM t
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: 47Ah FoMoCo colors are different
 //only call inside handler (to ensure sensors powered)
 void temperature_measureOEM(void)
 {
-	tempIntake  = temperature_measureOneSensor_degC(PIN_TEMP_GRN);
-	tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_YEL);
-	tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
-	tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
+	#ifdef BATTERY_TYPE_5AhG3
+		tempIntake  = temperature_measureOneSensor_degC(PIN_TEMP_GRN);
+		tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_YEL);
+		tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
+		tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
+	#elif defined BATTERY_TYPE_47AhFoMoCo
+		tempIntake  = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
+		tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
+		tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_GRN);
+		tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_YEL);
+	#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -117,7 +123,7 @@ void temperature_handler(void)
 	static uint32_t millis_previous = 0;
 	static uint32_t millis_latestSensorTurnon = 0;
 
-	if( (millis() - millis_previous) > temperatureUpdateInterval )
+	if( (uint32_t)(millis() - millis_previous) > temperatureUpdateInterval )
 	{
 		//time to measure temperature sensors
 		millis_previous = millis();
@@ -147,7 +153,7 @@ void temperature_handler(void)
 	}	
 
 	else if ( (tempSensorState == TEMP_SENSORS_POWERUP) &&
-	          ( (millis() - millis_latestSensorTurnon) > TEMP_STABILIZATION_TIME_ms) ) //wait for temp sensor LPFs to stabilize
+	          ( (uint32_t)(millis() - millis_latestSensorTurnon) > TEMP_STABILIZATION_TIME_ms) ) //wait for temp sensor LPFs to stabilize
 	{
 		// temp sensors stabilized
 		tempSensorState = TEMP_MEASURE_NOW;
@@ -323,19 +329,4 @@ int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
 ////////////////////////////////////////////////////////////////////////////////////
 
 //JTS2doLater:
-/*
-	-Monitor Temperature
-		-Read QTY4 temp pins (Temp_YEL/GRN/WHT/BLU_Pin)
-		-Read QTY4 LTC6804 temps
-		-If temp warm (35 degC?) && ( tempCabin < max(tempBattery) )
-			-Onboard fans low (FanOnPWM_Pin)
-			-OEM Fan on low (FanOEMlow_Pin)
-		-If temp hot (45 degC?)
-			-OEM Fan on high (FanOEMhigh_Pin)
-			-Onboard fans full speed (FanOnPWM_Pin)
-		-If temp overheating (50 degC?)
-			-OEM Fans on high (FanOEMhigh_Pin)
-			-Onboard fans full speed (FanOnPWM_Pin)
-			-Send overtemp flag (METSCI@Serial2)
-
-*/
+//Read QTY5 onboard LTC6804 temps

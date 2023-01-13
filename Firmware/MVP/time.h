@@ -4,7 +4,6 @@
 #define time_h
 	bool time_toUpdate_keyOffValues(void);
 
-	bool time_hasKeyBeenOffLongEnough_toEstimateSoC(void);
 	bool time_hasKeyBeenOffLongEnough_toTurnOffLiBCM(void);
 
 	void time_waitForLoopPeriod(void);

@@ -48,7 +48,7 @@ void key_handleKeyEvent_off(void)
 
 void key_handleKeyEvent_on(void)
 {
-	delay( EEPROM_delayKeyON_ms_get() ); //JTS2doNow: test tool to see if LiBCM is turning on fast enough
+	delay( EEPROM_delayKeyON_ms_get() ); //this is a test tool to verify LiBCM is turning on fast enough to prevent P-code //JTS2doLater: Delete
 	Serial.print(F("ON"));
 	BATTSCI_enable();
 	METSCI_enable();

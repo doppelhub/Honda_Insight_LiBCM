@@ -10,50 +10,41 @@
 /  **Some comparisons are actually 20 volts, but for simplicity this code treats them all as having to be within 10 volts.
 */
 
+//JTS2doLater: To prevent P1445 when the key first turns on, temporarily increase spoofed pack voltage for a few seconds, then dial down to the actual spoofed voltage.
+
 #include "libcm.h"
 
 uint8_t spoofedPackVoltage = 0;
 
-uint8_t modeMCMePWM = MCMe_USING_VPACK;
+//---------------------------------------------------------------------------------------
 
-int16_t pwmCounts_MCMe = 0;
-int16_t pwmCounts_VPIN_out = 0;
-
-uint8_t offsetVoltage_MCMe = MCME_VOLTAGE_OFFSET_ADJUST; //constant offset voltage to account for MCM HV insulation test
+uint8_t vPackSpoof_getSpoofedPackVoltage(void) { return spoofedPackVoltage; }
 
 //---------------------------------------------------------------------------------------
 
-void vPackSpoof_setModeMCMePWM(uint8_t newMode) { modeMCMePWM = newMode; }
+void vPackSpoof_handleKeyON(void) { ; }
 
 //---------------------------------------------------------------------------------------
 
-uint8_t vPackSpoof_getMCMeOffsetVoltage(void) { return offsetVoltage_MCMe; }
-void    vPackSpoof_setMCMeOffsetVoltage(uint8_t newOffset) { offsetVoltage_MCMe = newOffset; }
+void vPackSpoof_handleKeyOFF(void)
+{
+	pinMode(PIN_VPIN_OUT_PWM,INPUT); //set VPIN high impedance (to save power)
+	pinMode(PIN_MCME_PWM,    INPUT); //Set MCMe high impedance (to save power)
+}
 
 //---------------------------------------------------------------------------------------
 
-int16_t vPackSpoof_getPWMcounts_MCMe(void) { return pwmCounts_MCMe; }
-void    vPackSpoof_setPWMcounts_MCMe(uint8_t newCounts) { pwmCounts_MCMe = newCounts; }
-
-//---------------------------------------------------------------------------------------
-
-int16_t vPackSpoof_getPWMcounts_VPIN(void) { return pwmCounts_VPIN_out; }
-
-//---------------------------------------------------------------------------------------
-
-//JTS2doNow: Figure out if there's a better way to spoof MCMe to prevent P1576(12)
 void spoofVoltageMCMe(void)
 {
-  //Derivation, empirically determined (see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods)
-  //pwmCounts_MCMe = (               actualPackVoltage                 * 512) / spoofedPackVoltage       - 551
-  //pwmCounts_MCMe = (               actualPackVoltage                 * 256) / spoofedPackVoltage   * 2 - 551 //prevent 16b overflow
-  //pwmCounts_MCMe = (( ( ((uint16_t)actualPackVoltage               ) * 256) / spoofedPackVoltage)  * 2 - 551
+	int16_t pwmCounts_MCMe = 0;
 
-	if(modeMCMePWM == MCMe_USING_VPACK)
-	{
-		pwmCounts_MCMe = (( ( ((uint16_t)LTC68042result_packVoltage_get()) << 8 ) / spoofedPackVoltage) << 1 ) - 551;
-	}
-	//else //user entered static PWM value (using '$MCMp' command)
+	uint8_t spoofedPackVoltage_MCMe = spoofedPackVoltage + ADDITIONAL_MCMe_OFFSET_VOLTS;
+	
+	//Derivation, empirically determined (see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods)
+    //pwmCounts_MCMe = (               actualPackVoltage                 * 512) / spoofedPackVoltage_MCMe         - 551
+    //pwmCounts_MCMe = (               actualPackVoltage                 * 256) / spoofedPackVoltage_MCMe   * 2   - 551 //prevent 16b overflow
+    //pwmCounts_MCMe = (( ( ((uint16_t)actualPackVoltage )               * 256) / spoofedPackVoltage_MCMe)  * 2 ) - 551 
+	  pwmCounts_MCMe = (( ( ((uint16_t)LTC68042result_packVoltage_get()) << 8 ) / spoofedPackVoltage_MCMe) << 1 ) - 551;
 
 	//bounds checking
 	if     (pwmCounts_MCMe > 255) {pwmCounts_MCMe = 255;}
@@ -64,52 +55,97 @@ void spoofVoltageMCMe(void)
 
 //---------------------------------------------------------------------------------------
 
-void spoofVoltageMCMe_setSpecificPWM(uint8_t valuePWM)
-{ //used for troubleshooting
-	analogWrite(PIN_MCME_PWM, valuePWM);
-}
-
-//---------------------------------------------------------------------------------------
-
 void spoofVoltage_VPINout(void)
 {
+	int16_t pwmCounts_VPIN_out = 0;
+
 	//      V_DIV_CORRECTION = RESISTANCE_MCM / RESISTANCE_R34
 	//      V_DIV_CORRECTION = 100k           / 10k
 	#define V_DIV_CORRECTION 1.1
 
-	pwmCounts_VPIN_out = (adc_packVoltage_VpinIn() * spoofedPackVoltage * V_DIV_CORRECTION )
-	                     / LTC68042result_packVoltage_get();
+	uint8_t spoofedPackVoltage_VPIN = spoofedPackVoltage + ADDITIONAL_VPIN_OFFSET_VOLTS;
+
+	//remap measured Vpin_in value ratiometrically to desired spoofed voltage
+	//It's important to look at VPIN_in, since V_PDU is different from the Vpack during keyON capacitor charging event
+	uint16_t intermediateMath = (uint16_t)(adc_packVoltage_VpinIn() * spoofedPackVoltage_VPIN) * V_DIV_CORRECTION;
+	pwmCounts_VPIN_out = (int16_t)( (uint16_t)intermediateMath / LTC68042result_packVoltage_get() );
 
 	//bounds checking
 	if     (pwmCounts_VPIN_out > 255) {pwmCounts_VPIN_out = 255;}
-	else if(pwmCounts_VPIN_out <   0) {pwmCounts_VPIN_out =   0;}
+	else if(pwmCounts_VPIN_out <  26) {pwmCounts_VPIN_out =  26;} //MCM ADC rolls under if VPIN is less than 0.5 volts (0.5/5*256 = 25.6 ~= 26)
 
 	analogWrite(PIN_VPIN_OUT_PWM, (uint8_t)pwmCounts_VPIN_out);
 }
 
+//---------------------------------------------------------------------------------------
+
+uint8_t calculate_Vspoof_maxPossible(void)
+{
+	//Hardware limitations prevent us from spoofing the entire voltage range
+	//The max allowed voltage is a function of the actual pack voltage
+	//Derivation: ~/Electronics/PCB (KiCAD)/RevD/V&V/VPIN-MCMe Calibration.ods
+
+	uint8_t actualPackVoltage = LTC68042result_packVoltage_get();
+	uint8_t maxAllowedVspoof = 0;
+
+	if     (actualPackVoltage < 109) { maxAllowedVspoof = actualPackVoltage -  6; }
+	else if(actualPackVoltage < 119) { maxAllowedVspoof = actualPackVoltage -  7; }
+	else if(actualPackVoltage < 128) { maxAllowedVspoof = actualPackVoltage -  8; }
+	else if(actualPackVoltage < 138) { maxAllowedVspoof = actualPackVoltage -  9; }
+	else if(actualPackVoltage < 148) { maxAllowedVspoof = actualPackVoltage - 10; }
+	else if(actualPackVoltage < 158) { maxAllowedVspoof = actualPackVoltage - 11; }
+	else if(actualPackVoltage < 167) { maxAllowedVspoof = actualPackVoltage - 12; }
+	else if(actualPackVoltage < 177) { maxAllowedVspoof = actualPackVoltage - 13; }
+	else if(actualPackVoltage < 187) { maxAllowedVspoof = actualPackVoltage - 14; }
+	else if(actualPackVoltage < 197) { maxAllowedVspoof = actualPackVoltage - 15; }
+	else if(actualPackVoltage < 206) { maxAllowedVspoof = actualPackVoltage - 16; }
+	else if(actualPackVoltage < 216) { maxAllowedVspoof = actualPackVoltage - 17; }
+	else if(actualPackVoltage < 226) { maxAllowedVspoof = actualPackVoltage - 18; }
+	else if(actualPackVoltage < 236) { maxAllowedVspoof = actualPackVoltage - 19; }
+	else if(actualPackVoltage < 245) { maxAllowedVspoof = actualPackVoltage - 20; }
+	else                             { maxAllowedVspoof = actualPackVoltage - 21; }
+
+	return maxAllowedVspoof;
+}
 
 //---------------------------------------------------------------------------------------
 
 void spoofVoltage_calculateValue(void)
 {
-	//Hardware limitation: spoofedPackVoltage(max) must be less than (vPackActual - 12 volts)
+	uint8_t maxPossibleVspoof = calculate_Vspoof_maxPossible();
 
 	#if defined VOLTAGE_SPOOFING_DISABLE
-		//For those that don't want voltage spoofing, spoof maximum possible pack voltage
-		spoofedPackVoltage = LTC68042result_packVoltage_get() - offsetVoltage_MCMe;
+		//For those that don't want variable voltage spoofing, spoof maximum possible pack voltage
+		
+		#ifdef STACK_IS_48S
+			//48S pack voltage range is close enough to OEM that we can pass just pass the actual maxPossibleVspoof value to the MCM
+			spoofedPackVoltage = maxPossibleVspoof;
 
+		#elif defined STACK_IS_60S
+			spoofedPackVoltage = LTC68042result_packVoltage_get() * 0.67; //Vspoof(60S)=136 @ Vcell=3.4 //Vspoof(60S)=169 @ Vcell=4.2
+			if(spoofedPackVoltage < 155) { spoofedPackVoltage = 155; } //prevent P1440 during heavy assist (due to MCM increasing current as voltage drops)
+		#endif
 
-	#elif defined VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY
-		if( adc_getLatestBatteryCurrent_amps() > 40 ) { spoofedPackVoltage = 125; } //more than 40 amps assist
-		else { spoofedPackVoltage = LTC68042result_packVoltage_get() - offsetVoltage_MCMe; } //less than 40 amps assist or any regen
+	//JTS2doLater: Add 60S logic to all other modes (below)
 
 	//////////////////////////////////////////////////////////////////////////
+
+	#elif defined VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY
+		if(adc_getLatestBatteryCurrent_amps() > MAXIMIZE_POWER_ABOVE_CURRENT_AMPS) { spoofedPackVoltage = VSPOOF_TO_MAXIMIZE_POWER; } //more power during heavy assist
+		else { spoofedPackVoltage = maxPossibleVspoof; } //no voltage spoofing during regen, idle, or light assist
+
+	//////////////////////////////////////////////////////////////////////////
+
+	//JTS2doLater: Remove this mode before exiting beta
+	//DEPRECATED: This mode is no longer updated and may not work in future firmware versions
+	//Based on test data, spoofing pack voltage during regen causes erratic and/or heavy regen behavior.
+	//Recommendation: use VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE
 
 	#elif defined VOLTAGE_SPOOFING_ASSIST_AND_REGEN
 		//Derivation:
 		//Maximum assist occurs when MCM thinks pack is at 120 volts.
 		//Therefore, we want to adjust the pack voltage over that range:
-		//vAdjustRange_mV = (vPackActual_V - offsetVoltage_MCMe - 120) * 1000
+		//vAdjustRange_mV = (maxPossibleVspoof - 120) * 1000
 
 		//Since there's ~2x more assist current than regen current, set "0 A" pack voltage to 2/3 the above limits:
 		//vPackTwoThirdPoint_mV = vAdjustRange_mV * 2 / 3 + 120,000
@@ -124,7 +160,7 @@ void spoofVoltage_calculateValue(void)
 		//for any given actual pack voltage at any given current:
 		//spoofedVoltage_mV = vPackTwoThirdPoint_mV - actualCurrent_A * voltageAdjustment_mV_per_A
 
-		//Now we need to streamline this equation:
+		//Putting it all together, plug the equations above into the last equation:   
 		//spoofedVoltage_mV = vAdjustRange_mV             * 2 / 3 + 120,000   - actualCurrent_A * vAdjustRange_mV / TOTAL_CURRENT_RANGE_A
 		//spoofedVoltage_mV = ((vPackActual_mV - 132,000) * 2 / 3 + 120,000 ) - actualCurrent_A * ((vPackActual_mV - 132,000) / 215 )
 		//spoofedVoltage_mV = vPackActual_mV            * ( 2 / 3 - actualCurrent_A / 215 ) + 614 * actualCurrent_A + 32,000
@@ -150,44 +186,33 @@ void spoofVoltage_calculateValue(void)
 	//////////////////////////////////////////////////////////////////////////
 
 	#elif defined	VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE
-		//Maximum assist occurs when MCM thinks pack is at 120 volts.
-		//Therefore, we want to adjust the pack voltage over that range
-		//vAdjustRange_mV = (vPackActual_V - offsetVoltage_MCMe - 120) * 1000
+		if( (maxPossibleVspoof < VSPOOF_TO_MAXIMIZE_POWER) || //pack voltage too low     
+		        (adc_getLatestBatteryCurrent_amps() < BEGIN_SPOOFING_VOLTAGE_ABOVE_AMPS)  ) { spoofedPackVoltage = maxPossibleVspoof; } //regen, idle, or light assist
+		else if (adc_getLatestBatteryCurrent_amps() > MAXIMIZE_POWER_ABOVE_CURRENT_AMPS)    { spoofedPackVoltage = VSPOOF_TO_MAXIMIZE_POWER; } //heavy assist
+		else
+		{
+			//medium assist
+			//decrease spoofedPackVoltage inversely proportional to assist current
 
-		//Since we don't want to spoof voltage during regen, the "0 A" pack voltage is the maximum possible pack voltage.
-		//vPackHighestPossible_mV = vAdjustRange_mV + 120,000
+			uint8_t vAdjustRange_V = maxPossibleVspoof - VSPOOF_TO_MAXIMIZE_POWER;
 
-		//Next we linearize the (constant) maximum possible assist current:
-		//TOTAL_CURRENT_RANGE_A = 140 A
-		//However, we want to adjust the pack voltage over a much smaller range, so we choose:
-		//TOTAL_CURRENT_RANGE_A = 128 A
-		//This will spoof 120 volts at 64 A assist
-		//We'll need to bound values to: 120 < vSpoof < (vActual - offsetVoltage_MCMe)
+			//Calculate voltage adjustment per amp assist
+			//       voltageAdjustment_mV_per_A =            vAdjustRange_V   * 1000  / ADDITIONAL_AMPS_UNTIL_MAX_VSPOOF;
+			//       voltageAdjustment_mV_per_A =            vAdjustRange_V   * 1024  / ADDITIONAL_AMPS_UNTIL_MAX_VSPOOF; //change multiply to 2^n (2.4% error)
+			//       voltageAdjustment_mV_per_A =            vAdjustRange_V  <<   10 >> ADDITIONAL_AMPS__2_TO_THE_N     ; //substitute mult/div with bit shifts
+			//       voltageAdjustment_mV_per_A =            vAdjustRange_V  <<  (10  - ADDITIONAL_AMPS__2_TO_THE_N)    ; //combine bit shifts
+			uint16_t voltageAdjustment_mV_per_A = ((uint16_t)vAdjustRange_V) <<  (10  - ADDITIONAL_AMPS__2_TO_THE_N)    ; //cast intermediate math
+			//max counts: 3712 (when 60S pack is 4.3 V/cell)
+			//min counts:    0 (when 48S pack is 2.7 V/cell) 
 
-		//We then calculate the voltage adjustment per amp, across the (variable) spoofed voltage range:
-		//voltageAdjustment_mV_per_A = vAdjustRange_mV / TOTAL_CURRENT_RANGE_A
+			//Calculate how much to reduce actual pack voltage at any current
+			//      packVoltageReduction_mV =  (actualCurrent_A                    - BEGIN_SPOOFING_VOLTAGE_ABOVE_AMPS) * voltageAdjustment_mV_per_A         ;
+			//      packVoltageReduction_V  =  (actualCurrent_A                    - BEGIN_SPOOFING_VOLTAGE_ABOVE_AMPS) * voltageAdjustment_mV_per_A  * 0.001; //change mV to V
+			uint8_t packVoltageReduction_V  = ((adc_getLatestBatteryCurrent_amps() - BEGIN_SPOOFING_VOLTAGE_ABOVE_AMPS) * voltageAdjustment_mV_per_A) * 0.001;
 
-		//Putting these equations together, we determine the correct pack voltage to spoof
-		//for any given actual pack voltage at any given current:
-		//spoofedVoltage_mV = vPackHighestPosible_mV             - actualCurrent_A * voltageAdjustment_mv_per_A
-
-		//Now we need to streamline this equation:
-		//spoofedVoltage_mV = vAdjustRange_mV          + 120,000  -  actualCurrent_A * (vAdjustRange_mV               ) / TOTAL_CURRENT_RANGE_A
-		//spoofedVoltage_mV = vPackActual_mV - 132,000 + 120,000  -  actualCurrent_A * (vPackActual_mV      - 132,000 ) / 128
-		//spoofedVoltage_V  = vPackActual_V  - 132     + 120      -  actualCurrent_A * (vPackActual_V       - 132     ) / 128
-		//spoofedVoltage_V  = vPackActual_V  - offsetVoltage_MCMe                 -  actualCurrent_A * (vPackActual_V/128   - 132/128 )
-
-		//approximate:
-		//spoofedVoltage_V =  vPackActual_V  - offsetVoltage_MCMe                 -  actualCurrent_A * (vPackActual_V  / 128 -  1   )
-		//spoofedVoltage_V =  vPackActual_V  - offsetVoltage_MCMe                 -  actualCurrent_A * (vPackActual_V  >> 7  -  1   )
-		//spoofedVoltage_V =  vPackActual_V  - offsetVoltage_MCMe                 -  actualCurrent_A * (vPackActual_V  >> 7) + actualCurrent_A
-		//spoofedVoltage_V =  vPackActual_V  - offsetVoltage_MCMe                 -((actualCurrent_A *  vPackActual_V) >> 7) + actualCurrent_A
-
-		//rearrange terms:
-		//spoofedVoltage_V = vPackActual_V - offsetVoltage_MCMe + actualCurrent_A -((actualCurrent_A * vPackActual_V) >> 7)
-
-		spoofedPackVoltage = (uint8_t)((int16_t)LTC68042result_packVoltage_get() - offsetVoltage_MCMe + (int16_t)adc_getLatestBatteryCurrent_amps()
-	  	                    - ( ( (int16_t)adc_getLatestBatteryCurrent_amps() * (int16_t)LTC68042result_packVoltage_get() ) >> 7 ) );
+			//Calculate spoofed pack voltage
+			spoofedPackVoltage = maxPossibleVspoof - packVoltageReduction_V;
+		}
 
 	//////////////////////////////////////////////////////////////////////////
 
@@ -198,40 +223,17 @@ void spoofVoltage_calculateValue(void)
 	//////////////////////////////////////////////////////////////////////////
 
 	//bound values
-	if( spoofedPackVoltage > LTC68042result_packVoltage_get() - offsetVoltage_MCMe )
-	{
-		spoofedPackVoltage = LTC68042result_packVoltage_get() - offsetVoltage_MCMe;
-	}
-
-	else if( (spoofedPackVoltage < 120) && (LTC68042result_packVoltage_get() > 140) )
-	{
-		spoofedPackVoltage = 120;
-	}
+	if( spoofedPackVoltage > maxPossibleVspoof ) { spoofedPackVoltage = maxPossibleVspoof; }
+	else if( (spoofedPackVoltage < 120) && (LTC68042result_packVoltage_get() > 130) ) { spoofedPackVoltage = 120; }
 }
 
 //---------------------------------------------------------------------------------------
 
 void vPackSpoof_setVoltage(void)
 {
-	spoofVoltage_calculateValue();
+	spoofVoltage_calculateValue(); //result saved in 'spoofedPackVoltage'
 
 	spoofVoltage_VPINout();
 	spoofVoltageMCMe();
 	BATTSCI_setPackVoltage(spoofedPackVoltage);
 }
-
-//---------------------------------------------------------------------------------------
-
-void vPackSpoof_handleKeyON(void) { ; }
-
-//---------------------------------------------------------------------------------------
-
-void vPackSpoof_handleKeyOFF(void)
-{
-	pinMode(PIN_VPIN_OUT_PWM,INPUT); //set VPIN back to high impedance (to save power)
-	pinMode(PIN_MCME_PWM,    INPUT); //Set MCM'E' high impedance (to save power)
-}
-
-//---------------------------------------------------------------------------------------
-
-uint8_t vPackSpoof_getSpoofedPackVoltage(void) { return spoofedPackVoltage; }
