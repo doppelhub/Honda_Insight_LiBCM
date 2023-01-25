@@ -204,7 +204,7 @@ void debugUSB_printData_temperatures(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add debug data
+//JTS2doLater: Add debug data
 void debugUSB_printData_debug(void)
 {
 	status_printState();
@@ -282,6 +282,6 @@ void debugUSB_printConfigParameters(void)
 	#endif
 
 	Serial.print(F("/Heat:"));
-	if(gpio_isPackHeaterInstalled() == GPIO_HEATER_CONNECTED) { Serial.print('Y'); }
-	else                                                      { Serial.print('N'); }
+	if(heater_isInstalled() == YES) { Serial.print('Y'); }
+	else                            { Serial.print('N'); }
 }

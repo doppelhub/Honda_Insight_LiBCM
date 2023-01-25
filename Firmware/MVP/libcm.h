@@ -44,5 +44,6 @@
   #include "USB_userInterface.h"
   #include "fan.h"
   #include "status.h"
+  #include "heater.h"
 
 #endif

@@ -195,8 +195,8 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
     { flags |= BATTSCI_DISABLE_ASSIST_FLAG; EEPROM_hasLibcmDisabledAssist_set(EEPROM_LICBM_DISABLED_ASSIST); }
 
   #ifndef DISABLE_REGEN
-    if( (BATTSCI_isPackFull() == true)       || //pack is full
-        (temperature_battery_getLatest() < 1) ) //pack is too cold to safely regen
+    if( (BATTSCI_isPackFull() == true)                               || //pack is full
+        (temperature_battery_getLatest() < (TEMP_FREEZING_DEGC + 2) ) ) //pack is too cold to safely regen
   #endif
       { flags |= BATTSCI_DISABLE_REGEN_FLAG; EEPROM_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN); }
 
@@ -242,7 +242,7 @@ uint8_t BATTSCI_calculateChargeRequestByte(void)
     if(BATTSCI_isPackFull()  == true) { chargeRequestByte |= BATTSCI_REQUEST_NO_REGEN_FLAG ; }
   }
 
-  //JTS2doNow:add debug parameter: STATUS_BATTSCI_FLAGS_CHARGE_REQUEST
+  //JTS2doLater:add debug parameter: STATUS_BATTSCI_FLAGS_CHARGE_REQUEST
   return chargeRequestByte;
 }
 

@@ -386,14 +386,14 @@ bool lcd_printGridChargerStatus(void)
 
 	#ifdef LCD_4X20_CONNECTED
 		static uint8_t gridChargerState = 0;
-		if( gpio_isGridChargerChargingNow() == true ) { gridChargerState = 'G'; }
+		if( gpio_isGridChargerChargingNow() == YES )  { gridChargerState = 'G'; }
 		else                                          { gridChargerState = '_'; }
 
 		if( gridChargerState_onScreen != gridChargerState )
 		{
 			lcd2.setCursor(19,2); //grid charger status position
 
-			if(gpio_isGridChargerChargingNow() == true) { lcd2.print('G'); gridChargerState_onScreen = 'G'; }
+			if(gpio_isGridChargerChargingNow() == YES)  { lcd2.print('G'); gridChargerState_onScreen = 'G'; }
 			else                                        { lcd2.print('_'); gridChargerState_onScreen = '_'; }
 
 			didscreenUpdateOccur = SCREEN_UPDATED;
@@ -475,7 +475,7 @@ void lcd_refresh(void)
 // 		lcd2.setCursor(0,0);  lcd2.print("00Hx.xxx(y.yyy) Css%");  
 // 		lcd2.setCursor(0,1);  lcd2.print("00La.aaa(b.bbb) TggC");  
 // 		lcd2.setCursor(0,2);  lcd2.print("Vprrr(fff) dz.zzz   ");
-// 		lcd2.setCursor(0,3);  lcd2.print("Tuuuuu A-ccc kW-kk.k");
+// 		lcd2.setCursor(0,3);  lcd2.print("tuuuuu A-ccc kW-kk.k");
 
 //only call during keyOFF (screen updates are slow)
 void lcd_printStaticText(void)
@@ -491,13 +491,14 @@ void lcd_printStaticText(void)
 	                                                                 //      a.aaa:cellLO  b.bbb:Vmin  ccc:current
 		lcd2.setCursor(0,2);  lcd2.print(F("Vprrr(fff) ThhC Eeeg")); //row2: rrr=(2,2)     fff=(6,2)   hh=(12,2) ee=(17,2) p=(19,2)
 	                                                                 //      rrr:Vpack     fff:Vspoof  hh:T_batt ee:errors g:gridFlag
-		lcd2.setCursor(0,3);  lcd2.print(F("Tuuuuu SoCss kW-kk.k")); //row3: uuuuu=(1,3)   ss=(10,3)   kk.k=(15,3)
+		lcd2.setCursor(0,3);  lcd2.print(F("tuuuuu SoCss kW-kk.k")); //row3: uuuuu=(1,3)   ss=(10,3)   kk.k=(15,3)
 	                                                                 //      uuuuu:T_keyOn ss:SoC(%)   kk.k:power
 	#endif
 }
 
 ////////////////////////////////////////////////////////////////////////
 
+//JTS2doLater: Make this non-blocking by adding new lcd_handler() that runs in main loop
 void lcd_displayOFF(void)
 {
 	#ifdef LCD_4X20_CONNECTED
