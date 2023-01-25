@@ -43,38 +43,29 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	if(testToRun == '1')
 	{
 		Serial.print(F("PCB Fan High"));
-		fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_KEY, FAN_HIGH);
+		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_HIGH);
 	}
 	else if(testToRun == '2')
 	{
 		Serial.print(F("PCB Fan Low"));
-		fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_KEY, FAN_LOW);
+		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_LOW);
 	}
 	else if(testToRun == '3')
 	{
 		Serial.print(F("PCB Fan off"));
-		fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_KEY, FAN_OFF);
+		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF);
 	}
 	else if(testToRun == '4')
 	{
-		Serial.print(F("Grid PWM"));
-		pinMode(PIN_GRID_PWM, OUTPUT);
-
-		static uint8_t pwmValue_grid = 0;
-
-		if     (pwmValue_grid == 255) { pwmValue_grid =   0; }
-		else if(pwmValue_grid >= 200) { pwmValue_grid = 255; }
-		else                          { pwmValue_grid += 50; }
-		
-		Serial.print(F("\nSetting gridPWM to: "));
-		Serial.print(pwmValue_grid);
-		analogWrite(PIN_GRID_PWM, pwmValue_grid);
+		Serial.print(F("fanSpeed_now: "));
+		Serial.print(String(fan_getSpeed_now(),BIN));
+		Serial.print('\n');
 	}
 	else if(testToRun == '5')
 	{
 		Serial.print(F("Heater PCB: "));
-		if(gpio_isPackHeaterInstalled() == GPIO_HEATER_CONNECTED) { Serial.print("Connected"); }
-		if(gpio_isPackHeaterInstalled() == GPIO_HEATER_ABSENT   ) { Serial.print("Not Found"); }
+		if(heater_isInstalled() == YES) { Serial.print("Connected"); }
+		if(heater_isInstalled() == NO ) { Serial.print("Not Found"); }
 	}
 	else if(testToRun == '6')
 	{
@@ -84,38 +75,45 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	else if(testToRun == '7')
 	{
 		Serial.print(F("Turn Heater PCB off."));
-		gpio_turnHeaterPCB_off();
+		gpio_turnPackHeater_off();
 	}
 	else if(testToRun == '8')
 	{
 		Serial.print(F("Turn Heater PCB on."));
-		gpio_turnHeaterPCB_on();
+		gpio_turnPackHeater_on();
 	}
 	else if(testToRun == 'T')
 	{
-		gpio_turnTemperatureSensors_on();
-		Serial.print(F("\nTemperatures:"));
-		Serial.print(F("\nBLU: "));
-		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BLU));
-		Serial.print(F("\nGRN: "));
-		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
-		Serial.print(F("\nWHT: "));
-		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
-		Serial.print(F("\nYEL: "));
-		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
-		Serial.print(F("\nBAY1: "));
-		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY1));
-		Serial.print(F("\nBAY2: "));
-		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
-		Serial.print(F("\nBAY3: "));
-		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));				
+		if(gpio_getPinState(PIN_TEMP_EN) == PIN_OUTPUT_HIGH)
+		{		
+			Serial.print(F("\nTemperatures(C):"));
+			Serial.print(F("\nBLU: "));
+			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BLU));
+			Serial.print(F("\nGRN: "));
+			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
+			Serial.print(F("\nWHT: "));
+			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
+			Serial.print(F("\nYEL: "));
+			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
+			Serial.print(F("\nBAY1: "));
+			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY1));
+			Serial.print(F("\nBAY2: "));
+			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
+			Serial.print(F("\nBAY3: "));
+			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));				
+		}
+		else
+		{
+			gpio_turnTemperatureSensors_on();
+			Serial.print("\nturned sensors on. Repeat command to display temp.");
+		}
 	}
 	else if(testToRun == 'H')
 	{
 		Serial.print(F("Blink Heater LED"));
-		gpio_turnHeaterPCB_on();
+		gpio_turnPackHeater_on();
 		delay(100);
-		gpio_turnHeaterPCB_off();
+		gpio_turnPackHeater_off();
 	}
 	else { Serial.print(F("Error: Unknown Test")); }
 }

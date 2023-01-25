@@ -36,7 +36,6 @@ void key_handleKeyEvent_off(void)
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
     gpio_turnHMI_off();
-    gpio_turnTemperatureSensors_off();
     EEPROM_checkForExpiredFirmware(); //must occur before lcd_displayOFF()
     lcd_displayOFF();
 
@@ -51,11 +50,9 @@ void key_handleKeyEvent_on(void)
 	Serial.print(F("ON"));
 	BATTSCI_enable();
 	METSCI_enable();
-	gpio_turnTemperatureSensors_on();
 	gpio_turnHMI_on();
 	gpio_turnPowerSensors_on();
 	lcd_displayOn();
-	gpio_turnGridCharger_off();
 	LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
 	LTC68042configure_handleKeyStateChange();
 	LED(1,HIGH);

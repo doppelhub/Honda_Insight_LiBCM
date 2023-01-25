@@ -4,11 +4,6 @@
 //measures OEM temperature sensors
 //LTC6804 temperature sensors are measured in LTC68042gpio.cpp
 
-//FYI: need to enable temperature sensors
-
-//JTS2doLater: Disable fans entirely if pack is too hot (e.g. above 75 degC).
-//Prevents spreading smoke into the passenger cabin if the modules catch on fire.
-
 #include "libcm.h"
 
 int8_t tempBattery = ROOM_TEMP_DEGC;
@@ -46,118 +41,171 @@ void temperature_measureOEM(void)
 ////////////////////////////////////////////////////////////////////////////////////
 
 //only call inside handler (to ensure sensors powered)
-//stores the most extreme battery temperature in tempBattery
+//stores the most extreme battery temperature (from room temp) in tempBattery
 //LiBCM has QTY3 battery temperature sensors
 void temperature_measureBattery(void)
 {
-	uint8_t numTempSensorFaults = 0;
 	int8_t batteryTemps[NUM_BATTERY_TEMP_SENSORS + 1] = {0}; //1-indexed ([1] = bay1 temp)
 
 	batteryTemps[1] = temperature_measureOneSensor_degC(PIN_TEMP_BAY1);
 	batteryTemps[2] = temperature_measureOneSensor_degC(PIN_TEMP_BAY2);
 	batteryTemps[3] = temperature_measureOneSensor_degC(PIN_TEMP_BAY3);
-	int8_t tempHi = -127; //degC
-	int8_t tempLo =  127; //degC
+
+	//stores hottest and coldest temp sensor value
+	int8_t tempHi = TEMPERATURE_SENSOR_FAULT_LO; //highest measured temp is initially set to the  lowest possible temp
+	int8_t tempLo = TEMPERATURE_SENSOR_FAULT_HI; // lowest measured temp is initially set to the highest possible temp
 
 	for(uint8_t ii = 1; ii <= NUM_BATTERY_TEMP_SENSORS; ii++)
 	{
-		if( (batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_HI) || (batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_LO) )
+		if( (batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_HI) ||
+			(batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_LO)  )
 		{
-			//temperatures are in range
-			batteryTemps[ii] =  ROOM_TEMP_DEGC; //ignore missing sensor
-			numTempSensorFaults++;
+			Serial.print(F("\nCheck Batt Temp Sensor! Bay: "));
+			Serial.print(String(ii,DEC));
 		}
-
-		if(batteryTemps[ii] > tempHi) { tempHi = batteryTemps[ii]; } //find hi temp
-		if(batteryTemps[ii] < tempLo) { tempLo = batteryTemps[ii]; } //find lo temp
+		else
+		{
+			//this sensor returned valid data
+			//only valid sensors are considered
+			if(batteryTemps[ii] > tempHi) { tempHi = batteryTemps[ii]; } //find hi temp
+			if(batteryTemps[ii] < tempLo) { tempLo = batteryTemps[ii]; } //find lo temp
+		}
 	}
 
-	//alert user if all battery temp sensors are faulted
-	if(numTempSensorFaults == NUM_BATTERY_TEMP_SENSORS)
-	{
-		Serial.print(F("\nConnect Batt Temp Sensors!"));
-		tempBattery = TEMPERATURE_SENSOR_FAULT_HI;
-	}
-	else //at least one battery temperature sensor is working
-	{
-		//find hi & lo magnitudes from ROOM_TEMP_DEGC
-		int8_t tempHiDelta = 0;
-		int8_t tempLoDelta = 0;
+	//find hi & lo magnitudes from ROOM_TEMP_DEGC
+	int8_t tempHiDelta = 0;
+	int8_t tempLoDelta = 0;
 
-		if(tempHi > ROOM_TEMP_DEGC) { tempHiDelta = tempHi - ROOM_TEMP_DEGC; }
-		else                        { tempHiDelta = ROOM_TEMP_DEGC - tempHi; }
+	if(tempHi > ROOM_TEMP_DEGC) { tempHiDelta = tempHi - ROOM_TEMP_DEGC; }
+	else                        { tempHiDelta = ROOM_TEMP_DEGC - tempHi; }
 
-		if(tempLo > ROOM_TEMP_DEGC) { tempLoDelta = tempLo - ROOM_TEMP_DEGC; }
-		else                        { tempLoDelta = ROOM_TEMP_DEGC - tempLo; }
+	if(tempLo > ROOM_TEMP_DEGC) { tempLoDelta = tempLo - ROOM_TEMP_DEGC; }
+	else                        { tempLoDelta = ROOM_TEMP_DEGC - tempLo; }
 
-		//figure out which magnitude is further from ROOM_TEMP_DEGC 
-		if(tempHiDelta > tempLoDelta) { tempBattery = tempHi; }
-		else                          { tempBattery = tempLo; }
-	}
+	//figure out which magnitude is further from ROOM_TEMP_DEGC 
+	if(tempHiDelta > tempLoDelta) { tempBattery = tempHi; }
+	else                          { tempBattery = tempLo; }
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+int8_t temperature_coolBatteryAbove_C(void)
+{
+	int8_t coolBattAboveTemp_C = ROOM_TEMP_DEGC;
+
+	if     (key_getSampledState() == KEYSTATE_ON)            { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_KEYON;        }
+	else if(gpio_isGridChargerPluggedInNow() == YES)         { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_GRIDCHARGING; }
+	else if( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC) &&
+		     (key_getSampledState() == KEYSTATE_OFF) )       { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_KEYOFF;       }
+	else /*KEYOFF && SoC too low*/                           { coolBattAboveTemp_C = TEMPERATURE_SENSOR_FAULT_HI;            } //don't request fan if SoC low
+
+	if     (fan_getSpeed_now() == FAN_HIGH) { coolBattAboveTemp_C -= FAN_SPEED_HYSTERESIS_HIGH_degC; }
+	else if(fan_getSpeed_now() == FAN_LOW ) { coolBattAboveTemp_C -= FAN_SPEED_HYSTERESIS_LOW_degC;  }
+	else if(fan_getSpeed_now() == FAN_OFF ) { coolBattAboveTemp_C -= FAN_SPEED_HYSTERESIS_OFF_degC;  }
+
+	return coolBattAboveTemp_C;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+int8_t temperature_heatBatteryBelow_C(void)
+{
+	int8_t heatBattBelowTemp_C = ROOM_TEMP_DEGC;
+
+	if     (key_getSampledState() == KEYSTATE_ON)           { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_KEYON;        }
+	else if(gpio_isGridChargerPluggedInNow() == YES)        { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING; }
+	else if( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC) &&
+		     (key_getSampledState() == KEYSTATE_OFF) )      { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_KEYOFF;       }
+	else /*KEYOFF && SoC too low*/                          { heatBattBelowTemp_C = TEMPERATURE_SENSOR_FAULT_LO;            } //don't request fan if SoC low
+
+	if     (fan_getSpeed_now() == FAN_HIGH) { heatBattBelowTemp_C += FAN_SPEED_HYSTERESIS_HIGH_degC; }
+	else if(fan_getSpeed_now() == FAN_LOW ) { heatBattBelowTemp_C += FAN_SPEED_HYSTERESIS_LOW_degC;  }
+	else if(fan_getSpeed_now() == FAN_OFF ) { heatBattBelowTemp_C += FAN_SPEED_HYSTERESIS_OFF_degC;  }
+
+	return heatBattBelowTemp_C;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t turnSensorsOff_whenKeyStateChanges(uint8_t keyState)
+{
+	static uint8_t keyState_previous = KEYSTATE_OFF;
+
+	if(keyState_previous != keyState) { keyState_previous = keyState; return TEMPSENSORSTATE_TURNOFF; } //key state changed (either KeyON->OFF or KeyOFF->ON)
+	else                              {                               return keyState;                } //key state didn't change //return input state
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+uint32_t tempSensorUpdateInterval_ms(void)
+{	
+	uint32_t updatePeriod_ms = 0;
+
+	if     (key_getSampledState()            == KEYSTATE_ON) { updatePeriod_ms = TEMP_UPDATE_PERIOD_KEYON_ms;        }
+	else if(gpio_isGridChargerPluggedInNow() == YES        ) { updatePeriod_ms = TEMP_UPDATE_PERIOD_GRIDCHARGING_ms; }
+	else                                                     { updatePeriod_ms = TEMP_UPDATE_PERIOD_KEYOFF_ms;       }
+
+	return updatePeriod_ms;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
 void temperature_handler(void)
 {
-	#define TEMP_SENSORS_OFF     0
-	#define TEMP_SENSORS_ON      1
-	#define TEMP_SENSORS_POWERUP 2
-	#define TEMP_MEASURE_NOW     3
-	static uint8_t tempSensorState = TEMP_SENSORS_OFF; //state machine
-		
-	static uint8_t keyStatePrevious = KEYSTATE_OFF;
-	uint8_t keyState_Now = key_getSampledState();
+	static uint8_t tempSensorState = TEMPSENSORSTATE_TURNON; //state machine
 
-	//turn temp sensors off whenever keyState changes
-	if(keyState_Now != keyStatePrevious) { tempSensorState = TEMP_SENSORS_OFF; } //key state just changed (keyON->OFF or keyOFF->ON)
-	keyStatePrevious = keyState_Now;
+	uint8_t keyState_Now = key_getSampledState(); //prevent mid-loop key state change
 
-	//determine how often to measure temperature sensors
-	uint16_t temperatureUpdateInterval = 0;
+	keyState_Now = turnSensorsOff_whenKeyStateChanges(keyState_Now);
 	
-	if(keyState_Now == KEYSTATE_ON) {temperatureUpdateInterval = TEMP_UPDATE_PERIOD_MILLIS_KEYON;  }
-	else                            {temperatureUpdateInterval = TEMP_UPDATE_PERIOD_MILLIS_KEYOFF; }
-	
-	//see if it's time to measure temperature sensors
-	static uint32_t millis_previous = 0;
-	static uint32_t millis_latestSensorTurnon = 0;
+	static uint32_t latestTempMeasurement_ms = 0;
+	static uint32_t latestSensorTurnon_ms = 0;
 
-	if( (uint32_t)(millis() - millis_previous) > temperatureUpdateInterval )
+	if(tempSensorState == TEMPSENSORSTATE_TURNON)
 	{
-		//time to measure temperature sensors
-		millis_previous = millis();
-
-		if     (tempSensorState == TEMP_SENSORS_ON)  { tempSensorState = TEMP_MEASURE_NOW; }
-		else if(tempSensorState == TEMP_SENSORS_OFF)
-		{
-			tempSensorState = TEMP_SENSORS_POWERUP;
-			gpio_turnTemperatureSensors_on();
-			millis_latestSensorTurnon = millis();
-		}
+		gpio_turnTemperatureSensors_on(); 
+		latestSensorTurnon_ms = millis();
+		tempSensorState = TEMPSENSORSTATE_POWERUP;
 	}
 
-	else if(tempSensorState == TEMP_MEASURE_NOW)
+	else if(tempSensorState == TEMPSENSORSTATE_POWERUP)       
 	{
-		tempSensorState = TEMP_SENSORS_ON;
+		uint32_t timeSinceSensorTurnedOn = (millis() - latestSensorTurnon_ms);
+
+		if(timeSinceSensorTurnedOn > TEMP_POWERUP_DELAY_ms) { tempSensorState = TEMPSENSORSTATE_MEASURE; }
+		//else { ; } //do nothing //we're still waiting for sensors to powerup
+	}
+
+	else if(tempSensorState == TEMPSENSORSTATE_MEASURE)
+	{
 		temperature_measureBattery();
 		temperature_measureOEM();
-		
-		if(keyState_Now == KEYSTATE_OFF)
-		{
-			tempSensorState = TEMP_SENSORS_OFF;
-			gpio_turnTemperatureSensors_off(); 
-			Serial.print(F("\ntemp:"));
-			Serial.print(String(tempBattery));
-		}
+		latestTempMeasurement_ms = millis();
+
+		if( (keyState_Now == KEYSTATE_ON) || (gpio_isGridChargerPluggedInNow() == YES) ) { tempSensorState = TEMPSENSORSTATE_STAYON;  }
+		else                                                                             { tempSensorState = TEMPSENSORSTATE_TURNOFF; }
 	}	
 
-	else if ( (tempSensorState == TEMP_SENSORS_POWERUP) &&
-	          ( (uint32_t)(millis() - millis_latestSensorTurnon) > TEMP_STABILIZATION_TIME_ms) ) //wait for temp sensor LPFs to stabilize
+	else if(tempSensorState == TEMPSENSORSTATE_TURNOFF)
 	{
-		// temp sensors stabilized
-		tempSensorState = TEMP_MEASURE_NOW;
+		//sensors only turn off when key is off and grid charger is unplugged
+		Serial.print(F("\nTemp(C): ")); //print temp when key is off
+		Serial.print(String(tempBattery));
+		gpio_turnTemperatureSensors_off(); 
+		tempSensorState = TEMPSENSORSTATE_OFF;
 	}
+
+	//else if(tempSensorState == TEMPSENSORSTATE_STAYON) { ; } //handled (eventually) inside next state
+
+	else if( (millis() - latestTempMeasurement_ms) > tempSensorUpdateInterval_ms() )
+	{
+		//it's time to measure temperature sensors
+		if     (tempSensorState == TEMPSENSORSTATE_STAYON)  { tempSensorState = TEMPSENSORSTATE_MEASURE; } //sensors stay on when keyON (see logic above)
+		else                                                { tempSensorState = TEMPSENSORSTATE_TURNON;  } //sensors turn off when keyOFF //need to turn them on
+	}
+
+	// else if(tempSensorState == TEMPSENSORSTATE_OFF) { ; } //nothing to do
+	// else                                            { ; } //nothing to do
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -196,7 +244,7 @@ int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
 	//Rather than do the above math, LiBCM uses a lookup table (derived from the above equations):
 
 	int16_t tempMeasured_celsius = 0;
-	if     (countsADC > 1000) { tempMeasured_celsius = TEMPERATURE_SENSOR_FAULT_LO; } //sensor unplugged
+	if     (countsADC > 1000) { tempMeasured_celsius = TEMPERATURE_SENSOR_FAULT_LO; } //sensor unplugged //or VERY cold
 	else if(countsADC >  971) { tempMeasured_celsius = -30; } //MCM expecting uint8_t, where T_MCM = T_actual + 30 //So MCM can only receive down to -30 degC
 	else if(countsADC >  968) { tempMeasured_celsius = -29; }
 	else if(countsADC >  964) { tempMeasured_celsius = -28; }
