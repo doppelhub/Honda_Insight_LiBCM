@@ -29,6 +29,9 @@
     #define DISABLE_GRIDCHARGING_ABOVE_INTAKE_TEMP_C  45
     #define DISABLE_GRIDCHARGING_ABOVE_EXHAUST_TEMP_C 50
 
+    #define GRID_CHARGING_FANS_OFF_BELOW_TEMP_C 20
+    #define GRID_CHARGING_FANS_LOW_BELOW_TEMP_C 30 //fans are high above this temp
+
     #define DISABLE_GRIDCHARGING_LIBCM_BOOT_DELAY_ms  2500 //prevents grid charging at poweron, so that the grid charger will never turn on if the watchdog continuously resets
     #define DISABLE_GRIDCHARGING_PLUGIN_DELAY_ms 1000 //prevent current inrush while plugging in grid charger
     

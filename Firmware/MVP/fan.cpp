@@ -156,7 +156,7 @@ uint8_t periodicallyRunFans(void)
 	static uint32_t lastTimeThisFunctionRequestedFan_ms = MILLIS_MAXIMUM_VALUE - SAMPLE_CABIN_AIR_INTERVAL_KEY_OFF_ms; //initial value causes this to run immediately on powerup
 
 	if((millis() - lastTimeThisFunctionRequestedFan_ms) < FAN_TIME_ON_TO_SAMPLE_CABIN_AIR_ms) { request = FAN_LOW; }
-	if((millis() - lastTimeThisFunctionRequestedFan_ms) > howOftenToSampleCabinAir()        ) { request = FAN_LOW; lastTimeThisFunctionRequestedFan_ms = millis(); Serial.print(F("\nUpdated lastTimeThisFunctionRequestedFan_ms")); }
+	if((millis() - lastTimeThisFunctionRequestedFan_ms) > howOftenToSampleCabinAir()        ) { request = FAN_LOW; lastTimeThisFunctionRequestedFan_ms = millis(); }
 
 	return request;
 }

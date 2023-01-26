@@ -38,8 +38,8 @@
 	#define MIN_CABIN_AIR_DELTA_FOR_FANS_degC 5 //intake air must be at least this many degrees 'better' for fans to heat/cool pack
 
 	#define SAMPLE_CABIN_AIR_INTERVAL_KEY_OFF_ms   (15 * 60000) //if pack too hot or cold, LiBCM will briefly run fans at least this often to draw cabin air across intake temp sensor
-	#define SAMPLE_CABIN_AIR_INTERVAL_KEY_ON_ms    ( 1 * 60000)
-	#define SAMPLE_CABIN_AIR_INTERVAL_PLUGGEDIN_ms ( 1 * 60000)
+	#define SAMPLE_CABIN_AIR_INTERVAL_KEY_ON_ms    ( 3 * 60000)
+	#define SAMPLE_CABIN_AIR_INTERVAL_PLUGGEDIN_ms ( 3 * 60000)
 
 	void fan_handler(void);
 

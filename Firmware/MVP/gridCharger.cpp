@@ -100,6 +100,34 @@ void reportChargerState(uint8_t canWeCharge)
 
 //////////////////////////////////////////////////////////////////////////////////
 
+//cool onboard TRIAC and blocking diode while charging
+//required even if cabin air unfavorably heats or cools pack
+//there isn't a temperature sensor near the TRIAC or diode, so empirical data is used to determine when to use fans
+//  -At 23 degC, charging with 0.45 A grid charger leaves 85 degC headroom on TRIAC, and similar results on diode
+//  -At 23 degC, charging with 2.10 A grid charger leaves 25 degC headroom on TRIAC, and 50 degC on diode
+void runFansIfNeeded(void)
+{
+    uint8_t hysteresis_C = 0;
+
+    if     (fan_getSpeed_now() == FAN_HIGH) { hysteresis_C = FAN_SPEED_HYSTERESIS_HIGH_degC; }
+    else if(fan_getSpeed_now() == FAN_LOW ) { hysteresis_C = FAN_SPEED_HYSTERESIS_LOW_degC;  }
+    else if(fan_getSpeed_now() == FAN_OFF ) { hysteresis_C = FAN_SPEED_HYSTERESIS_OFF_degC;  }
+
+    if     ( (temperature_intake_getLatest()  < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C)) &&
+             (temperature_ambient_getLatest() < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C)) &&
+             (temperature_battery_getLatest() < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C))  ) { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);  }
+    
+    else if( (temperature_intake_getLatest()  < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C)) &&
+             (temperature_ambient_getLatest() < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C)) &&
+             (temperature_battery_getLatest() < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C))  ) { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_LOW);  }
+
+    else                                                                                                 { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_HIGH); }
+
+    
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
 void powered_handler(void)
 {
     static bool gridChargerEnabled_previous = NO;
@@ -110,7 +138,7 @@ void powered_handler(void)
     {
         if( LTC68042result_hiCellVoltage_get() <= (CELL_VMAX_GRIDCHARGER - VCELL_HYSTERESIS) ) //hysteresis to prevent rapid grid charger cycling
         {
-            fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_HIGH); //cool onboard IGBT while charging //required even if cabin air unfavorably heats or cools pack
+            runFansIfNeeded();
             gpio_turnGridCharger_on();
             gpio_setGridCharger_powerLevel('H');
 
