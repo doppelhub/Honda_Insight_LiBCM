@@ -36,8 +36,8 @@ void key_handleKeyEvent_off(void)
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
     gpio_turnHMI_off();
-    EEPROM_checkForExpiredFirmware(); //must occur before lcd_displayOFF()
-    lcd_displayOFF();
+    EEPROM_checkForExpiredFirmware(); //must occur before lcd_turnDisplayOffNow()
+    lcd_turnDisplayOffNow();
 
     key_latestTurnOffTime_ms_set(millis()); //MUST RUN LAST!   
 }
@@ -52,7 +52,7 @@ void key_handleKeyEvent_on(void)
 	METSCI_enable();
 	gpio_turnHMI_on();
 	gpio_turnPowerSensors_on();
-	lcd_displayOn();
+	lcd_turnDisplayOnNow();
 	LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
 	LTC68042configure_handleKeyStateChange();
 	LED(1,HIGH);
@@ -68,7 +68,8 @@ bool key_didStateChange(void)
 
 	keyState_sampled = gpio_keyStateNow();
 
-	if( (keyState_sampled == KEYSTATE_OFF) && ((keyState_previous == KEYSTATE_ON) || (keyState_previous == KEYSTATE_UNINITIALIZED)) )
+	if( (keyState_sampled == KEYSTATE_OFF) && 
+		((keyState_previous == KEYSTATE_ON) || (keyState_previous == KEYSTATE_UNINITIALIZED)) )
 	{	//key state just changed from 'ON' to 'OFF'.
 		//don't immediately handle keyOFF event, in case this is due to noise.
 		//if the key is still off the next time thru the loop, then we'll handle keyOFF event

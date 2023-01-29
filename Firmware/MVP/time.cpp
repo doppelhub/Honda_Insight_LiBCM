@@ -22,6 +22,7 @@ bool time_toUpdate_keyOffValues(void)
 
   //determine period between LTC cell voltage reads (saves power)
   if( ((cellBalance_areCellsBalanced() == false) && (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC)) ||
+      ((cellBalance_areCellsBalanced() == false) && (gpio_isGridChargerPluggedInNow() == YES)                ) ||
       (gpio_isGridChargerChargingNow() == YES                                                                )  )
   { 
     keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_ONE_SECOND_ms; //if over 1800 ms, LTC ICs will turn off (bad)

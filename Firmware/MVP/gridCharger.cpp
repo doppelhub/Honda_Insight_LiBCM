@@ -182,7 +182,7 @@ void handleEvent_plugin(void)
 {
     Serial.print(F("Plugged In"));
     gpio_setGridCharger_powerLevel('0');
-    lcd_displayOn();
+    lcd_turnDisplayOnNow();
     lastPlugin_ms = millis();
 }
 
@@ -192,7 +192,7 @@ void handleEvent_unplug(void)
 {
     Serial.print(F("Unplugged"));
     gpio_turnGridCharger_off();
-    lcd_displayOFF();
+    lcd_turnDisplayOffNow();
     gpio_setGridCharger_powerLevel('H'); //reduces power consumption
     gpio_turnBuzzer_off(); //if issues persist, something else will turn buzzer back on
     fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);

@@ -102,7 +102,7 @@ void bringupTester_run(void)
 				serialUSB_waitForEmptyBuffer();
 				lcd_begin();
 				lcd_printStaticText();
-				lcd_displayOn();
+				lcd_turnDisplayOnNow();
 
 				//test if 4x20 screen dims when 5V buck turned off (USB powers at lower voltage)
 				for(int ii=0; ii<6; ii++)

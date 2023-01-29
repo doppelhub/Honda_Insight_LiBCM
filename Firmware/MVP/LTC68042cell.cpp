@@ -318,7 +318,7 @@ bool LTC68042cell_nextVoltages(void)
 
 //---------------------------------------------------------------------------------------
 
-//Only call when keyOFF //takes too long to execute (causes check engine light)
+//Only call when keyOFF //takes too long to execute when keyON (causes check engine light)
 //Results are stored in "LTC68042_results.c"
 void LTC68042cell_sampleGatherAndProcessAllCellVoltages(void)
 {

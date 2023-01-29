@@ -5,7 +5,7 @@
 
 //The 4x20 LCD I2C bus is super slow... therefore, only one screen variable is updated per superloop iteration.
 //This is handled by token 'lcd_whichFunctionUpdates', which is used for a round-robin scheduler
-//Avoid calling 'lcd2.' at all costs; it's ALWAYS faster to do math to see if you need to send data to screen.
+//Avoid calling 'lcd2.___' at all costs; it's ALWAYS faster to do math to see if you need to send data to screen.
 
 #include "libcm.h"
 
@@ -499,7 +499,7 @@ void lcd_printStaticText(void)
 ////////////////////////////////////////////////////////////////////////
 
 //JTS2doLater: Make this non-blocking by adding new lcd_handler() that runs in main loop
-void lcd_displayOFF(void)
+void lcd_turnDisplayOffNow(void)
 {
 	#ifdef LCD_4X20_CONNECTED
 		lcd2.clear();
@@ -554,7 +554,7 @@ void lcd_displayOFF(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-void lcd_displayOn(void)
+void lcd_turnDisplayOnNow(void)
 {
 	#ifdef LCD_4X20_CONNECTED
 		lcd2.backlight();

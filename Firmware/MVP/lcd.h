@@ -30,9 +30,9 @@
 
 	void lcd_refresh(void); //primary interface //each call updates one screen element
 
-	void lcd_displayOn(void);
+	void lcd_turnDisplayOnNow(void);
 
-	void lcd_displayOFF(void);
+	void lcd_turnDisplayOffNow(void);
 
 	void lcd_printStaticText(void);
 
