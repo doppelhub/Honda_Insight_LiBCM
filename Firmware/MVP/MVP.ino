@@ -40,6 +40,7 @@ void loop()
 	heater_handler();
 	temperature_handler();
 	gridCharger_handler();
+	lcdState_handler();
 
 	if( key_getSampledState() == KEYSTATE_ON )
 	{
@@ -51,7 +52,6 @@ void loop()
 		adc_updateBatteryCurrent();
 		vPackSpoof_setVoltage();
 		debugUSB_printLatestData();
-		lcd_refresh();
 	}
 	else if( key_getSampledState() == KEYSTATE_OFF )
 	{	

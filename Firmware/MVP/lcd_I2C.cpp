@@ -11,6 +11,8 @@
 
 */
 
+//Low level I2C driver for 4x20 display
+
 //JTS2doLater: Determine if LCD is connected (using NACK/ACK 9th bit)
 
 #include "Arduino.h"

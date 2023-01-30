@@ -36,8 +36,7 @@ void key_handleKeyEvent_off(void)
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
     gpio_turnHMI_off();
-    EEPROM_checkForExpiredFirmware(); //must occur before lcd_turnDisplayOffNow()
-    lcd_turnDisplayOffNow();
+    EEPROM_checkForExpiredFirmware(); //JTS2doNow: move inside lcd logic.  //must occur before lcd_turnDisplayOffNow()
 
     key_latestTurnOffTime_ms_set(millis()); //MUST RUN LAST!   
 }
@@ -52,7 +51,6 @@ void key_handleKeyEvent_on(void)
 	METSCI_enable();
 	gpio_turnHMI_on();
 	gpio_turnPowerSensors_on();
-	lcd_turnDisplayOnNow();
 	LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
 	LTC68042configure_handleKeyStateChange();
 	LED(1,HIGH);

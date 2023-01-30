@@ -1,8 +1,8 @@
 //Copyright 2021-2022(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
-#ifndef lcd_h
-	#define lcd_h
+#ifndef lcdTransmit_h
+	#define lcdTransmit_h
 
 	#define SCREEN_DIDNT_UPDATE false
 	#define SCREEN_UPDATED      true
@@ -24,15 +24,27 @@
 	#define LCDUPDATE_TEMP_BATTERY 13
 	#define LCDUPDATE_GRID_STATUS  14
 
-	#define LCDUPDATE_MAX_VALUE    14 //must be equal to the highest defined number (above) 
+	#define LCDUPDATE_MAX_VALUE    14 //must be equal to the highest defined number (above)
+
+	#define SCREEN_UPDATE_RATE_MILLIS 32 //one element is updated each time
+		// Number of screen element updates per second = (1.0 / SCREEN_UPDATE_RATE_MILLIS)
+		// Since only one screen element updates at a time, the per-element update rate is:
+		//     ( (1.0 / SCREEN_UPDATE_RATE_MILLIS) / LCDUPDATE_MAX_VALUE)
+		//  Ex:( (1.0 / 32E-3                    ) / 14                 ) = worst case (all elements have changed), each screen element updates 2.2x/second
+
+	//JTS2doNow: See which functions can be deleted:
 
 	void lcd_begin(void);
+	void lcd_end(void);
 
-	void lcd_refresh(void); //primary interface //each call updates one screen element
+	void lcdTransmit_refreshKeyOn(void); //primary interface //each call updates one screen element
 
 	void lcd_turnDisplayOnNow(void);
-
 	void lcd_turnDisplayOffNow(void);
+
+	void lcd_resetVariablesToDefault(void);
+
+	void lcd_splashscreen_keyOff(void);
 
 	void lcd_printStaticText(void);
 

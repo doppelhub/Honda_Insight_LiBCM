@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.8.5f"
-    #define BUILD_DATE "2023JAN28"
+	#define FW_VERSION "0.8.5g"
+    #define BUILD_DATE "2023JAN29"
 
 	//choose your battery type:
 		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
@@ -68,7 +68,7 @@
 
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
 
-	#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
+	//#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
 	
 	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000 //JTS2doLater: Model after "debugUSB_printLatestData"
 
