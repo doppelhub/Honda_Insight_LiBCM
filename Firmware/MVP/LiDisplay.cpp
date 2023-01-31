@@ -70,30 +70,18 @@ void LiDisplay_begin(void)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_calculateCorrectPage() {
-	if (gpio_keyStateNow()) {
+	if (key_getSampledState() == KEYSTATE_ON) {
 		// Key is On
-		if (gpio_isGridChargerPluggedInNow()) {
-			// Grid Charger Plugged In -- Display Warning Page
-			LiDisplaySetPageNum = LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID;
-		} else if (LiDisplaySplashPending) {
-			LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID;
-		} else if (LiDisplaySettingsPageRequested) {
-			LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID;
-		} else {
-			LiDisplaySetPageNum = LIDISPLAY_DRIVING_PAGE_ID;
-		}
+		if (gpio_isGridChargerPluggedInNow()) { LiDisplaySetPageNum = LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID; } // Grid Charger Plugged In -- Display Warning Page
+		else if (LiDisplaySplashPending) { LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID; }
+		else if (LiDisplaySettingsPageRequested) { LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID; }
+		else { LiDisplaySetPageNum = LIDISPLAY_DRIVING_PAGE_ID; }
 	} else {
 		// Key is Off
-		if (gpio_isGridChargerPluggedInNow()) {
-			// Grid Charger Plugged In -- Display GC Page
-			LiDisplaySetPageNum = LIDISPLAY_GRIDCHARGE_PAGE_ID;
-		} else if (LiDisplaySplashPending) {
-			LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID;
-		} else if (LiDisplaySettingsPageRequested) {
-			LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID;
-		} else if (LiDisplayDebugMode) {
-			LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID;
-		}
+		if (gpio_isGridChargerPluggedInNow()) { LiDisplaySetPageNum = LIDISPLAY_GRIDCHARGE_PAGE_ID; } // Grid Charger Plugged In -- Display GC Page
+		else if (LiDisplaySplashPending) { LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID; }
+		else if (LiDisplaySettingsPageRequested) { LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID; }
+		else if (LiDisplayDebugMode) { LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID; }
 	}
 	return;
 }
@@ -148,17 +136,14 @@ void LiDisplay_calculateGCTimeStr() {
 
 		gc_connected_hours = (gc_connected_millis_most_recent_diff / 3600000);
 		gc_connected_minutes = (gc_connected_millis_most_recent_diff / 60000) % 60;
-		gc_connected_seconds = (gc_connected_millis_most_recent_diff / 1000) % 60;
+		gc_connected_seconds = (gc_connected_millis_most_recent_diff * 0.001) % 60;
 
-		if (gc_connected_seconds > 9) {
-			gc_sec_prefix = "";
-		} else gc_sec_prefix = String(0);
-		if (gc_connected_minutes > 9) {
-			gc_min_prefix = "";
-		} else gc_min_prefix = String(0);
-		if (gc_connected_hours > 9) {
-			gc_hour_prefix = "";
-		} else gc_hour_prefix = String(0);
+		if (gc_connected_seconds > 9) { gc_sec_prefix = ""; }
+		else gc_sec_prefix = String(0);
+		if (gc_connected_minutes > 9) { gc_min_prefix = ""; }
+		else gc_min_prefix = String(0);
+		if (gc_connected_hours > 9) { gc_hour_prefix = ""; }
+		else gc_hour_prefix = String(0);
 
 		//gc_time = String("M:") + String(gc_connected_minutes) + String(" S:") + String(gc_connected_seconds);
 		gc_time = String(gc_hour_prefix) + String(gc_connected_hours) + String(":") + String(gc_min_prefix) + String(gc_connected_minutes) + String(":") + String(gc_sec_prefix) + String(gc_connected_seconds);
@@ -174,165 +159,71 @@ void LiDisplay_calculateChrgAsstGaugeBars() {
 	// 22 is empty, 23 is 1 bar asst, 40 is 18 bars asst, 41 is 1 bar chrg, 58 is 18 bars chrg
 	int16_t packEHP = (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps()) / 746; // USA Electrical Horsepower is defined as 746 Watts
 
-	if (packEHP <= -18) {
-		LiDisplayChrgAsstPicId = 58;
-	} else if (packEHP <= -17) {
-		LiDisplayChrgAsstPicId = 57;
-	} else if (packEHP <= -16) {
-		LiDisplayChrgAsstPicId = 56;
-	} else if (packEHP <= -15) {
-		LiDisplayChrgAsstPicId = 55;
-	} else if (packEHP <= -14) {
-		LiDisplayChrgAsstPicId = 54;
-	} else if (packEHP <= -13) {
-		LiDisplayChrgAsstPicId = 53;
-	} else if (packEHP <= -12) {
-		LiDisplayChrgAsstPicId = 52;
-	} else if (packEHP <= -11) {
-		LiDisplayChrgAsstPicId = 51;
-	} else if (packEHP <= -10) {
-		LiDisplayChrgAsstPicId = 50;
-	} else if (packEHP <= -9) {
-		LiDisplayChrgAsstPicId = 49;
-	} else if (packEHP <= -8) {
-		LiDisplayChrgAsstPicId = 48;
-	} else if (packEHP <= -7) {
-		LiDisplayChrgAsstPicId = 47;
-	} else if (packEHP <= -6) {
-		LiDisplayChrgAsstPicId = 46;
-	} else if (packEHP <= -5) {
-		LiDisplayChrgAsstPicId = 45;
-	} else if (packEHP <= -4) {
-		LiDisplayChrgAsstPicId = 44;
-	} else if (packEHP <= -3) {
-		LiDisplayChrgAsstPicId = 43;
-	} else if (packEHP <= -2) {
-		LiDisplayChrgAsstPicId = 42;
-	} else if (packEHP <= -1) {
-		LiDisplayChrgAsstPicId = 41;
-	} else if (packEHP <= 0) {
-		LiDisplayChrgAsstPicId = 22;
-	} else if (packEHP <= 1) {
-		LiDisplayChrgAsstPicId = 23;
-	} else if (packEHP <= 2) {
-		LiDisplayChrgAsstPicId = 24;
-	} else if (packEHP <= 3) {
-		LiDisplayChrgAsstPicId = 25;
-	} else if (packEHP <= 4) {
-		LiDisplayChrgAsstPicId = 26;
-	} else if (packEHP <= 5) {
-		LiDisplayChrgAsstPicId = 27;
-	} else if (packEHP <= 6) {
-		LiDisplayChrgAsstPicId = 28;
-	} else if (packEHP <= 7) {
-		LiDisplayChrgAsstPicId = 29;
-	} else if (packEHP <= 8) {
-		LiDisplayChrgAsstPicId = 30;
-	} else if (packEHP <= 9) {
-		LiDisplayChrgAsstPicId = 31;
-	} else if (packEHP <= 10) {
-		LiDisplayChrgAsstPicId = 32;
-	} else if (packEHP <= 11) {
-		LiDisplayChrgAsstPicId = 33;
-	} else if (packEHP <= 12) {
-		LiDisplayChrgAsstPicId = 34;
-	} else if (packEHP <= 13) {
-		LiDisplayChrgAsstPicId = 35;
-	} else if (packEHP <= 14) {
-		LiDisplayChrgAsstPicId = 36;
-	} else if (packEHP <= 15) {
-		LiDisplayChrgAsstPicId = 37;
-	} else if (packEHP <= 16) {
-		LiDisplayChrgAsstPicId = 38;
-	} else if (packEHP <= 17) {
-		LiDisplayChrgAsstPicId = 39;
-	} else {
-		LiDisplayChrgAsstPicId = 40;
-	}
+	if (packEHP <= -18) { LiDisplayChrgAsstPicId = 58; }
+	else if (packEHP <= -17) { LiDisplayChrgAsstPicId = 57; }
+	else if (packEHP <= -16) { LiDisplayChrgAsstPicId = 56; }
+	else if (packEHP <= -15) { LiDisplayChrgAsstPicId = 55; }
+	else if (packEHP <= -14) { LiDisplayChrgAsstPicId = 54; }
+	else if (packEHP <= -13) { LiDisplayChrgAsstPicId = 53; }
+	else if (packEHP <= -12) { LiDisplayChrgAsstPicId = 52; }
+	else if (packEHP <= -11) { LiDisplayChrgAsstPicId = 51; }
+	else if (packEHP <= -10) { LiDisplayChrgAsstPicId = 50; }
+	else if (packEHP <= -9) { LiDisplayChrgAsstPicId = 49; }
+	else if (packEHP <= -8) { LiDisplayChrgAsstPicId = 48; }
+	else if (packEHP <= -7) { LiDisplayChrgAsstPicId = 47; }
+	else if (packEHP <= -6) { LiDisplayChrgAsstPicId = 46; }
+	else if (packEHP <= -5) { LiDisplayChrgAsstPicId = 45; }
+	else if (packEHP <= -4) { LiDisplayChrgAsstPicId = 44; }
+	else if (packEHP <= -3) { LiDisplayChrgAsstPicId = 43; }
+	else if (packEHP <= -2) { LiDisplayChrgAsstPicId = 42; }
+	else if (packEHP <= -1) { LiDisplayChrgAsstPicId = 41; }
+	else if (packEHP <= 0) { LiDisplayChrgAsstPicId = 22; }
+	else if (packEHP <= 1) { LiDisplayChrgAsstPicId = 23; }
+	else if (packEHP <= 2) { LiDisplayChrgAsstPicId = 24; }
+	else if (packEHP <= 3) { LiDisplayChrgAsstPicId = 25; }
+	else if (packEHP <= 4) { LiDisplayChrgAsstPicId = 26; }
+	else if (packEHP <= 5) { LiDisplayChrgAsstPicId = 27; }
+	else if (packEHP <= 6) { LiDisplayChrgAsstPicId = 28; }
+	else if (packEHP <= 7) { LiDisplayChrgAsstPicId = 29; }
+	else if (packEHP <= 8) { LiDisplayChrgAsstPicId = 30; }
+	else if (packEHP <= 9) { LiDisplayChrgAsstPicId = 31; }
+	else if (packEHP <= 10) { LiDisplayChrgAsstPicId = 32; }
+	else if (packEHP <= 11) { LiDisplayChrgAsstPicId = 33; }
+	else if (packEHP <= 12) { LiDisplayChrgAsstPicId = 34; }
+	else if (packEHP <= 13) { LiDisplayChrgAsstPicId = 35; }
+	else if (packEHP <= 14) { LiDisplayChrgAsstPicId = 36; }
+	else if (packEHP <= 15) { LiDisplayChrgAsstPicId = 37; }
+	else if (packEHP <= 16) { LiDisplayChrgAsstPicId = 38; }
+	else if (packEHP <= 17) { LiDisplayChrgAsstPicId = 39; }
+	else { LiDisplayChrgAsstPicId = 40; }
 	// 2022 Sept 07 -- NM To Do: The assist display can only show up to 18 HP of assist, but LiBCM can put out over 20 HP
 	// Need to edit the HMI file to have a graphical display of those extra HP, probably by further highlighting some of the assist bars
-
-
-	// Next lines are for debugging and can be removed later.
-/*	Serial.print(F("\n"));
-	Serial.print("LiDisplay DEBUG -- PicId = ");
-	Serial.print(String(LiDisplayChrgAsstPicId));
-	Serial.print(" -- packEHP = ");
-	Serial.print(String(packEHP));
-	Serial.print(" -- amps = ");
-	Serial.print(String(adc_getLatestBatteryCurrent_amps()));
-	Serial.print(" -- volts = ");
-	Serial.print(String(LTC68042result_packVoltage_get())); */
-
-	// Debug output:
-
-	// LiDisplay DEBUG -- PicId = 22 -- packEHP = 0 -- amps = -1 -- volts = 183
-	// LiDisplay DEBUG -- PicId = 22 -- packEHP = 0 -- amps = 1 -- volts = 181
-	// LiDisplay DEBUG -- PicId = 23 -- packEHP = 1 -- amps = 7 -- volts = 183
-	// LiDisplay DEBUG -- PicId = 24 -- packEHP = 2 -- amps = 9 -- volts = 183
-	// LiDisplay DEBUG -- PicId = 24 -- packEHP = 2 -- amps = 12 -- volts = 182
-	// LiDisplay DEBUG -- PicId = 25 -- packEHP = 3 -- amps = 16 -- volts = 182
-	// LiDisplay DEBUG -- PicId = 26 -- packEHP = 4 -- amps = 19 -- volts = 182
-	// LiDisplay DEBUG -- PicId = 27 -- packEHP = 5 -- amps = 21 -- volts = 185
-	// LiDisplay DEBUG -- PicId = 30 -- packEHP = 8 -- amps = 36 -- volts = 182
-	// LiDisplay DEBUG -- PicId = 37 -- packEHP = 15 -- amps = 63 -- volts = 181
-
-	// LiDisplay DEBUG -- PicId = 43 -- packEHP = -3 -- amps = -15 -- volts = 184
-	// LiDisplay DEBUG -- PicId = 44 -- packEHP = -4 -- amps = -19 -- volts = 187
-	// LiDisplay DEBUG -- PicId = 45 -- packEHP = -5 -- amps = -21 -- volts = 186
-	// LiDisplay DEBUG -- PicId = 46 -- packEHP = -6 -- amps = -25 -- volts = 186
-	// LiDisplay DEBUG -- PicId = 49 -- packEHP = -9 -- amps = -39 -- volts = 187
-	// LiDisplay DEBUG -- PicId = 51 -- packEHP = -11 -- amps = -44 -- volts = 187
-	// LiDisplay DEBUG -- PicId = 52 -- packEHP = -12 -- amps = -49 -- volts = 187
-
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_calculateSoCGaugeBars() {
-  if (SoC_getBatteryStateNow_percent() >= 76) {
-    LiDisplaySoCBarCount = 20;
-  } else if (SoC_getBatteryStateNow_percent() >= 73) {
-    LiDisplaySoCBarCount = 19;
-  } else if (SoC_getBatteryStateNow_percent() >= 70) {
-    LiDisplaySoCBarCount = 18;
-  } else if (SoC_getBatteryStateNow_percent() >= 67) {
-    LiDisplaySoCBarCount = 17;
-  } else if (SoC_getBatteryStateNow_percent() >= 64) {
-    LiDisplaySoCBarCount = 16;
-  } else if (SoC_getBatteryStateNow_percent() >= 61) {
-    LiDisplaySoCBarCount = 15;
-  } else if (SoC_getBatteryStateNow_percent() >= 58) {
-    LiDisplaySoCBarCount = 14;
-  } else if (SoC_getBatteryStateNow_percent() >= 55) {
-    LiDisplaySoCBarCount = 13;
-  } else if (SoC_getBatteryStateNow_percent() >= 52) {
-    LiDisplaySoCBarCount = 12;
-  } else if (SoC_getBatteryStateNow_percent() >= 49) {
-    LiDisplaySoCBarCount = 11;
-  } else if (SoC_getBatteryStateNow_percent() >= 46) {
-    LiDisplaySoCBarCount = 10;
-  } else if (SoC_getBatteryStateNow_percent() >= 43) {
-    LiDisplaySoCBarCount = 9;
-  } else if (SoC_getBatteryStateNow_percent() >= 40) {
-    LiDisplaySoCBarCount = 8;
-  } else if (SoC_getBatteryStateNow_percent() >= 37) {
-    LiDisplaySoCBarCount = 7;
-  } else if (SoC_getBatteryStateNow_percent() >= 34) {
-    LiDisplaySoCBarCount = 6;
-  } else if (SoC_getBatteryStateNow_percent() >= 34) {
-    LiDisplaySoCBarCount = 5;
-  } else if (SoC_getBatteryStateNow_percent() >= 31) {
-    LiDisplaySoCBarCount = 4;
-  } else if (SoC_getBatteryStateNow_percent() >= 28) {
-    LiDisplaySoCBarCount = 3;
-  } else if (SoC_getBatteryStateNow_percent() >= 25) {
-    LiDisplaySoCBarCount = 2;
-  } else if (SoC_getBatteryStateNow_percent() >= 22) {
-    LiDisplaySoCBarCount = 1;
-  } else {
-    LiDisplaySoCBarCount = 0;
-  }
+  if (SoC_getBatteryStateNow_percent() >= 76) { LiDisplaySoCBarCount = 20; }
+  else if (SoC_getBatteryStateNow_percent() >= 73) { LiDisplaySoCBarCount = 19; }
+  else if (SoC_getBatteryStateNow_percent() >= 70) { LiDisplaySoCBarCount = 18; }
+  else if (SoC_getBatteryStateNow_percent() >= 67) { LiDisplaySoCBarCount = 17; }
+  else if (SoC_getBatteryStateNow_percent() >= 64) { LiDisplaySoCBarCount = 16; }
+  else if (SoC_getBatteryStateNow_percent() >= 61) { LiDisplaySoCBarCount = 15; }
+  else if (SoC_getBatteryStateNow_percent() >= 58) { LiDisplaySoCBarCount = 14; }
+  else if (SoC_getBatteryStateNow_percent() >= 55) { LiDisplaySoCBarCount = 13; }
+  else if (SoC_getBatteryStateNow_percent() >= 52) { LiDisplaySoCBarCount = 12; }
+  else if (SoC_getBatteryStateNow_percent() >= 49) { LiDisplaySoCBarCount = 11; }
+  else if (SoC_getBatteryStateNow_percent() >= 46) { LiDisplaySoCBarCount = 10; }
+  else if (SoC_getBatteryStateNow_percent() >= 43) { LiDisplaySoCBarCount = 9; }
+  else if (SoC_getBatteryStateNow_percent() >= 40) { LiDisplaySoCBarCount = 8; }
+  else if (SoC_getBatteryStateNow_percent() >= 37) { LiDisplaySoCBarCount = 7; }
+  else if (SoC_getBatteryStateNow_percent() >= 34) { LiDisplaySoCBarCount = 6; }
+  else if (SoC_getBatteryStateNow_percent() >= 34) { LiDisplaySoCBarCount = 5; }
+  else if (SoC_getBatteryStateNow_percent() >= 31) { LiDisplaySoCBarCount = 4; }
+  else if (SoC_getBatteryStateNow_percent() >= 28) { LiDisplaySoCBarCount = 3; }
+  else if (SoC_getBatteryStateNow_percent() >= 25) { LiDisplaySoCBarCount = 2; }
+  else if (SoC_getBatteryStateNow_percent() >= 22) { LiDisplaySoCBarCount = 1; }
+  else { LiDisplaySoCBarCount = 0; }
   return;
 };
 
@@ -465,7 +356,7 @@ void LiDisplay_refresh(void)
 				// Ready to show GC page, but first check if key is on
 				// 2022 Sept 07 -- NM To Do: We may be able to delete this now because of LiDisplay_calculateCorrectPage()
 				// We may need to create a LiDisplay_calculateCorrectPowerState() function instead of this
-				if (gpio_keyStateNow()) {
+				if (key_getSampledState() == KEYSTATE_ON) {
 					LiDisplay_setPageNumber(LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID);
 				} else {
 					LiDisplay_setPageNumber(LIDISPLAY_GRIDCHARGE_PAGE_ID);
@@ -491,17 +382,11 @@ void LiDisplay_refresh(void)
 					// Splash page has shown long enough.  Switch to main driving screen.
 					LiDisplay_setPageNumber(LIDISPLAY_DRIVING_PAGE_ID);;
 				} else {
-					if (LiDisplayElementToUpdate > 2) {
-						LiDisplayElementToUpdate = 0;
-					}
+					if (LiDisplayElementToUpdate > 2) { LiDisplayElementToUpdate = 0; }
 					switch(LiDisplayElementToUpdate)
 					{
-						case 0:
-							LiDisplay_updateStringVal(1, "t1", 0, String(FW_VERSION));
-							break;
-						case 1:
-							LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - EEPROM_uptimeStoredInEEPROM_hours_get()));
-							break;
+						case 0: LiDisplay_updateStringVal(1, "t1", 0, String(FW_VERSION)); break;
+						case 1: LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - EEPROM_uptimeStoredInEEPROM_hours_get())); break;
 					}
 					LiDisplayElementToUpdate += 1;
 				}
@@ -562,7 +447,7 @@ void LiDisplay_refresh(void)
 						*/
 					break;
 					case LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID:
-						if (!gpio_keyStateNow()) {
+						if (key_getSampledState() != KEYSTATE_ON) {
 							if (gpio_isGridChargerPluggedInNow()) {
 								LiDisplay_setPageNumber(LIDISPLAY_GRIDCHARGE_PAGE_ID);
 								LiDisplay_updatePage();
@@ -686,7 +571,7 @@ void LiDisplay_gridChargerUnplugged(void) {
 		gc_connected_millis_most_recent_diff = 0;
 		// Check if gpio HMI was already off
 		if (gpio_HMIStateNow()) {
-			if (!gpio_keyStateNow()) {
+			if (key_getSampledState() == KEYSTATE_ON) {
 				hmi_power_millis = millis();
 				LiDisplaySplashPending = true;
 				LiDisplayPowerOffPending = true;
@@ -721,7 +606,7 @@ void LiDisplay_setDebugMode(uint8_t mode) {
 		Serial.print(F("\nLiDisplay Exiting Debug Mode"));
 		if (gpio_HMIStateNow()) {
 			Serial.print(F("\nLiDisplay Screen Still On"));
-			if (!gpio_keyStateNow() && !gpio_isGridChargerPluggedInNow()) {
+			if ((key_getSampledState() != KEYSTATE_ON) && !gpio_isGridChargerPluggedInNow()) {
 				gpio_turnHMI_off();
 				Serial.print(F("\nLiDisplay Turning Off Screen"));
 			} else {
