@@ -37,7 +37,7 @@
 	void lcd_begin(void);
 	void lcd_end(void);
 
-	void lcdTransmit_refreshKeyOn(void); //primary interface //each call updates one screen element
+	void lcdTransmit_updateNextElement_keyOn(void); //primary interface //each call updates one screen element
 
 	void lcd_turnDisplayOnNow(void);
 	void lcd_turnDisplayOffNow(void);
@@ -48,9 +48,8 @@
 
 	void lcd_printStaticText(void);
 
-	void lcd_Warning_gridCharger(void);
-
-	void lcd_Warning_firmwareUpdate(void);
-
-	void lcd_Warning_coverNotInstalled(void);
+	void lcd_warnKeyOnGridCharge(void);
+	void lcd_warnFirmwareExpired(void);
+	void lcd_warnCoverGone(void);
+	
 #endif

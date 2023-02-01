@@ -5,11 +5,11 @@
 
 #include "libcm.h"
 
-uint8_t heaterInstalled = NO;
+bool heaterInstalled = NO;
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t heater_isInstalled(void) { return heaterInstalled; }
+bool heater_isInstalled(void) { return heaterInstalled; }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -28,33 +28,24 @@ void heater_init(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t hasEnoughTimePassedToChangeState(void)
+bool hasEnoughTimePassedToChangeState(void)
 {
 	static uint32_t timestamp_latestChange_ms = 0;
 
-	static uint8_t pinState_helper = gpio_getPinState(PIN_GPIO3_HEATER);
-	       uint8_t pinState_now    = gpio_getPinState(PIN_GPIO3_HEATER);
+	bool hasEnoughTimePassed = NO;
 
-	uint8_t hasEnoughTimePassed = YES;
-
-	if(pinState_now != pinState_helper)
+	if( (millis() - timestamp_latestChange_ms) > HEATER_STATE_CHANGE_HYSTERESIS_ms)
 	{
-		//heater state changed
-		if( (millis() - timestamp_latestChange_ms) < HEATER_STATE_CHANGE_HYSTERESIS_ms ) { hasEnoughTimePassed = NO; }
-		else
-		{
-			// enough time has passed
-			timestamp_latestChange_ms = millis();
-			pinState_helper = pinState_now;
-		}
+		hasEnoughTimePassed = YES;
+		timestamp_latestChange_ms = millis();
 	}
-
+	
 	return hasEnoughTimePassed;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t heater_isPackTooHot(void)
+bool heater_isPackTooHot(void)
 {
 	if( (temperature_battery_getLatest() > FORCE_HEATER_OFF_ABOVE_TEMP_C) ||
 		(temperature_battery_getLatest() == TEMPERATURE_SENSOR_FAULT_LO)   ) //assume pack too hot if temp sensors disconnected
@@ -69,10 +60,8 @@ void heater_handler(void)
 	if( (SoC_isThermalManagementAllowed() == NO) || //not enough energy to heat pack
 		(heater_isInstalled() == NO            ) || //heater not installed         
 	    (heater_isPackTooHot() == YES)            ) //pack is too hot
-	{
-		//heater not allowed
-		gpio_turnPackHeater_off();
-	}
+	{ gpio_turnPackHeater_off(); } //heater not allowed
+
 	else //heater is allowed
 	{
 		if(hasEnoughTimePassedToChangeState() == YES)

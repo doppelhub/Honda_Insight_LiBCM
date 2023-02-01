@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.8.5g"
-    #define BUILD_DATE "2023JAN29"
+	#define FW_VERSION "0.8.5h"
+    #define BUILD_DATE "2023JAN31"
 
 	//choose your battery type:
 		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
@@ -49,8 +49,8 @@
 	//fan temp settings
 	#define COOL_BATTERY_ABOVE_TEMP_C_KEYOFF       36 //cabin air cooling
 	#define COOL_BATTERY_ABOVE_TEMP_C_GRIDCHARGING 30
-	#define COOL_BATTERY_ABOVE_TEMP_C_KEYON        28
-	#define HEAT_BATTERY_BELOW_TEMP_C_KEYON        20 //cabin air heating, or heater PCB (if installed) 
+	#define COOL_BATTERY_ABOVE_TEMP_C_KEYON        30
+	#define HEAT_BATTERY_BELOW_TEMP_C_KEYON        16 //cabin air heating, or heater PCB (if installed) 
 	#define HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING 16
 	#define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       10
 	//other fan settings
@@ -67,9 +67,9 @@
 	//All remaining settings are for debug testing only:
 
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
-
-	//#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
 	
+	#define CHECK_FOR_SAFETY_COVER //comment if testing LiBCM without the cover
+
 	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000 //JTS2doLater: Model after "debugUSB_printLatestData"
 
 	//#define DISABLE_ASSIST //uncomment to (always) disable assist

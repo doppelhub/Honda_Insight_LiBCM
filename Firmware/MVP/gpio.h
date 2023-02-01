@@ -30,8 +30,8 @@
 	void gpio_turnPowerSensors_on( void);
 	void gpio_turnPowerSensors_off(void);
 
-	uint8_t gpio_isGridChargerPluggedInNow(void);
-	uint8_t gpio_isGridChargerChargingNow(void);
+	bool gpio_isGridChargerPluggedInNow(void);
+	bool gpio_isGridChargerChargingNow(void);
 
 	void gpio_turnGridCharger_on( void);
 	void gpio_turnGridCharger_off(void);
@@ -44,7 +44,6 @@
 	void gpio_playSound_firmwareUpdated(void);
 
 	bool gpio_isCoverInstalled(void);
-	void gpio_safetyCoverCheck(void);
 
 	void gpio_turnHMI_on(void);
 	void gpio_turnHMI_off(void);

@@ -183,7 +183,7 @@ bool lcd_printCellVoltage_hi(void)
 			isBacklightOn = false;
 		} else {
 			lcd2.backlight();
-			gpio_turnBuzzer_off();
+			gpio_turnBuzzer_off(); //JTS2doNow: Add buzzer handler! //JTS2doNow: move elsewhere
 			isBacklightOn = true;
 		}
 	}
@@ -423,6 +423,8 @@ void lcd_turnDisplayOnNow(void)
 {
 	lcd2.backlight();
 	lcd2.display();
+
+	lcd_printStaticText(); //JTS2doNow: Remove once each static element is individually broadcast
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -435,29 +437,25 @@ void lcd_turnDisplayOffNow(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: move these into lcdState_handler()
-void lcd_Warning_gridCharger(void)
+void lcd_warnKeyOnGridCharge(void)
 {
-	gpio_turnBuzzer_on_highFreq();
-	lcd2.backlight();
-	lcd2.display();
-	lcd2.clear();
-	//                                 ********************
-	lcd2.setCursor(0,0); lcd2.print(F("ALERT: Grid Charger "));
-	lcd2.setCursor(0,1); lcd2.print(F("       Plugged In!! "));
-	gpio_turnBuzzer_on_lowFreq();
-	lcd2.setCursor(0,2); lcd2.print(F("LiBCM sent P1648 to "));
-	lcd2.setCursor(0,3); lcd2.print(F("prevent IMA start.  "));
-	gpio_turnBuzzer_off();
+	static uint8_t whichRowToPrint = 0;
+
+	lcd2.setCursor(0,whichRowToPrint);
+	//                                            ********************
+	if     (whichRowToPrint == 0) { lcd2.print(F("ALERT: Grid Charger ")); gpio_turnBuzzer_on_highFreq();}
+	else if(whichRowToPrint == 1) { lcd2.print(F("       Plugged In!! "));                               }
+	else if(whichRowToPrint == 2) { lcd2.print(F("LiBCM sent P1648 to ")); gpio_turnBuzzer_on_lowFreq(); }
+	else if(whichRowToPrint == 3) { lcd2.print(F("prevent IMA start.  "));                               }
+
+	if(++whichRowToPrint > 3) { whichRowToPrint = 0; }
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-void lcd_Warning_firmwareUpdate(void)
+//JTS2doNow: Make this function like above
+void lcd_warnFirmwareExpired(void)
 {
-	lcd2.backlight();
-	lcd2.display();
-	lcd2.clear();
 	//                                 ********************
 	lcd2.setCursor(0,0); lcd2.print(F("ALERT: New firmware "));
 	lcd2.setCursor(0,1); lcd2.print(F("required during beta"));
@@ -467,11 +465,9 @@ void lcd_Warning_firmwareUpdate(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-void lcd_Warning_coverNotInstalled(void)
+//JTS2doNow: Make this function like above
+void lcd_warnCoverGone(void)
 {
-	lcd2.backlight();
-	lcd2.display();
-	lcd2.clear();
 	//                                 ********************
 	lcd2.setCursor(0,0); lcd2.print(F("ALERT: Safety cover "));
 	lcd2.setCursor(0,1); lcd2.print(F("       not installed"));
@@ -522,7 +518,7 @@ bool lcd_updateValue(uint8_t stateToUpdate)
 
 //primary interface
 //update one screen element (if any have changed)
-void lcdTransmit_refreshKeyOn(void)
+void lcdTransmit_updateNextElement_keyOn(void)
 {
 	static uint8_t lcdElementToUpdate = LCDUPDATE_NUMERRORS; //init round-robin with least likely state to have changed
 	static uint32_t millis_previous = 0;

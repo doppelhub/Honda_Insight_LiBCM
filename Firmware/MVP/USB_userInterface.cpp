@@ -42,13 +42,11 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	//Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
 	if(testToRun == '1')
 	{
-		Serial.print(F("PCB Fan High"));
-		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_HIGH);
+		Serial.print(F("Not Defined"));
 	}
 	else if(testToRun == '2')
 	{
-		Serial.print(F("PCB Fan Low"));
-		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_LOW);
+		Serial.print(F("Not Defined"));
 	}
 	else if(testToRun == '3')
 	{

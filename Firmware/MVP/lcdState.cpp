@@ -12,29 +12,18 @@ uint8_t requestDisplayOn(uint8_t state)
 {
 	static uint32_t timestamp_helper_ms = 0;
 
-	Serial.print('1');
-
 	if(state == LCDSTATE_TURNON_NOW)
 	{
-		Serial.print('A');
 		lcd_begin();
 		timestamp_helper_ms = millis();
 		return LCDSTATE_TURNING_ON;
 	}
 	else if(state == LCDSTATE_TURNING_ON)
 	{
-		if( (millis() - timestamp_helper_ms) < LCD_TURNON_DELAY_ms) { Serial.print('B'); return LCDSTATE_TURNING_ON; } //repeat this state until delay finishes
-		else
-		{
-			Serial.print('C'); 
-
-			lcd_turnDisplayOnNow();
-
-			return LCDSTATE_ON;
-		}
+		if( (millis() - timestamp_helper_ms) < LCD_TURNON_DELAY_ms) {                         return LCDSTATE_TURNING_ON; } //repeat this state until delay finishes
+		else                                                        { lcd_turnDisplayOnNow(); return LCDSTATE_ON;         }
 	}
 	else { return LCDSTATE_TURNON_NOW; }
-
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -43,11 +32,8 @@ uint8_t requestDisplayOff(uint8_t state)
 {
 	static uint32_t timestamp_helper_ms = 0;
 
-	Serial.print('0');
-
 	if(state == LCDSTATE_PREOFF_SPLASHSCREEN)
 	{
-		Serial.print('D');
 		lcd_resetVariablesToDefault();
 
 		lcd_splashscreen_keyOff();
@@ -58,10 +44,9 @@ uint8_t requestDisplayOff(uint8_t state)
 	
 	else if(state == LCDSTATE_PREOFF_DELAY_READTEXT)
 	{
-		if( (millis() - timestamp_helper_ms) < LCD_PREOFF_DELAY_TOREADSCREEN_ms ) { Serial.print('E'); return LCDSTATE_PREOFF_DELAY_READTEXT; } //repeat this state until delay finishes
+		if( (millis() - timestamp_helper_ms) < LCD_PREOFF_DELAY_TOREADSCREEN_ms ) { return LCDSTATE_PREOFF_DELAY_READTEXT; } //repeat this state until delay finishes
 		else
 		{
-			Serial.print('F');
 			//timer expired
 			lcd_end(); //close previous session to recover from (possible) data transmission corruption during previous session
 			timestamp_helper_ms = millis(); //variable reused for next timer
@@ -72,10 +57,9 @@ uint8_t requestDisplayOff(uint8_t state)
 
 	else if(state == LCDSTATE_PREOFF_WAIT_FOR_SESSION_TO_END)
 	{
-		if( (millis() - timestamp_helper_ms) < LCD_PREOFF_DELAY_TOENDSESSION_ms ) { Serial.print('G'); return LCDSTATE_PREOFF_WAIT_FOR_SESSION_TO_END; } //repeat this state until delay finishes
+		if( (millis() - timestamp_helper_ms) < LCD_PREOFF_DELAY_TOENDSESSION_ms ) { return LCDSTATE_PREOFF_WAIT_FOR_SESSION_TO_END; } //repeat this state until delay finishes
 		else
 		{
-			Serial.print('H');
 			//timer expired
 			lcd_begin(); //reconnect to screen so we can turn the backlight off
 			
@@ -89,7 +73,7 @@ uint8_t requestDisplayOff(uint8_t state)
 		}
 	}
 
-	else { Serial.print('J'); return LCDSTATE_PREOFF_SPLASHSCREEN; } //if statePrevious wasn't one of the above, start the turnoff procedure
+	else { return LCDSTATE_PREOFF_SPLASHSCREEN; } //if statePrevious wasn't one of the above, start the turnoff procedure
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -97,24 +81,28 @@ uint8_t requestDisplayOff(uint8_t state)
 void lcdState_handler(void)
 {
 	#ifdef LCD_4X20_CONNECTED
-		static uint8_t lcdStatePrevious = LCDSTATE_LIBCM_JUST_TURNED_ON;
+		static uint8_t statePrevious = LCDSTATE_LIBCM_JUST_TURNED_ON;
 
-		if(key_getSampledState() == KEYSTATE_ON)
+		if((key_getSampledState() == KEYSTATE_OFF) && (gpio_isGridChargerPluggedInNow() == NO))
 		{
-			if(lcdStatePrevious == LCDSTATE_ON) { lcdTransmit_refreshKeyOn();                            }
-			else                                { lcdStatePrevious = requestDisplayOn(lcdStatePrevious); } //display is in the process of turning on
+			//nobody is using display, so turn it off
+			if(statePrevious != LCDSTATE_OFF) { statePrevious = requestDisplayOff(statePrevious); } //LCD is turning off
 		}
 
-		else if(gpio_isGridChargerPluggedInNow() == YES)
+		//if we get here, key is on and/or grid charger is plugged in
+		else if (statePrevious != LCDSTATE_ON) { statePrevious = requestDisplayOn(statePrevious); } //LCD is turning on
+
+		//if we get here, 4x20 LCD is on and ready to display data
+		else if(key_getSampledState() == KEYSTATE_ON)
 		{
-			if(lcdStatePrevious == LCDSTATE_ON) { lcdTransmit_refreshKeyOn();                            } //JTS2doNow: Make separate grid charging handler
-			else                                { lcdStatePrevious = requestDisplayOn(lcdStatePrevious); } //display is in the process of turning on
+			if     (gpio_isGridChargerPluggedInNow() == YES)         { lcd_warnKeyOnGridCharge();             }	
+			else if(gpio_isCoverInstalled() == false)                { lcd_warnCoverGone();                   }
+			else if(EEPROM_firmwareStatus_get() == FIRMWARE_EXPIRED) { lcd_warnFirmwareExpired();             }
+			else /* no warnings... update next screen element */     { lcdTransmit_updateNextElement_keyOn(); }
 		}
 
-		else //keyOFF and charger unplugged
-		{
-			if(lcdStatePrevious == LCDSTATE_OFF) { ;                                                       }
-			else                                 { lcdStatePrevious = requestDisplayOff(lcdStatePrevious); } //display is in the process of turning off
-		}
+		else if(gpio_isGridChargerPluggedInNow() == YES) { lcdTransmit_updateNextElement_keyOn(); } //JTS2doNow: Make separate grid charging UI
+
+		//should never get here...
 	#endif
 }

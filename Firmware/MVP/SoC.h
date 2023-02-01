@@ -18,7 +18,7 @@
 
 	void SoC_turnOffLiBCM_ifPackEmpty(void);
 
-	uint8_t SoC_isThermalManagementAllowed(void);
+	bool SoC_isThermalManagementAllowed(void);
 
 	void SoC_handler(void);
 
