@@ -5,7 +5,7 @@
 
 #include "libcm.h"
 
-uint8_t loopPeriod_ms = 10;
+uint8_t loopPeriod_ms = 10; //JTS2doLater: see how long period can be, then make this a constant
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -61,7 +61,7 @@ void time_waitForLoopPeriod(void)
     bool timingMet = false;
 
     LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left
-    while( (uint32_t)(millis() - timestamp_previousLoopStart_ms) < time_loopPeriod_ms_get() ) { timingMet = true; } //wait here to start next loop
+    while( (millis() - timestamp_previousLoopStart_ms) < time_loopPeriod_ms_get() ) { timingMet = true; } //wait here to start next loop
     LED(4,LOW);
     
     if( (key_getSampledState() == KEYSTATE_ON) && (timingMet == false) )

@@ -3,7 +3,7 @@
 
 	#define HEATER_STATE_CHANGE_HYSTERESIS_ms (2 * 1000) //period required before heater can turn on or off
 
-	#define FORCE_HEATER_OFF_ABOVE_TEMP_C 25 //prevent code changes from overheating pack
+	#define FORCE_HEATER_OFF_ABOVE_TEMP_C 30 //prevent code changes from overheating pack
 
 	void heater_init(void);
 

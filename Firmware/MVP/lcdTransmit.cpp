@@ -25,6 +25,8 @@ uint8_t  gridChargerState_onScreen = 'g';
 uint16_t hiCellVoltage_onScreen = 0;
 uint16_t loCellVoltage_onScreen = 0;
 
+bool areAllStaticValuesDisplayed = NO;
+
 ////////////////////////////////////////////////////////////////////////
 
 void lcd_begin(void) { lcd2.begin(20,4); }
@@ -183,7 +185,7 @@ bool lcd_printCellVoltage_hi(void)
 			isBacklightOn = false;
 		} else {
 			lcd2.backlight();
-			gpio_turnBuzzer_off(); //JTS2doNow: Add buzzer handler! //JTS2doNow: move elsewhere
+			gpio_turnBuzzer_off(); //JTS2doLater: Add buzzer handler
 			isBacklightOn = true;
 		}
 	}
@@ -373,35 +375,6 @@ bool lcd_printGridChargerStatus(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-//JTS2doLater: Implement proposed format
-// 		//                                          1111111111
-// 		//                                01234567890123456789
-// 		//4x20 screen text display format:********************
-// 		lcd2.setCursor(0,0);  lcd2.print("00Hx.xxx(y.yyy) Css%");  
-// 		lcd2.setCursor(0,1);  lcd2.print("00La.aaa(b.bbb) TggC");  
-// 		lcd2.setCursor(0,2);  lcd2.print("Vprrr(fff) dz.zzz   ");
-// 		lcd2.setCursor(0,3);  lcd2.print("tuuuuu A-ccc kW-kk.k");
-
-//only call during keyOFF (screen updates are slow)
-//JTS2doNow: Remove
-void lcd_printStaticText(void)
-{
-	lcd2.setCursor(0,0);
-	//                                            1111111111
-	//                                  01234567890123456789
-	//4x20 screen text display format:  ********************
-	lcd2.setCursor(0,0);  lcd2.print(F("Hx.xxx(y.yyy) dz.zzz")); //row0: x.xxx=(1,0)   y.yyy=(7,0) z.zzz=(15,0)
-	                                                             //      x.xxx:cellHI  y.yyy:Vmax  z.zzz:deltaV
-	lcd2.setCursor(0,1);  lcd2.print(F("La.aaa(b.bbb) A-ccc ")); //row1: a.aaa=(1,1)   b.bbb=(7,1) ccc=(15,1)
-                                                                 //      a.aaa:cellLO  b.bbb:Vmin  ccc:current
-	lcd2.setCursor(0,2);  lcd2.print(F("Vprrr(fff) ThhC Eeeg")); //row2: rrr=(2,2)     fff=(6,2)   hh=(12,2) ee=(17,2) p=(19,2)
-                                                                 //      rrr:Vpack     fff:Vspoof  hh:T_batt ee:errors g:gridFlag
-	lcd2.setCursor(0,3);  lcd2.print(F("tuuuuu SoCss kW-kk.k")); //row3: uuuuu=(1,3)   ss=(10,3)   kk.k=(15,3)
-                                                                 //      uuuuu:T_keyOn ss:SoC(%)   kk.k:power
-}
-
-////////////////////////////////////////////////////////////////////////
-
 void lcd_resetVariablesToDefault(void)
 {
 	packVoltageActual_onScreen  = 0;
@@ -423,8 +396,7 @@ void lcd_turnDisplayOnNow(void)
 {
 	lcd2.backlight();
 	lcd2.display();
-
-	lcd_printStaticText(); //JTS2doNow: Remove once each static element is individually broadcast
+	areAllStaticValuesDisplayed = NO;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -437,42 +409,40 @@ void lcd_turnDisplayOffNow(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-void lcd_warnKeyOnGridCharge(void)
+void lcd_displayWarning(uint8_t warningToDisplay)
 {
 	static uint8_t whichRowToPrint = 0;
 
 	lcd2.setCursor(0,whichRowToPrint);
-	//                                            ********************
-	if     (whichRowToPrint == 0) { lcd2.print(F("ALERT: Grid Charger ")); gpio_turnBuzzer_on_highFreq();}
-	else if(whichRowToPrint == 1) { lcd2.print(F("       Plugged In!! "));                               }
-	else if(whichRowToPrint == 2) { lcd2.print(F("LiBCM sent P1648 to ")); gpio_turnBuzzer_on_lowFreq(); }
-	else if(whichRowToPrint == 3) { lcd2.print(F("prevent IMA start.  "));                               }
+
+	if(warningToDisplay == LCD_WARN_KEYON_GRID)
+	{ 
+		//                                            ********************
+		if     (whichRowToPrint == 0) { lcd2.print(F("ALERT: Grid Charger ")); gpio_turnBuzzer_on_highFreq();}
+		else if(whichRowToPrint == 1) { lcd2.print(F("       Plugged In!! "));                               }
+		else if(whichRowToPrint == 2) { lcd2.print(F("LiBCM sent P1648 to ")); gpio_turnBuzzer_on_lowFreq(); }
+		else if(whichRowToPrint == 3) { lcd2.print(F("prevent IMA start.  "));                               }
+	}
+
+	else if(warningToDisplay == LCD_WARN_FW_EXPIRED)
+	{
+		if     (whichRowToPrint == 0) { lcd2.print(F("ALERT: New firmware ")); }
+		else if(whichRowToPrint == 1) { lcd2.print(F("required during beta")); }
+		else if(whichRowToPrint == 2) { lcd2.print(F(" --LiBCM disabled-- ")); }
+		else if(whichRowToPrint == 3) { lcd2.print(F("  www.linsight.org  ")); }
+	}
+
+	else if(warningToDisplay == LCD_WARN_COVER_GONE)
+	{
+		if     (whichRowToPrint == 0) { lcd2.print(F("ALERT: Safety cover ")); }
+		else if(whichRowToPrint == 1) { lcd2.print(F("       not installed")); }
+		else if(whichRowToPrint == 2) { lcd2.print(F(" --LiBCM disabled-- ")); }
+		else if(whichRowToPrint == 3) { lcd2.print(F("  www.linsight.org  ")); }		
+	}
 
 	if(++whichRowToPrint > 3) { whichRowToPrint = 0; }
-}
 
-////////////////////////////////////////////////////////////////////////
-
-//JTS2doNow: Make this function like above
-void lcd_warnFirmwareExpired(void)
-{
-	//                                 ********************
-	lcd2.setCursor(0,0); lcd2.print(F("ALERT: New firmware "));
-	lcd2.setCursor(0,1); lcd2.print(F("required during beta"));
-	lcd2.setCursor(0,2); lcd2.print(F(" --LiBCM disabled-- "));
-	lcd2.setCursor(0,3); lcd2.print(F("  www.linsight.org  "));
-}
-
-////////////////////////////////////////////////////////////////////////
-
-//JTS2doNow: Make this function like above
-void lcd_warnCoverGone(void)
-{
-	//                                 ********************
-	lcd2.setCursor(0,0); lcd2.print(F("ALERT: Safety cover "));
-	lcd2.setCursor(0,1); lcd2.print(F("       not installed"));
-	lcd2.setCursor(0,2); lcd2.print(F(" --LiBCM disabled-- "));
-	lcd2.setCursor(0,3); lcd2.print(F("  www.linsight.org  "));
+	areAllStaticValuesDisplayed = NO; //reprint static values once warning message goes away
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -516,11 +486,93 @@ bool lcd_updateValue(uint8_t stateToUpdate)
 
 ////////////////////////////////////////////////////////////////////////
 
+void updateNextValue(void)
+{
+	static uint8_t lcdElementToUpdate = LCDUPDATE_NO_UPDATE; //init round-robin
+
+	uint8_t updateAttempts = 0;
+		do
+		{
+			if( (++lcdElementToUpdate) > LCDUPDATE_MAX_VALUE ) { lcdElementToUpdate = 1; } //reset to first element
+			updateAttempts++;
+		} while( (lcd_updateValue(lcdElementToUpdate) == SCREEN_DIDNT_UPDATE) && (updateAttempts < MAX_LCDUPDATE_ATTEMPTS) );
+}
+
+////////////////////////////////////////////////////////////////////////
+
+//JTS2doLater: Implement proposed format
+// 		//                                          1111111111
+// 		//                                01234567890123456789
+// 		//4x20 screen text display format:********************
+// 		lcd2.setCursor(0,0);  lcd2.print("00Hx.xxx(y.yyy) Css%");  
+// 		lcd2.setCursor(0,1);  lcd2.print("00La.aaa(b.bbb) TggC");  
+// 		lcd2.setCursor(0,2);  lcd2.print("Vprrr(fff) dz.zzz   ");
+// 		lcd2.setCursor(0,3);  lcd2.print("tuuuuu A-ccc kW-kk.k");
+
+#ifdef RUN_BRINGUP_TESTER
+	//this function is too slow to call during keyON
+	//replaced by updateNextStatic(), (but bringup tester still uses it)
+	//JTS2doLater: make new function for bringup tester to display random text
+	void lcd_printStaticText(void)
+	{
+		lcd2.setCursor(0,0);
+		//                                            1111111111
+		//                                  01234567890123456789
+		//4x20 screen text display format:  ********************
+		lcd2.setCursor(0,0);  lcd2.print(F("Hx.xxx(y.yyy) dz.zzz")); //row0: x.xxx=(1,0)   y.yyy=(7,0) z.zzz=(15,0)                                                             
+		lcd2.setCursor(0,1);  lcd2.print(F("La.aaa(b.bbb) A-ccc ")); //row1: a.aaa=(1,1)   b.bbb=(7,1) ccc=(15,1)                                                                
+		lcd2.setCursor(0,2);  lcd2.print(F("Vprrr(fff) ThhC Eeeg")); //row2: rrr=(2,2)     fff=(6,2)   hh=(12,2) ee=(17,2) p=(19,2)                                                               
+		lcd2.setCursor(0,3);  lcd2.print(F("tuuuuu SoCss kW-kk.k")); //row3: uuuuu=(1,3)   ss=(10,3)   kk.k=(15,3)
+	                                                                 
+	                                                                      // x.xxx:cellHI  y.yyy:Vmax  z.zzz:deltaV
+	                                                                      // a.aaa:cellLO  b.bbb:Vmin  ccc:current
+	                                                                      // rrr:Vpack     fff:Vspoof  hh:T_batt ee:errors g:gridFlag
+	                                                                      // uuuuu:t_keyOn ss:SoC(%)   kk.k:power
+	}
+#endif
+
+////////////////////////////////////////////////////////////////////////
+
+//this function replaces lcd_printStaticText(), which was too slow to call during keyON
+bool updateNextStatic(void)
+{
+	static uint8_t lcdElementToUpdate = LCDSTATIC_NO_UPDATE; 
+
+	lcd_resetVariablesToDefault();
+
+	switch(lcdElementToUpdate)
+	{
+		case LCDSTATIC_NO_UPDATE: /*reduce CPU time when they key first turns on */  break;
+		case LCDSTATIC_SECONDS:       lcd2.setCursor( 0,3); lcd2.print(F("tuuuuu") ); break;
+		case LCDSTATIC_VPACK_ACTUAL:  lcd2.setCursor( 0,2); lcd2.print(F("Vprrr")  ); break;
+		case LCDSTATIC_VPACK_SPOOFED: lcd2.setCursor( 5,2); lcd2.print(F("(fff)")  ); break;
+		case LCDSTATIC_NUMERRORS:     lcd2.setCursor(15,2); lcd2.print(F(" Eee")   ); break;
+		case LCDSTATIC_CELL_HI:       lcd2.setCursor( 0,0); lcd2.print(F("Hx.xxx") ); break;
+		case LCDSTATIC_CELL_LO:       lcd2.setCursor( 0,1); lcd2.print(F("La.aaa") ); break;
+		case LCDSTATIC_CELL_DELTA:    lcd2.setCursor(13,0); lcd2.print(F(" dz.zzz")); break;
+		case LCDSTATIC_POWER:         lcd2.setCursor(13,3); lcd2.print(F("kW-kk.k")); break;
+		case LCDSTATIC_CELL_MAXEVER:  lcd2.setCursor( 6,0); lcd2.print(F("(y.yyy)")); break;
+		case LCDSTATIC_CELL_MINEVER:  lcd2.setCursor( 6,1); lcd2.print(F("(b.bbb)")); break;
+		case LCDSTATIC_SoC:           lcd2.setCursor( 6,3); lcd2.print(F(" SoCss ")); break;
+		case LCDSTATIC_CURRENT:       lcd2.setCursor(13,1); lcd2.print(F(" A-ccc ")); break;
+		case LCDSTATIC_TEMP_BATTERY:  lcd2.setCursor(10,2); lcd2.print(F(" ThhC")  ); break;
+		case LCDSTATIC_GRID_STATUS:   lcd2.setCursor(19,2); lcd2.print(F("g")      ); break;
+
+	}
+
+	bool doneDisplayingStaticValues = NO;
+	if(lcdElementToUpdate++ == LCDSTATIC_MAX_VALUE) { doneDisplayingStaticValues = YES; lcdElementToUpdate = LCDSTATIC_NO_UPDATE; }
+	else                                            { doneDisplayingStaticValues =  NO; }
+
+	return doneDisplayingStaticValues;
+}
+
+////////////////////////////////////////////////////////////////////////
+
 //primary interface
 //update one screen element (if any have changed)
-void lcdTransmit_updateNextElement_keyOn(void)
-{
-	static uint8_t lcdElementToUpdate = LCDUPDATE_NUMERRORS; //init round-robin with least likely state to have changed
+void lcdTransmit_printNextElement_keyOn(void)
+{	
 	static uint32_t millis_previous = 0;
 
 	//Only update screen at a human-readable rate
@@ -528,12 +580,7 @@ void lcdTransmit_updateNextElement_keyOn(void)
 	{ 
 		millis_previous = millis();
 
-		#define MAX_LCDUPDATE_ATTEMPTS LCDUPDATE_MAX_VALUE
-		uint8_t updateAttempts = 0;
-		do
-		{
-			if( (++lcdElementToUpdate) > LCDUPDATE_MAX_VALUE ) { lcdElementToUpdate = 1; } //reset to first element
-			updateAttempts++;
-		} while( (lcd_updateValue(lcdElementToUpdate) == SCREEN_DIDNT_UPDATE) && (updateAttempts < MAX_LCDUPDATE_ATTEMPTS) );
+		if(areAllStaticValuesDisplayed == YES) { updateNextValue();  }
+		else     { areAllStaticValuesDisplayed = updateNextStatic(); } //static values are only sent once, each time after the display turns on
 	}
 }
