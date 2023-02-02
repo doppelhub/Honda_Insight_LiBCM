@@ -7,6 +7,8 @@
 
 bool heaterInstalled = NO;
 
+//JTS2doNow: Add indicator to 4x20 when heater is off/on
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 bool heater_isInstalled(void) { return heaterInstalled; }

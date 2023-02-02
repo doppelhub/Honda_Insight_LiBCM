@@ -210,6 +210,7 @@ void temperature_handler(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doLater: Need to differentiate between TEMPERATURE_SENSOR_FAULT_LO and actually being below -30 degC
 int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
 {			
 	uint16_t countsADC = analogRead(thermistorPin); //measure ADC counts
