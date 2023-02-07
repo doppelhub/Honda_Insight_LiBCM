@@ -167,7 +167,6 @@ bool BATTSCI_isPackEmpty(void)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //JTS2doLater: Add hysteresis and/or different SoC setpoints
-//JTS2doNow: If SoC drops below 20%, allow regen even when pack is below freezing.
 //JTS2doNow: If SoC drops below 1%, spoof very different HVDC voltages, which will force MCM to open contactor (to prevent further discharge)
 //sternly demand no regen and/or assist from MCM
 uint8_t BATTSCI_calculateRegenAssistFlags(void)
@@ -296,9 +295,10 @@ uint16_t BATTSCI_convertSoC_deciPercent_toBytes(uint16_t SoC_deciPercent) //deci
 
 uint16_t BATTSCI_calculateSpoofedSoC(void)
 {
+  //JTS2doNow: How can we limit regen power when pack is severely empty and frozen?
   uint16_t SoC_toMCM_deciPercent = 0;
   if     (BATTSCI_isPackFull()  == YES) { SoC_toMCM_deciPercent = 820; } //disable regen  //JTS2doLater: See if this is actually required (also sent as flag)
-  else if(BATTSCI_isPackEmpty() == YES) { SoC_toMCM_deciPercent = 200; } //disable assist //JTS2doNow: Does sending very low SoC values cause MCM to open contactor?
+  else if(BATTSCI_isPackEmpty() == YES) { SoC_toMCM_deciPercent = 200; } //disable assist //JTS2doNow: Does sending very low SoC values cause MCM to open contactor while driving?
   else { SoC_toMCM_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; } //get MCM-remapped SoC value
 
   SoC_toMCM_deciPercent = BATTSCI_SoC_Hysteresis(SoC_toMCM_deciPercent);
