@@ -9,11 +9,13 @@
 	
 	uint8_t EEPROM_firmwareStatus_get(void);
 
+    #define BYTES_IN_DATE 12
+
 	#define REQUIRED_FIRMWARE_UPDATE_PERIOD_DAYS 40
     #define REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS (REQUIRED_FIRMWARE_UPDATE_PERIOD_DAYS * 24)
 
-    #define FIRMWARE_STATUS_EXPIRED 0b10101010 //alternating bit pattern for EEPROM read/write integrity
-    #define FIRMWARE_STATUS_VALID   0b01010101
+    #define FIRMWARE_EXPIRED   0b10101010 //alternating bit pattern for EEPROM read/write integrity
+    #define FIRMWARE_UNEXPIRED 0b01010101
 
     uint8_t EEPROM_hasLibcmDisabledAssist_get(void);
     void EEPROM_hasLibcmDisabledAssist_set(uint8_t);

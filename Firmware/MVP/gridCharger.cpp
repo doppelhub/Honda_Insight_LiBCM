@@ -32,6 +32,9 @@ uint8_t isChargingAllowed(void)
     else if( (millis() - lastPlugin_ms          ) < DISABLE_GRIDCHARGING_PLUGIN_DELAY_ms     ) { helper = NO__JUSTPLUGGEDIN;           }
     else if( (millis() - latestChargerDisable_ms) < minimumOffTime_beforeTurningOn_ms        ) { helper = NO__RECENTLY_TURNED_OFF;     }
 
+    //other checks
+    else if(key_getSampledState() == KEYSTATE_ON                                             ) { helper = NO__KEY_IS_ON;               }
+
     return helper;
 }
 
@@ -61,6 +64,8 @@ void reportChargerState(uint8_t canWeCharge)
         case NO__JUSTPLUGGEDIN:           { minimumOffTime_beforeTurningOn_ms = GRID_MIN_TIME_OFF_NONE_ms; gpio_turnBuzzer_off();         break; }
         case NO__LIBCMJUSTBOOTED:         { minimumOffTime_beforeTurningOn_ms = GRID_MIN_TIME_OFF_NONE_ms; gpio_turnBuzzer_off();         break; }
         case NO__RECENTLY_TURNED_OFF:     { /*    keep existing value      */                              gpio_turnBuzzer_off();         break; }
+        //other checks
+        case NO__KEY_IS_ON:               { minimumOffTime_beforeTurningOn_ms = GRID_MIN_TIME_OFF_NONE_ms; /* keep existing value */      break; }
         //all systems go
         case YES__CHARGING_ALLOWED:       { /*  no need to update value    */                              gpio_turnBuzzer_off();         break; }
         //unknown reason
@@ -75,9 +80,9 @@ void reportChargerState(uint8_t canWeCharge)
         switch (canWeCharge)
         {
             //voltage issue
-            case NO__ATLEASTONECELL_TOO_HIGH: { Serial.print(F("Overcharged")   ); break; } //JTS2doLater: display Warning on LCD
-            case NO__ATLEASTONECELL_TOO_LOW:  { Serial.print(F("Overdischarged")); break; } //JTS2doLater: display Warning on LCD
-            case NO__ATLEASTONECELL_FULL:     { Serial.print(F("Pack Charged")  ); break; }
+            case NO__ATLEASTONECELL_TOO_HIGH: { Serial.print(F("Overcharged")       ); break; } //JTS2doLater: display Warning on LCD
+            case NO__ATLEASTONECELL_TOO_LOW:  { Serial.print(F("Overdischarged")    ); break; } //JTS2doLater: display Warning on LCD
+            case NO__ATLEASTONECELL_FULL:     { Serial.print(F("Pack Charged")      ); break; }
             //thermal issue
             case NO__CHARGER_IS_HOT:          { Serial.print(F("Charger Hot")       ); break; }
             case NO__TEMP_UNPLUGGED_GRID:     { Serial.print(F("T_grid Unplugged")  ); break; }
@@ -87,11 +92,13 @@ void reportChargerState(uint8_t canWeCharge)
             case NO__TEMP_UNPLUGGED_INTAKE:   { Serial.print(F("T_intake Unplugged")); break; }
             case NO__TEMP_EXHAUST_IS_HOT:     { Serial.print(F("Exhaust Too Hot")   ); break; }
             //time issue
-            case NO__JUSTPLUGGEDIN:           { Serial.print(F("Plugin Delay")  ); break; }
-            case NO__LIBCMJUSTBOOTED:         { Serial.print(F("LiBCM Powerup") ); break; }
-            case NO__RECENTLY_TURNED_OFF:     { Serial.print(F("Turnoff Delay") ); break; }
+            case NO__JUSTPLUGGEDIN:           { Serial.print(F("Plugin Delay")      ); break; }
+            case NO__LIBCMJUSTBOOTED:         { Serial.print(F("LiBCM Powerup")     ); break; }
+            case NO__RECENTLY_TURNED_OFF:     { Serial.print(F("Turnoff Delay")     ); break; }
+            //other checks
+            case NO__KEY_IS_ON:               { Serial.print(F("Key is ON")         ); break; }
             //unknown reason
-            default:                          { Serial.print(F("Unknown Reason")); break; }
+            default:                          { Serial.print(F("Unknown Reason")    ); break; }
         }
 
         canWeCharge_previous = canWeCharge;
@@ -165,8 +172,6 @@ void powered_handler(void)
     }
 
     reportChargerState(areAllSystemsGo); //non-critical tasks go here
-
-    lcd_refresh();
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -182,7 +187,6 @@ void handleEvent_plugin(void)
 {
     Serial.print(F("Plugged In"));
     gpio_setGridCharger_powerLevel('0');
-    lcd_turnDisplayOnNow();
     lastPlugin_ms = millis();
 }
 
@@ -192,7 +196,6 @@ void handleEvent_unplug(void)
 {
     Serial.print(F("Unplugged"));
     gpio_turnGridCharger_off();
-    lcd_turnDisplayOffNow();
     gpio_setGridCharger_powerLevel('H'); //reduces power consumption
     gpio_turnBuzzer_off(); //if issues persist, something else will turn buzzer back on
     fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);
@@ -202,8 +205,8 @@ void handleEvent_unplug(void)
 
 void gridCharger_handler(void)
 {
-    static uint8_t isGridChargerPluggedIn_previous = NO;
-           uint8_t isGridChargerPluggedIn          = gpio_isGridChargerPluggedInNow();
+    static bool isGridChargerPluggedIn_previous = NO;
+           bool isGridChargerPluggedIn          = gpio_isGridChargerPluggedInNow();
 
     if(isGridChargerPluggedIn_previous != isGridChargerPluggedIn)
     {

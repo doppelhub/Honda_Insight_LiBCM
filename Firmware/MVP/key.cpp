@@ -30,14 +30,13 @@ void key_handleKeyEvent_off(void)
     BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
     METSCI_disable();
     LTC68042cell_sampleGatherAndProcessAllCellVoltages();
-    SoC_updateUsingLatestOpenCircuitVoltage();
+    SoC_updateUsingLatestOpenCircuitVoltage(); //JTS2doLater: Add ten minute delay before VoC->SoC LUT
     adc_calibrateBatteryCurrentSensorOffset();
     gpio_turnPowerSensors_off();
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
     gpio_turnHMI_off();
-    EEPROM_checkForExpiredFirmware(); //must occur before lcd_turnDisplayOffNow()
-    lcd_turnDisplayOffNow();
+    EEPROM_checkForExpiredFirmware();
 
     key_latestTurnOffTime_ms_set(millis()); //MUST RUN LAST!   
 }
@@ -52,7 +51,6 @@ void key_handleKeyEvent_on(void)
 	METSCI_enable();
 	gpio_turnHMI_on();
 	gpio_turnPowerSensors_on();
-	lcd_turnDisplayOnNow();
 	LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
 	LTC68042configure_handleKeyStateChange();
 	LED(1,HIGH);

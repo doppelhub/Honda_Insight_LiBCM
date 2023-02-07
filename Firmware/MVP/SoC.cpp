@@ -137,9 +137,9 @@ void SoC_turnOffLiBCM_ifPackEmpty(void)
 
 /////////////////////////////////////////////////////////////////////
 
-uint8_t SoC_isThermalManagementAllowed(void)
+bool SoC_isThermalManagementAllowed(void)
 {
-	uint8_t enoughEnergy = NO;
+	bool enoughEnergy = NO;
 
 	if( (key_getSampledState() == KEYSTATE_ON )   ||
 	    (gpio_isGridChargerPluggedInNow() == YES) ||

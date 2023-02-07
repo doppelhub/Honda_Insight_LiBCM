@@ -130,8 +130,8 @@ void gpio_turnHMI_off(void) { digitalWrite(PIN_HMI_EN,  LOW); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t gpio_isGridChargerPluggedInNow(void) { return !(digitalRead(PIN_GRID_SENSE)); }
-uint8_t gpio_isGridChargerChargingNow(void)  { return   digitalRead(PIN_GRID_EN);     }
+bool gpio_isGridChargerPluggedInNow(void) { return !(digitalRead(PIN_GRID_SENSE)); }
+bool gpio_isGridChargerChargingNow(void)  { return   digitalRead(PIN_GRID_EN);     }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -191,24 +191,11 @@ void gpio_playSound_firmwareUpdated(void)
 
 bool gpio_isCoverInstalled(void)
 {
-	if(digitalRead(PIN_COVER_SWITCH) == 1 ) {return  true;}
-	else                                    {return false;}
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-
-void gpio_safetyCoverCheck(void)
-{
-	#ifdef	PREVENT_BOOT_WITHOUT_SAFETY_COVER
-		if( gpio_isCoverInstalled() == false)
-		{
-			gpio_turnBuzzer_on_lowFreq();
-			lcd_Warning_coverNotInstalled();
-			Serial.print(F("\nInstall safety cover, then power cycle.  LiBCM Disabled.\nSee config.h>>'PREVENT_BOOT_WITHOUT_SAFETY_COVER' to disable"));
-			delay(5000);
-			gpio_turnBuzzer_off();
-			while(1) { ; } //hang here forever
-		}
+	#ifdef CHECK_FOR_SAFETY_COVER
+		if(digitalRead(PIN_COVER_SWITCH) == 1 ) {return  true;}
+		else                                    {return false;}
+	#else
+		return true;
 	#endif
 }
 

@@ -21,6 +21,7 @@
     #define NO__JUSTPLUGGEDIN           0b10001011
     #define NO__LIBCMJUSTBOOTED         0b10001100
     #define NO__RECENTLY_TURNED_OFF     0b10001101
+    #define NO__KEY_IS_ON               0b10001110
     
 
     #define DISABLE_GRIDCHARGING_ABOVE_CHARGER_TEMP_C 60

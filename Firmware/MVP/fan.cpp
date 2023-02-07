@@ -45,9 +45,9 @@ void fan_requestSpeed(uint8_t requestor, char newFanSpeed)
 ////////////////////////////////////////////////////////////////////////////////////
 
 //intake temp sensor only accurately measures cabin air temp when fans are on or have only recently turned off
-uint8_t isIntakeTempSensorMeasuringCabinTemp(void)
+bool isIntakeTempSensorMeasuringCabinTemp(void)
 {
-	uint8_t isIntakeTempValid = NO;
+	bool isIntakeTempValid = NO;
 
 	static uint32_t lastTimeFanTurned_off_ms = 0;
 	
@@ -122,7 +122,7 @@ uint8_t packTempState(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t doesPackWantFans(void)
+bool doesPackWantFans(void)
 {
 	uint8_t request = packTempState();
 	if( (request == PACKTEMP_HOT)  ||
@@ -194,13 +194,13 @@ void determineFastestFanSpeedRequest(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t hasEnoughTimePassedToChangeFanSpeed(void)
+bool hasEnoughTimePassedToChangeFanSpeed(void)
 {
 	static uint32_t latestFanSpeedChange_ms = 0;
 
 	static uint8_t fanSpeed_goal_previous = FAN_OFF;
 
-	uint8_t hasEnoughTimePassed = YES;
+	bool hasEnoughTimePassed = YES;
 
 	if(fanSpeed_goal != fanSpeed_goal_previous)
 	{

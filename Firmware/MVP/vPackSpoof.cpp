@@ -10,8 +10,6 @@
 /  **Some comparisons are actually 20 volts, but for simplicity this code treats them all as having to be within 10 volts.
 */
 
-//JTS2doLater: To prevent P1445 when the key first turns on, temporarily increase spoofed pack voltage for a few seconds, then dial down to the actual spoofed voltage.
-
 #include "libcm.h"
 
 uint8_t spoofedPackVoltage = 0;
