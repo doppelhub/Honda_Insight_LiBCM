@@ -102,7 +102,7 @@ void bringupTester_run(void)
 				serialUSB_waitForEmptyBuffer();
 				lcd_begin();
 				lcd_printStaticText();
-				lcd_displayOn();
+				lcd_turnDisplayOnNow();
 
 				//test if 4x20 screen dims when 5V buck turned off (USB powers at lower voltage)
 				for(int ii=0; ii<6; ii++)
@@ -270,8 +270,8 @@ void bringupTester_run(void)
 				Serial.print(F("\n\nCurrent sensor 10b result @ 0A is "));
 				serialUSB_waitForEmptyBuffer();
 				{
-					gpio_setFanSpeed_OEM('0'); //turn all FETs off (0A thru sensor)
-					gpio_setFanSpeed_PCB('0');     //turn all FETs off (0A thru sensor)
+					gpio_setFanSpeed_OEM(FAN_OFF); //turn all FETs off (0A thru sensor)
+					gpio_setFanSpeed_PCB(FAN_OFF);     //turn all FETs off (0A thru sensor)
 					delay(10);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
@@ -284,8 +284,8 @@ void bringupTester_run(void)
 				Serial.print(F("\nCurrent sensor 10b result @ 3A through OEM_FAN_L is "));
 				serialUSB_waitForEmptyBuffer();
 				{
-					gpio_setFanSpeed_OEM('L'); //test OEM fan low speed relay
-					gpio_setFanSpeed_PCB('0');
+					gpio_setFanSpeed_OEM(FAN_LOW); //test OEM fan low speed relay
+					gpio_setFanSpeed_PCB(FAN_OFF);
 					delay(500);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
@@ -298,8 +298,8 @@ void bringupTester_run(void)
 				Serial.print(F("\nCurrent sensor 10b result @ 3A through OEM_FAN_H is "));
 				serialUSB_waitForEmptyBuffer();
 				{
-					gpio_setFanSpeed_OEM('H'); //test OEM fan low speed relay
-					gpio_setFanSpeed_PCB('0');
+					gpio_setFanSpeed_OEM(FAN_HIGH); //test OEM fan low speed relay
+					gpio_setFanSpeed_PCB(FAN_OFF);
 					delay(500);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
@@ -312,8 +312,8 @@ void bringupTester_run(void)
 				Serial.print(F("\nCurrent sensor 10b result @ 3A through onboard fans is "));
 				serialUSB_waitForEmptyBuffer();
 				{
-					gpio_setFanSpeed_OEM('0'); //test OEM fan low speed relay
-					gpio_setFanSpeed_PCB('H');
+					gpio_setFanSpeed_OEM(FAN_OFF); //test OEM fan low speed relay
+					gpio_setFanSpeed_PCB(FAN_HIGH);
 					delay(500);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 3A * 19 turns = '57 A' = 595 counts
@@ -330,7 +330,7 @@ void bringupTester_run(void)
 					gpio_turnPowerSensors_off();
 					delay(500);
 
-					gpio_setFanSpeed_PCB('H'); //should already be here
+					gpio_setFanSpeed_PCB(FAN_HIGH); //should already be here
 					delay(100);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
@@ -339,8 +339,8 @@ void bringupTester_run(void)
 				}
 
 				//turn all FETs off (so they don't overheat)
-				gpio_setFanSpeed_PCB('0');
-				gpio_setFanSpeed_OEM('0');
+				gpio_setFanSpeed_PCB(FAN_OFF);
+				gpio_setFanSpeed_OEM(FAN_OFF);
 
 				/////////////////////////////////////////////////////////////////////
 
@@ -381,7 +381,7 @@ void bringupTester_run(void)
 				{
 					gpio_turnGridCharger_off(); //turn IGBT off (power applied to grid charger side)
 					delay(25);
-					if( gpio_isGridChargerPluggedInNow() == false ) { Serial.print(F("pass")); }
+					if( gpio_isGridChargerPluggedInNow() == NO ) { Serial.print(F("pass")); }
 					else { Serial.print(F("FAIL!! !! !! !! !! !")); didTestFail = true; }
 				}
 
@@ -390,7 +390,7 @@ void bringupTester_run(void)
 				{
 					gpio_turnGridCharger_on(); //turn IGBT on... grid sense should now see power
 					delay(25);
-					if( gpio_isGridChargerPluggedInNow() == true ) { Serial.print(F("pass")); }
+					if( gpio_isGridChargerPluggedInNow() == YES ) { Serial.print(F("pass")); }
 					else { Serial.print(F("FAIL!! !! !! !! !! !")); didTestFail = true; }
 				}
 

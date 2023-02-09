@@ -148,57 +148,41 @@ int16_t cellVoltageOffsetDueToESR(void)
 
 bool BATTSCI_isPackFull(void)
 {
-  // uint16_t currentAdjustedCellVoltage_max = CELL_VMAX_REGEN;
-  // JTS2doLater: Determine regen cell ESR
-  // if(adc_getLatestBatteryCurrent_amps() < 0)
-  // {
-  //   //regen, need to account for ESR-related cell voltage increase
-  //   currentAdjustedCellVoltage_max = CELL_VREST_85_PERCENT_SoC - cellVoltageOffsetDueToESR(); //fcn returns negative number (- - = +)
-  // }
-
-  if( (LTC68042result_hiCellVoltage_get() < CELL_VMAX_REGEN               ) && //below hard voltage limit (if SoC estimator is wrong)
-      //(LTC68042result_hiCellVoltage_get() < currentAdjustedCellVoltage_max) && //below ESR-adjusted voltage limit (due to IMA current) //JTS2doLater: required?
-      (  SoC_getBatteryStateNow_percent() < STACK_SoC_MAX                 ) )  //below SoC limit
-       { return false; } //pack is good
-  else { return true;  } //pack is overcharged
+  if( (LTC68042result_hiCellVoltage_get() < CELL_VMAX_REGEN ) && //below maximum cell voltage limit (if SoC estimator is wrong)
+      (  SoC_getBatteryStateNow_percent() < STACK_SoC_MAX   )  ) //below maximum SoC limit
+       { return NO;  } //pack is good
+  else { return YES; } //pack is overcharged
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool BATTSCI_isPackEmpty(void)
 {
-  //uint16_t currentAdjusted_Vmin = CELL_VMIN_ASSIST;
-
-  //JTS2doLater: Decide whether or not to include ESR Vcell offset
-  //account for additional cell voltage drop during assist
-  //if(adc_getLatestBatteryCurrent_amps() > 0) { currentAdjusted_Vmin = CELL_VMIN_ASSIST - cellVoltageOffsetDueToESR(); }
-
-  if( (LTC68042result_loCellVoltage_get() > CELL_VMIN_ASSIST    ) && //above hard voltage limit (if SoC estimator is wrong)
-      //(LTC68042result_loCellVoltage_get() > currentAdjusted_Vmin) && //above ESR-adjusted voltage limit (due to IMA current)
-      (  SoC_getBatteryStateNow_percent() > STACK_SoC_MIN       ) )  //above SoC limit
-       { return false; } //pack is good
-  else { return true;  } //pack is undercharged
+  if( (LTC68042result_loCellVoltage_get() > CELL_VMIN_ASSIST ) && //above minimum cell voltage limit (if SoC estimator is wrong))
+      (  SoC_getBatteryStateNow_percent() > STACK_SoC_MIN    )  ) //above minimum SoC limit
+       { return NO;  } //pack is good
+  else { return YES; } //pack is undercharged
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //JTS2doLater: Add hysteresis and/or different SoC setpoints
-
+//JTS2doNow: If SoC drops below 1%, spoof very different HVDC voltages, which will force MCM to open contactor (to prevent further discharge)
 //sternly demand no regen and/or assist from MCM
 uint8_t BATTSCI_calculateRegenAssistFlags(void)
 {
   uint8_t flags = 0;
 
   #ifndef DISABLE_ASSIST
-    if(BATTSCI_isPackEmpty() == true)
+    if(BATTSCI_isPackEmpty() == YES)
   #endif
     { flags |= BATTSCI_DISABLE_ASSIST_FLAG; EEPROM_hasLibcmDisabledAssist_set(EEPROM_LICBM_DISABLED_ASSIST); }
 
   #ifndef DISABLE_REGEN
-    if( (BATTSCI_isPackFull() == true)       || //pack is full
-        (temperature_battery_getLatest() < 1) ) //pack is too cold to safely regen
+    if( (BATTSCI_isPackFull() == YES)                                                                  || //pack is full
+        ( (temperature_battery_getLatest() < TEMP_FREEZING_DEGC + 2) && (BATTSCI_isPackEmpty() == NO) ) ) //pack is charged enough (to power DCDC), but too cold to safely regen
   #endif
-      { flags |= BATTSCI_DISABLE_REGEN_FLAG; EEPROM_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN); }
+    { flags |= BATTSCI_DISABLE_REGEN_FLAG; EEPROM_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN); } //when this flag is set, MCM draws zero power from IMA motor
 
   return flags;
 }
@@ -230,19 +214,20 @@ uint8_t BATTSCI_calculateChargeRequestByte(void)
   {
     //key turned to 'ON' position, but not yet to 'START'
 
-    if(BATTSCI_isPackEmpty() == true) { chargeRequestByte = BATTSCI_IMA_START_DISABLED; } //IMA battery empty
-    else                              { chargeRequestByte = BATTSCI_IMA_START_ALLOWED;  } //IMA battery charged enough for IMA start
+    if(BATTSCI_isPackEmpty() == YES) { chargeRequestByte = BATTSCI_IMA_START_DISABLED; } //IMA battery empty
+    else                             { chargeRequestByte = BATTSCI_IMA_START_ALLOWED;  } //IMA battery charged enough for IMA start
     //JTS2doLater: chargeRequestByte=0x00 is a third case //probably means "pack neither empty nor full"
   }
   else
   {
     //key previously turned to 'START', now in 'ON' position
 
-    if(BATTSCI_isPackEmpty() == true) { chargeRequestByte |= BATTSCI_REQUEST_REGEN_FLAG;     }
-    if(BATTSCI_isPackFull()  == true) { chargeRequestByte |= BATTSCI_REQUEST_NO_REGEN_FLAG ; }
+    //JTS2doNow: what happens if severely unbalanced pack causes us to send both flags?
+    if(BATTSCI_isPackEmpty() == YES) { chargeRequestByte |= BATTSCI_REQUEST_REGEN_FLAG;     }
+    if(BATTSCI_isPackFull()  == YES) { chargeRequestByte |= BATTSCI_REQUEST_NO_REGEN_FLAG ; }
   }
 
-  //JTS2doNow:add debug parameter: STATUS_BATTSCI_FLAGS_CHARGE_REQUEST
+  //JTS2doLater:add debug parameter: STATUS_BATTSCI_FLAGS_CHARGE_REQUEST
   return chargeRequestByte;
 }
 
@@ -310,9 +295,10 @@ uint16_t BATTSCI_convertSoC_deciPercent_toBytes(uint16_t SoC_deciPercent) //deci
 
 uint16_t BATTSCI_calculateSpoofedSoC(void)
 {
+  //JTS2doNow: How can we limit regen power when pack is severely empty and frozen?
   uint16_t SoC_toMCM_deciPercent = 0;
-  if     (BATTSCI_isPackFull()  == true) { SoC_toMCM_deciPercent = 820; } //disable regen  //JTS2doLater: See if this is actually required (also sent as flag)
-  else if(BATTSCI_isPackEmpty() == true) { SoC_toMCM_deciPercent = 200; } //disable assist //TODO_NATALYA (not urgent as of 2022JAN21) watch SoC gauge behaviour at 20% MCM SoC vs 19% MCM SoC to see if we should use 20% or 19%
+  if     (BATTSCI_isPackFull()  == YES) { SoC_toMCM_deciPercent = 820; } //disable regen  //JTS2doLater: See if this is actually required (also sent as flag)
+  else if(BATTSCI_isPackEmpty() == YES) { SoC_toMCM_deciPercent = 200; } //disable assist //JTS2doNow: Does sending very low SoC values cause MCM to open contactor while driving?
   else { SoC_toMCM_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; } //get MCM-remapped SoC value
 
   SoC_toMCM_deciPercent = BATTSCI_SoC_Hysteresis(SoC_toMCM_deciPercent);

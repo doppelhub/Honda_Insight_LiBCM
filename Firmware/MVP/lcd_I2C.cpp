@@ -11,6 +11,8 @@
 
 */
 
+//Low level I2C driver for 4x20 display
+
 //JTS2doLater: Determine if LCD is connected (using NACK/ACK 9th bit)
 
 #include "Arduino.h"
@@ -128,7 +130,7 @@ void lcd_I2C_jts::initializationRoutine() {
   // It also may be optional, useful only when:
   //"the power supply conditions for correctly operating the internal reset circuit are not met"
   sendQuartet( (LCD_FUNCTIONSET | LCD_FUNCTIONSET_DL_BIT), ADD_DELAY);
-  delayMicroseconds(4200);
+  delayMicroseconds(4200); //JTS2doNow: split this function into multiple calls, so it doesn't add so much delay
   sendQuartet( (LCD_FUNCTIONSET | LCD_FUNCTIONSET_DL_BIT), ADD_DELAY); 
   delayMicroseconds(110);
   sendQuartet( (LCD_FUNCTIONSET | LCD_FUNCTIONSET_DL_BIT), ADD_DELAY); 

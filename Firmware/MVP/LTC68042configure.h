@@ -4,6 +4,7 @@
 #ifndef LTC68042configure_h
 	#define LTC68042configure_h
 
+	//JTS2doLater: LiBCM also needs to determine cell count, and then sound an alarm if different from user-entered value (safety issue)
 	//choose number of LTC ICs in isoSPI network
 	#ifdef RUN_BRINGUP_TESTER
 		#define TOTAL_IC 5

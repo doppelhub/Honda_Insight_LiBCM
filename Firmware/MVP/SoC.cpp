@@ -31,7 +31,7 @@ void SoC_calculateBatteryStateNow_percent(void)
 	{
 		//only calculate if the pack mAh value just changed //division is expensive!
 		packCharge_Now_percent = (uint8_t)(((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh);
-		//JTS2doNow:add debug parameter: STATUS_SOC_PERCENT
+		//JTS2doLater:add debug parameter: STATUS_SOC_PERCENT
 	}
 
 	packCharge_Previous_mAh = packCharge_Now_mAh;
@@ -133,6 +133,20 @@ void SoC_turnOffLiBCM_ifPackEmpty(void)
 		}
 	}
 	else { numConsecutiveTimesCellVoltageTooLow = 0; } //pack is charged enough for LiBCM to stay on
+}
+
+/////////////////////////////////////////////////////////////////////
+
+bool SoC_isThermalManagementAllowed(void)
+{
+	bool enoughEnergy = NO;
+
+	if( (key_getSampledState() == KEYSTATE_ON )   ||
+	    (gpio_isGridChargerPluggedInNow() == YES) ||
+	    (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC) )
+	{ enoughEnergy = YES; }
+
+	return enoughEnergy;
 }
 
 /////////////////////////////////////////////////////////////////////

@@ -17,5 +17,11 @@
 
 	#define START_TIMER true
 	#define STOP_TIMER false
+	#define MILLIS_MAXIMUM_VALUE 0xFFFFFFFF //2^32-1
+
+	#define KEY_OFF_UPDATE_PERIOD_ONE_SECOND_ms  ( 1 *  1000)
+	#define KEY_OFF_UPDATE_PERIOD_TEN_MINUTES_ms (10 * 60000)
+
+	#define MILLISECONDS_PER_HOUR 3600000
 
 #endif

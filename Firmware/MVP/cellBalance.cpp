@@ -98,11 +98,11 @@ void cellBalance_handler(void)
 
   //JTS2doLater: Add per-cell SoC, to allow balancing at any SoC (see icn.net:post#1502833,comment#579)
   #ifdef ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN
-    if( (gpio_isGridChargerPluggedInNow() == PLUGGED_IN) &&
+    if( (gpio_isGridChargerPluggedInNow() == YES) &&
         (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) )
   #else 
     if( (temperature_battery_getLatest() < CELL_BALANCE_MAX_TEMP_C) &&
-        ((gpio_isGridChargerPluggedInNow() == PLUGGED_IN) || (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC)) )
+        ((gpio_isGridChargerPluggedInNow() == YES) || (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC)) )
   #endif
     //Regardless of which function logic is used, the function body doesn't change:
     {

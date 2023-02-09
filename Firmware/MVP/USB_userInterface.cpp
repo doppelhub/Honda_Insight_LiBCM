@@ -35,78 +35,63 @@ void printDebug(void)
 
 void USB_userInterface_runTestCode(uint8_t testToRun)
 {
+	Serial.print(F("\nRunning Test: "));
+
 	//Add whatever code you want to run whenever the user types '$TEST1'/2/3/etc into the Serial Monitor Window
-	if     (testToRun == STRING_TERMINATION_CHARACTER) { Serial.print(F("\nError: Test not specified")); }
-	else if(testToRun == '1')
+	//Numbered tests ($TEST1/2/3) are temporary, for internal testing during firmware development
+	//Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
+	if(testToRun == '1')
 	{
-		Serial.print(F("\nRunning TEST1: PCB Fan High"));
-		fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_KEY, FAN_HIGH);
+		Serial.print(F("Not Defined"));
 	}
 	else if(testToRun == '2')
 	{
-		Serial.print(F("\nRunning TEST2: PCB Fan Low"));
-		fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_KEY, FAN_LOW);
+		Serial.print(F("Not Defined"));
 	}
 	else if(testToRun == '3')
 	{
-		Serial.print(F("\nRunning TEST2: PCB Fan off"));
-		fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_KEY, FAN_OFF);
+		Serial.print(F("PCB Fan off"));
+		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF);
 	}
 	else if(testToRun == '4')
 	{
-		Serial.print(F("\nRunning TEST3"));
-		Serial.print(F("\nGrid PWM Test"));
-		pinMode(PIN_GRID_PWM, OUTPUT);
-
-		static uint8_t pwmValue_grid = 0;
-
-		if     (pwmValue_grid == 255) { pwmValue_grid =   0; }
-		else if(pwmValue_grid >= 200) { pwmValue_grid = 255; }
-		else                          { pwmValue_grid += 50; }
-
-		Serial.print(F("\nSetting gridPWM to: "));
-		Serial.print(pwmValue_grid);
-		analogWrite(PIN_GRID_PWM, pwmValue_grid);
+		Serial.print(F("fanSpeed_now: "));
+		Serial.print(String(fan_getSpeed_now(),BIN));
+		Serial.print('\n');
 	}
 	else if(testToRun == '5')
 	{
-		Serial.print(F("\nRunning TEST5: Is Heater PCB Connected?"));
-		gpio_isPackHeaterInstalled();
+		Serial.print(F("Heater PCB: "));
+		if(heater_isInstalled() == YES) { Serial.print("Connected"); }
+		if(heater_isInstalled() == NO ) { Serial.print("Not Found"); }
 	}
 	else if(testToRun == '6')
 	{
-		Serial.print(F("\nRunning TEST6: Turn off LiBCM (5V rail).\nLiBCM will stay on if USB's +5V connected."));
+		Serial.print(F("LiBCM turning off 5V rail.\nLiBCM will stay on if USB's +5V connected."));
 		gpio_turnLiBCM_off();
 	}
 	else if(testToRun == '7')
 	{
-		Serial.print(F("\nRunning TEST7: Turn off Heater PCB."));
-		gpio_turnHeaterPCB_off();
+		Serial.print(F("Turn Heater PCB off."));
+		gpio_turnPackHeater_off();
 	}
 	else if(testToRun == '8')
 	{
-		Serial.print(F("\nRunning TEST8: Turn on Heater PCB."));
-		gpio_turnHeaterPCB_on();
+		Serial.print(F("Turn Heater PCB on."));
+		gpio_turnPackHeater_on();
 	}
 	else if(testToRun == 'T')
 	{
-		gpio_turnTemperatureSensors_on();
-		Serial.print(F("\nTemperatures:"));
-		Serial.print(F("\nBLU: "));
-		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BLU));
-		Serial.print(F("\nGRN: "));
-		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
-		Serial.print(F("\nWHT: "));
-		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
-		Serial.print(F("\nYEL: "));
-		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
-		Serial.print(F("\nBAY1: "));
-		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY1));
-		Serial.print(F("\nBAY2: "));
-		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
-		Serial.print(F("\nBAY3: "));
-		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));
+		temperature_measureAndPrintAll();
 	}
+	else if(testToRun == 'H')
+	{
+		Serial.print(F("Blink Heater LED"));
+		gpio_turnPackHeater_on();
+		delay(100);
+		gpio_turnPackHeater_off();
+	}
+	else { Serial.print(F("Error: Unknown Test")); }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

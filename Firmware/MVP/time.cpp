@@ -5,7 +5,7 @@
 
 #include "libcm.h"
 
-uint8_t loopPeriod_ms = 10;
+uint8_t loopPeriod_ms = 10; //JTS2doLater: see how long period can be, then make this a constant
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -22,14 +22,15 @@ bool time_toUpdate_keyOffValues(void)
 
   //determine period between LTC cell voltage reads (saves power)
   if( ((cellBalance_areCellsBalanced() == false) && (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC)) ||
-      (gpio_isGridChargerChargingNow() == true                                                               )  )
+      ((cellBalance_areCellsBalanced() == false) && (gpio_isGridChargerPluggedInNow() == YES)                ) ||
+      (gpio_isGridChargerChargingNow() == YES                                                                )  )
   { 
-    keyOffUpdatePeriod_ms = 1000; //if over 1800 ms, LTC ICs will turn off (bad)
+    keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_ONE_SECOND_ms; //if over 1800 ms, LTC ICs will turn off (bad)
   } 
-  else { keyOffUpdatePeriod_ms = 600000; } //10 minutes
+  else { keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_TEN_MINUTES_ms; }
   
   //Has enough time passed yet?
-  if( (uint32_t)(millis() - timestamp_lastUpdate_ms) > keyOffUpdatePeriod_ms )
+  if( (millis() - timestamp_lastUpdate_ms) > keyOffUpdatePeriod_ms )
   { 
     isItTimeToUpdate = true;
     timestamp_lastUpdate_ms = millis();
@@ -60,7 +61,7 @@ void time_waitForLoopPeriod(void)
     bool timingMet = false;
 
     LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left
-    while( (uint32_t)(millis() - timestamp_previousLoopStart_ms) < time_loopPeriod_ms_get() ) { timingMet = true; } //wait here to start next loop
+    while( (millis() - timestamp_previousLoopStart_ms) < time_loopPeriod_ms_get() ) { timingMet = true; } //wait here to start next loop
     LED(4,LOW);
     
     if( (key_getSampledState() == KEYSTATE_ON) && (timingMet == false) )

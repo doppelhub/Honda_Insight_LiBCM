@@ -302,9 +302,9 @@ void LiDisplay_calculateSoCGaugeBars() {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_calclateFanSpeedStr() {
-	if (fan_getCurrentSpeed(FAN_PCB) == 'H') {
+	if (fan_getSpeed_now() == FAN_HIGH) {
 		currentFanSpeed = 2;
-	} else if (fan_getCurrentSpeed(FAN_PCB) == 'L') {
+	} else if (fan_getSpeed_now() == FAN_LOW) {
 		currentFanSpeed = 1;
 	} else {
 		currentFanSpeed = 0;
