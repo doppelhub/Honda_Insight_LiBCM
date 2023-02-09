@@ -236,6 +236,21 @@ bool hasEnoughTimePassedToChangeFanSpeed(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Delete once @joeaax1j gathers troubleshooting data
+void fan_printRequestorState(void)
+{
+	static uint8_t fanSpeed_allRequestors_previous = FAN_FORCE_OFF;
+
+	if(fanSpeed_allRequestors_previous != fanSpeed_allRequestors)
+	{
+		Serial.print(F("\nFanMask: "));
+		Serial.print(String(fanSpeed_allRequestors,DEC));
+		fanSpeed_allRequestors_previous = fanSpeed_allRequestors;
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
 void fan_handler(void)
 {
 	updateFanRequest_battery();
@@ -251,4 +266,6 @@ void fan_handler(void)
 
 	gpio_setFanSpeed_OEM(fanSpeed_now);
 	gpio_setFanSpeed_PCB(fanSpeed_now);
+
+	fan_printRequestorState(); //JTS2doNow: Delete
 }
