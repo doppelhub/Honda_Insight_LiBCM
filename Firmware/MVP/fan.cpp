@@ -246,6 +246,8 @@ void fan_printRequestorState(void)
 		Serial.print(F("\nFanMask: "));
 		Serial.print(String(fanSpeed_allRequestors,DEC));
 		fanSpeed_allRequestors_previous = fanSpeed_allRequestors;
+
+		temperature_printAll_latest();
 	}
 }
 

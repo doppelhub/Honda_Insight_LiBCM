@@ -11,6 +11,9 @@
 	int8_t temperature_ambient_getLatest(void); //IMA bay temperature
 
 	int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin);
+
+	void temperature_measureAndPrintAll(void);
+	void temperature_printAll_latest(void);
 	
 	int8_t temperature_coolBatteryAbove_C(void);
 	int8_t temperature_heatBatteryBelow_C(void);

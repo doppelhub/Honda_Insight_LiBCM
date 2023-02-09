@@ -82,29 +82,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	}
 	else if(testToRun == 'T')
 	{
-		if(gpio_getPinState(PIN_TEMP_EN) == PIN_OUTPUT_HIGH)
-		{		
-			Serial.print(F("\nTemperatures(C):"));
-			Serial.print(F("\nBLU: "));
-			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BLU));
-			Serial.print(F("\nGRN: "));
-			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
-			Serial.print(F("\nWHT: "));
-			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
-			Serial.print(F("\nYEL: "));
-			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
-			Serial.print(F("\nBAY1: "));
-			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY1));
-			Serial.print(F("\nBAY2: "));
-			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
-			Serial.print(F("\nBAY3: "));
-			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));				
-		}
-		else
-		{
-			gpio_turnTemperatureSensors_on();
-			Serial.print("\nturned sensors on. Repeat command to display temp.");
-		}
+		temperature_measureAndPrintAll();
 	}
 	else if(testToRun == 'H')
 	{
