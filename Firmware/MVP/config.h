@@ -8,7 +8,7 @@
 	#include "libcm.h"  //For Arduino IDE compatibility
 
 	#define FW_VERSION "0.9.0"
-    #define BUILD_DATE "2023JAN11"
+    #define BUILD_DATE "2023FEB04"
 
 	//choose your battery type:
 		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
