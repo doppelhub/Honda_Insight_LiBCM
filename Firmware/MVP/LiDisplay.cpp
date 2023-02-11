@@ -131,7 +131,9 @@ LiDisplay_updateNextCellValue() {
 	static uint8_t ic_cell_num = 0;
 	static uint16_t cell_avg_voltage = 0;
 	static String cell_color_number = "2016";
-	static uint16_t cell_voltage_diff_from_avg = 0;
+	static int cell_voltage_diff_from_avg = 0;
+	static int temp_cell_voltage = 0;
+
 
 	if (cellToUpdate > MAX_CELL_INDEX) cellToUpdate = 0;
 
@@ -146,9 +148,11 @@ LiDisplay_updateNextCellValue() {
 
 	// 09 Feb 2023 -- cell_avg_voltage is a crude approximation of the centre of the voltage range.  Ideally this would be replaced with the median cell voltage.
 	LiDisplayAverageCellVoltage = ((LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get()) * 0.5);
-	cell_avg_voltage = (LiDisplayAverageCellVoltage + LTC68042result_loCellVoltage_get());
 
-	cell_voltage_diff_from_avg = cell_avg_voltage - LTC68042result_specificCellVoltage_get(ic_index, ic_cell_num);
+	cell_avg_voltage = (LiDisplayAverageCellVoltage + LTC68042result_loCellVoltage_get());
+	temp_cell_voltage = LTC68042result_specificCellVoltage_get(ic_index, ic_cell_num);
+
+	cell_voltage_diff_from_avg = cell_avg_voltage - temp_cell_voltage;
 
 	// 04 Feb 2023 -- CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE is 32 so we are centering on -16 to +16, and then using increments of 32 to determine bar colour.
 	if (cell_voltage_diff_from_avg >= 80) { cell_color_number = "63488"; }			// 63488 = Red
@@ -167,7 +171,7 @@ LiDisplay_updateNextCellValue() {
 	Serial1.write(0xFF);
 
 	cellToUpdate += 1;
-	/*
+/*
 	Serial.print(F("\n"));
 	Serial.print("LiDisplay ColorStr ");
 	Serial.print(LiDisplay_Color_Str);
@@ -175,14 +179,14 @@ LiDisplay_updateNextCellValue() {
 	Serial.print("LiDisplay cell_avg_voltage ");
 	Serial.print(cell_avg_voltage);
 	Serial.print("  V:");
-	Serial.print(String(LTC68042result_specificCellVoltage_get(ic_index, ic_cell_num)));
+	Serial.print(String(temp_cell_voltage));
 	Serial.print("  IC:");
 	Serial.print(ic_index);
 	Serial.print("  Cell:");
 	Serial.print(ic_cell_num);
-	Serial.print("  MR:");
+	Serial.print("  cell_voltage_diff_from_avg:");
 	Serial.print(cell_voltage_diff_from_avg);
-	*/
+*/
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -309,6 +313,13 @@ void LiDisplay_calclateFanSpeedStr() {
 	} else {
 		currentFanSpeed = 0;
 	}
+	/*
+	Serial.print(F("\n"));
+	Serial.print("LiDisplay currentFanSpeed: ");
+	Serial.print(currentFanSpeed);
+	Serial.print("   fan speed now: ");
+	Serial.print(String(fan_getSpeed_now()));
+	*/
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -481,6 +492,7 @@ void LiDisplay_refresh(void)
 							// The other 4 elements update less frequently.  We will update 1 of them.
 							// Priority is from least-likely to change to most-likely to change.
 							case 4:
+								LiDisplay_calclateFanSpeedStr();
 								if (LiDisplayFanSpeed_onScreen != currentFanSpeed) {
 									LiDisplay_calclateFanSpeedStr();
 									LiDisplay_updateStringVal(0, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed])));
@@ -532,6 +544,7 @@ void LiDisplay_refresh(void)
 							case 2: LiDisplay_updateNextCellValue();	break;
 							case 3: LiDisplay_updateStringVal(3, "t8", 0, String(gc_time));	break;
 							case 4:
+								LiDisplay_calclateFanSpeedStr();
 								if (LiDisplayFanSpeed_onScreen != currentFanSpeed) {
 									LiDisplay_calclateFanSpeedStr();
 									LiDisplay_updateStringVal(3, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed])));
