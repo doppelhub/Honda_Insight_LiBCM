@@ -44,6 +44,7 @@
 	void fan_handler(void);
 
 	uint8_t fan_getSpeed_now(void);
+	uint8_t fan_getAllRequestors_mask(void);
 
 	void fan_requestSpeed(uint8_t requestor, char newFanSpeed); //request fan speed //Example: fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_HIGH)
 #endif
