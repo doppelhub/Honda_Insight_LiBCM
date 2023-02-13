@@ -13,7 +13,7 @@
 
 lcd_I2C_jts lcd2(0x27);
 
-//JTS2doNow: Add indicator to 4x20 when fan is off/low/high
+//JTS2doLater: Add indicator to 4x20 when fan is off/low/high
 
 //These variables are reset during key or grid charger state change
 uint8_t  packVoltageActual_onScreen = 0;

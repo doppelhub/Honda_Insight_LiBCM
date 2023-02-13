@@ -236,7 +236,7 @@ bool hasEnoughTimePassedToChangeFanSpeed(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Delete once @joeaax1j gathers troubleshooting data
+//Debug function
 void fan_printRequestorState(void)
 {
 	static uint8_t fanSpeed_allRequestors_previous = FAN_FORCE_OFF;
@@ -269,5 +269,5 @@ void fan_handler(void)
 	gpio_setFanSpeed_OEM(fanSpeed_now);
 	gpio_setFanSpeed_PCB(fanSpeed_now);
 
-	fan_printRequestorState(); //JTS2doNow: Delete
+	//fan_printRequestorState(); //JTS2doLater: Delete debug
 }

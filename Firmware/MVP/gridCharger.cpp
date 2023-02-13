@@ -129,8 +129,6 @@ void runFansIfNeeded(void)
              (temperature_battery_getLatest() < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C))  ) { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_LOW);  }
 
     else                                                                                                 { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_HIGH); }
-
-    
 }
 
 //////////////////////////////////////////////////////////////////////////////////
