@@ -57,9 +57,8 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	}
 	else if(testToRun == '4')
 	{
-		Serial.print(F("fanSpeed_now: "));
-		Serial.print(String(fan_getSpeed_now(),BIN));
-		Serial.print('\n');
+		Serial.print(F("fanSpeed_allRequestors mask: "));
+		Serial.print(String(fan_getAllRequestors_mask(),DEC));
 	}
 	else if(testToRun == '5')
 	{
