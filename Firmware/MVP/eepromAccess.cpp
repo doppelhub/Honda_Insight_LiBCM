@@ -3,7 +3,7 @@
 #include <EEPROM.h>
 #include "libcm.h"
 
-#define BYTES_IN_DATE 12
+
 
 //store the day customer compiled the source code in program memory
 const uint8_t COMPILE_DATE_PROGRAM[BYTES_IN_DATE]= __DATE__; //Format: Mmm DD YYYY //Ex: Jan 23 2022 //Mar  5 2022
@@ -84,8 +84,8 @@ void uptimeStoredInEEPROM_hours_set(uint16_t hourCount)
 uint8_t EEPROM_firmwareStatus_get(void)
 { 
   //structured this way to prevent EEPROM read/write failures from disabling LiBCM
-  if( (EEPROM.read(EEPROM_ADDRESS_FIRMWARE_STATUS)) == FIRMWARE_STATUS_EXPIRED ) { return FIRMWARE_STATUS_EXPIRED; }
-  else                                                                           { return FIRMWARE_STATUS_VALID  ; }          
+  if( (EEPROM.read(EEPROM_ADDRESS_FIRMWARE_STATUS)) == FIRMWARE_EXPIRED ) { return FIRMWARE_EXPIRED;   }
+  else                                                                    { return FIRMWARE_UNEXPIRED; }          
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -97,8 +97,6 @@ void EEPROM_firmwareStatus_set(uint8_t newFirmwareStatus) { EEPROM.update(EEPROM
 //add value stored in EEPROM (from last keyOFF event) to previous keyOFF time
 uint16_t EEPROM_calculateTotalHoursSinceLastFirmwareUpdate(void)
 {
-  #define MILLISECONDS_PER_HOUR 3600000
-
   uint32_t timeSincePreviousKeyOff_ms = (uint32_t)(millis() - key_latestTurnOffTime_ms_get());
   uint16_t timeSincePreviousKeyOff_hours = (uint16_t)(timeSincePreviousKeyOff_ms / MILLISECONDS_PER_HOUR);
   
@@ -110,7 +108,6 @@ uint16_t EEPROM_calculateTotalHoursSinceLastFirmwareUpdate(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//this function does not return if firmware is too old (e.g. after 40 days)
 void EEPROM_checkForExpiredFirmware(void)
 { 
 	if(wasFirmwareJustUpdated() == true)
@@ -118,7 +115,7 @@ void EEPROM_checkForExpiredFirmware(void)
   	//user recently updated the firmware, so...
     uptimeStoredInEEPROM_hours_set(0); //reset hour counter to zero
     compileDateStoredInEEPROM_set(); //store new compile date in EEPROM (so we can compare again on future keyOFF events)
-    EEPROM_firmwareStatus_set(FIRMWARE_STATUS_VALID); //prevent P1648 at keyON
+    EEPROM_firmwareStatus_set(FIRMWARE_UNEXPIRED);
 
     Serial.print(F("\nFirmwareUpdated"));
     gpio_playSound_firmwareUpdated();
@@ -128,19 +125,19 @@ void EEPROM_checkForExpiredFirmware(void)
     uint16_t newUptime_hours = EEPROM_calculateTotalHoursSinceLastFirmwareUpdate(); 
     uptimeStoredInEEPROM_hours_set(newUptime_hours); //store new total uptime in EEPROM
 
-    //Displays total hours on this FW version and maximum hours allowed per version
     Serial.print(F("\nTotal hours since firmware last uploaded: "));
-    if(newUptime_hours == REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS) { Serial.print(F("EXPIRED"));    }
-    else                                                         { Serial.print(newUptime_hours); }
-    Serial.print(F(" (")); Serial.print(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS); Serial.print(F( " Hours MAX)" )); 
-
-    if(newUptime_hours == REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS) //newUptime_hours is bounded to REQUIRED_FW_UPDATE_PERIOD_HOURS 
+    if(newUptime_hours == REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS) //newUptime_hours is bounded to REQUIRED_FW_UPDATE_PERIOD_HOURS
     {
-      Serial.print(F("\nOpen Beta ALERT: Firmware update required (linsight.org/downloads)\nLiBCM disabled until firmware is updated"));
-      lcd_Warning_firmwareUpdate(); 
-      EEPROM_firmwareStatus_set(FIRMWARE_STATUS_EXPIRED);
-      delay(5000); //give user time to read display
-    } 
+      Serial.print(F("EXPIRED\nOpen Beta ALERT: Firmware update required (linsight.org/downloads)\nLiBCM disabled until firmware is updated"));
+      EEPROM_firmwareStatus_set(FIRMWARE_EXPIRED);
+    }  
+    else //firmware not expired
+    {
+      Serial.print(newUptime_hours);
+      Serial.print(F(" ("));
+      Serial.print(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS);
+      Serial.print(F( " Hours MAX)" ));
+    }
   }
 }
 

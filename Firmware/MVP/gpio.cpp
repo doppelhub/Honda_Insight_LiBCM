@@ -8,9 +8,6 @@
 
 //FYI: simple pin state read/writes take less than 10 us
 
-uint8_t previousGridChargerState = GPIO_CHARGER_INIT;
-uint8_t packHeaterStatus = GPIO_HEATER_INIT;
-
 ////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t gpio_getHardwareRevision(void)
@@ -31,21 +28,6 @@ uint8_t gpio_getHardwareRevision(void)
 	pinMode(PIN_HW_VER1, INPUT);
 
 	return hardwareRevision;
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-
-//only call this function at powerup
-//pin floats when called, which can cause switching FET to continuously operate in active region (bad)
-void gpio_powerOn_packHeaterCheck(void)
-{
-	pinMode(PIN_GPIO3,INPUT_PULLUP);
-
-	if(digitalRead(PIN_GPIO3) == false) { packHeaterStatus = GPIO_HEATER_CONNECTED; } //if connected, the isolated driver on the heater PCB will pull signal low
-	else                                { packHeaterStatus = GPIO_HEATER_ABSENT;    } //if heater PCB disconnected, the CPU pullup will pull signal high
-
-	pinMode(PIN_GPIO3,INPUT); //turn heater PCB off for safety
-	digitalWrite(PIN_GPIO3,LOW); //disable pullup (redundant)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -78,8 +60,6 @@ void gpio_begin(void)
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
-	gpio_powerOn_packHeaterCheck();
-
 	//JTS2doLater: Turn all this stuff off when the key is off
 	TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D11(fan) & D12()
 	TCCR3B = (TCCR3B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D2() & D3() & D5(VPIN_OUT)
@@ -107,12 +87,15 @@ void gpio_turnLiBCM_off(void)
 
 void gpio_setFanSpeed_OEM(char speed)
 {
-	switch(speed)
-	{
-		case '0': digitalWrite(PIN_FANOEM_LOW,  LOW); digitalWrite(PIN_FANOEM_HI,  LOW); break;
-		case 'L': digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break;
-		case 'H': digitalWrite(PIN_FANOEM_LOW,  LOW); digitalWrite(PIN_FANOEM_HI, HIGH); break;
-	}
+	#ifdef OEM_FAN_INSTALLED
+		switch(speed)
+		{
+			case FAN_OFF:  digitalWrite(PIN_FANOEM_LOW,  LOW); digitalWrite(PIN_FANOEM_HI,  LOW); break;
+			case FAN_LOW:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break;
+			//case FAN_MED:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break; //same as FAN_LOW... OEM fan only supports OFF/LOW/HIGH
+			case FAN_HIGH: digitalWrite(PIN_FANOEM_LOW,  LOW); digitalWrite(PIN_FANOEM_HI, HIGH); break;
+		}
+	#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -123,10 +106,11 @@ void gpio_setFanSpeed_PCB(char speed)
 
 	switch(speed)
 	{
-		case '0': fanPWM =     0; break;
-		case 'L': fanPWM =    30; break;
-		case 'H': fanPWM =   255; break;
-		default : fanPWM = speed; break;
+		case FAN_OFF:  fanPWM =     0; break;
+		case FAN_LOW:  fanPWM =    40; break;
+		//case FAN_MED:  fanPWM =    60; break; //Not used
+		case FAN_HIGH: fanPWM =   255; break;
+		default: Serial.print(F("\nError: Invalid fan speed"));
 	}
 
 	if (fanPWM == 0) { pinMode(PIN_FAN_PWM, INPUT); } //saves power when fan is off
@@ -151,27 +135,8 @@ bool gpio_isGridChargerChargingNow(void)  { return   digitalRead(PIN_GRID_EN);  
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-void gpio_turnGridCharger_on( void)
-{
-	digitalWrite(PIN_GRID_EN, HIGH);
-	if(previousGridChargerState != GPIO_CHARGER_ON)
-	{ 
-		previousGridChargerState = GPIO_CHARGER_ON;
-		Serial.print(F("\nCharger: ON" ));
-	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-
-void gpio_turnGridCharger_off(void)
-{ 
-	digitalWrite(PIN_GRID_EN, LOW);
-	if(previousGridChargerState != GPIO_CHARGER_OFF)
-	{
-		previousGridChargerState = GPIO_CHARGER_OFF;
-		Serial.print(F("\nCharger: OFF"));
-	}
-}
+void gpio_turnGridCharger_on(void)  { digitalWrite(PIN_GRID_EN, HIGH); }
+void gpio_turnGridCharger_off(void) { digitalWrite(PIN_GRID_EN, LOW);  }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -226,24 +191,11 @@ void gpio_playSound_firmwareUpdated(void)
 
 bool gpio_isCoverInstalled(void)
 {
-	if(digitalRead(PIN_COVER_SWITCH) == 1 ) {return  true;}
-	else                                    {return false;}
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-
-void gpio_safetyCoverCheck(void)
-{
-	#ifdef	PREVENT_BOOT_WITHOUT_SAFETY_COVER
-		if( gpio_isCoverInstalled() == false)
-		{
-			gpio_turnBuzzer_on_lowFreq();
-			lcd_Warning_coverNotInstalled();
-			Serial.print(F("\nInstall safety cover, then power cycle.  LiBCM Disabled.\nSee config.h>>'PREVENT_BOOT_WITHOUT_SAFETY_COVER' to disable"));
-			delay(5000);
-			gpio_turnBuzzer_off();
-			while(1) { ; } //hang here forever
-		}
+	#ifdef CHECK_FOR_SAFETY_COVER
+		if(digitalRead(PIN_COVER_SWITCH) == 1 ) {return  true;}
+		else                                    {return false;}
+	#else
+		return true;
 	#endif
 }
 
@@ -251,7 +203,7 @@ void gpio_safetyCoverCheck(void)
 
 bool gpio1_getState(void) { return digitalRead(PIN_GPIO1); }
 bool gpio2_getState(void) { return digitalRead(PIN_GPIO2); }
-bool gpio3_getState(void) { return digitalRead(PIN_GPIO3); }
+bool gpio3_getState(void) { return digitalRead(PIN_GPIO3_HEATER); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -260,9 +212,34 @@ void gpio_turnTemperatureSensors_off(void) {digitalWrite(PIN_TEMP_EN,LOW ); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-void gpio_turnHeaterPCB_on(void) { pinMode(PIN_GPIO3,OUTPUT); digitalWrite(PIN_GPIO3,HIGH); }
-void gpio_turnHeaterPCB_off(void){ pinMode(PIN_GPIO3,INPUT);  digitalWrite(PIN_GPIO3,LOW);  }
-uint8_t gpio_isPackHeaterInstalled(void) { return packHeaterStatus; }
+void gpio_turnPackHeater_on(void) { pinMode(PIN_GPIO3_HEATER,OUTPUT); digitalWrite(PIN_GPIO3_HEATER,HIGH); }
+void gpio_turnPackHeater_off(void){ pinMode(PIN_GPIO3_HEATER,INPUT);  digitalWrite(PIN_GPIO3_HEATER,LOW);  }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t gpio_getPinMode(uint8_t pin)
+{
+	volatile uint8_t *reg;
+
+	reg = portModeRegister( digitalPinToPort(pin) );
+
+	if( (*reg) & digitalPinToBitMask(pin) ) { return OUTPUT; }
+	else                                    { return INPUT;  }
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t gpio_getPinState(uint8_t pin)
+{ 
+	uint8_t pinMode = gpio_getPinMode(pin);
+	uint8_t pinLevel = digitalRead(pin);
+
+	if     ( (pinLevel == LOW ) && (pinMode == OUTPUT) ) { return PIN_OUTPUT_LOW;  }
+	else if( (pinLevel == HIGH) && (pinMode == OUTPUT) ) { return PIN_OUTPUT_HIGH; }
+	else if( (pinLevel == LOW ) && (pinMode == INPUT ) ) { return PIN_INPUT_LOW;   }
+	else if( (pinLevel == HIGH) && (pinMode == INPUT ) ) { return PIN_INPUT_HIGH;  }
+	else                                                 { return PIN_STATE_ERROR; }
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 

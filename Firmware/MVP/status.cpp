@@ -14,7 +14,7 @@ uint16_t parameters_16b[STATUS_NUM_PARAMETERS_16b] = { 0 };
 //Message format:
 //\n k TBD
 
-//JTS2doNow: implement
+//JTS2doLater: implement
 void status_printState(void)
 {	
 

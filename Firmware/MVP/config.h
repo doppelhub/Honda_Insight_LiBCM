@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.8.5"
-    #define BUILD_DATE "2023JAN02"
+	#define FW_VERSION "0.8.6"
+    #define BUILD_DATE "2023FEB10"
 
 	//choose your battery type:
 		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
@@ -46,16 +46,16 @@
 	#define CELL_BALANCE_MAX_TEMP_C             40
 	//#define ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN //uncomment to disable keyOFF cell balancing (unless the grid charger is plugged in)
 
-	//fan temp settings
-	#define COOL_BATTERY_ABOVE_TEMP_C_KEYOFF       50 //cabin air cooling
+	//temp setpoints
+	#define COOL_BATTERY_ABOVE_TEMP_C_KEYOFF       36 //cabin air cooling
 	#define COOL_BATTERY_ABOVE_TEMP_C_GRIDCHARGING 30
-	#define COOL_BATTERY_ABOVE_TEMP_C_KEYON        28
-	#define HEAT_BATTERY_BELOW_TEMP_C_KEYON        18 //cabin air heating, or heater PCB (if installed) 
+	#define COOL_BATTERY_ABOVE_TEMP_C_KEYON        30
+	#define HEAT_BATTERY_BELOW_TEMP_C_KEYON        16 //cabin air heating, or heater PCB (if installed) 
 	#define HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING 16
 	#define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       10
-	//other fan settings
-	#define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 60 //set to 100 to disable fans entirely when keyOFF (unless grid charger plugged in)
-	#define OEM_FAN_INSTALLED //comment if OEM fan removed  
+	//other temp settings
+	#define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 50 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
+	#define OEM_FAN_INSTALLED //comment if OEM fan removed
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda EHW5 lithium modules
 
@@ -67,9 +67,9 @@
 	//All remaining settings are for debug testing only:
 
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
-
-	#define PREVENT_BOOT_WITHOUT_SAFETY_COVER //comment if testing LiBCM without the cover
 	
+	#define CHECK_FOR_SAFETY_COVER //comment if testing LiBCM without the cover
+
 	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000 //JTS2doLater: Model after "debugUSB_printLatestData"
 
 	//#define DISABLE_ASSIST //uncomment to (always) disable assist
@@ -85,5 +85,5 @@
 JTS2doLater:
 	#define SERIAL_H_LINE_CONNECTED NO //H-Line wire connected to OEM BCM connector pin B01
 	#define SERIAL_HMI_CONNECTED NO //Nextion touch screen connected to J14
-	#define KEYOFF_TURNOFF_LIBCM_AFTER_HOURS 48 //LiBCM turns off this many hours after keyOFF. //JTS2doLater: Not implemented yet.
+	#define KEYOFF_TURNOFF_LIBCM_AFTER_HOURS 48 //LiBCM turns off this many hours after keyOFF.
 */

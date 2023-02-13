@@ -70,7 +70,7 @@ void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap, uint16
 //JTS2doLater: Place inside debugUSB_printData_cellVoltages()?
 void debugUSB_printCellBalanceStatus(void)
 {
-	uint8_t anyCellsBalancing = NO;
+	bool anyCellsBalancing = NO;
 	for(uint8_t ii=0; ii<TOTAL_IC; ii++)
 	{
 		if(cellBalanceBitmaps[ii] != 0) { anyCellsBalancing = YES; }
@@ -204,7 +204,7 @@ void debugUSB_printData_temperatures(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add debug data
+//JTS2doLater: Add debug data
 void debugUSB_printData_debug(void)
 {
 	status_printState();
@@ -282,6 +282,6 @@ void debugUSB_printConfigParameters(void)
 	#endif
 
 	Serial.print(F("/Heat:"));
-	if(gpio_isPackHeaterInstalled() == GPIO_HEATER_CONNECTED) { Serial.print('Y'); }
-	else                                                      { Serial.print('N'); }
+	if(heater_isInstalled() == YES) { Serial.print('Y'); }
+	else                            { Serial.print('N'); }
 }

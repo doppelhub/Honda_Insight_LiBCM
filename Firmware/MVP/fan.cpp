@@ -1,201 +1,258 @@
 //Copyright 2021-2022(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
+//handles fans
+//LiBCM allows QTY4 different subsystems to independently control fan speed.
+//If energy is available, the fans will spin at the highest requested speed (OFF/LOW/MED/HIGH)
+
 #include "libcm.h"
 
-char goalSpeed[NUM_FAN_CONTROLLERS] = {'0'}; //store desired fan speeds (for OEM and PCB fans)
+uint8_t fanSpeed_now  = FAN_OFF; //actual fan state now (OFF/LOW/HIGH)
+uint8_t fanSpeed_goal = FAN_OFF; //desired fan state (highest speed requested by any subsystem)
 
-uint8_t fanStates[NUM_FAN_CONTROLLERS] = {FAN_NOT_REQUESTED}; //each subsystem's fan speed request is stored in 2 bits
-
-//JTS2doLater: Turn the fan on when the car is on and the battery temp isn't ideal (assumes cabin air temp is habitable)
+uint8_t fanSpeed_allRequestors = FAN_FORCE_OFF; //each subsystem's fan speed request is stored in 2 bits (see 'FAN_REQUESTOR' constants)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//prevents rapid fan speed changes //Each fan (OEM and PCB) has its own controller
-void fanSpeedController(uint8_t whichFan)
+uint8_t fan_getSpeed_now(void)  { return fanSpeed_now;  }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t fan_getAllRequestors_mask(void) { return fanSpeed_allRequestors; }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t numBitshifts_thisRequestor(uint8_t requestor)
 {
-	static char actualSpeed[NUM_FAN_CONTROLLERS] = {'0'};
-	static uint32_t timestamp_latestFanSpeedChange_ms[NUM_FAN_CONTROLLERS] = {0};
-	
-	if(actualSpeed[whichFan] != goalSpeed[whichFan])
+	uint8_t numShifts = 0;
+
+	switch(requestor)
 	{
-		uint8_t changeFanSpeedNow = NO;
-
-		if( ((actualSpeed[whichFan] == '0')                                ) || //speed changing from off to either low or high
-			((actualSpeed[whichFan] == 'L') && (goalSpeed[whichFan] == 'H'))  ) //speed changing from low to high
-		{
-			//fan speed is increasing //change speed immediately
-			changeFanSpeedNow = YES;
-		}
-		else //(fan speed is decreasing)
-		{
-			if( (uint32_t)(millis() - timestamp_latestFanSpeedChange_ms[whichFan]) > FAN_HYSTERESIS_ms)
-			{
-				//hysteresis delay period has passed
-				changeFanSpeedNow = YES;
-			}
-		}
-
-		if(changeFanSpeedNow == YES)
-		{
-			if(whichFan == FAN_PCB) { gpio_setFanSpeed_PCB(goalSpeed[whichFan]); }
-			if(whichFan == FAN_OEM) { gpio_setFanSpeed_OEM(goalSpeed[whichFan]); }
-			actualSpeed[whichFan] = goalSpeed[whichFan];
-			timestamp_latestFanSpeedChange_ms[whichFan] = millis();
-		}
+		case FAN_REQUESTOR_BATTERY:     numShifts = FAN_REQUESTOR_BITSHIFTS_BATTERY;     break;
+		case FAN_REQUESTOR_USER:        numShifts = FAN_REQUESTOR_BITSHIFTS_USER;        break;
+		case FAN_REQUESTOR_GRIDCHARGER: numShifts = FAN_REQUESTOR_BITSHIFTS_GRIDCHARGER; break;
+		case FAN_REQUESTOR_CELLBALANCE: numShifts = FAN_REQUESTOR_BITSHIFTS_CELLBALANCE; break;
 	}
+
+	return numShifts;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-int8_t fan_getBatteryCoolSetpoint_C(void)
+void fan_requestSpeed(uint8_t requestor, char newFanSpeed)
 {
-	int8_t coolBattAboveTemp_C = ROOM_TEMP_DEGC;
-
-	if     (key_getSampledState()         == KEYSTATE_ON)    { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_KEYON; }
-	else if(gpio_isGridChargerPluggedInNow() == PLUGGED_IN)  { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_GRIDCHARGING; }
-	else if( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC) &&
-		     (key_getSampledState() == KEYSTATE_OFF) )       { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_KEYOFF; }
-	else /*KEYOFF && SoC too low*/                           { coolBattAboveTemp_C = TEMPERATURE_SENSOR_FAULT_HI; }
-
-	return coolBattAboveTemp_C;
+	uint8_t fanSpeedOtherSubsystems = fanSpeed_allRequestors & ~(requestor); //mask out this requestor's previous request
+	uint8_t fanSpeedThisRequestor = newFanSpeed<<numBitshifts_thisRequestor(requestor); //left shift to requestor's position in memory
+	fanSpeed_allRequestors = (fanSpeedThisRequestor | fanSpeedOtherSubsystems); //combine the above
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-int8_t fan_getBatteryHeatSetpoint_C(void)
+//intake temp sensor only accurately measures cabin air temp when fans are on or have only recently turned off
+bool isIntakeTempSensorMeasuringCabinTemp(void)
 {
-	int8_t heatBattBelowTemp_C = ROOM_TEMP_DEGC;
+	bool isIntakeTempValid = NO;
 
-	if     (key_getSampledState() == KEYSTATE_ON)           { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_KEYON; }
-	else if(gpio_isGridChargerPluggedInNow() == PLUGGED_IN) { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING; }
-	else if( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC) &&
-		     (key_getSampledState() == KEYSTATE_OFF) )      { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_KEYOFF; }
-	else /*KEYOFF && SoC too low*/                          { heatBattBelowTemp_C = TEMPERATURE_SENSOR_FAULT_LO; }
-
-	return heatBattBelowTemp_C;
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-
-void fan_requestSpeed(uint8_t whichFan, uint8_t requestor, char newFanSpeed)
-{
-	uint8_t fanSpeedOtherSubsystems = fanStates[whichFan] & ~(0b11 << requestor); //mask out requestor's previous state
-	fanStates[whichFan] = (newFanSpeed<<requestor) | fanSpeedOtherSubsystems;
-
-	if     (fanStates[whichFan] & FAN_HI_MASK) { goalSpeed[whichFan] = 'H'; } //at least one subsystem is requesting high speed
-	else if(fanStates[whichFan] & FAN_LO_MASK) { goalSpeed[whichFan] = 'L'; } //at least one subsystem is requesting low speed
-	else                                       { goalSpeed[whichFan] = '0'; } //nobody is requesting fan
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-
-int8_t calculateAbsoluteDelta(int8_t temperatureA, int8_t temperatureB)
-{
-	int8_t absoluteDelta = 0;
-
-	if(temperatureA > temperatureB) { absoluteDelta = temperatureA - temperatureB; }
-	else                            { absoluteDelta = temperatureB - temperatureA; }
-
-	return absoluteDelta;
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-
-//JTS2doLater: Add option to see who is requesting fan state
-void fan_handler(void)
-{
-	//JTS2doLater: Rewrite this handler entirely... it's not good.  Proposed framework:
-	//If pack too warm or too cold, wait a minute after keyON, then turn fan on briefly to sample cabin air temp.
-	//           If cabin air temp undesirable, turn fan off and wait a few more minutes.
-	//           Once cabin air temp is good, turn fans on and heat/cool pack.
-
-	// if(getPackTemp() > (COOL_PACK_ABOVE_TEMP_DEGC + FAN_HIGH_SPEED_degC))
-	// {
-	// 	//pack is very hot
-	// 	timeSinceFansLastActivated_ms = millis();
-	// }
-
-	// else if (getPackTemp() < HEAT_PACK_BELOW_TEMP_DEGC)
-	// {
-	// 	//pack is too cold
-	// 	timeSinceFansLastActivated_ms = millis();
-	// }
-
-	// else
-	// {
-	// 	//pack temperature is "just right"
-
-	// 	if( (millis() - timeSinceFansLastActivated_ms) > FIVE_MINUTES_IN_MILLISECONDS)
-	// 	{
-	// 		if(fanSpeed == FAN_SPEED_HI) { fanSpeedSet(FAN_SPEED_LOW); }
-	// 		if(fanSpeed == FAN_SPEED_LO) { fanSpeedSet(FAN_SPEED_OFF); }
-
-	// 	} 
-	// }
+	static uint32_t lastTimeFanTurned_off_ms = 0;
 	
-	int8_t battTemp   = temperature_battery_getLatest();
+	//capture timestamp each time fan state changes
+	static uint8_t fanSpeed_previous = FAN_OFF;
+	if(fanSpeed_now != fanSpeed_previous)
+	{
+		//fan speed just changed
+		if(fanSpeed_now == FAN_OFF){ lastTimeFanTurned_off_ms = millis(); }
+
+		fanSpeed_previous = fanSpeed_now;
+	}
+
+	uint32_t timeSinceFansTurnedOff_ms = (millis() - lastTimeFanTurned_off_ms);
+
+	//determine if air plenum contains cabin temp air
+	if(fanSpeed_now != FAN_OFF) { isIntakeTempValid = YES; } //fan is on.  Intake temp sensor might not be at cabin temp yet, but probably good enough
+	else
+	{
+		if(timeSinceFansTurnedOff_ms < FAN_TIME_OFF_BEFORE_INTAKE_TEMP_INVALID_ms ) { isIntakeTempValid = YES; } //air inside intake plenum is still at cabin temp
+	}
+	
+	return isIntakeTempValid;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t relativePackTemp(void)
+{
+	#define PACKTEMP_DELTA_UNKNOWN      255
+	#define PACKTEMP_HOTTER_THAN_INTAKE   3
+	#define PACKTEMP_CLOSE_TO_INTAKE      5
+	#define PACKTEMP_COLDER_THAN_INTAKE   9
+
+	int8_t packTemp = temperature_battery_getLatest();
 	int8_t intakeTemp = temperature_intake_getLatest();
 
-	static int8_t   battTemp_lastFanStateUpdate = ROOM_TEMP_DEGC;
-	static int8_t intakeTemp_lastFanStateUpdate = ROOM_TEMP_DEGC;
-	
-	int8_t deltaAbs_battTemp   = calculateAbsoluteDelta(battTemp,     battTemp_lastFanStateUpdate);
-	int8_t deltaAbs_intakeTemp = calculateAbsoluteDelta(intakeTemp, intakeTemp_lastFanStateUpdate);
+	uint8_t relativeDelta = PACKTEMP_DELTA_UNKNOWN;
 
-	static uint32_t timeSinceLastFanCheck_ms = 0;
+	if     (packTemp == TEMPERATURE_SENSOR_FAULT_HI                      ) { relativeDelta = PACKTEMP_DELTA_UNKNOWN;      }
+	else if(packTemp >  (intakeTemp + MIN_CABIN_AIR_DELTA_FOR_FANS_degC) ) { relativeDelta = PACKTEMP_HOTTER_THAN_INTAKE; }
+	else if(packTemp >  (intakeTemp - MIN_CABIN_AIR_DELTA_FOR_FANS_degC) ) { relativeDelta = PACKTEMP_CLOSE_TO_INTAKE;    }
+	else if(packTemp >  TEMPERATURE_SENSOR_FAULT_LO                      ) { relativeDelta = PACKTEMP_COLDER_THAN_INTAKE; }
 
-	if( (deltaAbs_battTemp   >= FAN_HYSTERESIS_degC) || //battery temperature sensor value has changed more than a few degrees
-		(deltaAbs_intakeTemp >= FAN_HYSTERESIS_degC) || //intake  temperature sensor value has changed more than a few degrees
-		((uint32_t)(millis() - timeSinceLastFanCheck_ms) > FORCE_FAN_UPDATE_PERIOD_ms) )
-	{
-		//intake or battery temperature changed enough to check for possible new fan state
-
-		//store latest temperatures (for future comparisons)
-		  battTemp_lastFanStateUpdate = battTemp;
-		intakeTemp_lastFanStateUpdate = intakeTemp;
-
-		timeSinceLastFanCheck_ms = millis();
-
-		uint8_t fanSpeed = FAN_OFF;
-
-		//cool pack if too warm
-		if(battTemp > ROOM_TEMP_DEGC)
-		{
-			int8_t coolBatteryAboveTemp_C = fan_getBatteryCoolSetpoint_C();
-			
-			if(battTemp >= (temperature_intake_getLatest() + AIR_TEMP_DELTA_TO_RUN_FANS) )
-			{
-				//battery is warmer than intake air
-				if     (battTemp >= (coolBatteryAboveTemp_C + FAN_HIGH_SPEED_degC)) { fanSpeed = FAN_HIGH; }
-				else if(battTemp >= (coolBatteryAboveTemp_C                      )) { fanSpeed = FAN_LOW;  }
-			}
-		}
-		else //heat pack if too cold
-		{
-			int8_t heatBatteryBelowTemp_C = fan_getBatteryHeatSetpoint_C();
-
-			if(battTemp <= (temperature_intake_getLatest() - AIR_TEMP_DELTA_TO_RUN_FANS) )
-			{
-				//battery is cooler than intake air
-				if     (battTemp <= (heatBatteryBelowTemp_C - FAN_HIGH_SPEED_degC)) { fanSpeed = FAN_HIGH; }
-				else if(battTemp <= (heatBatteryBelowTemp_C                      )) { fanSpeed = FAN_LOW;  }
-			}
-		}
-
-		//request temperature based fan speed
-		fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_TEMPERATURE, fanSpeed);
-		#ifdef OEM_FAN_INSTALLED
-			//Fan positive is unpowered when keyOFF, so no need to check key state
-			fan_requestSpeed(FAN_OEM, FAN_REQUESTOR_TEMPERATURE, fanSpeed);
-		#endif
-	}
-
-	if(gpio_isGridChargerChargingNow() == true) { fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_GRIDCHARGER, FAN_HIGH); }
-	else                                        { fan_requestSpeed(FAN_PCB, FAN_REQUESTOR_GRIDCHARGER, FAN_OFF ); }
-
-	fanSpeedController(FAN_OEM);
-	fanSpeedController(FAN_PCB);
+	return relativeDelta;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t packTempState(void)
+{
+	#define PACKTEMP_UNKNOWN 255
+	#define PACKTEMP_RUNAWAY   1
+	#define PACKTEMP_HOT       2
+	#define PACKTEMP_WARM      4
+	#define PACKTEMP_OK        8
+	#define PACKTEMP_COOL     16
+	#define PACKTEMP_COLD     32
+
+	uint8_t status = PACKTEMP_UNKNOWN;
+	int8_t packTemp = temperature_battery_getLatest();
+
+	if     (packTemp > TEMPERATURE_PACK_IN_THERMAL_RUNAWAY                                        ) { status = PACKTEMP_RUNAWAY; }
+	else if(packTemp > temperature_coolBatteryAbove_C() +  FAN_ADDITIONAL_TEMP_FOR_HIGH_SPEED_degC) { status = PACKTEMP_HOT;  }
+	else if(packTemp > temperature_coolBatteryAbove_C()                                           ) { status = PACKTEMP_WARM; }
+	else if(packTemp > temperature_heatBatteryBelow_C()                                           ) { status = PACKTEMP_OK;   }
+	else if(packTemp > temperature_heatBatteryBelow_C() -  FAN_ADDITIONAL_TEMP_FOR_HIGH_SPEED_degC) { (heater_isInstalled() == YES) ? (status = PACKTEMP_OK) : (status = PACKTEMP_COOL); }
+	else if(packTemp > TEMPERATURE_SENSOR_FAULT_LO                                                ) { (heater_isInstalled() == YES) ? (status = PACKTEMP_OK) : (status = PACKTEMP_COLD); }
+
+	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+bool doesPackWantFans(void)
+{
+	uint8_t request = packTempState();
+	if( (request == PACKTEMP_HOT)  ||
+		(request == PACKTEMP_WARM) ||
+		(request == PACKTEMP_COOL) ||
+		(request == PACKTEMP_COLD)  ) { return YES; }
+	else                              { return NO;  }
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+uint32_t howOftenToSampleCabinAir(void)
+{
+	uint32_t sampleCabinTempAtLeastEvery_ms = 0;
+	
+	if     (key_getSampledState() == KEYSTATE_ON   ) { sampleCabinTempAtLeastEvery_ms = SAMPLE_CABIN_AIR_INTERVAL_KEY_ON_ms;    }
+	else if(gpio_isGridChargerPluggedInNow() == YES) { sampleCabinTempAtLeastEvery_ms = SAMPLE_CABIN_AIR_INTERVAL_PLUGGEDIN_ms; }
+	else                                             { sampleCabinTempAtLeastEvery_ms = SAMPLE_CABIN_AIR_INTERVAL_KEY_OFF_ms;   }
+
+	return sampleCabinTempAtLeastEvery_ms;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+//if the battery is too hot or cold, periodically run fans if they haven't run recently
+//required for intake air temp sensor to actually measure cabin air temp
+uint8_t periodicallyRunFans(void)
+{
+	uint8_t request = FAN_OFF;
+	
+	static uint32_t lastTimeThisFunctionRequestedFan_ms = MILLIS_MAXIMUM_VALUE - SAMPLE_CABIN_AIR_INTERVAL_KEY_OFF_ms; //initial value causes this to run immediately on powerup
+
+	if((millis() - lastTimeThisFunctionRequestedFan_ms) < FAN_TIME_ON_TO_SAMPLE_CABIN_AIR_ms) { request = FAN_LOW; }
+	if((millis() - lastTimeThisFunctionRequestedFan_ms) > howOftenToSampleCabinAir()        ) { request = FAN_LOW; lastTimeThisFunctionRequestedFan_ms = millis(); }
+
+	return request;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void updateFanRequest_battery(void)
+{
+	uint8_t request = FAN_OFF;
+
+	if(isIntakeTempSensorMeasuringCabinTemp() == YES)
+	{
+		if     ( (packTempState() == PACKTEMP_HOT ) && (relativePackTemp() == PACKTEMP_HOTTER_THAN_INTAKE) ) { request = FAN_HIGH; }
+		else if( (packTempState() == PACKTEMP_WARM) && (relativePackTemp() == PACKTEMP_HOTTER_THAN_INTAKE) ) { request = FAN_LOW;  }
+		else if( (packTempState() == PACKTEMP_COOL) && (relativePackTemp() == PACKTEMP_COLDER_THAN_INTAKE) ) { request = FAN_LOW;  }
+		else if( (packTempState() == PACKTEMP_COLD) && (relativePackTemp() == PACKTEMP_COLDER_THAN_INTAKE) ) { request = FAN_HIGH; }
+	}
+	else
+	{
+		//need to move cabin air into intake plenum //periodically to save power
+		if(doesPackWantFans() == YES) { request = periodicallyRunFans(); }	
+	}
+
+	fan_requestSpeed(FAN_REQUESTOR_BATTERY, request);
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void determineFastestFanSpeedRequest(void)
+{
+	if     (fanSpeed_allRequestors & FAN_HI_MASK) { fanSpeed_goal = FAN_HIGH; } //at least one subsystem is requesting high speed
+	else if(fanSpeed_allRequestors & FAN_LO_MASK) { fanSpeed_goal = FAN_LOW;  } //at least one subsystem is requesting low speed
+	else                                          { fanSpeed_goal = FAN_OFF;  } //no subsystem is requesting fan
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+bool hasEnoughTimePassedToChangeFanSpeed(void)
+{
+	static uint32_t latestFanSpeedChange_ms = 0;
+
+	static uint8_t fanSpeed_goal_previous = FAN_OFF;
+
+	bool hasEnoughTimePassed = YES;
+
+	if(fanSpeed_goal != fanSpeed_goal_previous)
+	{
+		//JTS2doLater: Add logic for FAN_MED
+		if( ((fanSpeed_goal_previous == FAN_OFF)                               ) || //speed changing from off to either low or high
+			((fanSpeed_goal_previous == FAN_LOW) && (fanSpeed_goal == FAN_HIGH))  ) //speed changing from low to high
+		{
+			//fan speed goal is increasing
+			if( (millis() - latestFanSpeedChange_ms) < FAN_SPEED_INCREASE_HYSTERESIS_ms ) { hasEnoughTimePassed = NO; }
+			else
+			{
+				// enough time has passed
+				latestFanSpeedChange_ms = millis();
+				fanSpeed_goal_previous = fanSpeed_goal;
+			}
+
+		}
+		else
+		{
+			//fan speed goal is decreasing
+			if( (millis() - latestFanSpeedChange_ms) < FAN_SPEED_DECREASE_HYSTERESIS_ms ) { hasEnoughTimePassed = NO; }
+			else
+			{
+				// enough time has passed
+				latestFanSpeedChange_ms = millis();
+				fanSpeed_goal_previous = fanSpeed_goal;
+			}
+		}
+	}
+
+	return hasEnoughTimePassed;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void fan_handler(void)
+{
+	updateFanRequest_battery();
+
+	determineFastestFanSpeedRequest(); //result stored in fanSpeed_goal
+
+	if(SoC_isThermalManagementAllowed() == NO) { fanSpeed_now = FAN_OFF; } //not enough energy to run fans
+	else
+	{
+		if( (fanSpeed_now != fanSpeed_goal               ) && //this lightweight test occurs first, so that we only run time test condition when states aren't the same
+			(hasEnoughTimePassedToChangeFanSpeed() == YES)  ) { fanSpeed_now = fanSpeed_goal; }
+	}
+
+	gpio_setFanSpeed_OEM(fanSpeed_now);
+	gpio_setFanSpeed_PCB(fanSpeed_now);
+}
