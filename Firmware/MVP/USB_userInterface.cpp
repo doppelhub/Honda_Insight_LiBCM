@@ -42,28 +42,27 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	//Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
 	if(testToRun == '1')
 	{
-		Serial.print(F("Not Defined"));
+		Serial.print(F("FAN_REQUESTOR_USER: OFF"));
+		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF);
 	}
 	else if(testToRun == '2')
 	{
-		Serial.print(F("Not Defined"));
+		Serial.print(F("FAN_REQUESTOR_USER: LOW"));
+		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_LOW);
 	}
 	else if(testToRun == '3')
 	{
-		Serial.print(F("PCB Fan off"));
-		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF);
+		Serial.print(F("FAN_REQUESTOR_USER: HIGH"));
+		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_HIGH);
 	}
 	else if(testToRun == '4')
 	{
-		Serial.print(F("fanSpeed_now: "));
-		Serial.print(String(fan_getSpeed_now(),BIN));
-		Serial.print('\n');
+		Serial.print(F("fanSpeed_allRequestors mask: "));
+		Serial.print(String(fan_getAllRequestors_mask(),DEC));
 	}
 	else if(testToRun == '5')
 	{
-		Serial.print(F("Heater PCB: "));
-		if(heater_isInstalled() == YES) { Serial.print("Connected"); }
-		if(heater_isInstalled() == NO ) { Serial.print("Not Found"); }
+		Serial.print(F("Unused"));
 	}
 	else if(testToRun == '6')
 	{
@@ -72,39 +71,15 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	}
 	else if(testToRun == '7')
 	{
-		Serial.print(F("Turn Heater PCB off."));
-		gpio_turnPackHeater_off();
+		Serial.print(F("Unused"));
 	}
 	else if(testToRun == '8')
 	{
-		Serial.print(F("Turn Heater PCB on."));
-		gpio_turnPackHeater_on();
+		Serial.print(F("Unused"));
 	}
 	else if(testToRun == 'T')
 	{
-		if(gpio_getPinState(PIN_TEMP_EN) == PIN_OUTPUT_HIGH)
-		{		
-			Serial.print(F("\nTemperatures(C):"));
-			Serial.print(F("\nBLU: "));
-			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BLU));
-			Serial.print(F("\nGRN: "));
-			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
-			Serial.print(F("\nWHT: "));
-			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
-			Serial.print(F("\nYEL: "));
-			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
-			Serial.print(F("\nBAY1: "));
-			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY1));
-			Serial.print(F("\nBAY2: "));
-			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
-			Serial.print(F("\nBAY3: "));
-			Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));				
-		}
-		else
-		{
-			gpio_turnTemperatureSensors_on();
-			Serial.print("\nturned sensors on. Repeat command to display temp.");
-		}
+		temperature_measureAndPrintAll();
 	}
 	else if(testToRun == 'H')
 	{

@@ -14,7 +14,7 @@ int8_t tempAmbient = ROOM_TEMP_DEGC;
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-int8_t temperature_battery_getLatest()        { return tempBattery; }
+int8_t temperature_battery_getLatest(void)    { return tempBattery; }
 int8_t temperature_intake_getLatest(void)     { return tempIntake;  } //GRN OEM temp sensor
 int8_t temperature_exhaust_getLatest(void)    { return tempExhaust; } //YEL OEM temp sensor
 int8_t temperature_gridCharger_getLatest(void){ return tempCharger; } //BLU OEM temp sensor
@@ -85,6 +85,52 @@ void temperature_measureBattery(void)
 	//figure out which magnitude is further from ROOM_TEMP_DEGC 
 	if(tempHiDelta > tempLoDelta) { tempBattery = tempHi; }
 	else                          { tempBattery = tempLo; }
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void temperature_printAll_latest(void)
+{
+	Serial.print(F("\nTemperatures(C):"));
+	Serial.print(F("\nGrid: "));
+	Serial.print(temperature_gridCharger_getLatest());
+	Serial.print(F("\nIn: "));
+	Serial.print(temperature_intake_getLatest());
+	Serial.print(F("\nAmb: "));
+	Serial.print(temperature_ambient_getLatest());
+	Serial.print(F("\nOut: "));
+	Serial.print(temperature_exhaust_getLatest());
+	Serial.print(F("\nBatt: "));
+	Serial.print(temperature_battery_getLatest());
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void temperature_measureAndPrintAll(void)
+{
+	if(gpio_getPinState(PIN_TEMP_EN) == PIN_OUTPUT_HIGH)
+	{		
+		Serial.print(F("\nTemperatures(C):"));
+		Serial.print(F("\nBLU: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BLU));
+		Serial.print(F("\nGRN: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
+		Serial.print(F("\nWHT: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
+		Serial.print(F("\nYEL: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
+		Serial.print(F("\nBAY1: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY1));
+		Serial.print(F("\nBAY2: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
+		Serial.print(F("\nBAY3: "));
+		Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));	
+	}
+	else
+	{
+		gpio_turnTemperatureSensors_on();
+		Serial.print("\nturned sensors on. Repeat command to display temp.");
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
