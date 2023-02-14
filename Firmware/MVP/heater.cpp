@@ -7,7 +7,7 @@
 
 bool heaterInstalled = NO;
 
-//JTS2doNow: Add indicator to 4x20 when heater is off/on
+//JTS2doLater: Add indicator to 4x20 when heater is off/on
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -68,8 +68,8 @@ void heater_handler(void)
 	{
 		if(hasEnoughTimePassedToChangeState() == YES)
 		{
-			if( temperature_battery_getLatest() < temperature_heatBatteryBelow_C() ) { gpio_turnPackHeater_on();  Serial.print('H'); } //pack is     cold //JTS2doNow: remove debug 'H'
-			else                                                                     { gpio_turnPackHeater_off(); Serial.print('h'); } //pack is not cold
+			if( temperature_battery_getLatest() < temperature_heatBatteryBelow_C() ) { gpio_turnPackHeater_on();  } //pack is     cold
+			else                                                                     { gpio_turnPackHeater_off(); } //pack is not cold
 		}
 	}
 }

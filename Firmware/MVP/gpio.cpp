@@ -107,7 +107,7 @@ void gpio_setFanSpeed_PCB(char speed)
 	switch(speed)
 	{
 		case FAN_OFF:  fanPWM =     0; break;
-		case FAN_LOW:  fanPWM =    30; break;
+		case FAN_LOW:  fanPWM =    40; break;
 		//case FAN_MED:  fanPWM =    60; break; //Not used
 		case FAN_HIGH: fanPWM =   255; break;
 		default: Serial.print(F("\nError: Invalid fan speed"));
