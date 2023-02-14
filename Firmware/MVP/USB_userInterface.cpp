@@ -23,7 +23,7 @@ void printDebug(void)
 
 	Serial.print(F("\n -Has LiBCM limited assist since last cleared?: "));
 	(EEPROM_hasLibcmDisabledAssist_get() == EEPROM_LICBM_DISABLED_ASSIST) ? Serial.print(F("YES")) : Serial.print(F("NO"));
-	
+
 	Serial.print(F("\n -Has LiBCM limited regen since last cleared?: "));
 	(EEPROM_hasLibcmDisabledRegen_get() == EEPROM_LICBM_DISABLED_REGEN) ? Serial.print(F("YES")) : Serial.print(F("NO"));
 
@@ -36,7 +36,7 @@ void printDebug(void)
 void USB_userInterface_runTestCode(uint8_t testToRun)
 {
 	Serial.print(F("\nRunning Test: "));
-	
+
 	//Add whatever code you want to run whenever the user types '$TEST1'/2/3/etc into the Serial Monitor Window
 	//Numbered tests ($TEST1/2/3) are temporary, for internal testing during firmware development
 	//Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
@@ -104,6 +104,7 @@ void printHelp(void)
 		"\n -'$BOOT': restart LiBCM"
 		"\n -'$TEST1'/2/3/4: run test code. See 'USB_userInterface_runTestCode()')"
 		"\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
+		"\n -'$LIDISP' 0/1: LiDisplay Debug Mode Off/On."
 		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
 		"\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"
 		"\n -'$DISP=PWR'/SCI/CELL/TEMP/DBG/OFF: data to stream (power/BAT&METSCI/Vcell/temperature/none)"
@@ -145,7 +146,7 @@ uint8_t get_uint8_FromInput(uint8_t digit1, uint8_t digit2, uint8_t digit3)
 	if     (digit1 == STRING_TERMINATION_CHARACTER) { errorOccurred = true; }
 	else if(digit2 == STRING_TERMINATION_CHARACTER) { numDecimalDigits = 1; }
 	else if(digit3 == STRING_TERMINATION_CHARACTER) { numDecimalDigits = 2; }
-	
+
 	if(errorOccurred == true) { Serial.print(F("\nInvalid uint8_t Entry")); }
 	else
 	{
@@ -177,17 +178,23 @@ void USB_userInterface_executeUserInput(void)
 
 		//$TEST
 		else if( (line[1] == 'T') && (line[2] == 'E') && (line[3] == 'S') && (line[4] == 'T') ) { USB_userInterface_runTestCode(line[5]); }
-		
+
 		//$DEBUG
 		else if( (line[1] == 'D') && (line[2] == 'E') && (line[3] == 'B') && (line[4] == 'U') && (line[5] == 'G') )
-		{ 
+		{
 			if     ( (line[6] == '=') && (line[7] == 'C') && (line[8] == 'L') && (line[9] == 'R') )
-			{ 
+			{
 				Serial.print(F("\nRestoring default DEBUG values"));
 				EEPROM_resetDebugValues();
 			}
 			else if(line[6] == STRING_TERMINATION_CHARACTER) { printDebug(); }
 		}
+/*
+		//$LIDISP
+		else if( (line[1] == 'L') && (line[2] == 'I') && (line[3] == 'D') && (line[4] == 'I') && (line[5] == 'S') && (line[6] == 'P'))
+		{
+			LiDisplay_setDebugMode(line[7]);
+		} */
 
 		//KEYms
 		else if( (line[1] == 'K') && (line[2] == 'E') && (line[3] == 'Y') && (line[4] == 'M') && (line[5] == 'S') )
@@ -291,7 +298,7 @@ void USB_userInterface_handler(void)
 		//user-typed characters are waiting in serial buffer
 
 		latestCharacterRead = Serial.read(); //read next character in buffer
-	
+
 		if( (latestCharacterRead == '\n') || (latestCharacterRead == '\r'))
 		{
 			//line is now complete
@@ -304,7 +311,7 @@ void USB_userInterface_handler(void)
 
 			numCharactersReceived = 0; //reset for next line
 		}
-		else //add (non-EOL) character to array 
+		else //add (non-EOL) character to array
 		{
 			if(inputFlags && INPUT_FLAG_INSIDE_COMMENT)
 			{
@@ -329,7 +336,7 @@ void USB_userInterface_handler(void)
 				{
 					//empty serial receive buffer
 					uint8_t byte = Serial.read();
-					if((byte == '\n') || (byte == '\r')) { break; } 
+					if((byte == '\n') || (byte == '\r')) { break; }
 				}
 				numCharactersReceived = 0;
 			}

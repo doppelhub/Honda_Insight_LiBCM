@@ -40,7 +40,7 @@ void gpio_begin(void)
 
 	//turn on lcd display
 	pinMode(PIN_HMI_EN,OUTPUT);
-	gpio_turnHMI_on();
+	//gpio_turnHMI_on();
 
 	//Controls BCM current sensor, constant 5V load, and BATTSCI/METSCI biasing
 	pinMode(PIN_SENSOR_EN,OUTPUT);
@@ -75,7 +75,7 @@ bool gpio_keyStateNow(void) { return digitalRead(PIN_IGNITION_SENSE); }
 
 //THIS FUNCTION DOES NOT RETURN!
 void gpio_turnLiBCM_off(void)
-{ 
+{
 	//JTS2doLater: Write SoC to EEPROM (so LiBCM can read it back at next keyON, if not enough time to calculate it)
 	Serial.print(F("\nLiBCM turning off"));
 	delay(20); //wait for the above message to transmit
@@ -102,7 +102,7 @@ void gpio_setFanSpeed_OEM(char speed)
 
 void gpio_setFanSpeed_PCB(char speed)
 {
-	uint8_t fanPWM = 0; 
+	uint8_t fanPWM = 0;
 
 	switch(speed)
 	{
@@ -127,6 +127,7 @@ void gpio_turnPowerSensors_off(void) { digitalWrite(PIN_SENSOR_EN,  LOW); }
 
 void gpio_turnHMI_on( void) { digitalWrite(PIN_HMI_EN, HIGH); }
 void gpio_turnHMI_off(void) { digitalWrite(PIN_HMI_EN,  LOW); }
+bool gpio_HMIStateNow(void) { return digitalRead(PIN_HMI_EN); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -230,7 +231,7 @@ uint8_t gpio_getPinMode(uint8_t pin)
 ////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t gpio_getPinState(uint8_t pin)
-{ 
+{
 	uint8_t pinMode = gpio_getPinMode(pin);
 	uint8_t pinLevel = digitalRead(pin);
 

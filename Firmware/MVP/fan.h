@@ -22,10 +22,10 @@
 	#define FAN_HI_MASK   0b10101010 //OR this mask with fanSpeed_allRequestors to see if any subsystem is requesting high speed fans
 	#define FAN_LO_MASK   0b01010101 //OR this mask with fanSpeed_allRequestors to see if any subsystem is requesting  low speed fans
 	#define FAN_FORCE_OFF 0b00000000
-	
+
 	#define FAN_SPEED_INCREASE_HYSTERESIS_ms  (5 * 1000) //period required before fan speed can increase
 	#define FAN_SPEED_DECREASE_HYSTERESIS_ms (10 * 1000) //period required before fan speed can decrease
-	
+
 	#define FAN_SPEED_HYSTERESIS_HIGH_degC 4 //adds temperature based hysteresis to battery related fan requests
 	#define FAN_SPEED_HYSTERESIS_LOW_degC  2
 	#define FAN_SPEED_HYSTERESIS_OFF_degC  0

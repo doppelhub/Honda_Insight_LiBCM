@@ -54,7 +54,7 @@ bool isIntakeTempSensorMeasuringCabinTemp(void)
 	bool isIntakeTempValid = NO;
 
 	static uint32_t lastTimeFanTurned_off_ms = 0;
-	
+
 	//capture timestamp each time fan state changes
 	static uint8_t fanSpeed_previous = FAN_OFF;
 	if(fanSpeed_now != fanSpeed_previous)
@@ -73,7 +73,7 @@ bool isIntakeTempSensorMeasuringCabinTemp(void)
 	{
 		if(timeSinceFansTurnedOff_ms < FAN_TIME_OFF_BEFORE_INTAKE_TEMP_INVALID_ms ) { isIntakeTempValid = YES; } //air inside intake plenum is still at cabin temp
 	}
-	
+
 	return isIntakeTempValid;
 }
 
@@ -141,7 +141,7 @@ bool doesPackWantFans(void)
 uint32_t howOftenToSampleCabinAir(void)
 {
 	uint32_t sampleCabinTempAtLeastEvery_ms = 0;
-	
+
 	if     (key_getSampledState() == KEYSTATE_ON   ) { sampleCabinTempAtLeastEvery_ms = SAMPLE_CABIN_AIR_INTERVAL_KEY_ON_ms;    }
 	else if(gpio_isGridChargerPluggedInNow() == YES) { sampleCabinTempAtLeastEvery_ms = SAMPLE_CABIN_AIR_INTERVAL_PLUGGEDIN_ms; }
 	else                                             { sampleCabinTempAtLeastEvery_ms = SAMPLE_CABIN_AIR_INTERVAL_KEY_OFF_ms;   }
@@ -156,7 +156,7 @@ uint32_t howOftenToSampleCabinAir(void)
 uint8_t periodicallyRunFans(void)
 {
 	uint8_t request = FAN_OFF;
-	
+
 	static uint32_t lastTimeThisFunctionRequestedFan_ms = MILLIS_MAXIMUM_VALUE - SAMPLE_CABIN_AIR_INTERVAL_KEY_OFF_ms; //initial value causes this to run immediately on powerup
 
 	if((millis() - lastTimeThisFunctionRequestedFan_ms) < FAN_TIME_ON_TO_SAMPLE_CABIN_AIR_ms) { request = FAN_LOW; }
@@ -181,7 +181,7 @@ void updateFanRequest_battery(void)
 	else
 	{
 		//need to move cabin air into intake plenum //periodically to save power
-		if(doesPackWantFans() == YES) { request = periodicallyRunFans(); }	
+		if(doesPackWantFans() == YES) { request = periodicallyRunFans(); }
 	}
 
 	fan_requestSpeed(FAN_REQUESTOR_BATTERY, request);

@@ -7,8 +7,9 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.8.6"
-    #define BUILD_DATE "2023FEB10"
+	#define FW_VERSION "0.9.0a"
+    #define BUILD_DATE "2023FEB09"
+
 
 	//choose your battery type:
 		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
@@ -30,14 +31,16 @@
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //increase assist power by statically spoofing pack voltage during heavy assist
 		//#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //increase assist and regen power by variably spoofing pack voltage //DEPRECATED (regen too strong)
 
-	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
+//	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
+	#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands
+	#define LIDISPLAY_SPLASH_PAGE_MS 2000
 
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
 
 	#define CELL_VMAX_REGEN                     42500 //42500 = 4.2500 volts
 	#define CELL_VMIN_ASSIST                    31900 //allows for ESR-based voltage drop
-	#define CELL_VMAX_GRIDCHARGER               39000 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
+	#define CELL_VMAX_GRIDCHARGER               39600 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
 	#define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
 	#define CELL_VMIN_KEYOFF                    CELL_VREST_10_PERCENT_SoC //when car is off, LiBCM turns off below this voltage  //JTS2doLater: Change to higher SoC
 	#define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled below this percentage
@@ -50,7 +53,7 @@
 	#define COOL_BATTERY_ABOVE_TEMP_C_KEYOFF       36 //cabin air cooling
 	#define COOL_BATTERY_ABOVE_TEMP_C_GRIDCHARGING 30
 	#define COOL_BATTERY_ABOVE_TEMP_C_KEYON        30
-	#define HEAT_BATTERY_BELOW_TEMP_C_KEYON        16 //cabin air heating, or heater PCB (if installed) 
+	#define HEAT_BATTERY_BELOW_TEMP_C_KEYON        16 //cabin air heating, or heater PCB (if installed)
 	#define HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING 16
 	#define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       10
 	//other temp settings
@@ -67,7 +70,7 @@
 	//All remaining settings are for debug testing only:
 
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
-	
+
 	#define CHECK_FOR_SAFETY_COVER //comment if testing LiBCM without the cover
 
 	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000 //JTS2doLater: Model after "debugUSB_printLatestData"
