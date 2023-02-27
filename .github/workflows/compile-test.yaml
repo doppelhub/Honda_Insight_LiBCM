@@ -1,0 +1,23 @@
+name: PR Tests
+
+on:
+  pull_request:
+    paths:
+      - 'Firmware/**'
+      - '.github/workflows/**'
+
+jobs:
+  compile-test:
+    name: Compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Build
+        uses: arduino/compile-sketches@v1
+        with:
+          cli-version: 0.31.0
+          fqbn: 'arduino:avr:mega'
+          sketch-paths: |
+            - Firmware/MVP/MVP.ino
