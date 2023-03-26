@@ -1,0 +1,39 @@
+R25 & R26 need lower values.  Then we can use PWM to adjust current value (after swapping GRID_ILIM to a PWM pin).
+
+Troubleshooting:
+Change R25 & R26 to 768 Ohms.  This yields:
+-1.36 vout when U3 is on
+-4.79 vout when U3 is off
+
+However, this causes LM4040 voltage to drop, because voltage divider doesn't have enough headroom (i.e. 100k top leg to HVDC).
+
+To guarantee 5 Vmin across LM4040, the low side Rmin is:
+
+Lowest possible pack voltage = 3.0 Vcell(min) * 48 = 144 volts
+
+Vout = 5 V = Vin(min) * Rout(min)/(Rout(min) + 100k)
+
+So Rout(min) = 3.6 kOhm
+
+Therefore, we need to increase R26 & R25 from 768 Ohms to something higher:
+
+Rout(min) = (R21||R23||R24) + 1/(1/R22 + 1/(R26+R25))
+3.6kOhm = (768/2) + 1/(1/10kOhm + 1/(R26+R25))
+
+So R26+R25(min) = 4.75 kOhm
+
+Therefore, we should change layout so R25 and R26 are in parallel, and then populate them with 10k0 and 7k32 resistors (4.25 kOhm, which is close enough).
+
+...
+
+Maybe we should just get rid of R22 entirely, and increase R21||R23||R24, so that we don't need as much bias voltage for CHARGER_CURRENT_LIMIT.  Might make more sense to:
+-DNP R22
+-DNP R24
+-R21=7k32
+-R23=7k32
+-R25=7k32||7k32 (5k)
+R26=shorted
+
+That yields 7k32(min) total load on LM4040... so we might even be able to get rid of QTY3 resistors in R16/R19/R17/R20.
+
+Result: The optoisolator can handle fast switching speeds, but there's too much ripple on the output.  Need to add a better lowpass filter to the output.

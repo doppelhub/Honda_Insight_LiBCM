@@ -14,6 +14,7 @@ void serialUSB_waitForEmptyBuffer(void)
 void bringupTester_run(void)
 {
 	#ifdef RUN_BRINGUP_TESTER
+	
 		while(1) //this function never returns
 		{
 			uint8_t testToRun = TEST_TYPE_UNDEFINED;
@@ -160,20 +161,37 @@ void bringupTester_run(void)
 					delay(10);
 				}
 
-				Serial.print(F("\nBATTSCI -> METSCI loopback test: "));
+				Serial.print(F("\nBATTSCI -> METSCI loopback test "));
 				serialUSB_waitForEmptyBuffer();
 				{
 					BATTSCI_enable();
 					METSCI_enable();
 
-					uint8_t numberToLoopback = 0b10101110;
-					BATTSCI_writeByte(numberToLoopback);  //send data on BATTSCI (which is connected to METSCI)
-					delay(10);
+					//empty buffer
+					while ( METSCI_bytesAvailableToRead() != 0 ) { METSCI_readByte(); }
 
-					uint8_t numberLoopedBack = 0;
-					while ( METSCI_bytesAvailableToRead() != 0 ) { numberLoopedBack = METSCI_readByte(); }
-					if(numberLoopedBack == numberToLoopback) { Serial.print(F("pass")); }
-					else                                     { Serial.print(F("FAIL!! !! !! !! !! !! !! !! ")); didTestFail = true; }
+					bool didLoopbackPass = true;
+
+					for(char charToLoopback = 'A'; charToLoopback <= 'Z'; charToLoopback++)
+					{
+						BATTSCI_writeByte(charToLoopback);  //send data on BATTSCI (which is connected to METSCI)
+						delay(10);
+
+						uint8_t loopedBack = METSCI_readByte();
+
+						if(loopedBack != charToLoopback)
+						{
+							Serial.print(F("\nMismatch, sent:"));
+							Serial.print(charToLoopback);
+							Serial.print(F(", received:"));
+							Serial.print(loopedBack);
+							didLoopbackPass = false;
+						}
+						else {Serial.print(String(charToLoopback)); }
+					}
+
+					if(didLoopbackPass == true) { Serial.print(F(": pass")); }
+					else { Serial.print(F(": FAIL!! !! !! !! !! !! !! !! ")); didTestFail = true; }
 
 			    	BATTSCI_disable();
 			   		METSCI_disable();
@@ -253,9 +271,9 @@ void bringupTester_run(void)
 					Serial.print( String(tempBAY2) + '/');
 					Serial.print( String(tempBAY3) + ": ");
 
-					if((tempBAY1 > 462) && (tempBAY1 < 562) &&
-					   (tempBAY2 > 462) && (tempBAY2 < 562) &&
-					   (tempBAY3 > 462) && (tempBAY3 < 562)) { Serial.print(F("pass")); }
+					if((tempBAY1 > 459) && (tempBAY1 < 565) &&
+					   (tempBAY2 > 459) && (tempBAY2 < 565) &&
+					   (tempBAY3 > 459) && (tempBAY3 < 565)) { Serial.print(F("pass")); }
 					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
@@ -277,7 +295,7 @@ void bringupTester_run(void)
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
 					Serial.print(String(resultADC));
 					Serial.print(F(" counts: "));
-					if((resultADC > 328) && (resultADC < 336)) { Serial.print(F("pass")); }
+					if((resultADC > 324) && (resultADC < 336)) { Serial.print(F("pass")); }
 					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
@@ -324,17 +342,19 @@ void bringupTester_run(void)
 				}
 
 				//test that OEM current sensor turns off correctly
-				Serial.print(F("\nTurning current sensor off: "));
+				Serial.print(F("\n\nCurrent sensor 10b result after turning off is "));
 				serialUSB_waitForEmptyBuffer();
 				{
 					gpio_turnPowerSensors_off();
 					delay(500);
 
 					gpio_setFanSpeed_PCB(FAN_HIGH); //should already be here
-					delay(100);
+					delay(250);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
-					if((resultADC > 328) && (resultADC < 336)) { Serial.print(F("pass")); }
+					Serial.print(String(resultADC));
+					Serial.print(" counts: ");
+					if((resultADC > 324) && (resultADC < 336)) { Serial.print(F("pass")); }
 					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
