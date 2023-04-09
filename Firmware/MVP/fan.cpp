@@ -212,28 +212,17 @@ bool hasEnoughTimePassedToChangeFanSpeed(void)
 
 	if(fanSpeed_goal != fanSpeed_goal_previous)
 	{
-		if(fanSpeed_goal > fanSpeed_goal_previous)
-		{
-			//fan speed goal is increasing
-			if( (millis() - latestFanSpeedChange_ms) < FAN_SPEED_INCREASE_HYSTERESIS_ms ) { hasEnoughTimePassed = NO; }
-			else
-			{
-				// enough time has passed
-				latestFanSpeedChange_ms = millis();
-				fanSpeed_goal_previous = fanSpeed_goal;
-			}
+		const uint32_t hysteresisTarget_ms = (fanSpeed_goal > fanSpeed_goal_previous) ?
+			FAN_SPEED_INCREASE_HYSTERESIS_ms : FAN_SPEED_DECREASE_HYSTERESIS_ms;
 
-		}
+		const uint32_t currentTime_ms = millis();
+
+		if((currentTime_ms - latestFanSpeedChange_ms) < hysteresisTarget_ms) { hasEnoughTimePassed = NO; }
 		else
 		{
-			//fan speed goal is decreasing
-			if( (millis() - latestFanSpeedChange_ms) < FAN_SPEED_DECREASE_HYSTERESIS_ms ) { hasEnoughTimePassed = NO; }
-			else
-			{
-				// enough time has passed
-				latestFanSpeedChange_ms = millis();
-				fanSpeed_goal_previous = fanSpeed_goal;
-			}
+			// enough time has passed
+			latestFanSpeedChange_ms = currentTime_ms;
+			fanSpeed_goal_previous = fanSpeed_goal;
 		}
 	}
 
