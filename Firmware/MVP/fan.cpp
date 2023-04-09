@@ -7,7 +7,7 @@
 
 #include "libcm.h"
 
-uint8_t fanSpeed_now  = FAN_OFF; //actual fan state now (OFF/LOW/HIGH)
+uint8_t fanSpeed_now  = FAN_OFF; //actual fan state now (OFF/LOW/MED/HIGH)
 uint8_t fanSpeed_goal = FAN_OFF; //desired fan state (highest speed requested by any subsystem)
 
 uint8_t fanSpeed_allRequestors = FAN_FORCE_OFF; //each subsystem's fan speed request is stored in 2 bits (see 'FAN_REQUESTOR' constants)
@@ -191,9 +191,13 @@ void updateFanRequest_battery(void)
 
 void determineFastestFanSpeedRequest(void)
 {
-	if     (fanSpeed_allRequestors & FAN_HI_MASK) { fanSpeed_goal = FAN_HIGH; } //at least one subsystem is requesting high speed
-	else if(fanSpeed_allRequestors & FAN_LO_MASK) { fanSpeed_goal = FAN_LOW;  } //at least one subsystem is requesting low speed
-	else                                          { fanSpeed_goal = FAN_OFF;  } //no subsystem is requesting fan
+	const uint8_t fan_hi_bits = (fanSpeed_allRequestors & FAN_HI_MASK) >> 1; //shift to align with lo_bits
+	const uint8_t fan_lo_bits = (fanSpeed_allRequestors & FAN_LO_MASK);
+
+	if     (fan_hi_bits & fan_lo_bits) { fanSpeed_goal = FAN_HIGH; } //at least one subsystem is requesting high speed
+	else if(fan_hi_bits)               { fanSpeed_goal = FAN_MED;  } //at least one subsystem is requesting medium speed
+	else if(fan_lo_bits)               { fanSpeed_goal = FAN_LOW;  } //at least one subsystem is requesting low speed
+	else                               { fanSpeed_goal = FAN_OFF;  } //no subsystem is requesting fan
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -208,9 +212,7 @@ bool hasEnoughTimePassedToChangeFanSpeed(void)
 
 	if(fanSpeed_goal != fanSpeed_goal_previous)
 	{
-		//JTS2doLater: Add logic for FAN_MED
-		if( ((fanSpeed_goal_previous == FAN_OFF)                               ) || //speed changing from off to either low or high
-			((fanSpeed_goal_previous == FAN_LOW) && (fanSpeed_goal == FAN_HIGH))  ) //speed changing from low to high
+		if(fanSpeed_goal > fanSpeed_goal_previous)
 		{
 			//fan speed goal is increasing
 			if( (millis() - latestFanSpeedChange_ms) < FAN_SPEED_INCREASE_HYSTERESIS_ms ) { hasEnoughTimePassed = NO; }
