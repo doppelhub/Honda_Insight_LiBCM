@@ -174,9 +174,9 @@
 
 	bool LTC68042configure_wakeup(void);
 
-	uint16_t LTC68042configure_calcPEC15(uint8_t len, uint8_t *data);
+	uint16_t LTC68042configure_calcPEC15(uint8_t len, uint8_t const data[]);
 
-	void LTC68042configure_spiWrite( uint8_t length, uint8_t *data);
+	void LTC68042configure_spiWrite( uint8_t length, uint8_t const data[]);
 
 	void LTC68042configure_spiWriteRead(uint8_t *TxData, uint8_t TXlen, uint8_t *rx_data, uint8_t RXlen);
 

@@ -89,11 +89,10 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
 	uint16_t cellY_Voltage_counts;
 	uint16_t cellZ_Voltage_counts;
 
+	uint8_t returnedData[NUM_RX_BYTES];
+
 	do //repeats until PECs match (i.e. no data transmission errors) 
 	{
-		uint8_t *returnedData; //JTS2doLater: replace malloc with empty array
-		returnedData = (uint8_t *) malloc( NUM_RX_BYTES * sizeof(uint8_t) );
-
 		//Read single cell voltage register (QTY3 cell voltages) from specified IC
 		serialReadCVR(chipAddress, cellVoltageRegister, returnedData); //result stored in returnedData
 
@@ -104,8 +103,6 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
 
 		received_pec   = (returnedData[6]<<8) + returnedData[7]; //PEC0 PEC1
 		calculated_pec = LTC68042configure_calcPEC15(NUM_BYTES_IN_REG, &returnedData[0]);
-
-		free(returnedData);
 
 		attemptCounter++; //prevent while loop hang
 	} while( (received_pec != calculated_pec) && (attemptCounter < MAX_READ_ATTEMPTS) ); //retry if isoSPI error
