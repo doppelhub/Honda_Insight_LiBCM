@@ -40,6 +40,7 @@ void loop()
 	fan_handler();
 	heater_handler();
 	gridCharger_handler();
+	buzzer_handler();
 	lcdState_handler();
 	if(digitalRead(PIN_HMI_EN) == 1) {
 		LiDisplay_refresh();
