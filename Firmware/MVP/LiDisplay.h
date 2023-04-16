@@ -4,9 +4,11 @@
 #ifndef lidisplay_h
 	#define lidisplay_h
 
+	#define LIDISPLAY_SPLASH_PAGE_MS 2000
+
 	void LiDisplay_begin(void);
 
-	void LiDisplay_refresh(void);
+	void LiDisplay_handler(void);
 
 	void LiDisplay_keyOn(void);
 
@@ -22,7 +24,7 @@
 
 	uint8_t LiDisplay_bytesAvailableForWrite(void);
 
-	uint8_t LiDisplay_writeByte(uint8_t data);
+	void LiDisplay_writeByte(uint8_t data);
 
 	uint8_t LiDisplay_readByte(void);
 

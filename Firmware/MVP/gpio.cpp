@@ -38,9 +38,7 @@ void gpio_begin(void)
 	pinMode(PIN_TURNOFFLiBCM,OUTPUT);
 	digitalWrite(PIN_TURNOFFLiBCM,LOW);
 
-	//turn on lcd display
 	pinMode(PIN_HMI_EN,OUTPUT);
-	//gpio_turnHMI_on();
 
 	//Controls BCM current sensor, constant 5V load, and BATTSCI/METSCI biasing
 	pinMode(PIN_SENSOR_EN,OUTPUT);

@@ -13,7 +13,6 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 	BATTSCI_begin();
 	heater_init();
 	LiDisplay_begin();
-	lcd_begin();
 	LTC68042configure_initialize();
 
 	#ifdef RUN_BRINGUP_TESTER
@@ -41,9 +40,7 @@ void loop()
 	heater_handler();
 	gridCharger_handler();
 	lcdState_handler();
-	if(digitalRead(PIN_HMI_EN) == 1) {
-		LiDisplay_refresh();
-	}
+	LiDisplay_handler();
 
 	if( key_getSampledState() == KEYSTATE_ON )
 	{

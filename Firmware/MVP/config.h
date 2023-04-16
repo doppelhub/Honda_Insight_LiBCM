@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.9.0a"
-    #define BUILD_DATE "2023FEB09"
+	#define FW_VERSION "0.9.0b"
+    #define BUILD_DATE "2023APR16"
 
 
 	//choose your battery type:
@@ -31,16 +31,15 @@
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //increase assist power by statically spoofing pack voltage during heavy assist
 		//#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //increase assist and regen power by variably spoofing pack voltage //DEPRECATED (regen too strong)
 
-//	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
-	#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands
-	#define LIDISPLAY_SPLASH_PAGE_MS 2000
+	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
+	//#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands
 
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
 
 	#define CELL_VMAX_REGEN                     42500 //42500 = 4.2500 volts
 	#define CELL_VMIN_ASSIST                    31900 //allows for ESR-based voltage drop
-	#define CELL_VMAX_GRIDCHARGER               39600 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
+	#define CELL_VMAX_GRIDCHARGER               39000 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
 	#define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
 	#define CELL_VMIN_KEYOFF                    CELL_VREST_10_PERCENT_SoC //when car is off, LiBCM turns off below this voltage  //JTS2doLater: Change to higher SoC
 	#define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled below this percentage
@@ -60,7 +59,7 @@
 	#define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 50 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
 	#define OEM_FAN_INSTALLED //comment if OEM fan removed
 
-	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda EHW5 lithium modules
+	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda 5AhG3 lithium modules
 
 	#define KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES 10 //Even with low SoC, LiBCM will remain on for this many minutes after keyOFF.
 		//to turn LiBCM back on: turn ignition 'ON', or turn IMA switch off and on, or plug in USB cable

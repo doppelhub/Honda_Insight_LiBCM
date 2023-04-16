@@ -104,7 +104,6 @@ void printHelp(void)
 		"\n -'$BOOT': restart LiBCM"
 		"\n -'$TEST1'/2/3/4: run test code. See 'USB_userInterface_runTestCode()')"
 		"\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
-		"\n -'$LIDISP' 0/1: LiDisplay Debug Mode Off/On."
 		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
 		"\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"
 		"\n -'$DISP=PWR'/SCI/CELL/TEMP/DBG/OFF: data to stream (power/BAT&METSCI/Vcell/temperature/none)"
@@ -190,7 +189,7 @@ void USB_userInterface_executeUserInput(void)
 			else if(line[6] == STRING_TERMINATION_CHARACTER) { printDebug(); }
 		}
 /*
-		//$LIDISP
+		//$LIDISP //Natalya TODO: Move to '$TEST' //JTS2doLater: Delete if no longer used
 		else if( (line[1] == 'L') && (line[2] == 'I') && (line[3] == 'D') && (line[4] == 'I') && (line[5] == 'S') && (line[6] == 'P'))
 		{
 			LiDisplay_setDebugMode(line[7]);
