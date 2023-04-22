@@ -5,10 +5,18 @@
 
 #ifndef config_h
 	#define config_h
-	#include "libcm.h"  //For Arduino IDE compatibility
+	#include "libcm.h"
 
-	#define FW_VERSION "0.9.0c"
-  #define BUILD_DATE "2023APR21"
+	#define FW_VERSION "0.9.0d"
+	#define BUILD_DATE "2023APR21"
+
+	//////////////////////////////////////////////////////////////////
+
+	//////////////////////////////
+	//                          //
+	//  Hardware Configuration  //
+	//                          //
+	//////////////////////////////
 
 	//choose your battery type:
 		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
@@ -32,6 +40,16 @@
 
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
 	//#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands //JTS2doNow: mudder has not yet tested this code. Use at your own risk.
+
+	//#define GRIDCHARGER_IS_1500W //Uncomment if using UHP-1500-230 grid charger (i.e. the optional "+15% SoC per hour" charger sold with FoMoCo Kits)
+
+	//////////////////////////////////////////////////////////////////
+
+	/////////////////////////
+	//                     //
+	//  Firmware Settings  //
+	//                     //
+	/////////////////////////
 
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
@@ -65,7 +83,11 @@
 
 	//////////////////////////////////////////////////////////////////
 
-	//All remaining settings are for debug testing only:
+	////////////////////////
+	//                    //
+	//  Debug Parameters  //
+	//                    //
+	////////////////////////
 
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
 

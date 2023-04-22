@@ -423,7 +423,7 @@ void bringupTester_run(void)
 				Serial.print(F("\nTesting 12V_KEYON state is ON: "));
 				serialUSB_waitForEmptyBuffer();
 				{
-					gpio_setGridCharger_powerLevel('H'); //open drain is left floating (negative logic)
+					gpio_setGridCharger_powerLevel('Z'); //open drain is left floating (negative logic)
 					delay(100);
 					if( gpio_keyStateNow() == true ) { Serial.print(F("pass")); } //key appears on
 					else { Serial.print(F("FAIL!! !! !! !")); didTestFail = true; }
