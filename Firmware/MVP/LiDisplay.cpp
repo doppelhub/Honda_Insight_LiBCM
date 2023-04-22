@@ -678,11 +678,11 @@
 
 	void LiDisplay_gridChargerPluggedIn(void) {
 		#ifdef LIDISPLAY_CONNECTED
-			Serial.print(F("\nLiDisplay_gridChargerPluggedIn"));
+			//Serial.print(F("\nLiDisplay_gridChargerPluggedIn"));
 			Serial.print(F("\nLiDisplay HMI Power On"));
-			Serial.print(F("\ngpio_HMIStateNow() = "));
-			Serial.print(String(gpio_HMIStateNow()));
-			if (!gpio_HMIStateNow()) {
+			//Serial.print(F("\ngpio_HMIStateNow() = "));
+			//Serial.print(String(gpio_HMIStateNow()));
+			if (gpio_HMIStateNow() == OFF) {
 				gpio_turnHMI_on();
 				hmi_power_millis = millis();
 			}
@@ -706,7 +706,7 @@
 			Serial.print(F("\nLiDisplay_gridChargerUnplugged"));
 			gc_connected_millis_most_recent_diff = 0;
 			// Check if gpio HMI was already off
-			if (gpio_HMIStateNow()) {
+			if (gpio_HMIStateNow() == ON) {
 				if (key_getSampledState() == KEYSTATE_OFF) {
 					hmi_power_millis = millis();
 					LiDisplaySplashPending = true;

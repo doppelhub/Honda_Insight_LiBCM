@@ -186,7 +186,7 @@ void handleEvent_plugin(void)
     Serial.print(F("Plugged In"));
     gpio_setGridCharger_powerLevel('0');
     lastPlugin_ms = millis();
-	LiDisplay_gridChargerPluggedIn();
+	LiDisplay_gridChargerPluggedIn(); //JTS2doNow: 
 }
 
 //////////////////////////////////////////////////////////////////////////////////
