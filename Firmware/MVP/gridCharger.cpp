@@ -186,7 +186,7 @@ void handleEvent_plugin(void)
     Serial.print(F("Plugged In"));
     gpio_setGridCharger_powerLevel('0');
     lastPlugin_ms = millis();
-	LiDisplay_gridChargerPluggedIn(); //JTS2doNow: 
+	LiDisplay_gridChargerPluggedIn(); //JTS2doNow: Move inside LiDisplay.c... LiDisplay handler should check key state
 }
 
 //////////////////////////////////////////////////////////////////////////////////
