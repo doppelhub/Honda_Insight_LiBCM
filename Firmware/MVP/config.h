@@ -38,10 +38,13 @@
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //increase assist power by statically spoofing pack voltage during heavy assist
 		//#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //increase assist and regen power by variably spoofing pack voltage //DEPRECATED (regen too strong)
 
-	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
-	//#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands //JTS2doNow: mudder has not yet tested this code. Use at your own risk.
+	//choose which display(s) is/are connected:
+		#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
+		//#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands //JTS2doNow: mudder has not yet tested this code. Use at your own risk.
 
-	//#define GRIDCHARGER_IS_1500W //Uncomment if using UHP-1500-230 grid charger (i.e. the optional "+15% SoC per hour" charger sold with FoMoCo Kits)
+	//choose which grid charger is installed
+		#define GRIDCHARGER_IS_NOT_1500W
+		//#define GRIDCHARGER_IS_1500W //Uncomment if using the optional "+15% SoC per hour" charger (UHP-1500-230) //sold only with FoMoCo Kits
 
 	//////////////////////////////////////////////////////////////////
 
