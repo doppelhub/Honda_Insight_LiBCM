@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.9.0b"
-    #define BUILD_DATE "2023APR16"
+	#define FW_VERSION "0.9.0c"
+    #define BUILD_DATE "2023APR21"
 
 
 	//choose your battery type:
@@ -32,7 +32,7 @@
 		//#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //increase assist and regen power by variably spoofing pack voltage //DEPRECATED (regen too strong)
 
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
-	//#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands
+	//#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands //JTS2doNow: mudder has not yet tested this code. Use at your own risk.
 
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
