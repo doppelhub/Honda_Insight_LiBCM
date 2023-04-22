@@ -123,7 +123,7 @@ void runFansIfNeeded(void)
     if     ( (temperature_intake_getLatest()  < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C)) &&
              (temperature_ambient_getLatest() < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C)) &&
              (temperature_battery_getLatest() < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C))  ) { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);  }
-    
+
     else if( (temperature_intake_getLatest()  < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C)) &&
              (temperature_ambient_getLatest() < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C)) &&
              (temperature_battery_getLatest() < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C))  ) { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_LOW);  }
@@ -148,7 +148,7 @@ void powered_handler(void)
             gpio_setGridCharger_powerLevel('H');
 
             if(gridChargerEnabled_previous == NO)
-            {   
+            {
                 Serial.print(F("\nCharger: ON" ));
                 gridChargerEnabled_previous = YES;
             }
@@ -160,7 +160,7 @@ void powered_handler(void)
         fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);
         gpio_turnGridCharger_off();
         gpio_setGridCharger_powerLevel('0');
-        
+
         if(gridChargerEnabled_previous == YES)
         {
             Serial.print(F("\nCharger: OFF"));
@@ -186,6 +186,7 @@ void handleEvent_plugin(void)
     Serial.print(F("Plugged In"));
     gpio_setGridCharger_powerLevel('0');
     lastPlugin_ms = millis();
+	LiDisplay_gridChargerPluggedIn(); //JTS2doNow: Move inside LiDisplay.c... LiDisplay handler should check key state
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -197,6 +198,7 @@ void handleEvent_unplug(void)
     gpio_setGridCharger_powerLevel('H'); //reduces power consumption
     gpio_turnBuzzer_off(); //if issues persist, something else will turn buzzer back on
     fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);
+	LiDisplay_gridChargerUnplugged();
 }
 
 //////////////////////////////////////////////////////////////////////////////////

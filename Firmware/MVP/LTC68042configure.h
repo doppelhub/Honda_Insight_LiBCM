@@ -35,7 +35,6 @@
 	#define AUX_CH_GPIO5 5
 	#define AUX_CH_VREF2 6
 
-
 	//JTS2doLater: Does reducing corner frequency to 26 Hz reduce assist/regen noise? //Add 214 ms wait before reading 
 	//ADC LPF Fcorner:       Total conversion time (QTY12 cells/IC)
 	//ADCOPT(CFGR0[0] = 0)    

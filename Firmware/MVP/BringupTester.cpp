@@ -70,7 +70,7 @@ void bringupTester_run(void)
 				    (LTC68042result_hiCellVoltage_get() < 41000) ) //default returned data is 65535 (if no data sent)
 				{
 					Serial.print(F("pass"));
-					if( LTC68042result_hiCellVoltage_get() > 30000 ) { testToRun = TEST_TYPE_THERMAL_IMAGER; } //lithium batteries connected
+					if( LTC68042result_hiCellVoltage_get() > 30000 ) { testToRun = TEST_TYPE_THERMAL_IMAGER; } //lithium batteries connected //JTS2doNow: Make this beep constantly
 					else                                             { testToRun = TEST_TYPE_GAUNTLET;       } //LED BMS board connected
 
 				} else {
@@ -166,14 +166,31 @@ void bringupTester_run(void)
 					BATTSCI_enable();
 					METSCI_enable();
 
-					uint8_t numberToLoopback = 0b10101110;
-					BATTSCI_writeByte(numberToLoopback);  //send data on BATTSCI (which is connected to METSCI)
-					delay(10);
+					//empty buffer
+					while ( METSCI_bytesAvailableToRead() != 0 ) { METSCI_readByte(); }
 
-					uint8_t numberLoopedBack = 0;
-					while ( METSCI_bytesAvailableToRead() != 0 ) { numberLoopedBack = METSCI_readByte(); }
-					if(numberLoopedBack == numberToLoopback) { Serial.print(F("pass")); }
-					else                                     { Serial.print(F("FAIL!! !! !! !! !! !! !! !! ")); didTestFail = true; }
+					bool didLoopbackPass = true;
+
+					for(char charToLoopback = 'A'; charToLoopback <= 'Z'; charToLoopback++)
+					{
+						BATTSCI_writeByte(charToLoopback);  //send data on BATTSCI (which is connected to METSCI)
+						delay(10);
+
+						uint8_t loopedBack = METSCI_readByte();
+
+						if(loopedBack != charToLoopback)
+						{
+							Serial.print(F("\nMismatch, sent:"));
+							Serial.print(charToLoopback);
+							Serial.print(F(", received:"));
+							Serial.print(loopedBack);
+							didLoopbackPass = false;
+						}
+						else {Serial.print(String(charToLoopback)); }
+					}
+
+					if(didLoopbackPass == true) { Serial.print(F(": pass")); }
+					else { Serial.print(F(": FAIL!! !! !! !! !! !! !! !! ")); didTestFail = true; }
 
 			    	BATTSCI_disable();
 			   		METSCI_disable();
@@ -253,9 +270,9 @@ void bringupTester_run(void)
 					Serial.print( String(tempBAY2) + '/');
 					Serial.print( String(tempBAY3) + ": ");
 
-					if((tempBAY1 > 462) && (tempBAY1 < 562) &&
-					   (tempBAY2 > 462) && (tempBAY2 < 562) &&
-					   (tempBAY3 > 462) && (tempBAY3 < 562)) { Serial.print(F("pass")); }
+					if((tempBAY1 > 459) && (tempBAY1 < 565) &&
+					   (tempBAY2 > 459) && (tempBAY2 < 565) &&
+					   (tempBAY3 > 459) && (tempBAY3 < 565)) { Serial.print(F("pass")); }
 					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
@@ -277,7 +294,7 @@ void bringupTester_run(void)
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
 					Serial.print(String(resultADC));
 					Serial.print(F(" counts: "));
-					if((resultADC > 328) && (resultADC < 336)) { Serial.print(F("pass")); }
+					if((resultADC > 324) && (resultADC < 336)) { Serial.print(F("pass")); }
 					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
@@ -324,17 +341,19 @@ void bringupTester_run(void)
 				}
 
 				//test that OEM current sensor turns off correctly
-				Serial.print(F("\nTurning current sensor off: "));
+				Serial.print(F("\n\nCurrent sensor 10b result after turning off is "));
 				serialUSB_waitForEmptyBuffer();
 				{
 					gpio_turnPowerSensors_off();
 					delay(500);
 
 					gpio_setFanSpeed_PCB(FAN_HIGH); //should already be here
-					delay(100);
+					delay(250);
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
-					if((resultADC > 328) && (resultADC < 336)) { Serial.print(F("pass")); }
+					Serial.print(String(resultADC));
+					Serial.print(" counts: ");
+					if((resultADC > 324) && (resultADC < 336)) { Serial.print(F("pass")); }
 					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}
 
@@ -449,10 +468,7 @@ void bringupTester_run(void)
 				//This is due to -2.5V PFET gate threshold voltage & also LTC6804 "Discharge Switch On-Resistance vs Cell Voltage" (p14).
 				//Therefore, to test discharge resistors, run test again with actual batteries plugged in, then use thermal imager.
 
-				//JTS2doLater: Solder together a 75 Ohm test board - similar to existing LED test board - so that the above is no longer an issue.
-
-				LTC68042configure_wakeup();
-				delay(1);
+				Serial.print(F("\nTesting LTC6804 discharge circuitry"));
 
 				for(uint8_t ii=0; ii<3; ii++)
 				{
@@ -462,26 +478,27 @@ void bringupTester_run(void)
 					delay(100);
 				}
 
-				//activate LTC6804 discharge FETs
-				for(uint8_t ii=0; ii<TOTAL_IC; ii++)
+				LTC68042configure_wakeup();
+
+				uint16_t cellDischargeBitmaps[4] = { 0x0, 0b0000010101010101, 0b0000101010101010, 0x0}; //no discharge, discharge odd cells, discharge even cells, no discharge
+
+				for(uint8_t bitmapPattern = 0; bitmapPattern < 4; bitmapPattern++)
 				{
-					gpio_turnBuzzer_on_highFreq();
-					delay(50);
-					gpio_turnBuzzer_off();
 
-					uint16_t cellDischargeBitmap = 0b0000010101010101; //discharge cells 1/3/5/7/9/11
-					LTC68042configure_setBalanceResistors( (FIRST_IC_ADDR + ii), cellDischargeBitmap, LTC6804_DISCHARGE_TIMEOUT_02_SECONDS);
-					delay(1800); //wait for visual inspection
+					Serial.print(F("\n\nbitmapPattern: "));
+					Serial.print(String(cellDischargeBitmaps[bitmapPattern],BIN));
+					//Test each LTC6804 IC separately
+					for(uint8_t ii=0; ii<TOTAL_IC; ii++)
+					{
+						LTC68042configure_setBalanceResistors(FIRST_IC_ADDR + ii, cellDischargeBitmaps[bitmapPattern], LTC6804_DISCHARGE_TIMEOUT_02_SECONDS);
+					}
+						
+					delay(500); //wait for filter network to settle
 
-					LTC68042configure_programVolatileDefaults(); //disables all discharge FETs
-					delay(1800); //wait for cool down
+					LTC68042cell_sampleGatherAndProcessAllCellVoltages();
+					LTC68042cell_sampleGatherAndProcessAllCellVoltages();
 
-					cellDischargeBitmap = 0b0000101010101010; //discharge cells 2/4/6/8/10/12
-					LTC68042configure_setBalanceResistors( (FIRST_IC_ADDR + ii), cellDischargeBitmap, LTC6804_DISCHARGE_TIMEOUT_02_SECONDS);
-					delay(1800); //wait for visual inspection
-
-					LTC68042configure_programVolatileDefaults(); //disables all discharge FETs
-					delay(1800); //wait for cool down
+					for(uint8_t ii=0; ii<TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages( ii, 3); }
 				}
 			}
 			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.8.6a"
-    #define BUILD_DATE "2023APR16"
+	#define FW_VERSION "0.9.0c"
+  #define BUILD_DATE "2023APR21"
 
 	//choose your battery type:
 		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
@@ -31,6 +31,7 @@
 		//#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //increase assist and regen power by variably spoofing pack voltage //DEPRECATED (regen too strong)
 
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
+	//#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands //JTS2doNow: mudder has not yet tested this code. Use at your own risk.
 
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
@@ -50,14 +51,14 @@
 	#define COOL_BATTERY_ABOVE_TEMP_C_KEYOFF       36 //cabin air cooling
 	#define COOL_BATTERY_ABOVE_TEMP_C_GRIDCHARGING 30
 	#define COOL_BATTERY_ABOVE_TEMP_C_KEYON        30
-	#define HEAT_BATTERY_BELOW_TEMP_C_KEYON        16 //cabin air heating, or heater PCB (if installed) 
+	#define HEAT_BATTERY_BELOW_TEMP_C_KEYON        16 //cabin air heating, or heater PCB (if installed)
 	#define HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING 16
 	#define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       10
 	//other temp settings
 	#define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 50 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
 	#define OEM_FAN_INSTALLED //comment if OEM fan removed
 
-	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda EHW5 lithium modules
+	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda 5AhG3 lithium modules
 
 	#define KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES 10 //Even with low SoC, LiBCM will remain on for this many minutes after keyOFF.
 		//to turn LiBCM back on: turn ignition 'ON', or turn IMA switch off and on, or plug in USB cable
@@ -67,7 +68,7 @@
 	//All remaining settings are for debug testing only:
 
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
-	
+
 	#define CHECK_FOR_SAFETY_COVER //comment if testing LiBCM without the cover
 
 	#define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000 //JTS2doLater: Model after "debugUSB_printLatestData"

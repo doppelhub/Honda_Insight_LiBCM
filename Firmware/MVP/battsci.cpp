@@ -146,6 +146,7 @@ int16_t cellVoltageOffsetDueToESR(void)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doLater: Add five second timeout
 bool BATTSCI_isPackFull(void)
 {
   if( (LTC68042result_hiCellVoltage_get() < CELL_VMAX_REGEN ) && //below maximum cell voltage limit (if SoC estimator is wrong)

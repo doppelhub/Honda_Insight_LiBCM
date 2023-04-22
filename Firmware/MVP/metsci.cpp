@@ -13,18 +13,18 @@
  * (frame3) | (packet6)(packet7) | (Byte18)(Byte19)(Byte20)(Byte21)(Byte22)(Byte23) | E6405A B30449 | assist  engineB3 |
  * (frame4) | (packet8)(packet9) | (Byte24)(Byte25)(Byte26)(Byte27)(Byte28)(Byte29) | E6405A B4004C | assist  engineB4 |
  * ---------------------------------------------------------------------------------------------------------------------
- * 
+ *
  * As shown above, each 30 byte message consists of ten packets.
  * A single packet is sent every 100 ms, hence a complete frame is sent every 200 ms, and a complete message is sent every 1000 ms.
  * Every other packet always starts with 0xE6.
  * Storing the complete message isn't important, as each frame is self-contained.
- * 
+ *
  * At the frame level, the above table reduces to:
  * --------------------------------------------------------------------------|
  * Frame:  | Packet:            | Byte:                                      |
- * (frame) | (packet0)(packet1) | (Byte0)(Byte1)(Byte2)(Byte3)(Byte4)(Byte5) | 
+ * (frame) | (packet0)(packet1) | (Byte0)(Byte1)(Byte2)(Byte3)(Byte4)(Byte5) |
  * --------------------------------------------------------------------------|
- * 
+ *
  * Where the byte order for each frame is always:
  * -Byte0: ALWAYS 0xE6
  * -Byte1: Number of assist/regen bars displayed on instrument panel**
@@ -32,17 +32,17 @@
  * -Byte3: Is either 0xE1, 0xB4, or 0xB3***
  * -Byte4: Data (linked to Byte3 value)
  * -Byte5: Checksum (Byte3+Byte4)
- * 
+ *
  * Given the above, we know the following:
  * -When we eventually add new data types to METSCI, we MUST NEVER send 0xE6 (0b11100110) in METSCI datastream.
  * -Byte0 never changes, so we don't need to store it.
  * -Byte2 & Byte5 are checksums.  After verifying the checksum, we don't need to store them.
  * -Therefore, we only return Byte1/Byte3/Byte4.
- * 
+ *
  * Only the latest METSCI frame is important... If LiBCM gets behind, old frames are deleted.
- * 
+ *
  * ---------------------------------------------------------------------------------------------------------------------
- * 
+ *
  * **The number of assist/regen bars is:
  * Byte0 Byte1 Byte2
  * -----------------
@@ -69,7 +69,7 @@
  * E6 54 46 = 20 Bars Assist
  * E6 21 79 = 01 Bars Regen
  * E6 22 78 = 02 Bars Regen
- * E6 23 77 = 03 Bars Regen 
+ * E6 23 77 = 03 Bars Regen
  * E6 24 76 = 04 Bars Regen
  * E6 25 75 = 05 Bars Regen
  * E6 26 74 = 06 Bars Regen
@@ -87,9 +87,9 @@
  * E6 32 68 = 18 Bars Regen
  * E6 33 67 = 19 Bars Regen
  * E6 34 66 = 20 Bars Regen
- * 
+ *
  * ---------------------------------------------------------------------------------------------------------------------
- * 
+ *
  * ***Where:
  * If Byte3 = 0xE1, then Byte4 indicates IMA state of charge:
  * Byte3 Byte4 Byte5
@@ -100,26 +100,26 @@
  * E1 23 7C = 3 Bars
  * E1 24 7B = 4 Bars
  * E1 25 7A = 5 Bars
- * E1 26 79 = 6 Bars 
+ * E1 26 79 = 6 Bars
  * E1 27 78 = 7 Bars
  * E1 28 77 = 8 Bars
  * E1 29 76 = 9 Bars
  * E1 2A 75 = 10 Bars
- * E1 2B 74 = 11 Bars  
+ * E1 2B 74 = 11 Bars
  * E1 2C 73 = 12 Bars
  * E1 2D 72 = 13 Bars
  * E1 2E 71 = 14 Bars
  * E1 2F 70 = 15 Bars
  * E1 30 6F = 16 Bars
- * E1 31 6E = 17 Bars  
+ * E1 31 6E = 17 Bars
  * E1 32 6D = 18 Bars
  * E1 33 6C = 19 Bars
  * E1 34 6B = 20 Bars
- * 
+ *
  * If Byte3 = 0xB3, then Byte4 indicates engine status.  Details not fully deciphered (or important).  Peter knows the most about this.
  * If Byte3 = 0xB4, then Byte4 indicates engine status.  Details not fully deciphered (or important).  Peter knows the most about this.
  ************************************************************************************************************************/
- 
+
 #include "libcm.h"
 
 struct packetTypes
@@ -136,23 +136,23 @@ void METSCI_begin(void)
 {
   pinMode(PIN_METSCI_DE, OUTPUT);
   digitalWrite(PIN_METSCI_DE,LOW);
-  
+
   pinMode(PIN_METSCI_REn, OUTPUT);
   digitalWrite(PIN_METSCI_REn,HIGH);
-  
+
   Serial3.begin(9600,SERIAL_8E1);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void METSCI_enable(void)
-{  
+{
   digitalWrite(PIN_METSCI_REn,LOW);
 
   //MCM throws CEL if old data sent when key first turned on
   METSCI_Packets.latestB4Packet_engine = 0x18; //OEM BCM transmits 0x18 on BATTSCI until first valid B4 packet received on METSCI
   METSCI_Packets.latestE6Packet_assistLevel = 0x40; // 0x40 is "zero bars assist/regen"
-  METSCI_Packets.latestB3Packet_engine = 0x06; //OEM BCM transmits 0x06 on BATTSCI until first valid B3 packet received on METSCI 
+  METSCI_Packets.latestB3Packet_engine = 0x06; //OEM BCM transmits 0x06 on BATTSCI until first valid B3 packet received on METSCI
   METSCI_Packets.latestE1Packet_SoC = 0x00;
 }
 
@@ -191,17 +191,17 @@ void METSCI_processLatestFrame(void)
     Serial.print(F("\nMETSCI stale.  Discarding frame: "));
     for(int ii=0; ii < METSCI_BYTES_IN_FRAME; ii++) { Serial.print(String(METSCI_readByte(), HEX) ); } //Display (and delete) oldest frame
   }
-  
+
   //At this point the serial receive buffer contains at most the two latest complete frames
   //If everything is in sync, then the next six bytes are a complete frame, and the first byte is 0xE6.
   if( METSCI_bytesAvailableToRead() > METSCI_BYTES_IN_FRAME )  //Verify a full frame exists in the buffer
   {
     uint8_t resyncAttempt = 0; //prevents endless loop by bailing after N tries
-  
+
     while( (METSCI_readByte() != 0xE6) )  //Ensure the first byte is 0xE6 //JTS2doLater: See if keyONinitial pattern "E6,E6,E1,E6" occurs with LiBCM installed
     {
       //throw away data until the next frame starts (0xE6 byte)
-      if(resyncAttempt == 0) { Serial.print( F("\nMETSCI buffer sync") ); } 
+      if(resyncAttempt == 0) { Serial.print( F("\nMETSCI buffer sync") ); }
       else                   { Serial.print('.'); }
 
       resyncAttempt++;
@@ -210,7 +210,7 @@ void METSCI_processLatestFrame(void)
 
     //If we get here, then we've read the first byte, which is 0xE6
     if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { Serial.print(" MET:E6,"); }
-   
+
     //now read the remaining five bytes in the frame
     uint8_t packetType = 0xE6;              //Byte0 (always 0xE6) (we discarded it above)
     uint8_t packetData = METSCI_readByte(); //Byte1 (always number of bars assist/regen)
@@ -228,7 +228,7 @@ void METSCI_processLatestFrame(void)
         if     ( packetType == 0xB4 ) { METSCI_Packets.latestB4Packet_engine = packetData; }
         else if( packetType == 0xB3 ) { METSCI_Packets.latestB3Packet_engine = packetData; }
         else if( packetType == 0xE1 ) { METSCI_Packets.latestE1Packet_SoC    = packetData; }
-      } 
+      }
       else //unknown packet type received
       {
         Serial.print(F("\nUnknown METSCI packet type:"));
@@ -241,12 +241,12 @@ void METSCI_processLatestFrame(void)
         METSCI_Packets.latestB3Packet_engine = 0;
         METSCI_Packets.latestE1Packet_SoC    = 0;
       }
-    } 
-    else //0xE6 checksum invalid 
-    { 
+    }
+    else //0xE6 checksum invalid
+    {
       METSCI_Packets.latestE6Packet_assistLevel = 0;
     }
-  } 
+  }
   return;
 }
 

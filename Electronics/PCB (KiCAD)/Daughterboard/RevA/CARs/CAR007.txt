@@ -1,0 +1,3 @@
+Add zip tie holes:
+-in 'OSHW' logo (move or remove logo)
+-in 'RevA' text (move)
