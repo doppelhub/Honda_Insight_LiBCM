@@ -1,1 +1,4 @@
 Swap Arduino pins #A15 and #44, so we can PWM the grid charger current control circuit
+
+Result:
+Implemented as described

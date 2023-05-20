@@ -1,0 +1,4 @@
+Remove CAN support.  Don't want to have to deal with the header pass-through and I'm certain I'll never add firmware support.
+
+Solution:
+Decided to keep it because I already purchased the connectors and it makes it easier to plug in the 4x20 display.

@@ -1,0 +1,2 @@
+Add BZW04-376B between "L1" and "TRIAC_GATE".
+Prototyped from top of TRIAC (pin 2) to MOC pin4.

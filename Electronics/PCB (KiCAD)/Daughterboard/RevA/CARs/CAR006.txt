@@ -37,3 +37,6 @@ R26=shorted
 That yields 7k32(min) total load on LM4040... so we might even be able to get rid of QTY3 resistors in R16/R19/R17/R20.
 
 Result: The optoisolator can handle fast switching speeds, but there's too much ripple on the output.  Need to add a better lowpass filter to the output.
+
+Solution:
+Changed entire circuit.

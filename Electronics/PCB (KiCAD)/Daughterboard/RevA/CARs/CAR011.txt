@@ -1,0 +1,6 @@
+Header to LiBCM has MOSI and SCLK backwards.  Flip these pins so they match LiBCM's pinout.
+
+Root cause:
+The silkscreen on RevD LiBCM was incorrect (had these pins flipped).
+
+Fixed.
