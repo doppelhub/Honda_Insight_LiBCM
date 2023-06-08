@@ -259,8 +259,12 @@ void fan_handler(void)
 		//OEM battery fan is removed in FoMoCo systems.  The battery fan circuitry is repurposed to allow LiBCM to control the PDU fan
 		//Note that the MCM retains its OEM behavior (i.e. it can still control the PDU fan, too).
 		//JTS2doLater: Add new fan handler specifically for OEM fan... the direct gpio functions used below will only work properly if no other subsystem calls them 
-		if(key_getSampledState() == KEYSTATE_ON) { gpio_setFanSpeed_OEM(FAN_LOW); } //PDU fan defaults to low speed when keyON
-		else                                     { gpio_setFanSpeed_OEM(FAN_OFF); }
+		if( (key_getSampledState() == KEYSTATE_ON) &&
+		    ((millis() - key_latestTurnOnTime_ms_get()) > FAN_SPEED_INCREASE_HYSTERESIS_ms) )
+		{
+			gpio_setFanSpeed_OEM(FAN_LOW); //PDU fan defaults to low speed when keyON
+		} 
+		else { gpio_setFanSpeed_OEM(FAN_OFF); }
 	#endif
 	
 	gpio_setFanSpeed_PCB(fanSpeed_now);
