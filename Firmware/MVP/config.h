@@ -76,7 +76,7 @@
 	#define HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING 16
 	#define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       10
 	//other temp settings
-	#define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 60 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
+	#define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 50 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda 5AhG3 lithium modules
 
@@ -109,6 +109,5 @@
 /*
 JTS2doLater:
 	#define SERIAL_H_LINE_CONNECTED NO //H-Line wire connected to OEM BCM connector pin B01
-	#define SERIAL_HMI_CONNECTED NO //Nextion touch screen connected to J14
 	#define KEYOFF_TURNOFF_LIBCM_AFTER_HOURS 48 //LiBCM turns off this many hours after keyOFF.
 */
