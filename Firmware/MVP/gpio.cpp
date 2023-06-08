@@ -55,6 +55,8 @@ void gpio_begin(void)
 	pinMode(PIN_FANOEM_HI,OUTPUT);
 	pinMode(PIN_GRID_EN,OUTPUT);
 	pinMode(PIN_TEMP_EN,OUTPUT);
+	pinMode(PIN_GPIO0,OUTPUT);
+	digitalWrite(PIN_GPIO0,HIGH); //JTS2doLater: Move into LiControl function
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
@@ -91,7 +93,7 @@ void gpio_setFanSpeed_OEM(char speed)
 			case FAN_OFF:  digitalWrite(PIN_FANOEM_LOW,  LOW); digitalWrite(PIN_FANOEM_HI,  LOW); break;
 			case FAN_LOW:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break;
 			//case FAN_MED:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break; //same as FAN_LOW... OEM fan only supports OFF/LOW/HIGH
-			case FAN_HIGH: digitalWrite(PIN_FANOEM_LOW,  LOW); digitalWrite(PIN_FANOEM_HI, HIGH); break;
+			case FAN_HIGH: digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI, HIGH); break; //JTS2doNow: Change back
 		}
 	#endif
 }

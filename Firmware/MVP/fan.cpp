@@ -254,5 +254,5 @@ void fan_handler(void)
 	}
 
 	gpio_setFanSpeed_OEM(fanSpeed_now);
-	gpio_setFanSpeed_PCB(fanSpeed_now);
+	//gpio_setFanSpeed_PCB(fanSpeed_now); //JTS2doNow: Re-enable
 }

@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"
 
-	#define FW_VERSION "0.9.0d"
-	#define BUILD_DATE "2023APR21"
+	#define FW_VERSION "0.9.0f"
+	#define BUILD_DATE "2023JUN07"
 
 	//////////////////////////////////////////////////////////////////
 
@@ -19,12 +19,12 @@
 	//////////////////////////////
 
 	//choose your battery type:
-		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
-		//#define BATTERY_TYPE_47AhFoMoCo
+		//#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
+		#define BATTERY_TYPE_47AhFoMoCo
 
 	//choose how many cells in series
-		#define STACK_IS_48S
-		//#define STACK_IS_60S
+		//#define STACK_IS_48S
+		#define STACK_IS_60S
 
 	//choose ONE of the following:
 		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
@@ -33,8 +33,8 @@
 		//#define SET_CURRENT_HACK_60 //+60% //Note: LiBCM can only measure between 71 A regen & 147 A assist //higher current values will (safely) rail the ADC
 
 	//choose ONE of the following:
-		//#define VOLTAGE_SPOOFING_DISABLE              //spoof maximum possible pack voltage at all times //closest to OEM behavior
-		#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE   //increase assist power by variably   spoofing pack voltage during assist
+		#define VOLTAGE_SPOOFING_DISABLE              //spoof maximum possible pack voltage at all times //closest to OEM behavior
+		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE   //increase assist power by variably   spoofing pack voltage during assist
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //increase assist power by statically spoofing pack voltage during heavy assist
 		//#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //increase assist and regen power by variably spoofing pack voltage //DEPRECATED (regen too strong)
 
@@ -43,8 +43,8 @@
 		//#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands //JTS2doNow: mudder has not yet tested this code. Use at your own risk.
 
 	//choose which grid charger is installed
-		#define GRIDCHARGER_IS_NOT_1500W
-		//#define GRIDCHARGER_IS_1500W //Uncomment if using the optional "+15% SoC per hour" charger (UHP-1500-230) //sold only with FoMoCo Kits
+		//#define GRIDCHARGER_IS_NOT_1500W
+		#define GRIDCHARGER_IS_1500W //Uncomment if using the optional "+15% SoC per hour" charger (UHP-1500-230) //sold only with FoMoCo Kits
 
 	//////////////////////////////////////////////////////////////////
 
@@ -59,7 +59,7 @@
 
 	#define CELL_VMAX_REGEN                     42500 //42500 = 4.2500 volts
 	#define CELL_VMIN_ASSIST                    31900 //allows for ESR-based voltage drop
-	#define CELL_VMAX_GRIDCHARGER               39000 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
+	#define CELL_VMAX_GRIDCHARGER               31000 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
 	#define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
 	#define CELL_VMIN_KEYOFF                    CELL_VREST_10_PERCENT_SoC //when car is off, LiBCM turns off below this voltage  //JTS2doLater: Change to higher SoC
 	#define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled below this percentage
@@ -76,7 +76,7 @@
 	#define HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING 16
 	#define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       10
 	//other temp settings
-	#define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 50 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
+	#define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 10 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
 	#define OEM_FAN_INSTALLED //comment if OEM fan removed
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda 5AhG3 lithium modules
