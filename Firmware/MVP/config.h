@@ -7,7 +7,7 @@
 	#define config_h
 	#include "libcm.h"
 
-	#define FW_VERSION "0.9.0f"
+	#define FW_VERSION "0.9.0g"
 	#define BUILD_DATE "2023JUN07"
 
 	//////////////////////////////////////////////////////////////////
@@ -76,8 +76,7 @@
 	#define HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING 16
 	#define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       10
 	//other temp settings
-	#define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 10 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
-	#define OEM_FAN_INSTALLED //comment if OEM fan removed
+	#define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 60 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda 5AhG3 lithium modules
 

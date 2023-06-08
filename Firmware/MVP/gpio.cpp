@@ -87,15 +87,17 @@ void gpio_turnLiBCM_off(void)
 
 void gpio_setFanSpeed_OEM(char speed)
 {
-	#ifdef OEM_FAN_INSTALLED
-		switch(speed)
-		{
-			case FAN_OFF:  digitalWrite(PIN_FANOEM_LOW,  LOW); digitalWrite(PIN_FANOEM_HI,  LOW); break;
-			case FAN_LOW:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break;
-			//case FAN_MED:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break; //same as FAN_LOW... OEM fan only supports OFF/LOW/HIGH
-			case FAN_HIGH: digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI, HIGH); break; //JTS2doNow: Change back
-		}
-	#endif
+	switch(speed)
+	{
+		case FAN_OFF:  digitalWrite(PIN_FANOEM_LOW,  LOW); digitalWrite(PIN_FANOEM_HI,  LOW); break;
+		case FAN_LOW:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break;
+		//case FAN_MED:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break; //same as FAN_LOW... OEM fan only supports OFF/LOW/HIGH
+		#ifdef BATTERY_TYPE_5AhG3
+			case FAN_HIGH: digitalWrite(PIN_FANOEM_LOW, LOW); digitalWrite(PIN_FANOEM_HI, HIGH); break; //OEM fan schematic requires one relay for high speed
+		#elif defined BATTERY_TYPE_47AhFoMoCo
+			case FAN_HIGH: digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI, HIGH); break; //PDU fan schematic requires both relays for high speed
+		#endif
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
