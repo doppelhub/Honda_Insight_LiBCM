@@ -55,6 +55,8 @@ void gpio_begin(void)
 	pinMode(PIN_FANOEM_HI,OUTPUT);
 	pinMode(PIN_GRID_EN,OUTPUT);
 	pinMode(PIN_TEMP_EN,OUTPUT);
+	pinMode(PIN_GPIO0,OUTPUT);
+	digitalWrite(PIN_GPIO0,HIGH); //JTS2doLater: Move into LiControl function
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
@@ -85,15 +87,17 @@ void gpio_turnLiBCM_off(void)
 
 void gpio_setFanSpeed_OEM(char speed)
 {
-	#ifdef OEM_FAN_INSTALLED
-		switch(speed)
-		{
-			case FAN_OFF:  digitalWrite(PIN_FANOEM_LOW,  LOW); digitalWrite(PIN_FANOEM_HI,  LOW); break;
-			case FAN_LOW:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break;
-			//case FAN_MED:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break; //same as FAN_LOW... OEM fan only supports OFF/LOW/HIGH
-			case FAN_HIGH: digitalWrite(PIN_FANOEM_LOW,  LOW); digitalWrite(PIN_FANOEM_HI, HIGH); break;
-		}
-	#endif
+	switch(speed)
+	{
+		case FAN_OFF:  digitalWrite(PIN_FANOEM_LOW,  LOW); digitalWrite(PIN_FANOEM_HI,  LOW); break;
+		case FAN_LOW:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break;
+		//case FAN_MED:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break; //same as FAN_LOW... OEM fan only supports OFF/LOW/HIGH
+		#ifdef BATTERY_TYPE_5AhG3
+			case FAN_HIGH: digitalWrite(PIN_FANOEM_LOW, LOW); digitalWrite(PIN_FANOEM_HI, HIGH); break; //OEM fan schematic requires one relay for high speed
+		#elif defined BATTERY_TYPE_47AhFoMoCo
+			case FAN_HIGH: digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI, HIGH); break; //PDU fan schematic requires both relays for high speed
+		#endif
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -143,10 +147,23 @@ void gpio_setGridCharger_powerLevel(char powerLevel)
 {
 	switch(powerLevel)
 	{
-		case '0': analogWrite(PIN_GRID_PWM, 255); break; //negative logic
-		case 'L': analogWrite(PIN_GRID_PWM, 160); break; //JTS2doLater: Determine correct grid charger values
-		case 'M': analogWrite(PIN_GRID_PWM, 80); break;
-		case 'H': pinMode(PIN_GRID_PWM, INPUT); break; //reduces power consumption
+		#ifdef GRIDCHARGER_IS_1500W //wiring is different from other chargers		
+			//JTS2doNow: Add #define in gpio.c to remap this to the correct daughterboard pin
+			//JTS2doNow: Add #define in gpio.c to add charger on/off pin
+			case '0': analogWrite(PIN_GRID_PWM,   0); break; //disable grid charger
+			//case 'L' //this pin is connected to simple on/off control, so there are no intermediate states
+			//case 'M' //this pin is connected to simple on/off control, so there are no intermediate states
+			case 'H': analogWrite(PIN_GRID_PWM, 255); break; //enable grid charger
+			case 'Z': pinMode(PIN_GRID_PWM, INPUT);   break; //reduces power consumption
+			default:  analogWrite(PIN_GRID_PWM,   0); break; //disable charger
+		#else
+			case '0': analogWrite(PIN_GRID_PWM, 255); break; //negative logic
+			case 'L': analogWrite(PIN_GRID_PWM, 160); break; //JTS2doLater: Determine correct grid charger values
+			case 'M': analogWrite(PIN_GRID_PWM,  80); break;
+			case 'H': analogWrite(PIN_GRID_PWM,   0); break;
+			case 'Z': pinMode(PIN_GRID_PWM, INPUT);   break; //reduces power consumption
+			default:  analogWrite(PIN_GRID_PWM, 255); break; //disable charger
+		#endif
 	}
 }
 

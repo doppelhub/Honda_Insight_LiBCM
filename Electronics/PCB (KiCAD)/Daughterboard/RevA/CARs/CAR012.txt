@@ -1,0 +1,3 @@
+Make room for larger 2x3 SPI Header (to LiControl)
+
+Done.

@@ -167,6 +167,7 @@ bool BATTSCI_isPackEmpty(void)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doLater: Disable assist and regen if pack too hot
 //JTS2doLater: Add hysteresis and/or different SoC setpoints
 //JTS2doNow: If SoC drops below 1%, spoof very different HVDC voltages, which will force MCM to open contactor (to prevent further discharge)
 //sternly demand no regen and/or assist from MCM

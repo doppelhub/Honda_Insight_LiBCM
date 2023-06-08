@@ -1,0 +1,41 @@
+websites:
+enerz.us
+greentecauto.com
+batteryhookup.com
+
+
+Ford Fusion Hybrid 2013-2019
+76S1P (QTY2 38S1P stacks)
+1.4 kWh, so 5Ah cells.  Look similar to 5AhG3, but with green overwrap
+Requires new mechanicals.
+GG98-10B759-AA
+
+Ford Explorer/Escape Hybrid
+76S1P (QTY2 38S1P stacks)
+Hitachi Cells
+
+Ford CMAX plug in hybrid ('Energi')
+42S1P (QTY2 21S1P stacks)
+panasonic EH25 (25 Ah)
+
+Honda CRZ 2013-2016
+
+FoMoCo modules used in:
+Land Rover discovery sport p300e (2.14 kWh)
+vw egolf (1.6kwh)
+
+B-MAX
+https://jag35.com/collections/nmc-cells/products/12s-nmc-module-44-4vdc-200a-continuous-400a-burstba
+
+2016-2022 Prius lithium hybrid
+56S1P (QTY2 28S1P stacks)
+cell tabs are bolted together
+
+2017-2021 prius prime
+QTY5 modules, total is 8.79 kWh
+Each module contains QTY19 cells, and weighs 16.9 kg (37.2 pounds).
+Each module is 596.5 mm long, 120.6 mm tall, and 152 mm wide.  So each cell is:
+31.4x121x152 mm
+cells bolted together... separate after drilling four case rivets per module.
+25 Ah cells
+

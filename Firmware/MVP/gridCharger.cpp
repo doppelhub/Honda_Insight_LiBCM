@@ -145,7 +145,7 @@ void powered_handler(void)
         {
             runFansIfNeeded();
             gpio_turnGridCharger_on();
-            gpio_setGridCharger_powerLevel('H');
+            gpio_setGridCharger_powerLevel('H'); //JTS2doNow: Reduce duty cycle as temp increases
 
             if(gridChargerEnabled_previous == NO)
             {
@@ -195,7 +195,7 @@ void handleEvent_unplug(void)
 {
     Serial.print(F("Unplugged"));
     gpio_turnGridCharger_off();
-    gpio_setGridCharger_powerLevel('H'); //reduces power consumption
+    gpio_setGridCharger_powerLevel('Z'); //reduces power consumption
     gpio_turnBuzzer_off(); //if issues persist, something else will turn buzzer back on
     fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);
 	LiDisplay_gridChargerUnplugged();

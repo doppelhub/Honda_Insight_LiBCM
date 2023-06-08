@@ -109,6 +109,7 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
 //turn LiBCM off if any cell voltage is too low
 //LiBCM remains off until the next keyON occurs
 //prevents over-discharge during extended keyOFF
+//JTS2doNow: Don't turn off if grid charger is plugged in
 void SoC_turnOffLiBCM_ifPackEmpty(void)
 {
 	static uint8_t numConsecutiveTimesCellVoltageTooLow = 0; 

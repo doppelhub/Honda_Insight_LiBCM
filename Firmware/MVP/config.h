@@ -5,10 +5,18 @@
 
 #ifndef config_h
 	#define config_h
-	#include "libcm.h"  //For Arduino IDE compatibility
+	#include "libcm.h"
 
-	#define FW_VERSION "0.9.0c"
-  #define BUILD_DATE "2023APR21"
+	#define FW_VERSION "0.9.0g"
+	#define BUILD_DATE "2023JUN07"
+
+	//////////////////////////////////////////////////////////////////
+
+	//////////////////////////////
+	//                          //
+	//  Hardware Configuration  //
+	//                          //
+	//////////////////////////////
 
 	//choose your battery type:
 		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
@@ -25,13 +33,26 @@
 		//#define SET_CURRENT_HACK_60 //+60% //Note: LiBCM can only measure between 71 A regen & 147 A assist //higher current values will (safely) rail the ADC
 
 	//choose ONE of the following:
-		//#define VOLTAGE_SPOOFING_DISABLE              //spoof maximum possible pack voltage at all times //closest to OEM behavior
-		#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE   //increase assist power by variably   spoofing pack voltage during assist
+		#define VOLTAGE_SPOOFING_DISABLE              //spoof maximum possible pack voltage at all times //closest to OEM behavior
+		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE   //increase assist power by variably   spoofing pack voltage during assist
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //increase assist power by statically spoofing pack voltage during heavy assist
 		//#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //increase assist and regen power by variably spoofing pack voltage //DEPRECATED (regen too strong)
 
-	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
-	//#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands //JTS2doNow: mudder has not yet tested this code. Use at your own risk.
+	//choose which display(s) is/are connected:
+		#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
+		//#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands //JTS2doNow: mudder has not yet tested this code. Use at your own risk.
+
+	//choose which grid charger is installed
+		#define GRIDCHARGER_IS_NOT_1500W
+		//#define GRIDCHARGER_IS_1500W //Uncomment if using the optional "+15% SoC per hour" charger (UHP-1500-230) //sold only with FoMoCo Kits
+
+	//////////////////////////////////////////////////////////////////
+
+	/////////////////////////
+	//                     //
+	//  Firmware Settings  //
+	//                     //
+	/////////////////////////
 
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
@@ -56,7 +77,6 @@
 	#define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       10
 	//other temp settings
 	#define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 50 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
-	#define OEM_FAN_INSTALLED //comment if OEM fan removed
 
 	#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda 5AhG3 lithium modules
 
@@ -65,7 +85,11 @@
 
 	//////////////////////////////////////////////////////////////////
 
-	//All remaining settings are for debug testing only:
+	////////////////////////
+	//                    //
+	//  Debug Parameters  //
+	//                    //
+	////////////////////////
 
 	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
 
@@ -85,6 +109,5 @@
 /*
 JTS2doLater:
 	#define SERIAL_H_LINE_CONNECTED NO //H-Line wire connected to OEM BCM connector pin B01
-	#define SERIAL_HMI_CONNECTED NO //Nextion touch screen connected to J14
 	#define KEYOFF_TURNOFF_LIBCM_AFTER_HOURS 48 //LiBCM turns off this many hours after keyOFF.
 */
