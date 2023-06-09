@@ -15,7 +15,7 @@ uint8_t heater_isConnected(void) { return heaterLocation; }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-bool isHeaterConnectedtoPin(uint8_t pinToTest)
+bool isHeaterConnectedtoPin(int16_t pinToTest)
 {
 	uint8_t initialPinMode = gpio_getPinMode(pinToTest);
 	bool isHeaterConnectedToThisPin = NO;
@@ -28,11 +28,7 @@ bool isHeaterConnectedtoPin(uint8_t pinToTest)
 		digitalWrite(pinToTest,LOW); //turn heater off
 		pinMode(pinToTest,INPUT); //switch pin to input (redundant, for safety)
 	} 
-	else
-	{
-		//heater not connected to this pin
-		pinMode(pinToTest,initialPinMode);
-	}
+	else { pinMode(pinToTest,initialPinMode); } //heater not connected to this pin
 
 	return isHeaterConnectedToThisPin;
 }
