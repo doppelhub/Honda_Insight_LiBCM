@@ -148,12 +148,17 @@ void gpio_setGridCharger_powerLevel(char powerLevel)
 	switch(powerLevel)
 	{
 		#ifdef GRIDCHARGER_IS_1500W //wiring is different from other chargers		
-			case '0': analogWrite(PIN_ABSTRACTED_GRID_VOLTAGE, HIGH); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,  LOW); break; //disable grid charger
-			//case 'L': analogWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,  120); break; //PWM value TBD
-			//case 'M': analogWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   60); break; //PWM value TBD
-			case 'H': analogWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT, HIGH); break; //enable grid charger
-			case 'Z':     pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,INPUT);     pinMode(PIN_ABSTRACTED_GRID_CURRENT,INPUT); break; //reduces power consumption
-			default:  analogWrite(PIN_ABSTRACTED_GRID_VOLTAGE, HIGH); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,  LOW); break; //disable charger
+			case '0': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
+			     digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  HIGH); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    0); break; //disable grid charger
+		  //case 'L': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
+			   //digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,  120); break; //PWM value TBD
+		  //case 'M': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
+			   //digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   60); break; //PWM value TBD
+			case 'H': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
+			     digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,  255); break; //enable grid charger
+			case 'Z': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE, INPUT);     pinMode(PIN_ABSTRACTED_GRID_CURRENT,INPUT); break; //reduces power consumption	 
+			default:  pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
+			     digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  HIGH); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    0); break; //disable charger
 		
 		#elif defined GRIDCHARGER_IS_NOT_1500W
 			case '0': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   255); break; //negative logic
