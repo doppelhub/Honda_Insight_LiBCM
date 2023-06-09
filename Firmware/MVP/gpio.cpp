@@ -55,8 +55,8 @@ void gpio_begin(void)
 	pinMode(PIN_FANOEM_HI,OUTPUT);
 	pinMode(PIN_GRID_EN,OUTPUT);
 	pinMode(PIN_TEMP_EN,OUTPUT);
-	pinMode(PIN_GPIO0,OUTPUT);
-	digitalWrite(PIN_GPIO0,HIGH); //JTS2doLater: Move into LiControl function
+	pinMode(PIN_GPIO0_CS_MIMA,OUTPUT);
+	digitalWrite(PIN_GPIO0_CS_MIMA,HIGH); //JTS2doLater: Move into LiControl function
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
@@ -219,7 +219,7 @@ bool gpio_isCoverInstalled(void)
 
 bool gpio1_getState(void) { return digitalRead(PIN_GPIO1); }
 bool gpio2_getState(void) { return digitalRead(PIN_GPIO2); }
-bool gpio3_getState(void) { return digitalRead(PIN_GPIO3_HEATER); }
+bool gpio3_getState(void) { return digitalRead(PIN_GPIO3); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -228,8 +228,35 @@ void gpio_turnTemperatureSensors_off(void) {digitalWrite(PIN_TEMP_EN,LOW ); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-void gpio_turnPackHeater_on(void) { pinMode(PIN_GPIO3_HEATER,OUTPUT); digitalWrite(PIN_GPIO3_HEATER,HIGH); }
-void gpio_turnPackHeater_off(void){ pinMode(PIN_GPIO3_HEATER,INPUT);  digitalWrite(PIN_GPIO3_HEATER,LOW);  }
+void gpio_turnPackHeater_on(void)
+{
+	if(heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM)
+	{
+		pinMode(PIN_GPIO3,OUTPUT);
+		digitalWrite(PIN_GPIO3,HIGH);
+	}
+	else if(heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)
+	{
+		pinMode(PIN_GPIO1,OUTPUT);
+		digitalWrite(PIN_GPIO1,HIGH);
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void gpio_turnPackHeater_off(void)
+{
+	if(heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM)
+	{
+		pinMode(PIN_GPIO3,INPUT);
+		digitalWrite(PIN_GPIO3,LOW);
+	}
+	else if(heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)
+	{
+		pinMode(PIN_GPIO1,INPUT);
+		digitalWrite(PIN_GPIO1,LOW);
+	}
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 

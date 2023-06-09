@@ -282,6 +282,6 @@ void debugUSB_printConfigParameters(void)
 	#endif
 
 	Serial.print(F("/Heat:"));
-	if(heater_isInstalled() == YES) { Serial.print('Y'); }
-	else                            { Serial.print('N'); }
+	if(heater_isConnected() == HEATER_NOT_CONNECTED) { Serial.print('N'); }
+	else                                             { Serial.print('Y'); }
 }

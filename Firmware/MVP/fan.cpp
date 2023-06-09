@@ -114,12 +114,12 @@ uint8_t packTempState(void)
 	uint8_t status = PACKTEMP_UNKNOWN;
 	int8_t packTemp = temperature_battery_getLatest();
 
-	if     (packTemp > TEMPERATURE_PACK_IN_THERMAL_RUNAWAY                                        ) { status = PACKTEMP_RUNAWAY; }
-	else if(packTemp > temperature_coolBatteryAbove_C() +  FAN_ADDITIONAL_TEMP_FOR_HIGH_SPEED_degC) { status = PACKTEMP_HOT;  }
-	else if(packTemp > temperature_coolBatteryAbove_C()                                           ) { status = PACKTEMP_WARM; }
-	else if(packTemp > temperature_heatBatteryBelow_C()                                           ) { status = PACKTEMP_OK;   }
-	else if(packTemp > temperature_heatBatteryBelow_C() -  FAN_ADDITIONAL_TEMP_FOR_HIGH_SPEED_degC) { (heater_isInstalled() == YES) ? (status = PACKTEMP_OK) : (status = PACKTEMP_COOL); }
-	else if(packTemp > TEMPERATURE_SENSOR_FAULT_LO                                                ) { (heater_isInstalled() == YES) ? (status = PACKTEMP_OK) : (status = PACKTEMP_COLD); }
+	if     (packTemp > TEMPERATURE_PACK_IN_THERMAL_RUNAWAY                            ) { status = PACKTEMP_RUNAWAY; }
+	else if(packTemp > temperature_coolBatteryAbove_C() +  FAN_DELTA_T_HIGH_SPEED_degC) { status = PACKTEMP_HOT;  }
+	else if(packTemp > temperature_coolBatteryAbove_C()                               ) { status = PACKTEMP_WARM; }
+	else if(packTemp > temperature_heatBatteryBelow_C()                               ) { status = PACKTEMP_OK;   }
+	else if(packTemp > temperature_heatBatteryBelow_C() -  FAN_DELTA_T_HIGH_SPEED_degC) { (heater_isConnected() == HEATER_NOT_CONNECTED)?(status=PACKTEMP_COOL):(status = PACKTEMP_OK); }
+	else if(packTemp > TEMPERATURE_SENSOR_FAULT_LO                                    ) { (heater_isConnected() == HEATER_NOT_CONNECTED)?(status=PACKTEMP_COLD):(status = PACKTEMP_OK); }
 
 	return status;
 }

@@ -45,8 +45,8 @@
       #define PIN_BATTSCI_REn    40
       #define PIN_BATTSCI_DE     41
       #define PIN_COVER_SWITCH   42
-      #define PIN_GPIO0          43
-      #define PIN_GPIO3_HEATER   44
+      #define PIN_GPIO0_CS_MIMA  43
+      #define PIN_GPIO3          44
       #define PIN_BUZZER_PWM     45
       #define PIN_LED3           46
       #define PIN_SPI_EXT_CS     47

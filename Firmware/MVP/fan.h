@@ -34,8 +34,8 @@
 	#define FAN_TIME_ON_BEFORE_INTAKE_TEMP_VALID_ms    (10 *  1000) //period fan must run before intake temperature sensor accurately measures cabin air temperature
 	#define FAN_TIME_OFF_BEFORE_INTAKE_TEMP_INVALID_ms ( 2 * 60000) //period after fan stops where the intake temperature sensor value still reflects cabin air temperature
 
-	#define FAN_ADDITIONAL_TEMP_FOR_HIGH_SPEED_degC    5 //this many additional degrees enables fan at high speed (instead of low speed)
-	#define MIN_CABIN_AIR_DELTA_FOR_FANS_degC 5 //intake air must be at least this many degrees 'better' for fans to heat/cool pack
+	#define FAN_DELTA_T_HIGH_SPEED_degC        5 //this many additional degrees enables fan at high speed (instead of low speed)
+	#define MIN_CABIN_AIR_DELTA_FOR_FANS_degC  5 //intake air must be at least this many degrees 'better' for fans to heat/cool pack
 
 	#define SAMPLE_CABIN_AIR_INTERVAL_KEY_OFF_ms   (15 * 60000) //if pack too hot or cold, LiBCM will briefly run fans at least this often to draw cabin air across intake temp sensor
 	#define SAMPLE_CABIN_AIR_INTERVAL_KEY_ON_ms    ( 3 * 60000)
