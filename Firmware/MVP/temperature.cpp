@@ -32,8 +32,8 @@ void temperature_measureOEM(void)
 		tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
 	#elif defined BATTERY_TYPE_47AhFoMoCo
 		tempIntake  = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
-		tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
-		tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_GRN);
+		tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_GRN);
+		tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
 		tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_YEL);
 	#endif
 }
