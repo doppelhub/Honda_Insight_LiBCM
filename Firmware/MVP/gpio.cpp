@@ -53,7 +53,7 @@ void gpio_begin(void)
 	pinMode(PIN_FAN_PWM,OUTPUT);
 	pinMode(PIN_FANOEM_LOW,OUTPUT);
 	pinMode(PIN_FANOEM_HI,OUTPUT);
-	pinMode(PIN_GRID_EN,OUTPUT);
+	pinMode(PIN_ABSTRACTED_GRID_EN,OUTPUT);
 	pinMode(PIN_TEMP_EN,OUTPUT);
 	pinMode(PIN_GPIO0_CS_MIMA,OUTPUT);
 	digitalWrite(PIN_GPIO0_CS_MIMA,HIGH); //JTS2doLater: Move into LiControl function
@@ -133,13 +133,13 @@ bool gpio_HMIStateNow(void) { return digitalRead(PIN_HMI_EN); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-bool gpio_isGridChargerPluggedInNow(void) { return !(digitalRead(PIN_GRID_SENSE)); }
-bool gpio_isGridChargerChargingNow(void)  { return   digitalRead(PIN_GRID_EN);     }
+bool gpio_isGridChargerPluggedInNow(void) { return !(digitalRead(PIN_GRID_SENSE)       ); }
+bool gpio_isGridChargerChargingNow(void)  { return   digitalRead(PIN_ABSTRACTED_GRID_EN); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-void gpio_turnGridCharger_on(void)  { digitalWrite(PIN_GRID_EN, HIGH); }
-void gpio_turnGridCharger_off(void) { digitalWrite(PIN_GRID_EN, LOW);  }
+void gpio_turnGridCharger_on(void)  { digitalWrite(PIN_ABSTRACTED_GRID_EN, HIGH); }
+void gpio_turnGridCharger_off(void) { digitalWrite(PIN_ABSTRACTED_GRID_EN, LOW);  }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -148,21 +148,20 @@ void gpio_setGridCharger_powerLevel(char powerLevel)
 	switch(powerLevel)
 	{
 		#ifdef GRIDCHARGER_IS_1500W //wiring is different from other chargers		
-			//JTS2doNow: Add #define in gpio.c to remap this to the correct daughterboard pin
-			//JTS2doNow: Add #define in gpio.c to add charger on/off pin
-			case '0': analogWrite(PIN_GRID_PWM,   0); break; //disable grid charger
-			//case 'L' //this pin is connected to simple on/off control, so there are no intermediate states
-			//case 'M' //this pin is connected to simple on/off control, so there are no intermediate states
-			case 'H': analogWrite(PIN_GRID_PWM, 255); break; //enable grid charger
-			case 'Z': pinMode(PIN_GRID_PWM, INPUT);   break; //reduces power consumption
-			default:  analogWrite(PIN_GRID_PWM,   0); break; //disable charger
-		#else
-			case '0': analogWrite(PIN_GRID_PWM, 255); break; //negative logic
-			case 'L': analogWrite(PIN_GRID_PWM, 160); break; //JTS2doLater: Determine correct grid charger values
-			case 'M': analogWrite(PIN_GRID_PWM,  80); break;
-			case 'H': analogWrite(PIN_GRID_PWM,   0); break;
-			case 'Z': pinMode(PIN_GRID_PWM, INPUT);   break; //reduces power consumption
-			default:  analogWrite(PIN_GRID_PWM, 255); break; //disable charger
+			case '0': analogWrite(PIN_ABSTRACTED_GRID_VOLTAGE, HIGH); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,  LOW); break; //disable grid charger
+			//case 'L': analogWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,  120); break; //PWM value TBD
+			//case 'M': analogWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   60); break; //PWM value TBD
+			case 'H': analogWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT, HIGH); break; //enable grid charger
+			case 'Z':     pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,INPUT);     pinMode(PIN_ABSTRACTED_GRID_CURRENT,INPUT); break; //reduces power consumption
+			default:  analogWrite(PIN_ABSTRACTED_GRID_VOLTAGE, HIGH); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,  LOW); break; //disable charger
+		
+		#elif defined GRIDCHARGER_IS_NOT_1500W
+			case '0': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   255); break; //negative logic
+			case 'L': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   160); break; //JTS2doLater: Determine correct grid charger values
+			case 'M': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    80); break;
+			case 'H': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,     0); break;
+			case 'Z':     pinMode(PIN_ABSTRACTED_GRID_CURRENT, INPUT); break; //reduces power consumption
+			default:  analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   255); break; //disable charger
 		#endif
 	}
 }

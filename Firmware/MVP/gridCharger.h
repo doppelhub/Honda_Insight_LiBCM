@@ -23,7 +23,6 @@
     #define NO__RECENTLY_TURNED_OFF     0b10001101
     #define NO__KEY_IS_ON               0b10001110
 
-
     #define DISABLE_GRIDCHARGING_ABOVE_CHARGER_TEMP_C 60
     #define DISABLE_GRIDCHARGING_BELOW_BATTERY_TEMP_C (TEMP_FREEZING_DEGC + 2)
     #define DISABLE_GRIDCHARGING_ABOVE_BATTERY_TEMP_C 40
@@ -39,8 +38,6 @@
     #define GRID_MIN_TIME_OFF_NONE_ms      0
     #define GRID_MIN_TIME_OFF_SHORT_ms  2000 //prevents rapid grid charger cycling
     #define GRID_MIN_TIME_OFF_LONG_ms  30000
-
-
 
     void gridCharger_handler(void);
 
