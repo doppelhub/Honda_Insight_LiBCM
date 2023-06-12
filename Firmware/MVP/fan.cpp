@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //handles fans
@@ -258,7 +258,9 @@ void fan_handler(void)
 	#elif defined BATTERY_TYPE_47AhFoMoCo
 		//OEM battery fan is removed in FoMoCo systems.  The battery fan circuitry is repurposed to allow LiBCM to control the PDU fan
 		//Note that the MCM retains its OEM behavior (i.e. it can still control the PDU fan, too).
-		//JTS2doLater: Add new fan handler specifically for OEM fan... the direct gpio functions used below will only work properly if no other subsystem calls them 
+		//JTS2doLater: Add new fan handler specifically for OEM fan... the direct gpio functions used below will only work properly if no other subsystem calls them
+		//JTS2doLater: Enable  high speed if more than 500 kJ have flowed through the IGBT stage over the previous 60 seconds.
+		//JTS2doLater: Disable high speed if less than 250 kJ have flowed through the IGBT stage over the previous 60 seconds.
 		if( (key_getSampledState() == KEYSTATE_ON) &&
 		    ((millis() - key_latestTurnOnTime_ms_get()) > FAN_SPEED_INCREASE_HYSTERESIS_ms) )
 		{

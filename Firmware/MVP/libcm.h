@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //main LiBCM include file
@@ -46,5 +46,6 @@
   #include "fan.h"
   #include "status.h"
   #include "heater.h"
+  #include "LiControl.h"
 
 #endif

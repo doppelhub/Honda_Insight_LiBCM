@@ -13,6 +13,7 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 	BATTSCI_begin();
 	heater_init();
 	LiDisplay_begin();
+	LiControl_begin();
 	LTC68042configure_initialize();
 
 	#ifdef RUN_BRINGUP_TESTER
@@ -51,6 +52,7 @@ void loop()
 		adc_updateBatteryCurrent();
 		vPackSpoof_setVoltage();
 		debugUSB_printLatestData();
+		LiControl_handler();
 	}
 	else if( key_getSampledState() == KEYSTATE_OFF )
 	{

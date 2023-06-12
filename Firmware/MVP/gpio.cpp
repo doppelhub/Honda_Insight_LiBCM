@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //all digitalRead(), digitalWrite(), analogRead(), analogWrite() functions live here
@@ -55,8 +55,6 @@ void gpio_begin(void)
 	pinMode(PIN_FANOEM_HI,OUTPUT);
 	pinMode(PIN_ABSTRACTED_GRID_EN,OUTPUT);
 	pinMode(PIN_TEMP_EN,OUTPUT);
-	pinMode(PIN_GPIO0_CS_MIMA,OUTPUT);
-	digitalWrite(PIN_GPIO0_CS_MIMA,HIGH); //JTS2doLater: Move into LiControl function
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
