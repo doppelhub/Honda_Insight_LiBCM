@@ -23,3 +23,4 @@ GND
 
 To fix:
 Swap "MOSI" and "SCK" silkscreen text.  The electrical connections should not change.
+This also needs to be corrected in the schematic on J22!
