@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //Tests PCB (using custom external hardware)
 
 //Not used when deployed in vehicle
