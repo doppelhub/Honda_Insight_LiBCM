@@ -45,6 +45,13 @@
 	//choose which grid charger is installed
 		//#define GRIDCHARGER_IS_NOT_1500W
 		#define GRIDCHARGER_IS_1500W //Uncomment if using the optional "+15% SoC per hour" charger (UHP-1500-230) //sold only with FoMoCo Kits
+		
+	//JTS2doNow: Implement this feature	
+	//if using 1500 watt charger with 120 volt extension cord, choose input current limit 
+		//#define CHARGER_INPUT_CURRENT__15A_MAX //select this option if using 12 AWG extension cord up to 100 feet, or 14 AWG up to 50 feet**, else if;
+		//#define CHARGER_INPUT_CURRENT__13A_MAX //select this option if using 14 AWG extension cord up to 100 feet, or 16 AWG up to 50 feet**, else if;
+		//#define CHARGER_INPUT_CURRENT__10A_MAX //select this option if using 16 AWG extension cord up to 100 feet, or 18 AWG up to 50 feet**.
+			//**please verify maximum continuous current rating for your specific extension cord
 
 	//////////////////////////////////////////////////////////////////
 
