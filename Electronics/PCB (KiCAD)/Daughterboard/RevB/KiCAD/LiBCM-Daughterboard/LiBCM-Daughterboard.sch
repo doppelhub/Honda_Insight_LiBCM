@@ -661,17 +661,6 @@ F 3 "http://www.vishay.com/docs/83675/sfh620a.pdf" H 7575 5675 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:LED D2
-U 1 1 64E2926F
-P 5975 5775
-F 0 "D2" H 6025 5675 50  0000 R CNN
-F 1 "LED" H 6025 5875 50  0000 R CNN
-F 2 "LED_SMD:LED_0805_2012Metric" H 5975 5775 50  0001 C CNN
-F 3 "~" H 5975 5775 50  0001 C CNN
-	1    5975 5775
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:+5V #PWR030
 U 1 1 650832C1
 P 7225 5300
@@ -686,10 +675,6 @@ Wire Wire Line
 	7225 5575 7225 5300
 Wire Wire Line
 	7225 5575 7275 5575
-Text Label 5300 5775 0    69   ~ 0
-ILIM_LED2
-Text Label 6150 5775 0    69   ~ 0
-ILIM_LED
 Wire Wire Line
 	4100 1625 4100 2075
 $Comp
@@ -939,7 +924,7 @@ HEATER_EN
 Wire Wire Line
 	3725 850  3725 5775
 Wire Wire Line
-	7275 5775 6125 5775
+	7275 5775 6350 5775
 $Comp
 L Device:C C5
 U 1 1 64EE399D
@@ -981,10 +966,8 @@ $EndComp
 NoConn ~ 10325 5125
 Wire Wire Line
 	3725 5775 3925 5775
-Text Notes 5650 6100 0    59   ~ 0
-V(typ): 2.1 V\nV(max): 2.6 V
 Text Notes 6825 6350 0    59   ~ 0
-V(typ): 1.25 V\nV(max): 1.65 V\nI(typ): 8.25 mA\nI(min): 3.25 mA
+V(typ): 1.25 V\nV(max): 1.65 V\nI(typ): 12.5 mA\nI(min): 11.2 mA
 Text Notes 1925 5450 2    59   ~ 0
 SPI HEADER:\nLiCONTROL
 Wire Wire Line
@@ -1331,7 +1314,7 @@ F 3 "~" H 4950 4225 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 Text Notes 4925 4050 0    59   ~ 0
-When U4 is (ON)/[OFF]:\n-Net 'CHARGER_LIMIT_VOLTAGE' = (4.44V)/[2.35V]\n-Charger output set to (249V)/[164V]\n-This circuit pulls (450uA)/[2200uA] from +5P
+When U4 is (ON)/[OFF] (and U3 is OFF):\n-Net 'CHARGER_LIMIT_VOLTAGE' = (4.44V)/[2.35V]\n-Charger output set to (249V)/[164V]\n-This circuit pulls (450uA)/[2200uA] from +5P
 Wire Wire Line
 	9250 4675 9250 4625
 Wire Wire Line
@@ -1352,7 +1335,7 @@ L Device:R R30
 U 1 1 64B64D05
 P 9250 4875
 F 0 "R30" V 9150 4800 50  0000 L CNN
-F 1 "100" V 9250 4800 50  0000 L CNN
+F 1 "768" V 9250 4800 50  0000 L CNN
 F 2 "Resistor_SMD:R_0805_2012Metric" V 9180 4875 50  0001 C CNN
 F 3 "~" H 9250 4875 50  0001 C CNN
 	1    9250 4875
@@ -1387,7 +1370,7 @@ L Device:R R28
 U 1 1 64B64D27
 P 8600 5975
 F 0 "R28" V 8700 5900 50  0000 L CNN
-F 1 "71k5" V 8600 5875 50  0000 L CNN
+F 1 "10k" V 8600 5900 50  0000 L CNN
 F 2 "Resistor_SMD:R_0805_2012Metric" V 8530 5975 50  0001 C CNN
 F 3 "~" H 8600 5975 50  0001 C CNN
 	1    8600 5975
@@ -1516,20 +1499,18 @@ Connection ~ 8600 5775
 $Comp
 L Device:R R14
 U 1 1 64F8875A
-P 5075 5775
-F 0 "R14" V 4975 5700 50  0000 L CNN
-F 1 "100" V 5075 5700 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric" V 5005 5775 50  0001 C CNN
-F 3 "~" H 5075 5775 50  0001 C CNN
-	1    5075 5775
+P 5125 5775
+F 0 "R14" V 5025 5700 50  0000 L CNN
+F 1 "100" V 5125 5700 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 5055 5775 50  0001 C CNN
+F 3 "~" H 5125 5775 50  0001 C CNN
+	1    5125 5775
 	0    1    -1   0   
 $EndComp
 Wire Wire Line
-	4225 5775 4925 5775
-Wire Wire Line
-	5825 5775 5225 5775
-Text Label 4300 5775 0    69   ~ 0
-ILIM_DIV
+	4225 5775 4975 5775
+Text Label 4250 5775 0    69   ~ 0
+ILIM_LED_1
 Wire Wire Line
 	9675 4025 9800 4025
 Wire Wire Line
@@ -1635,7 +1616,7 @@ Wire Wire Line
 Text Label 4650 4700 0    69   ~ 0
 SW_DIV
 Text Notes 4900 5600 0    59   ~ 0
-When U3 is (OFF)/[ON]:\n-Net 'CHARGER_LIMIT_CURRENT' = (4.80V)/[1.03V]\n-Charger output set to (6.7A)/[1.3A]\n-This circuit pulls (260uA)/[5200uA] from +5P
+When U3 is (OFF)/[ON] (and U4 is OFF):\n-Net 'CHARGER_LIMIT_CURRENT' = (4.80V)/[2.48V]\n-Charger output set to (6.7A)/[3.4A]\n-This circuit pulls (260uA)/[3280uA] from +5P
 Wire Wire Line
 	8000 1000 8200 1000
 Connection ~ 7800 1000
@@ -1700,7 +1681,7 @@ L Device:R R18
 U 1 1 6481E02C
 P 8600 1750
 F 0 "R18" V 8700 1675 50  0000 L CNN
-F 1 "100k" V 8600 1650 50  0000 L CNN
+F 1 "DNP" V 8600 1675 50  0000 L CNN
 F 2 "Resistor_SMD:R_0805_2012Metric" V 8530 1750 50  0001 C CNN
 F 3 "~" H 8600 1750 50  0001 C CNN
 	1    8600 1750
@@ -1762,7 +1743,7 @@ L Device:R R5
 U 1 1 647DB495
 P 8400 1200
 F 0 "R5" V 8500 1125 50  0000 L CNN
-F 1 "100k" V 8400 1100 50  0000 L CNN
+F 1 "DNP" V 8400 1125 50  0000 L CNN
 F 2 "Resistor_SMD:R_0805_2012Metric" V 8330 1200 50  0001 C CNN
 F 3 "~" H 8400 1200 50  0001 C CNN
 	1    8400 1200
@@ -1813,8 +1794,8 @@ Wire Wire Line
 	8000 1900 8000 1950
 Wire Wire Line
 	7800 1000 7800 900 
-Text Notes 9350 1600 2    59   ~ 0
-USE 250 mW\n100k RESISTORS\n1500 mW MAX
+Text Notes 8675 1675 0    59   ~ 0
+USE 250 mW\n100k RESISTORS\n1050 mW MAX\nR = 58k3
 Wire Wire Line
 	8000 1050 8000 1000
 Wire Wire Line
@@ -1835,7 +1816,7 @@ L Device:R R16
 U 1 1 639CD976
 P 7800 1200
 F 0 "R16" V 7900 1125 50  0000 L CNN
-F 1 "100k" V 7800 1100 50  0000 L CNN
+F 1 "DNP" V 7800 1125 50  0000 L CNN
 F 2 "Resistor_SMD:R_0805_2012Metric" V 7730 1200 50  0001 C CNN
 F 3 "~" H 7800 1200 50  0001 C CNN
 	1    7800 1200
@@ -1846,7 +1827,7 @@ L Device:R R22
 U 1 1 65603188
 P 9250 5300
 F 0 "R22" V 9150 5225 50  0000 L CNN
-F 1 "100" V 9250 5225 50  0000 L CNN
+F 1 "20" V 9250 5250 50  0000 L CNN
 F 2 "Resistor_SMD:R_0805_2012Metric" V 9180 5300 50  0001 C CNN
 F 3 "~" H 9250 5300 50  0001 C CNN
 	1    9250 5300
@@ -1932,10 +1913,10 @@ Wire Wire Line
 	7800 2375 7800 1950
 Connection ~ 7800 2375
 Connection ~ 7800 1950
-Text Notes 8925 2225 0    39   ~ 0
-+5P supply notes:\n  0V when charger OFF\n  5V when charger ON\n  Vout can sag above 3.4 mA**\n  Vout will sag above 6.1 mA
+Text Notes 8775 2175 0    39   ~ 0
++5P supply notes:\n  0V when charger OFF\n  5V when charger ON\n  Vout can sag above 2.3 mA**\n  Vout will sag above 3.8 mA
 Text Notes 8500 2550 0    39   ~ 0
-**DERIVATION:\n(QTY48 CELLS)*(3.0 V/CELL)=144 V_HVDC(MIN)\n(144 V_MIN)-(5V_REF)=139 Vdrop@R_POWER\n(139 Vdrop)/(40 kOhm)=3475uA_max(+5P)\n(3475uA_max)-(65uA_max_LM4040)=3410uA(max)
+**DERIVATION:\n(QTY48 CELLS)*(3.0 V/CELL)=144 V_HVDC(MIN)\n(144 V_MIN)-(5V_REF)=139 Vdrop@R_POWER\n(139 Vdrop)/(58k3 Ohm)=2385uA_max(+5P)\n(2385uA_max)-(65uA_max_LM4040)=2320uA(max)
 Wire Wire Line
 	3400 2475 3400 3500
 Wire Wire Line
@@ -2291,4 +2272,21 @@ Text Notes 1250 4300 0    59   ~ 0
 Wire Wire Line
 	2575 4325 2825 4325
 Connection ~ 2575 4325
+$Comp
+L Device:R R36
+U 1 1 64A03025
+P 6200 5775
+F 0 "R36" V 6100 5700 50  0000 L CNN
+F 1 "100" V 6200 5700 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 6130 5775 50  0001 C CNN
+F 3 "~" H 6200 5775 50  0001 C CNN
+	1    6200 5775
+	0    1    -1   0   
+$EndComp
+Text Label 5325 5775 0    69   ~ 0
+ILIM_LED_2
+Text Label 6375 5775 0    69   ~ 0
+ILIM_LED_3
+Wire Wire Line
+	6050 5775 5275 5775
 $EndSCHEMATC
