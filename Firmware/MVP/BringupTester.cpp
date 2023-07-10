@@ -18,7 +18,7 @@ void serialUSB_waitForEmptyBuffer(void)
 
 void serialUSB_waitForAnyUserInput(void)
 {
-	const uint32_t maxTestPeriod_ms = 120000; //prevent overcharging modules if user walks off mid-test
+	const uint32_t maxTestPeriod_ms = 60000; //prevent overcharging modules if user walks off mid-test
 	uint32_t timestamp_testStartTime_ms = millis();
 	static bool hasTooMuchTimePassed = false;
 
@@ -49,6 +49,8 @@ void bringupTester_gridcharger(void)
 				Serial.print(F("GRIDCHARGER_IS_1500W"));
 
 				//Verify charger Vin sense is working when unplugged
+				gpio_turnGridCharger_off();
+				gpio_setGridCharger_powerLevel('0');
 				Serial.print(F("\n\nUnplug charger from wall, disconnect battery, then press 'enter' to continue. "));
 				serialUSB_waitForAnyUserInput();
 				Serial.print(F("Result: "));
@@ -65,19 +67,19 @@ void bringupTester_gridcharger(void)
 				//Charger disabled, verify fans off, Vout == 0
 				gpio_turnGridCharger_off(); //signal under test
 				gpio_setGridCharger_powerLevel('H'); //other signals set to least safe value
-				Serial.print(F("\n\nVerify:\n -fans off\n -Vout = 0"));
+				Serial.print(F("\n\nVerify:\n -fans off\n -Vout ~= 0"));
 				serialUSB_waitForAnyUserInput();
 
 				//Charger enabled, verify fans on, Vout is high
 				gpio_turnGridCharger_on();
 				gpio_setGridCharger_powerLevel('H');
-				Serial.print(F("\n\nVerify:\n -fans on\n Vout = 250\n P_in ~= 1200|1500 watts @ Vin ~= 120|240 volts"));
+				Serial.print(F("\n\nVerify:\n -fans on\n -Vout ~= 250"));
 				serialUSB_waitForAnyUserInput();
 
 				//Verify voltage and current won't charge pack if on/off gets stuck on
 				gpio_turnGridCharger_on(); //assume this signal gets stuck on (unsafe)
 				gpio_setGridCharger_powerLevel('0'); //do these reduntant signals prevent charging?
-				Serial.print(F("\n\nVerify:\n -fans on\n -Vout = 110\n -Daughterboard 'V' is ~2.5 volts\n -Daughterboard 'I' is ~2.5 volts"));
+				Serial.print(F("\n\nVerify:\n -fans on\n -Vout ~= 105\n -Daughterboard 'V' is ~.7 volts\n -Daughterboard 'I' is ~0.7 volts"));
 				serialUSB_waitForAnyUserInput();
 
 				//connect battery
