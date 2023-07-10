@@ -5,15 +5,113 @@
 
 #include "libcm.h"
 
+//////////////////////////////////////////////////////////////////
+
 void serialUSB_waitForEmptyBuffer(void)
 {	//This function verifies serial data is sent to host prior to starting each test (in case of brownout/reset)
 	while(Serial.availableForWrite() != 63) { ; } //do nothing
 }
 
 //the 'quality' of this code is... poor.  Not written to be good/fast/etc... just to test each PCB after assembly
-void bringupTester_run(void)
+
+//////////////////////////////////////////////////////////////////
+
+void serialUSB_waitForAnyUserInput(void)
 {
-	#ifdef RUN_BRINGUP_TESTER
+	const uint32_t maxTestPeriod_ms = 120000; //prevent overcharging modules if user walks off mid-test
+	uint32_t timestamp_testStartTime_ms = millis();
+	static bool hasTooMuchTimePassed = false;
+
+	if(hasTooMuchTimePassed == true)
+	{
+		gpio_turnGridCharger_off();
+		gpio_setGridCharger_powerLevel('0');
+		Serial.print(F("\nTest timed out. Grid charger disabled. Reboot to continue"));
+		while(1) { ; } //hang here forever
+	}
+
+	while((Serial.available() == 0) && (hasTooMuchTimePassed == false))
+	{
+		if((millis() - timestamp_testStartTime_ms) > maxTestPeriod_ms) { hasTooMuchTimePassed = true; }
+	}
+	while(Serial.read() != -1) { delay(10); } //empty read buffer
+}
+
+//////////////////////////////////////////////////////////////////
+
+void bringupTester_gridcharger(void)
+{
+	#ifdef RUN_BRINGUP_TESTER_GRIDCHARGER
+		while(1) //this function never returns
+		{		
+			Serial.print(F("\nRunning Grid Charger Test: "));
+			#ifdef GRIDCHARGER_IS_1500W
+				Serial.print(F("GRIDCHARGER_IS_1500W"));
+
+				//Verify charger Vin sense is working when unplugged
+				Serial.print(F("\n\nUnplug charger from wall, disconnect battery, then press 'enter' to continue. "));
+				serialUSB_waitForAnyUserInput();
+				Serial.print(F("Result: "));
+				if(gpio_isGridChargerPluggedInNow() == false) { Serial.print(F("pass")); }
+				else                                          { Serial.print(F("FAIL")); }
+
+				//Verify charger Vin sense is working when plugged in
+				Serial.print(F("\n\nPlug charger into wall, then press 'enter' to continue. "));
+				serialUSB_waitForAnyUserInput();
+				Serial.print(F("Result: "));
+				if(gpio_isGridChargerPluggedInNow() == true) { Serial.print(F("pass")); }
+				else                                         { Serial.print(F("FAIL")); }
+
+				//Charger disabled, verify fans off, Vout == 0
+				gpio_turnGridCharger_off(); //signal under test
+				gpio_setGridCharger_powerLevel('H'); //other signals set to least safe value
+				Serial.print(F("\n\nVerify:\n -fans off\n -Vout = 0"));
+				serialUSB_waitForAnyUserInput();
+
+				//Charger enabled, verify fans on, Vout is high
+				gpio_turnGridCharger_on();
+				gpio_setGridCharger_powerLevel('H');
+				Serial.print(F("\n\nVerify:\n -fans on\n Vout = 250\n P_in ~= 1200|1500 watts @ Vin ~= 120|240 volts"));
+				serialUSB_waitForAnyUserInput();
+
+				//Verify voltage and current won't charge pack if on/off gets stuck on
+				gpio_turnGridCharger_on(); //assume this signal gets stuck on (unsafe)
+				gpio_setGridCharger_powerLevel('0'); //do these reduntant signals prevent charging?
+				Serial.print(F("\n\nVerify:\n -fans on\n -Vout = 110\n -Daughterboard 'V' is ~2.5 volts\n -Daughterboard 'I' is ~2.5 volts"));
+				serialUSB_waitForAnyUserInput();
+
+				//connect battery
+				gpio_turnGridCharger_off();
+				Serial.print(F("\n\nConnect battery, then press 'enter' to continue. "));
+				serialUSB_waitForAnyUserInput();
+
+				//Charger enabled, Vout is high, Iout is high
+				gpio_turnGridCharger_on();
+				gpio_setGridCharger_powerLevel('H');
+				Serial.print(F("\n\nVerify P_in ~= 1200|1500 watts @ Vin ~= 120|240 volts"));
+				serialUSB_waitForAnyUserInput();
+
+				//Charger enabled, Vout is high, Iout is low
+				gpio_turnGridCharger_on();
+				gpio_setGridCharger_powerLevel('L');
+				Serial.print(F("\n\nVerify P_in ~= 600|600 watts @ Vin ~= 120|240 volts"));
+				serialUSB_waitForAnyUserInput();
+
+			#else //GRIDCHARGER_IS_NOT_1500W
+				//JTS2doLater: Add test case
+
+			#endif
+
+			Serial.print(F("\nGRID CHARGER TEST COMPLETE.  Restarting test.\n-----------------------------------------------------------------\n"));
+		}
+	#endif
+}
+
+//////////////////////////////////////////////////////////////////
+
+void bringupTester_motherboard(void)
+{
+	#ifdef RUN_BRINGUP_TESTER_MOTHERBOARD
 		while(1) //this function never returns
 		{
 			uint8_t testToRun = TEST_TYPE_UNDEFINED;

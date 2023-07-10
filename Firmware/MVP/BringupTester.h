@@ -4,7 +4,8 @@
 #ifndef bringuptester_h
 	#define bringuptester_h
 
-	void bringupTester_run(void);
+	void bringupTester_motherboard(void);
+	void bringupTester_gridcharger(void);
 
 	#define TEST_TYPE_UNDEFINED      0
 	#define TEST_TYPE_THERMAL_IMAGER 1

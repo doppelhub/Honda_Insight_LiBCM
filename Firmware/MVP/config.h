@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"
 
-	#define FW_VERSION "0.9.0n"
-	#define BUILD_DATE "2023JUN08"
+	#define FW_VERSION "0.9.1a"
+	#define BUILD_DATE "2023JUL10"
 
 	//////////////////////////////////////////////////////////////////
 
@@ -98,7 +98,8 @@
 	//                    //
 	////////////////////////
 
-	//#define RUN_BRINGUP_TESTER //requires external test PCB (that you don't have)
+	//#define RUN_BRINGUP_TESTER_MOTHERBOARD //requires external test PCB (that you don't have)
+	#define RUN_BRINGUP_TESTER_GRIDCHARGER //requires external test equipment
 
 	#define CHECK_FOR_SAFETY_COVER //comment if testing LiBCM without the cover
 

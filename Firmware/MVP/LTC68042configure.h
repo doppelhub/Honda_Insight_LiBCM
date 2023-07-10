@@ -6,7 +6,7 @@
 
 	//JTS2doLater: LiBCM also needs to determine cell count, and then sound an alarm if different from user-entered value (safety issue)
 	//choose number of LTC ICs in isoSPI network
-	#ifdef RUN_BRINGUP_TESTER
+	#ifdef RUN_BRINGUP_TESTER_MOTHERBOARD
 		#define TOTAL_IC 5
 	#elif defined STACK_IS_48S
 		#define TOTAL_IC 4
@@ -80,7 +80,7 @@
 	#define DCP_DISABLED 0
 	#define DCP_ENABLED 1
 
-	#ifdef RUN_BRINGUP_TESTER
+	#ifdef RUN_BRINGUP_TESTER_MOTHERBOARD
 		#define IS_DISCHARGE_ALLOWED_DURING_CONVERSION DCP_ENABLED
 	#else
 		#define IS_DISCHARGE_ALLOWED_DURING_CONVERSION DCP_DISABLED

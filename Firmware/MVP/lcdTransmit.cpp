@@ -511,7 +511,7 @@ void updateNextValue(void)
 // 		lcd2.setCursor(0,2);  lcd2.print("Vprrr(fff) dz.zzz   ");
 // 		lcd2.setCursor(0,3);  lcd2.print("tuuuuu A-ccc kW-kk.k");
 
-#ifdef RUN_BRINGUP_TESTER
+#ifdef RUN_BRINGUP_TESTER_MOTHERBOARD
 	//this function is too slow to call during keyON
 	//replaced by updateNextStatic(), (but bringup tester still uses it)
 	//JTS2doLater: make new function for bringup tester to display random text

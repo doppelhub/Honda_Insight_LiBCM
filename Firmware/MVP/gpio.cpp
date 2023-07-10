@@ -148,8 +148,8 @@ void gpio_setGridCharger_powerLevel(char powerLevel)
 		#ifdef GRIDCHARGER_IS_1500W //wiring is different from other chargers		
 			case '0': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
 			     digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  HIGH); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    0); break; //disable grid charger
-		  //case 'L': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
-			   //digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,  120); break; //PWM value TBD
+		  case 'L': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
+			     digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,  120); break; //PWM value TBD
 		  //case 'M': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
 			   //digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   60); break; //PWM value TBD
 			case 'H': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);

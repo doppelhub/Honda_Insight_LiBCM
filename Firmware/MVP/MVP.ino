@@ -16,8 +16,10 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 	LiControl_begin();
 	LTC68042configure_initialize();
 
-	#ifdef RUN_BRINGUP_TESTER
-	  	bringupTester_run(); //this function never returns
+	#ifdef RUN_BRINGUP_TESTER_GRIDCHARGER
+	  	bringupTester_gridcharger();
+	#elif defined RUN_BRINGUP_TESTER_MOTHERBOARD
+	  	bringupTester_motherboard(); //this function never returns
 	#endif
 
 	if(gpio_keyStateNow() == KEYSTATE_ON){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while keyON (e.g. while driving)
