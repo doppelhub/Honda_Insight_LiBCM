@@ -79,7 +79,7 @@ void bringupTester_gridcharger(void)
 				//Verify voltage and current won't charge pack if on/off gets stuck on
 				gpio_turnGridCharger_on(); //assume this signal gets stuck on (unsafe)
 				gpio_setGridCharger_powerLevel('0'); //do these reduntant signals prevent charging?
-				Serial.print(F("\n\nVerify:\n -fans on\n -Vout ~= 105\n -Daughterboard 'V' is ~.7 volts\n -Daughterboard 'I' is ~0.7 volts"));
+				Serial.print(F("\n\nVerify:\n -fans on\n -Vout ~= 105\n -Daughterboard 'V' is ~0.7 volts\n -Daughterboard 'I' is ~0.7 volts"));
 				serialUSB_waitForAnyUserInput();
 
 				//connect battery
@@ -96,7 +96,7 @@ void bringupTester_gridcharger(void)
 				//Charger enabled, Vout is high, Iout is low
 				gpio_turnGridCharger_on();
 				gpio_setGridCharger_powerLevel('L');
-				Serial.print(F("\n\nVerify P_in ~= 600|600 watts @ Vin ~= 120|240 volts"));
+				Serial.print(F("\n\nVerify P_in ~= 950|950 watts @ Vin ~= 120|240 volts"));
 				serialUSB_waitForAnyUserInput();
 
 			#else //GRIDCHARGER_IS_NOT_1500W
