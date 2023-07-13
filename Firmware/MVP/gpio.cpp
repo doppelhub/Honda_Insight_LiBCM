@@ -55,6 +55,8 @@ void gpio_begin(void)
 	pinMode(PIN_FANOEM_HI,OUTPUT);
 	pinMode(PIN_ABSTRACTED_GRID_EN,OUTPUT);
 	pinMode(PIN_TEMP_EN,OUTPUT);
+	pinMode(PIN_SPI_EXT_CS,OUTPUT);
+	digitalWrite(PIN_SPI_EXT_CS,HIGH); //JTS2doNow: Move this somewhere else logical
 
 	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
 
