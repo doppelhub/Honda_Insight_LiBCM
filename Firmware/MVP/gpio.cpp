@@ -162,8 +162,8 @@ void gpio_setGridCharger_powerLevel(char powerLevel)
 		
 		#elif defined GRIDCHARGER_IS_NOT_1500W
 			case '0': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   255); break; //negative logic
-			case 'L': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   160); break; //JTS2doLater: Determine correct grid charger values
-			case 'M': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    80); break;
+			case 'L': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    80); break; //JTS2doLater: Determine correct grid charger values
+			case 'M': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    40); break;
 			case 'H': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,     0); break;
 			case 'Z':     pinMode(PIN_ABSTRACTED_GRID_CURRENT, INPUT); break; //reduces power consumption
 			default:  analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   255); break; //disable charger
