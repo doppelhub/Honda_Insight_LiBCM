@@ -100,9 +100,74 @@ void bringupTester_gridcharger(void)
 				serialUSB_waitForAnyUserInput();
 
 			#else //GRIDCHARGER_IS_NOT_1500W
-				//JTS2doLater: Add test case
+				Serial.print(F("GRIDCHARGER_IS_NOT_1500W"));
 
+				//Verify charger Vin sense is working when unplugged
+				gpio_turnGridCharger_off();
+				gpio_setGridCharger_powerLevel('0');
+				Serial.print(F("\n\nUnplug charger from wall, disconnect battery, then press 'enter' to continue. "));
+				serialUSB_waitForAnyUserInput();
+				Serial.print(F("Result: "));
+				if(gpio_isGridChargerPluggedInNow() == false) { Serial.print(F("pass")); }
+				else                                          { Serial.print(F("FAIL")); }
+
+				//Verify charger Vin sense is working when plugged in
+				Serial.print(F("\n\nPlug charger into wall, then press 'enter' to continue. "));
+				serialUSB_waitForAnyUserInput();
+				Serial.print(F("Result: "));
+				if(gpio_isGridChargerPluggedInNow() == true) { Serial.print(F("pass")); }
+				else                                         { Serial.print(F("FAIL")); }
+
+				//Charger disabled, verify Vout == 0
+				gpio_turnGridCharger_off(); //signal under test
+				gpio_setGridCharger_powerLevel('H'); //other signals set to least safe value
+				Serial.print(F("\n\nVerify Vout ~= 0"));
+				serialUSB_waitForAnyUserInput();
+
+				//Charger enabled, verify fans on, Vout is high
+				gpio_turnGridCharger_on();
+				gpio_setGridCharger_powerLevel('H');
+				Serial.print(F("\n\nVerify Vout ~= 275"));
+				serialUSB_waitForAnyUserInput();
+
+				//Verify voltage and current won't charge pack if on/off gets stuck on
+				gpio_turnGridCharger_on(); //assume this signal gets stuck on (unsafe)
+				gpio_setGridCharger_powerLevel('0'); //do these reduntant signals prevent charging?
+				Serial.print(F("\n\nVerify Vout ~= 0"));
+				serialUSB_waitForAnyUserInput();
+
+				//connect battery
+				gpio_turnGridCharger_off();
+				Serial.print(F("\n\nConnect battery, then press 'enter' to continue. "));
+				serialUSB_waitForAnyUserInput();
+
+				//Charger enabled, Vout is high, Iout is high
+				gpio_turnGridCharger_on();
+				gpio_setGridCharger_powerLevel('H');
+				Serial.print(F("\n\nVerify P_in ~= 500 watts"));
+				serialUSB_waitForAnyUserInput();
+
+				//Charger enabled, Vout is high, Iout is low
+				gpio_turnGridCharger_on();
+				gpio_setGridCharger_powerLevel('L');
+				Serial.print(F("\n\nVerify P_in ~= 100 watts"));
+				serialUSB_waitForAnyUserInput();
 			#endif
+
+			//test heater (if installed)
+			gpio_turnGridCharger_off();
+			gpio_setGridCharger_powerLevel('0');
+			if(heater_isConnected() == HEATER_NOT_CONNECTED) { Serial.print(F("\nHeater NOT Connected. Skipping test.")); }
+			else
+			{
+				Serial.print(F("\nHeater connected to: "));
+				if(heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)   { Serial.print(F("Daughterboard")); }
+				if(heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM) { Serial.print(F("LiBCM Header"));  }
+				Serial.print(F("\nTurning heater on for 5 seconds"));
+				gpio_turnPackHeater_on();
+				delay(5000);
+				gpio_turnPackHeater_off();
+			}
 
 			Serial.print(F("\nGRID CHARGER TEST COMPLETE.  Restarting test.\n-----------------------------------------------------------------\n"));
 		}
