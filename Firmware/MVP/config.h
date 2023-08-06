@@ -22,6 +22,7 @@
 		//#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
 		#define BATTERY_TYPE_47AhFoMoCo
 
+	//JTS2doNow: Come up with method to determine if user has selected correct option before allowing contactor to fire.
 	//choose how many cells in series
 		//#define STACK_IS_48S
 		#define STACK_IS_60S
