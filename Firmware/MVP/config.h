@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"
 
-	#define FW_VERSION "0.9.1c"
-	#define BUILD_DATE "2023AUG14"
+	#define FW_VERSION "0.9.1d"
+	#define BUILD_DATE "2023AUG24"
 
 	//////////////////////////////////////////////////////////////////
 
@@ -19,13 +19,13 @@
 	//////////////////////////////
 
 	//choose your battery type:
-		//#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
-		#define BATTERY_TYPE_47AhFoMoCo
+		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
+		//#define BATTERY_TYPE_47AhFoMoCo
 
 	//JTS2doNow: Come up with method to determine if user has selected correct option before allowing contactor to fire.
 	//choose how many cells in series
-		//#define STACK_IS_48S
-		#define STACK_IS_60S
+		#define STACK_IS_48S
+		//#define STACK_IS_60S
 
 	//choose ONE of the following:
 		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
@@ -44,8 +44,8 @@
 		//#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands //JTS2doNow: mudder has not yet tested this code. Use at your own risk.
 
 	//choose which grid charger is installed
-		//#define GRIDCHARGER_IS_NOT_1500W
-		#define GRIDCHARGER_IS_1500W //Uncomment if using the optional "+15% SoC per hour" charger (UHP-1500-230) //sold only with FoMoCo Kits
+		#define GRIDCHARGER_IS_NOT_1500W
+		//#define GRIDCHARGER_IS_1500W //Uncomment if using the optional "+15% SoC per hour" charger (UHP-1500-230) //sold only with FoMoCo Kits
 		
 	//JTS2doNow: Implement this feature	
 	//if using 1500 watt charger with 120 volt extension cord, choose input current limit 

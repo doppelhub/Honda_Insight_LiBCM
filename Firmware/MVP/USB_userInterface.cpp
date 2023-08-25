@@ -77,6 +77,10 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	{
 		Serial.print(F("Unused"));
 	}
+	else if(testToRun == 'C')
+	{
+		for( uint8_t ii = 0; ii < TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages(ii, FOUR_DECIMAL_PLACES); }
+	}
 	else if(testToRun == 'T')
 	{
 		temperature_measureAndPrintAll();
@@ -120,6 +124,8 @@ void printHelp(void)
 		"\n -'$BOOT': restart LiBCM"
 		"\n -'$TESTR': run LTC6804 VREF test"
 		"\n -'$TESTH': blink heater LED"
+		"\n -'$TESTC': print cell voltages"
+		"\n -'$TESTT': print temperatures"
 		"\n -'$TEST1'/2/3/4: run temporary debug test code. See 'USB_userInterface_runTestCode()')"
 		"\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
 		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
