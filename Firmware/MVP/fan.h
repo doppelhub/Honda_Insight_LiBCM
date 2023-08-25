@@ -16,8 +16,11 @@
 	//fan request status bits (for each subsystem)
 	#define FAN_OFF  0b00
 	#define FAN_LOW  0b01
-	//#define FAN_MED  0b10 //JTS2doLater: not fully implemented in hasEnoughTimePassedToChangeFanSpeed()
+	#define FAN_MED  0b10
 	#define FAN_HIGH 0b11
+	static_assert((FAN_OFF < FAN_LOW),  "FAN_OFF needs to be less than FAN_LOW");
+	static_assert((FAN_LOW < FAN_MED),  "FAN_LOW needs to be less than FAN_MED");
+	static_assert((FAN_MED < FAN_HIGH), "FAN_MED needs to be less than FAN_HIGH");
 
 	#define FAN_HI_MASK   0b10101010 //OR this mask with fanSpeed_allRequestors to see if any subsystem is requesting high speed fans
 	#define FAN_LO_MASK   0b01010101 //OR this mask with fanSpeed_allRequestors to see if any subsystem is requesting  low speed fans
