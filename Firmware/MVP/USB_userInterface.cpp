@@ -118,7 +118,9 @@ void printHelp(void)
 {
 	Serial.print(F("\n\nLiBCM commands:"
 		"\n -'$BOOT': restart LiBCM"
-		"\n -'$TEST1'/2/3/4: run test code. See 'USB_userInterface_runTestCode()')"
+		"\n -'$TESTR': run LTC6804 VREF test"
+		"\n -'$TESTH': blink heater LED"
+		"\n -'$TEST1'/2/3/4: run temporary debug test code. See 'USB_userInterface_runTestCode()')"
 		"\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
 		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
 		"\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"

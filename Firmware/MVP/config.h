@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"
 
-	#define FW_VERSION "0.9.1b"
-	#define BUILD_DATE "2023JUL10"
+	#define FW_VERSION "0.9.1c"
+	#define BUILD_DATE "2023AUG14"
 
 	//////////////////////////////////////////////////////////////////
 
@@ -67,7 +67,7 @@
 
 	#define CELL_VMAX_REGEN                     42500 //42500 = 4.2500 volts
 	#define CELL_VMIN_ASSIST                    31900 //allows for ESR-based voltage drop
-	#define CELL_VMAX_GRIDCHARGER               39000 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
+	#define CELL_VMAX_GRIDCHARGER               39600 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
 	#define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
 	#define CELL_VMIN_KEYOFF                    CELL_VREST_10_PERCENT_SoC //when car is off, LiBCM turns off below this voltage  //JTS2doLater: Change to higher SoC
 	#define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled below this percentage
@@ -119,4 +119,9 @@
 JTS2doLater:
 	#define SERIAL_H_LINE_CONNECTED NO //H-Line wire connected to OEM BCM connector pin B01
 	#define KEYOFF_TURNOFF_LIBCM_AFTER_HOURS 48 //LiBCM turns off this many hours after keyOFF.
+
+	Change these #define statements so that all they do is reconfigure EEPROM values.
+	Also, change this file so that all #define statements are commented out by default.
+	With these two changes, a user only needs to edit config.h if they want to change a previously sent parameter.
+	If user doesn't uncomment anything, then the previously uploaded value remains in EEPROM
 */
