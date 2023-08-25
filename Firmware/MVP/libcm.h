@@ -44,6 +44,7 @@
   #include "time.h"
   #include "USB_userInterface.h"
   #include "fan.h"
+  #include "buzzer.h"
   #include "status.h"
   #include "heater.h"
   #include "LiControl.h"

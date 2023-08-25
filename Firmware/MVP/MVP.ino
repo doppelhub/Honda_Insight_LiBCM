@@ -42,6 +42,7 @@ void loop()
 	fan_handler();
 	heater_handler();
 	gridCharger_handler();
+	buzzer_handler();
 	lcdState_handler();
 	LiDisplay_handler();
 

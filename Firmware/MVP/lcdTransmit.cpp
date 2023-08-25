@@ -183,11 +183,9 @@ bool lcd_printCellVoltage_hi(void)
 
 		if ( isBacklightOn == true ) {
 			lcd2.noBacklight();
-			gpio_turnBuzzer_on_lowFreq();
 			isBacklightOn = false;
 		} else {
 			lcd2.backlight();
-			gpio_turnBuzzer_off(); //JTS2doLater: Add buzzer handler
 			isBacklightOn = true;
 		}
 	}
@@ -418,12 +416,12 @@ void lcd_displayWarning(uint8_t warningToDisplay)
 	lcd2.setCursor(0,whichRowToPrint);
 
 	if(warningToDisplay == LCD_WARN_KEYON_GRID)
-	{ 
+	{
 		//                                            ********************
-		if     (whichRowToPrint == 0) { lcd2.print(F("ALERT: Grid Charger ")); gpio_turnBuzzer_on_highFreq();}
-		else if(whichRowToPrint == 1) { lcd2.print(F("       Plugged In!! "));                               }
-		else if(whichRowToPrint == 2) { lcd2.print(F("LiBCM sent P1648 to ")); gpio_turnBuzzer_on_lowFreq(); }
-		else if(whichRowToPrint == 3) { lcd2.print(F("prevent IMA start.  "));                               }
+		if     (whichRowToPrint == 0) { lcd2.print(F("ALERT: Grid Charger "));}
+		else if(whichRowToPrint == 1) { lcd2.print(F("       Plugged In!! "));}
+		else if(whichRowToPrint == 2) { lcd2.print(F("LiBCM sent P1648 to "));}
+		else if(whichRowToPrint == 3) { lcd2.print(F("prevent IMA start.  "));}
 	}
 
 	else if(warningToDisplay == LCD_WARN_FW_EXPIRED)
@@ -439,7 +437,7 @@ void lcd_displayWarning(uint8_t warningToDisplay)
 		if     (whichRowToPrint == 0) { lcd2.print(F("ALERT: Safety cover ")); }
 		else if(whichRowToPrint == 1) { lcd2.print(F("       not installed")); }
 		else if(whichRowToPrint == 2) { lcd2.print(F(" --LiBCM disabled-- ")); }
-		else if(whichRowToPrint == 3) { lcd2.print(F("  www.linsight.org  ")); }		
+		else if(whichRowToPrint == 3) { lcd2.print(F("  www.linsight.org  ")); }
 	}
 
 	if(++whichRowToPrint > 3) { whichRowToPrint = 0; }
@@ -454,7 +452,7 @@ void lcd_splashscreen_keyOff(void)
 	lcd2.clear();
 	lcd2.setCursor(0,0);
 	lcd2.print(F("LiBCM v")); lcd2.print(String(FW_VERSION));
-	lcd2.setCursor(0,1);	
+	lcd2.setCursor(0,1);
 	lcd2.print(F("FW Hours Left: "));
 	lcd2.print(String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - EEPROM_uptimeStoredInEEPROM_hours_get() ));
 }
@@ -506,8 +504,8 @@ void updateNextValue(void)
 // 		//                                          1111111111
 // 		//                                01234567890123456789
 // 		//4x20 screen text display format:********************
-// 		lcd2.setCursor(0,0);  lcd2.print("00Hx.xxx(y.yyy) Css%");  
-// 		lcd2.setCursor(0,1);  lcd2.print("00La.aaa(b.bbb) TggC");  
+// 		lcd2.setCursor(0,0);  lcd2.print("00Hx.xxx(y.yyy) Css%");
+// 		lcd2.setCursor(0,1);  lcd2.print("00La.aaa(b.bbb) TggC");
 // 		lcd2.setCursor(0,2);  lcd2.print("Vprrr(fff) dz.zzz   ");
 // 		lcd2.setCursor(0,3);  lcd2.print("tuuuuu A-ccc kW-kk.k");
 
@@ -521,11 +519,11 @@ void updateNextValue(void)
 		//                                            1111111111
 		//                                  01234567890123456789
 		//4x20 screen text display format:  ********************
-		lcd2.setCursor(0,0);  lcd2.print(F("Hx.xxx(y.yyy) dz.zzz")); //row0: x.xxx=(1,0)   y.yyy=(7,0) z.zzz=(15,0)                                                             
-		lcd2.setCursor(0,1);  lcd2.print(F("La.aaa(b.bbb) A-ccc ")); //row1: a.aaa=(1,1)   b.bbb=(7,1) ccc=(15,1)                                                                
-		lcd2.setCursor(0,2);  lcd2.print(F("Vprrr(fff) ThhC Eeeg")); //row2: rrr=(2,2)     fff=(6,2)   hh=(12,2) ee=(17,2) p=(19,2)                                                               
+		lcd2.setCursor(0,0);  lcd2.print(F("Hx.xxx(y.yyy) dz.zzz")); //row0: x.xxx=(1,0)   y.yyy=(7,0) z.zzz=(15,0)
+		lcd2.setCursor(0,1);  lcd2.print(F("La.aaa(b.bbb) A-ccc ")); //row1: a.aaa=(1,1)   b.bbb=(7,1) ccc=(15,1)
+		lcd2.setCursor(0,2);  lcd2.print(F("Vprrr(fff) ThhC Eeeg")); //row2: rrr=(2,2)     fff=(6,2)   hh=(12,2) ee=(17,2) p=(19,2)
 		lcd2.setCursor(0,3);  lcd2.print(F("tuuuuu SoCss kW-kk.k")); //row3: uuuuu=(1,3)   ss=(10,3)   kk.k=(15,3)
-	                                                                 
+
 	                                                                      // x.xxx:cellHI  y.yyy:Vmax  z.zzz:deltaV
 	                                                                      // a.aaa:cellLO  b.bbb:Vmin  ccc:current
 	                                                                      // rrr:Vpack     fff:Vspoof  hh:T_batt ee:errors g:gridFlag
@@ -538,7 +536,7 @@ void updateNextValue(void)
 //this function replaces lcd_printStaticText(), which was too slow to call during keyON
 bool updateNextStatic(void)
 {
-	static uint8_t lcdElementToUpdate = LCDSTATIC_NO_UPDATE; 
+	static uint8_t lcdElementToUpdate = LCDSTATIC_NO_UPDATE;
 
 	lcd_resetVariablesToDefault();
 
@@ -574,12 +572,12 @@ bool updateNextStatic(void)
 //primary interface
 //update one screen element (if any have changed)
 void lcdTransmit_printNextElement_keyOn(void)
-{	
+{
 	static uint32_t millis_previous = 0;
 
 	//Only update screen at a human-readable rate
 	if((uint32_t)(millis() - millis_previous) > SCREEN_UPDATE_RATE_MILLIS)
-	{ 
+	{
 		millis_previous = millis();
 
 		if(areAllStaticValuesDisplayed == YES) { updateNextValue();  }
