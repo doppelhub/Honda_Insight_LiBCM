@@ -1,0 +1,118 @@
+Summary:
+For modules up to 300 Wh, you can ship USPS ground with:
+-Limited Quantity label, and
+-"Lithium batteries - forbidden for transport aboard aircraft and vessel"
+
+No additional paperwork is required (these medium-sized cells are exempted by 49CFR173.185(c):
+https://www.ecfr.gov/current/title-49/subtitle-B/chapter-I/subchapter-C/part-173/subpart-E/section-173.185
+"[cells under 300 Wh] are exempt from the requirements in subparts C through H of 49CFR172
+
+Therefore, since modules over 300 Wh are NOT exempt, the must include the following additional markings:
+-UN3480 (requires hazardous shipping license at UPS... but maybe not USPS?)
+-Class 9 Lithium Battery label
+
+
+//////////////////////////////////////////
+
+https://pe.usps.com/text/pub52/pub52c3_003.htm#ep898369
+
+Postal Service standards generally limit the mailing of hazardous materials to Limited Quantity surface materials or Limited Quantity air materials as defined in 332 through 336, that meet USPS quantity limitations and packaging requirements. This allowance is limited to the following:
+...
+Lithium batteries, dry ice, and magnetized materials, as permitted in 349.
+
+...
+
+332 Limited Quantity:
+https://pe.usps.com/text/pub52/pub52c3_011.htm
+"A limited quantity of a hazardous material is the maximum amount of a specific hazardous material exempted from DOT labeling or packaging requirements in 49 CFR. To be eligible to ship under the DOT Limited Quantity provision, a hazardous material must list an exception in column 8A of the Hazardous Materials Table in 49 CFR 172.101"
+
+49CFR172.101 column 8A for "lithium ion batteries" states:
+-must adhere to 49CFR173.185 packaging requirements
+-173.27 & 175.75 non-passenger aircraft package weight limit: 35 kg
+
+///////////////////////////////////
+
+349 (https://pe.usps.com/text/pub52/pub52c3_027.htm#ep900056)
+
+349.2 Mailability
+... lithium batteries ... are permitted within the specified limits provided in ... 349.222, 349.23, and 349.24
+
+///////////////////////////////////
+
+349.222 (same link as above)
+In summary: Lithium batteries with cells weighing up to 5 pounds are mailable via surface transportation.
+
+349.4(b)
+For surface transportation, parcels containing mailable Class 9 materials must be plainly and durably marked on the address side with an approved DOT Limited Quantity ground marking unless specified in 221.1 and 325.1 (see 325.4). Surface shipments bearing the Limited Quantity ground marking are not required to include the proper shipping name and identification number.
+
+/////////////////////////////////////
+/////////////////////////////////////
+
+UPS Dangerous Goods contract
+UPS Hazardous Materials Contract Service
+In order to ship hazardous materials/dangerous goods with UPS, you must enter into an Agreement that ensures compliance with applicable Regulations as well as UPS carrier requirements.  In order to use this service, you must:
+-Have a UPS.com user name
+-Have a shipping account
+-Be in compliance with all regulatory requirements and UPS's carrier variations
+
+/////////////////////////////////////
+UPS guidelines:
+https://www.ups.com/assets/resources/webcontent/en_US/pack_ship_batteries.pdf
+
+UPS does not allow UN3480 (Lithium Ion Batteries (by themselves)) without a "UPS Dangerous Goods Contract".
+but does allow UN3481 (Lithium Ion Batteries contained in equipment)
+
+"air shipments of lithium ion (UN3480) and lithium metal (UN3090) batteries without equipment must be sent as fully regulated dangerous goods when shipped with UPS, which requires a UPS Dangerous Goods contract."
+
+"lithium ion or metal batteries may be classed as “packed with equipment” or “contained in equipment” when
+the batteries accompany or are installed in apparatus for which the lithium batteries will provide electrical power for operation."
+
+"For fully regulated shipments, the Class 9 Lithium Battery label is required."
+
+"For ground shipments, the markings shown above are common in most countries around the world (see ADR SP 188, TDGR SP 34, or check local regulations). The U.S. additionally requires ground shipments of small lithium batteries to be identified as forbidden on passenger aircraft. The Cargo Aircraft Only label may be used, or either of the following statements, in letters at least 6 mm high:
+-LITHIUM ION BATTERIES-
+FORBIDDEN FOR TRANSPORT ABOARD PASSENGER AIRCRAFT"
+^^^FedEx has the same requirement...
+^^^...because this is a federal law: 49CFR173.185(C)(1)(iv):
+"For transportation by highway or rail only, the lithium content of the cell and battery may be increased to ... 60 Wh for a lithium ion cell or 300 Wh for a lithium ion battery, provided the outer package is marked: “LITHIUM BATTERIES - FORBIDDEN FOR TRANSPORT ABOARD AIRCRAFT AND VESSEL.”"
+
+"The U.S. also allows unique exceptions on the ground for medium lithium batteries, not recognized in other international regulations. For lithium ion, medium cells have > 20 Wh but ≤ 60 Wh; and medium batteries have > 100 Wh but ≤ 300 Wh.  Medium lithium cells/batteries may be shipped by ground as lightly regulated, provided they have the appropriate lithium ion or lithium metal mark (as shown above) and display the following marking:
+LITHIUM BATTERIES—FORBIDDEN FOR TRANSPORT ABOARD AIRCRAFT AND VESSEL.”
+
+Figure 8 - Flowchart (page 9):
+Is lithium battery greater than 100 Wh? Yes
+Is lithium battery less than 300 Wh OR cells less than 60 Wh? Yes
+Does the package contain lithium ion batteries packed with equipment? NO
+Does the package contain lithium ion batteries contained in equipment? NO
+Is the gross package weight greater than 30 kg? NO
+Result:
+Your package does not need to be shipped as fully regulated Dangerous Goods. Please see U.S. DOT Hazardous Materials Regulations for further details about shipping requirements.
+Required: Warning markings stating “Lithium Batteries – Forbidden for Transport Aboard Aircraft and Vessel,” lithium ion battery mark.
+
+/////////////////////////////////////////////////////////////
+
+https://www.ups.com/media/en/lithium_batteries_guidance.pdf
+
+
+/////////////////////////////////////////////////////////////
+Lots of packaging-specific examples:
+https://www.rrc-ps.com/fileadmin/Dokumente/Shipment/Shipping_Guidelines_Lithium_Ion_Batteries_EN.pdf
+5.2. Shipment of Lithium Ion Batteries > 100 Wh by Truck / Rail (ADR/RID), Sea Freight (IMDG)
+A passed transportation test according section 38.3 of the UN Manual of Tests and Criteria is required!
+
+Critical: Passing of safety tests for lithium batteries and cells (Refer to the UN Manual of Tests and Criteria
+- UN/DOT 38.3). This will be indicated in the test summary document requested from your supplier.
+• There are recordkeeping requirements for this testing which can be found in 49CFR173.185.
+
+49CFR173.185:
+https://www.ecfr.gov/current/title-49/subtitle-B/chapter-I/subchapter-C/part-173/subpart-E/section-173.185
+"Beginning January 1, 2022 each manufacturer and subsequent distributor of lithium cells or batteries manufactured on or after January 1, 2008, must make available a test summary."
+
+
+/////////////////////////////////////////////////////////////
+
+Fedex course:
+http://www.shipsafeshipsmart.com/ProductSubCats.aspx?SubCatID=5
+https://www.fedex.com/content/dam/fedex/us-united-states/services/Shipping-Lithium-Batteries-via-FedEx-Ground.pdf
+
+

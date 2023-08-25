@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //Handles user interactions with LiBCM (data query/response)
@@ -77,16 +77,36 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	{
 		Serial.print(F("Unused"));
 	}
+	else if(testToRun == 'C')
+	{
+		for( uint8_t ii = 0; ii < TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages(ii, FOUR_DECIMAL_PLACES); }
+	}
 	else if(testToRun == 'T')
 	{
 		temperature_measureAndPrintAll();
 	}
 	else if(testToRun == 'H')
 	{
-		Serial.print(F("Blink Heater LED"));
-		gpio_turnPackHeater_on();
-		delay(100);
-		gpio_turnPackHeater_off();
+		if(heater_isConnected() == HEATER_NOT_CONNECTED) { Serial.print(F("\nHeater NOT Connected")); }
+		else
+		{
+			Serial.print(F("\nHeater connected to: "));
+			if(heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)   { Serial.print(F("Daughterboard")); }
+			if(heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM) { Serial.print(F("LiBCM Header"));  }
+			Serial.print(F("\nBlink Heater LED"));
+			gpio_turnPackHeater_on();
+			delay(100);
+			gpio_turnPackHeater_off();
+		}
+	}
+	else if(testToRun == 'R')
+	{
+		//JTS2doNow: Add to keyOFF routine
+		//verify LTC6804 VREF is in bounds
+		LTC6804_adax();
+		delay(5);
+		LTC6804_rdaux(0,TOTAL_IC,FIRST_IC_ADDR);
+		LTC6804gpio_printVREF();
 	}
 	else { Serial.print(F("Error: Unknown Test")); }
 }
@@ -102,9 +122,12 @@ void printHelp(void)
 {
 	Serial.print(F("\n\nLiBCM commands:"
 		"\n -'$BOOT': restart LiBCM"
-		"\n -'$TEST1'/2/3/4: run test code. See 'USB_userInterface_runTestCode()')"
+		"\n -'$TESTR': run LTC6804 VREF test"
+		"\n -'$TESTH': blink heater LED"
+		"\n -'$TESTC': print cell voltages"
+		"\n -'$TESTT': print temperatures"
+		"\n -'$TEST1'/2/3/4: run temporary debug test code. See 'USB_userInterface_runTestCode()')"
 		"\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
-		"\n -'$LIDISP' 0/1: LiDisplay Debug Mode Off/On."
 		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
 		"\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"
 		"\n -'$DISP=PWR'/SCI/CELL/TEMP/DBG/OFF: data to stream (power/BAT&METSCI/Vcell/temperature/none)"
@@ -190,7 +213,7 @@ void USB_userInterface_executeUserInput(void)
 			else if(line[6] == STRING_TERMINATION_CHARACTER) { printDebug(); }
 		}
 /*
-		//$LIDISP
+		//$LIDISP //Natalya TODO: Move to '$TEST' //JTS2doLater: Delete if no longer used
 		else if( (line[1] == 'L') && (line[2] == 'I') && (line[3] == 'D') && (line[4] == 'I') && (line[5] == 'S') && (line[6] == 'P'))
 		{
 			LiDisplay_setDebugMode(line[7]);

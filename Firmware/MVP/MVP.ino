@@ -13,11 +13,13 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 	BATTSCI_begin();
 	heater_init();
 	LiDisplay_begin();
-	lcd_begin();
+	LiControl_begin();
 	LTC68042configure_initialize();
 
-	#ifdef RUN_BRINGUP_TESTER
-	  	bringupTester_run(); //this function never returns
+	#ifdef RUN_BRINGUP_TESTER_GRIDCHARGER
+	  	bringupTester_gridcharger();
+	#elif defined RUN_BRINGUP_TESTER_MOTHERBOARD
+	  	bringupTester_motherboard(); //this function never returns
 	#endif
 
 	if(gpio_keyStateNow() == KEYSTATE_ON){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while keyON (e.g. while driving)
@@ -42,9 +44,7 @@ void loop()
 	gridCharger_handler();
 	buzzer_handler();
 	lcdState_handler();
-	if(digitalRead(PIN_HMI_EN) == 1) {
-		LiDisplay_refresh();
-	}
+	LiDisplay_handler();
 
 	if( key_getSampledState() == KEYSTATE_ON )
 	{
@@ -55,6 +55,7 @@ void loop()
 		adc_updateBatteryCurrent();
 		vPackSpoof_setVoltage();
 		debugUSB_printLatestData();
+		LiControl_handler();
 	}
 	else if( key_getSampledState() == KEYSTATE_OFF )
 	{

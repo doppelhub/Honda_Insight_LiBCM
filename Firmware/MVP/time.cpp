@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //stores various system millisecond timers
@@ -55,6 +55,8 @@ bool time_hasKeyBeenOffLongEnough_toTurnOffLiBCM(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+//loop execution time (0.9.0c): 8.0 ms with 4x20 enabled
+//loop execution time (0.9.0c): 2.8 ms with no display
 void time_waitForLoopPeriod(void)
 {
     static uint32_t timestamp_previousLoopStart_ms = millis();

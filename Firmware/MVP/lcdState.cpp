@@ -40,6 +40,7 @@ uint8_t requestDisplayOff(uint8_t state)
 		return LCDSTATE_PREOFF_DELAY_READTEXT;
 	}
 	
+	//JTS2doLater: Make display stay on longer after keyOff
 	else if(state == LCDSTATE_PREOFF_DELAY_READTEXT)
 	{
 		if( (millis() - timestamp_helper_ms) < LCD_PREOFF_DELAY_TOREADSCREEN_ms ) { return LCDSTATE_PREOFF_DELAY_READTEXT; } //repeat this state until delay finishes

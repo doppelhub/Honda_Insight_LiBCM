@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 #include "libcm.h"
 
@@ -116,7 +116,7 @@ void powered_handler(void)
         {
             runFansIfNeeded();
             gpio_turnGridCharger_on();
-            gpio_setGridCharger_powerLevel('H');
+            gpio_setGridCharger_powerLevel('H'); //JTS2doNow: Reduce duty cycle as temp increases
 
             if(chargerState_previous != YES__CHARGING_ALLOWED)
             {
@@ -165,7 +165,7 @@ void handleEvent_plugin(void)
     Serial.print(F("Plugged In"));
     gpio_setGridCharger_powerLevel('0');
     lastPlugin_ms = millis();
-	LiDisplay_gridChargerPluggedIn();
+	LiDisplay_gridChargerPluggedIn(); //JTS2doNow: Move inside LiDisplay.c... LiDisplay handler should check key state
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -174,10 +174,10 @@ void handleEvent_unplug(void)
 {
     Serial.print(F("Unplugged"));
     gpio_turnGridCharger_off();
-    gpio_setGridCharger_powerLevel('H'); //reduces power consumption
-    buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, BUZZER_OFF); //if issues persist, something else will turn buzzer back on
+    buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, BUZZER_OFF);
+    gpio_setGridCharger_powerLevel('Z'); //reduces power consumption
     fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);
-	LiDisplay_gridChargerUnplugged();
+    LiDisplay_gridChargerUnplugged();
 }
 
 //////////////////////////////////////////////////////////////////////////////////

@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //LTC6804 configuration functions
@@ -27,10 +27,7 @@ void LTC68042configure_writeConfigRegisters(uint8_t icAddress)
 {
   const uint8_t BYTES_IN_REG = 6;
   const uint8_t CMD_LENGTH = 2+2+6+2; //("Write Configuration Registers" command) + (PEC) + ("configuration register" data) + (PEC)
-  uint8_t *cmd;
-
-  //JTS2doLater: Replace malloc with array init
-  cmd = (uint8_t *)malloc(CMD_LENGTH*sizeof(uint8_t));
+  uint8_t cmd[CMD_LENGTH];
 
   //Load cmd array with WRCFG command and PEC
   if(icAddress == BROADCAST_TO_ALL_ICS) { cmd[0] = 0x00; } //0b00000xxx indicates this is a broadcast command
@@ -54,8 +51,6 @@ void LTC68042configure_writeConfigRegisters(uint8_t icAddress)
   cmd[cmd_index++] = (uint8_t)temp_pec; //lower PEC byte
 
   LTC68042configure_spiWrite(CMD_LENGTH,cmd);
-
-  free(cmd);
 }
 
 //---------------------------------------------------------------------------------------
@@ -163,7 +158,7 @@ bool LTC68042configure_wakeup(void)
 //---------------------------------------------------------------------------------------
 
 uint16_t LTC68042configure_calcPEC15(uint8_t len, //data array length
-                                     uint8_t *data ) //data array to generate PEC from
+                                     uint8_t const data[] ) //data array to generate PEC from
 {
   uint16_t remainder,addr;
 
@@ -179,7 +174,7 @@ uint16_t LTC68042configure_calcPEC15(uint8_t len, //data array length
 //---------------------------------------------------------------------------------------
 
 void LTC68042configure_spiWrite(uint8_t len, // bytes to be written on the SPI port
-                                uint8_t data[] )//array of bytes to be written on the SPI port
+                                uint8_t const data[] )//array of bytes to be written on the SPI port
 {
   LTC68042configure_wakeup();
 

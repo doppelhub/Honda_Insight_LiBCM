@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //LTC6804 gpio (e.g. temperature) data and various functions
@@ -47,28 +47,27 @@ void LTC6804_adax()
 //Reads and parses aux voltages from LTC6804 registers into 'aux_codes' variable.
 int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read (0=all, 1=A, 2=B)
                      uint8_t total_ic,
-                     uint16_t aux_codes[][6],
                      uint8_t addr_first_ic )
 {
   const uint8_t NUM_RX_BYTES = 8;
   const uint8_t NUM_BYTES_IN_REG = 6;
   const uint8_t GPIO_IN_REG = 3;
 
-  uint8_t *data;
+  uint8_t data[NUM_RX_BYTES];
   uint8_t data_counter = 0;
   int8_t pec_error = 0;
   uint16_t received_pec;
   uint16_t data_pec;
-  data = (uint8_t *) malloc((NUM_RX_BYTES*total_ic)*sizeof(uint8_t));
 
   if (reg == 0)
   { //Read GPIO voltage registers A-B for every IC in the pack
     for (uint8_t gpio_reg = 1; gpio_reg<3; gpio_reg++) //executes once for each aux voltage register
     {
-      data_counter = 0;
-      LTC6804_rdaux_reg(gpio_reg, total_ic,data, addr_first_ic);
       for (uint8_t current_ic = 0 ; current_ic < total_ic; current_ic++) //executes once for each LTC6804
       {
+        LTC6804_rdaux_reg(gpio_reg, current_ic, data, addr_first_ic);
+
+        data_counter = 0;
         //Parse raw GPIO voltage data in aux_codes array
         for (uint8_t current_gpio = 0; current_gpio< GPIO_IN_REG; current_gpio++) //Parses GPIO voltage stored in the register
         {
@@ -82,14 +81,15 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
         {
           pec_error = 1;
         }
-        data_counter=data_counter+2;
       }
     }
   } else {
     //Read single GPIO voltage register for all ICs in pack
-    LTC6804_rdaux_reg(reg, total_ic, data, addr_first_ic);
     for (int current_ic = 0 ; current_ic < total_ic; current_ic++) // executes for every LTC6804 in the pack
     {
+      LTC6804_rdaux_reg(reg, current_ic, data, addr_first_ic);
+
+      data_counter = 0;
       //Parse raw GPIO voltage data in aux_codes array
       for (int current_gpio = 0; current_gpio<GPIO_IN_REG; current_gpio++)  // This loop parses the read back data. Loops
       {
@@ -106,7 +106,6 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
       }
     }
   }
-  free(data);
   return (pec_error);
 }
 
@@ -117,7 +116,7 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
 //read a single GPIO voltage register and stores the read data in the *data point as a byte array
 //not used outside LTC6804_rdaux() 
 void LTC6804_rdaux_reg(uint8_t reg, //GPIO voltage register to read back (1:A, 2:B)
-                       uint8_t total_ic,
+                       uint8_t current_ic,
                        uint8_t *data, //array of the unparsed aux codes
                        uint8_t addr_first_ic )
 {
@@ -128,20 +127,31 @@ void LTC6804_rdaux_reg(uint8_t reg, //GPIO voltage register to read back (1:A, 2
   if      (reg == 1) { cmd[1] = 0x0C; }
   else if (reg == 2) { cmd[1] = 0x0e; }
   else               { cmd[1] = 0x0C; }
-  
-  //calculate PEC
+
+  //Send Global Command to LTC6804 pack
+  cmd[0] = 0x80 + ( (current_ic + addr_first_ic) << 3); //Setting address
   cmd_pec = LTC68042configure_calcPEC15(2, cmd);
   cmd[2] = (uint8_t)(cmd_pec >> 8);
   cmd[3] = (uint8_t)(cmd_pec);
 
-  //Send Global Command to LTC6804 pack
-  for (int current_ic = 0; current_ic<total_ic; current_ic++)
-  {
-    cmd[0] = 0x80 + ( (current_ic + addr_first_ic) << 3); //Setting address
-    cmd_pec = LTC68042configure_calcPEC15(2, cmd);
-    cmd[2] = (uint8_t)(cmd_pec >> 8);
-    cmd[3] = (uint8_t)(cmd_pec);
+  LTC68042configure_spiWriteRead(cmd,4,data,8);
+}
 
-    LTC68042configure_spiWriteRead(cmd,4,&data[current_ic*8],8);
+//---------------------------------------------------------------------------------------
+
+void LTC6804gpio_printVREF(void)
+{
+  for(uint8_t ii = 0; ii<TOTAL_IC; ii++)
+  {
+    uint16_t countsVREF = aux_codes[ii][5];
+
+    Serial.print(F("\nIC"));
+    Serial.print(String(ii));
+    Serial.print(F(" VREF2 is "));
+    Serial.print(String(countsVREF));
+    Serial.print(F(", "));
+
+    if((countsVREF < 30150) && (countsVREF > 29850)) { Serial.print("ok");   }
+    else                                             { Serial.print("FAIL"); }
   }
 }
