@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //LTC6804 gpio (e.g. temperature) data and various functions
@@ -47,7 +47,6 @@ void LTC6804_adax()
 //Reads and parses aux voltages from LTC6804 registers into 'aux_codes' variable.
 int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read (0=all, 1=A, 2=B)
                      uint8_t total_ic,
-                     uint16_t aux_codes[][6],
                      uint8_t addr_first_ic )
 {
   const uint8_t NUM_RX_BYTES = 8;
@@ -136,4 +135,23 @@ void LTC6804_rdaux_reg(uint8_t reg, //GPIO voltage register to read back (1:A, 2
   cmd[3] = (uint8_t)(cmd_pec);
 
   LTC68042configure_spiWriteRead(cmd,4,data,8);
+}
+
+//---------------------------------------------------------------------------------------
+
+void LTC6804gpio_printVREF(void)
+{
+  for(uint8_t ii = 0; ii<TOTAL_IC; ii++)
+  {
+    uint16_t countsVREF = aux_codes[ii][5];
+
+    Serial.print(F("\nIC"));
+    Serial.print(String(ii));
+    Serial.print(F(" VREF2 is "));
+    Serial.print(String(countsVREF));
+    Serial.print(F(", "));
+
+    if((countsVREF < 30150) && (countsVREF > 29850)) { Serial.print("ok");   }
+    else                                             { Serial.print("FAIL"); }
+  }
 }

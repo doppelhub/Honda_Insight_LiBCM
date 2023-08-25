@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //measures OEM temperature sensors
@@ -32,8 +32,8 @@ void temperature_measureOEM(void)
 		tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
 	#elif defined BATTERY_TYPE_47AhFoMoCo
 		tempIntake  = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
-		tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
-		tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_GRN);
+		tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_GRN);
+		tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
 		tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_YEL);
 	#endif
 }

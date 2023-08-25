@@ -1,0 +1,4 @@
+Remove Tach circuit.  Would have been nice to have... need the pin for something else.
+
+Done.
+Used pin for voltage control circuit.

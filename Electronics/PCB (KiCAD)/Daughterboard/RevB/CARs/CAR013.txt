@@ -1,0 +1,4 @@
+Adafruit SPI Flash PCB doesn't buffer MISO, and operates at 3.3 volts.  Therefore, whenever another slave (e.g. LiControl or LTC6820) drives MISO high, the flash memory is destroyed (because greater than 3.6 Vin(max).
+
+Solution:
+Designed my own SPI Flash PCB.
