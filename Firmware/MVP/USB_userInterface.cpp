@@ -39,7 +39,6 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 
 	//Add whatever code you want to run whenever the user types '$TEST1'/2/3/etc into the Serial Monitor Window
 	//Numbered tests ($TEST1/2/3) are temporary, for internal testing during firmware development
-	//Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
 	if(testToRun == '1')
 	{
 		Serial.print(F("FAN_REQUESTOR_USER: OFF"));
@@ -60,30 +59,20 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 		Serial.print(F("fanSpeed_allRequestors mask: "));
 		Serial.print(String(fan_getAllRequestors_mask(),DEC));
 	}
-	else if(testToRun == '5')
-	{
-		Serial.print(F("Unused"));
-	}
+	else if(testToRun == '5') { Serial.print(F("Unused")); }
 	else if(testToRun == '6')
 	{
 		Serial.print(F("LiBCM turning off 5V rail.\nLiBCM will stay on if USB's +5V connected."));
 		gpio_turnLiBCM_off();
 	}
-	else if(testToRun == '7')
-	{
-		Serial.print(F("Unused"));
-	}
-	else if(testToRun == '8')
-	{
-		Serial.print(F("Unused"));
-	}
+	else if(testToRun == '7') { Serial.print(F("Unused")); }
+	else if(testToRun == '8') { Serial.print(F("Unused")); }
+
+	//Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
+	else if(testToRun == 'T') { temperature_measureAndPrintAll(); }
 	else if(testToRun == 'C')
 	{
 		for( uint8_t ii = 0; ii < TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages(ii, FOUR_DECIMAL_PLACES); }
-	}
-	else if(testToRun == 'T')
-	{
-		temperature_measureAndPrintAll();
 	}
 	else if(testToRun == 'H')
 	{
@@ -108,6 +97,8 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 		LTC6804_rdaux(0,TOTAL_IC,FIRST_IC_ADDR);
 		LTC6804gpio_printVREF();
 	}
+
+	//invalid entry
 	else { Serial.print(F("Error: Unknown Test")); }
 }
 
