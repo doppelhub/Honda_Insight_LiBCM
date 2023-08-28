@@ -32,9 +32,9 @@ void temperature_measureOEM(void)
 		tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
 	#elif defined BATTERY_TYPE_47AhFoMoCo
 		tempIntake  = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
-		tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_GRN);
+		tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_GRN); //JTS2doNow: Actually top rear battery module
 		tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
-		tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_YEL);
+		tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_YEL); //JTS2doNow: Acutually top middle battery module
 	#endif
 }
 
@@ -43,6 +43,7 @@ void temperature_measureOEM(void)
 //only call inside handler (to ensure sensors powered)
 //stores the most extreme battery temperature (from room temp) in tempBattery
 //LiBCM has QTY3 battery temperature sensors
+//JTS2doNow: Add FoMoCo hardware configuration
 void temperature_measureBattery(void)
 {
 	int8_t batteryTemps[NUM_BATTERY_TEMP_SENSORS + 1] = {0}; //1-indexed ([1] = bay1 temp)
@@ -106,6 +107,7 @@ void temperature_printAll_latest(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: add separate case for FoMoCo
 void temperature_measureAndPrintAll(void)
 {
 	if(gpio_getPinState(PIN_TEMP_EN) == PIN_OUTPUT_HIGH)
@@ -184,7 +186,7 @@ uint8_t turnSensorsOff_whenKeyStateChanges(uint8_t keyState)
 ////////////////////////////////////////////////////////////////////////////////////
 
 uint32_t tempSensorUpdateInterval_ms(void)
-{	
+{
 	uint32_t updatePeriod_ms = 0;
 
 	if     (key_getSampledState()            == KEYSTATE_ON) { updatePeriod_ms = TEMP_UPDATE_PERIOD_KEYON_ms;        }

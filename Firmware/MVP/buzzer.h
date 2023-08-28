@@ -11,7 +11,9 @@
 
 	//Requestor value correpond to their bit positions in the mask
 	#define BUZZER_REQUESTOR_GRIDCHARGER 0
-	#define BUZZER_REQUESTOR_Unused      2
+	#define BUZZER_REQUESTOR_USER        2
+	#define BUZZER_REQUESTOR_UNUSED_A    4
+	#define BUZZER_REQUESTOR_UNUSED_B    6
 
 	//buzzer request status bits (for each subsystem)
 	#define BUZZER_OFF  0b00

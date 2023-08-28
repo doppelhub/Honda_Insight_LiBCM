@@ -204,10 +204,20 @@ void debugUSB_printData_temperatures(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doLater: Add debug data
+
 void debugUSB_printData_debug(void)
 {
-	status_printState();
+	//status_printState(); //JTS2doLater: Add debug data
+
+	static uint32_t lastDebugUpdate_millis = 0;
+
+	if(millis() - lastDebugUpdate_millis > 500)
+	{
+		//put whatever debug data you want to display
+
+		lastDebugUpdate_millis = millis();
+	}
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

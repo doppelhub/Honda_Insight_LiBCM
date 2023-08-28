@@ -248,30 +248,28 @@ bool lcd_printCellVoltage_delta(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-//JTS2doLater: Flip sign
 bool lcd_printCurrent(void)
 {
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
-	static int16_t packAmps_onScreen = 0; //don't want to multiply to determine power
+	static int16_t deciAmps_onScreen = 0;
 
-	if( packAmps_onScreen != adc_getLatestBatteryCurrent_amps() )
+	if( deciAmps_onScreen != adc_getLatestBatteryCurrent_deciAmps() )
 	{
-		packAmps_onScreen = adc_getLatestBatteryCurrent_amps();
+		int16_t deciAmps = adc_getLatestBatteryCurrent_deciAmps();
+		
 		lcd2.setCursor(15,1);
-		if(adc_getLatestBatteryCurrent_amps() >= 0 )
-		{
-			if      (adc_getLatestBatteryCurrent_amps() <  10 ) { lcd2.print(F("  ")); }
-			else if (adc_getLatestBatteryCurrent_amps() < 100 ) { lcd2.print(  ' '  );  }
-			lcd2.print('+');
-		}
-		else //negative current
-		{
-			if      (adc_getLatestBatteryCurrent_amps() >  -10 ) { lcd2.print(F("  ")); }
-			else if (adc_getLatestBatteryCurrent_amps() > -100 ) { lcd2.print(  ' '  );  }
-		}
-		lcd2.print(adc_getLatestBatteryCurrent_amps());
+		if     (deciAmps > 0) { lcd2.print('-'); } //When discharging battery (i.e. assist), we display '-' symbol, even though internally it's '+' 
+		else if(deciAmps < 0) { lcd2.print('+'); } //When    charging battery (i.e. regen ), we display '+' symbol, even though internally it's '-' 
+		else                  { lcd2.print(' '); }
 
+		int16_t abs_deciAmps = abs(deciAmps);
+
+		if(abs_deciAmps <  100) { lcd2.print(' '); } //add one leading space (e.g. "+ 9.9")
+		if(abs_deciAmps < 1000) { lcd2.print(abs_deciAmps * 0.1, 1); }
+		else                    { lcd2.print(abs_deciAmps * 0.1, 0); lcd2.print(' '); }
+		
+		deciAmps_onScreen = deciAmps;
 		didscreenUpdateOccur = SCREEN_UPDATED;
 	}
 
@@ -320,32 +318,27 @@ bool lcd_printPower(void)
 {
 	bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
-	static int16_t packAmps_onScreen = 0; //don't want to multiply to determine power
-	static uint8_t packVoltage_onScreen = 0;
+	static int16_t deci_kW_onScreen = 0; //100 watts per count (i.e. one tenth of a kW per count)
 
-	if( packAmps_onScreen != adc_getLatestBatteryCurrent_amps() ||
-		  packVoltage_onScreen != LTC68042result_packVoltage_get() )
+	int16_t deci_kW = (LTC68042result_packVoltage_get() * (int32_t)adc_getLatestBatteryCurrent_deciAmps()) * 0.001;
+
+	if(deci_kW != deci_kW_onScreen)
 	{
-		packAmps_onScreen = adc_getLatestBatteryCurrent_amps();
-		packVoltage_onScreen = LTC68042result_packVoltage_get();
-
-		int16_t packWatts = LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps();
-
 		lcd2.setCursor(15,3);
 
-		if(packWatts >=0)
-		{
-			if(packWatts < 10000) { lcd2.print(' '); } //" +0.0" to " +9.9" kW
-			lcd2.print('+');
-		}
-		else //negative watts
-		{
-			if(packWatts > -10000) { lcd2.print(' '); } //" -0.1" to " -9.9" kW
-		}
-		lcd2.print( (packWatts * 0.001), 1 );
+		if     (deci_kW > 0) { lcd2.print('-'); } //When discharging battery (i.e. assist), we display '-' symbol, even though internally it's '+' 
+		else if(deci_kW < 0) { lcd2.print('+'); } //When    charging battery (i.e. regen ), we display '+' symbol, even though internally it's '-' 
+		else                 { lcd2.print(' '); }
 
+		int16_t abs_deci_kW = abs(deci_kW);
+
+		if(abs_deci_kW <  100) { lcd2.print(' '); } //add one leading space (e.g. "+ 9.9")
+		lcd2.print(abs_deci_kW * 0.1, 1); //print kW
+
+		deci_kW_onScreen = deci_kW;
 		didscreenUpdateOccur = SCREEN_UPDATED;
 	}
+
 
 	return didscreenUpdateOccur;
 }

@@ -235,7 +235,7 @@ void bringupTester_motherboard(void)
 				    (LTC68042result_hiCellVoltage_get() < 41000) ) //default returned data is 65535 (if no data sent)
 				{
 					Serial.print(F("pass"));
-					if( LTC68042result_hiCellVoltage_get() > 30000 ) { testToRun = TEST_TYPE_THERMAL_IMAGER; } //lithium batteries connected //JTS2doNow: Make this beep constantly
+					if( LTC68042result_hiCellVoltage_get() > 30000 ) { testToRun = TEST_TYPE_THERMAL_IMAGER; } //lithium batteries connected
 					else                                             { testToRun = TEST_TYPE_GAUNTLET;       } //LED BMS board connected
 
 				} else {

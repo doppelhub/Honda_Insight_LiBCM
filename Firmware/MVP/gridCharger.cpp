@@ -4,77 +4,9 @@
 
 //JTS2doLater: Feature: If SoC greater than 70% when grid charger first plugged in, then charge to 85% SoC.
 
-uint32_t lastPlugin_ms = 0;
+uint32_t latestPlugin_ms = 0;
 uint32_t latestChargerDisable_ms = 0;
-uint32_t minimumOffTime_beforeTurningOn_ms = GRID_MIN_TIME_OFF_NONE_ms;
-//////////////////////////////////////////////////////////////////////////////////
-
-uint8_t isChargingAllowed(void)
-{
-    uint8_t helper = YES__CHARGING_ALLOWED;
-
-    uint8_t buzzerToneRequest = BUZZER_OFF;
-
-    //cell voltage checks
-    if     (LTC68042result_hiCellVoltage_get()    > CELL_VREST_85_PERCENT_SoC                ) { helper = NO__ATLEASTONECELL_TOO_HIGH; buzzerToneRequest = BUZZER_HIGH;                                                        }
-    else if(LTC68042result_loCellVoltage_get()    < CELL_VMIN_GRIDCHARGER                    ) { helper = NO__ATLEASTONECELL_TOO_LOW;  buzzerToneRequest = BUZZER_HIGH;                                                        }
-    else if(LTC68042result_hiCellVoltage_get()    > CELL_VMAX_GRIDCHARGER                    ) { helper = NO__ATLEASTONECELL_FULL;     buzzerToneRequest = (buzzer_getTone_now() ? BUZZER_OFF : BUZZER_LOW);                   }
-
-    //thermal checks
-    else if(temperature_gridCharger_getLatest()   > DISABLE_GRIDCHARGING_ABOVE_CHARGER_TEMP_C) { helper = NO__CHARGER_IS_HOT;                                                                                                  }
-    else if(temperature_gridCharger_getLatest()  == TEMPERATURE_SENSOR_FAULT_LO              ) { helper = NO__TEMP_UNPLUGGED_GRID;                                                                                             }
-    else if(temperature_battery_getLatest()       < DISABLE_GRIDCHARGING_BELOW_BATTERY_TEMP_C) { helper = NO__BATTERY_IS_COLD;                                                                                                 }
-    else if(temperature_battery_getLatest()       > DISABLE_GRIDCHARGING_ABOVE_BATTERY_TEMP_C) { helper = NO__BATTERY_IS_HOT;                                                                                                  }
-    else if(temperature_intake_getLatest()        > DISABLE_GRIDCHARGING_ABOVE_INTAKE_TEMP_C ) { helper = NO__AIRINTAKE_IS_HOT;                                                                                                }
-    else if(temperature_intake_getLatest()       == TEMPERATURE_SENSOR_FAULT_LO              ) { helper = NO__TEMP_UNPLUGGED_INTAKE;                                                                                           }
-    else if(temperature_exhaust_getLatest()       > DISABLE_GRIDCHARGING_ABOVE_EXHAUST_TEMP_C) { helper = NO__TEMP_EXHAUST_IS_HOT;                                                                                             }
-
-    //time checks
-    else if( (millis()                          ) < DISABLE_GRIDCHARGING_LIBCM_BOOT_DELAY_ms ) { helper = NO__LIBCMJUSTBOOTED;                                                                                                 }
-    else if( (millis() - lastPlugin_ms          ) < DISABLE_GRIDCHARGING_PLUGIN_DELAY_ms     ) { helper = NO__JUSTPLUGGEDIN;                                                                                                   }
-    else if( (millis() - latestChargerDisable_ms) < minimumOffTime_beforeTurningOn_ms        ) { helper = NO__RECENTLY_TURNED_OFF;                                                                                             }
-
-    //other checks
-    else if(key_getSampledState() == KEYSTATE_ON                                             ) { helper = NO__KEY_IS_ON;               buzzerToneRequest = ((buzzer_getTone_now() != BUZZER_HIGH) ? BUZZER_HIGH : BUZZER_LOW); }
-
-    buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, buzzerToneRequest);
-
-    return helper;
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-
-void reportChargerState(uint8_t canWeCharge)
-{
-    Serial.print(F("\nGrid charger disabled: "));
-    uint32_t minimumOffTime_ms = GRID_MIN_TIME_OFF_LONG_ms; //most common value; will be overwritten as needed
-
-    switch (canWeCharge)
-    {
-        //voltage issue
-        case NO__ATLEASTONECELL_TOO_HIGH: { Serial.print(F("Overcharged")       );                                                        break; } //JTS2doLater: display Warning on LCD
-        case NO__ATLEASTONECELL_TOO_LOW:  { Serial.print(F("Overdischarged")    );                                                        break; } //JTS2doLater: display Warning on LCD
-        case NO__ATLEASTONECELL_FULL:     { Serial.print(F("Pack Charged")      );                                                        break; }
-        //thermal issue
-        case NO__CHARGER_IS_HOT:          { Serial.print(F("Charger Hot")       );                                                        break; }
-        case NO__TEMP_UNPLUGGED_GRID:     { Serial.print(F("T_grid Unplugged")  );                                                        break; }
-        case NO__BATTERY_IS_COLD:         { Serial.print(F("Pack Too Cold")     );                                                        break; }
-        case NO__BATTERY_IS_HOT:          { Serial.print(F("Pack Too Hot")      );                                                        break; }
-        case NO__AIRINTAKE_IS_HOT:        { Serial.print(F("Cabin Too Hot")     );                                                        break; }
-        case NO__TEMP_UNPLUGGED_INTAKE:   { Serial.print(F("T_intake Unplugged"));                                                        break; }
-        case NO__TEMP_EXHAUST_IS_HOT:     { Serial.print(F("Exhaust Too Hot")   );                                                        break; }
-        //time issue
-        case NO__JUSTPLUGGEDIN:           { Serial.print(F("Plugin Delay")      ); minimumOffTime_ms = GRID_MIN_TIME_OFF_NONE_ms;         break; }
-        case NO__LIBCMJUSTBOOTED:         { Serial.print(F("LiBCM Powerup")     ); minimumOffTime_ms = GRID_MIN_TIME_OFF_NONE_ms;         break; }
-        case NO__RECENTLY_TURNED_OFF:     { Serial.print(F("Turnoff Delay")     ); minimumOffTime_ms = minimumOffTime_beforeTurningOn_ms; break; }
-        //other checks
-        case NO__KEY_IS_ON:               { Serial.print(F("Key is ON")         ); minimumOffTime_ms = GRID_MIN_TIME_OFF_NONE_ms;         break; }
-        //unknown reason
-        default:                          { Serial.print(F("Unknown Reason")    );                                                        break; }
-    }
-
-    minimumOffTime_beforeTurningOn_ms = minimumOffTime_ms;
-}
+uint32_t minGridOffPeriod_ms = GRID_MIN_OFF_PERIOD__NONE_ms;
 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -104,58 +36,123 @@ void runFansIfNeeded(void)
 
 //////////////////////////////////////////////////////////////////////////////////
 
-void powered_handler(void)
+uint16_t determineMaxAllowedCellVoltage(void)
 {
-    static uint8_t chargerState_previous = NO__UNINITIALIZED;
-
-    uint8_t areAllSystemsGo = isChargingAllowed();
-
-    if(areAllSystemsGo == YES__CHARGING_ALLOWED)
-    {
-        if( LTC68042result_hiCellVoltage_get() <= (CELL_VMAX_GRIDCHARGER - VCELL_HYSTERESIS) ) //hysteresis to prevent rapid grid charger cycling
-        {
-            runFansIfNeeded();
-            gpio_turnGridCharger_on();
-            gpio_setGridCharger_powerLevel('H'); //JTS2doNow: Reduce duty cycle as temp increases
-
-            if(chargerState_previous != YES__CHARGING_ALLOWED)
-            {
-                Serial.print(F("\nCharger: ON" ));
-                chargerState_previous = YES__CHARGING_ALLOWED;
-            }
-        }
-    }
-    else
-    {
-        //something is unhappy //turn everything off
-        fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);
-        gpio_turnGridCharger_off();
-        gpio_setGridCharger_powerLevel('0');
-
-
-        if(areAllSystemsGo != chargerState_previous)
-        {
-            if(chargerState_previous == YES__CHARGING_ALLOWED)
-            {
-                Serial.print(F("\nCharger: OFF"));
-                latestChargerDisable_ms = millis();
-            }
-
-            reportChargerState(areAllSystemsGo);
-
-            chargerState_previous = areAllSystemsGo;
-        }
-
-    }
-
-
+    //prevents rapid grid charger enable/disable when cells full
+    if(gpio_isGridChargerChargingNow() == YES) { return CELL_VMAX_GRIDCHARGER;                    }
+    else                                       { return CELL_VMAX_GRIDCHARGER - VCELL_HYSTERESIS; }
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 
-void unpowered_handler(void)
+uint8_t isChargingAllowed(void)
 {
-    gpio_turnGridCharger_off(); //safety: continuously turn grid charger off in case a bit flip occurs in RAM (that would otherwise turn it on)
+    //order is important
+    //external checks
+    if(gpio_isGridChargerPluggedInNow()    == NO                                       ) { return NO__CHARGER_UNPLUGGED;       }
+    if(key_getSampledState()               == KEYSTATE_ON                              ) { return NO__KEY_IS_ON;               }
+    //cell voltage checks
+    if(LTC68042result_hiCellVoltage_get()   > CELL_VREST_85_PERCENT_SoC                ) { return NO__ATLEASTONECELL_TOO_HIGH; }
+    if(LTC68042result_loCellVoltage_get()   < CELL_VMIN_GRIDCHARGER                    ) { return NO__ATLEASTONECELL_TOO_LOW;  }
+    if(LTC68042result_hiCellVoltage_get()   > CELL_VMAX_GRIDCHARGER                    ) { return NO__ATLEASTONECELL_FULL;     }
+    if(LTC68042result_hiCellVoltage_get()   > determineMaxAllowedCellVoltage()         ) { return NO__CELL_VOLTAGE_HYSTERESIS; }
+    //thermal checks
+    if(temperature_gridCharger_getLatest()  > DISABLE_GRIDCHARGING_ABOVE_CHARGER_TEMP_C) { return NO__CHARGER_IS_HOT;          }
+    if(temperature_gridCharger_getLatest() == TEMPERATURE_SENSOR_FAULT_LO              ) { return NO__TEMP_UNPLUGGED_GRID;     }
+    if(temperature_battery_getLatest()      < DISABLE_GRIDCHARGING_BELOW_BATTERY_TEMP_C) { return NO__BATTERY_IS_COLD;         }
+    if(temperature_battery_getLatest()      > DISABLE_GRIDCHARGING_ABOVE_BATTERY_TEMP_C) { return NO__BATTERY_IS_HOT;          }
+    if(temperature_intake_getLatest()       > DISABLE_GRIDCHARGING_ABOVE_INTAKE_TEMP_C ) { return NO__AIRINTAKE_IS_HOT;        }
+    if(temperature_intake_getLatest()      == TEMPERATURE_SENSOR_FAULT_LO              ) { return NO__TEMP_UNPLUGGED_INTAKE;   }
+    if(temperature_exhaust_getLatest()      > DISABLE_GRIDCHARGING_ABOVE_EXHAUST_TEMP_C) { return NO__TEMP_EXHAUST_IS_HOT;     }
+    //time checks
+    if((millis()                          ) < DISABLE_GRIDCHARGING_LIBCM_BOOT_DELAY_ms ) { return NO__LIBCMJUSTBOOTED;         }
+    if((millis() - latestPlugin_ms        ) < DISABLE_GRIDCHARGING_PLUGIN_DELAY_ms     ) { return NO__JUSTPLUGGEDIN;           }
+    if((millis() - latestChargerDisable_ms) < minGridOffPeriod_ms                      ) { return NO__RECENTLY_TURNED_OFF;     }
+
+    return YES__CHARGING_ALLOWED; //nothing else returned, so we can charge
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
+//JTS2doLater: display status on LCD
+void processChargerDisableReason(uint8_t canWeCharge)
+{
+    Serial.print(F("\nCharger disabled: "));
+    uint32_t offPeriod_helper = GRID_MIN_OFF_PERIOD__LONG_ms; //most common value //overwritten as needed
+    uint8_t buzzer_helper = BUZZER_OFF; //most common value //overwritten as needed
+
+    switch (canWeCharge)
+    {
+        //external checks
+        case NO__CHARGER_UNPLUGGED:       { Serial.print(F("Unplugged")         ); offPeriod_helper = GRID_MIN_OFF_PERIOD__NONE_ms; break; }
+        case NO__KEY_IS_ON:               { Serial.print(F("Key is ON")         ); buzzer_helper = BUZZER_LOW;                      break; }
+        //voltage issue
+        case NO__ATLEASTONECELL_TOO_HIGH: { Serial.print(F("Overcharged")       ); buzzer_helper = BUZZER_HIGH;                     break; }
+        case NO__ATLEASTONECELL_TOO_LOW:  { Serial.print(F("Overdischarged")    ); buzzer_helper = BUZZER_HIGH;                     break; }
+        case NO__ATLEASTONECELL_FULL:     { Serial.print(F("Pack Charged")      );                                                  break; }
+        case NO__CELL_VOLTAGE_HYSTERESIS: { Serial.print(F("Vcell Hysteresis")  );                                                  break; }
+        //thermal issue
+        case NO__CHARGER_IS_HOT:          { Serial.print(F("Charger Hot")       );                                                  break; }
+        case NO__TEMP_UNPLUGGED_GRID:     { Serial.print(F("T_grid Unplugged")  );                                                  break; }
+        case NO__BATTERY_IS_COLD:         { Serial.print(F("Pack Too Cold")     );                                                  break; }
+        case NO__BATTERY_IS_HOT:          { Serial.print(F("Pack Too Hot")      );                                                  break; }
+        case NO__AIRINTAKE_IS_HOT:        { Serial.print(F("Cabin Too Hot")     );                                                  break; }
+        case NO__TEMP_UNPLUGGED_INTAKE:   { Serial.print(F("T_intake Unplugged"));                                                  break; }
+        case NO__TEMP_EXHAUST_IS_HOT:     { Serial.print(F("Exhaust Too Hot")   );                                                  break; }
+        //time issue
+        case NO__JUSTPLUGGEDIN:           { Serial.print(F("Plugin Delay")      ); offPeriod_helper = GRID_MIN_OFF_PERIOD__NONE_ms; break; }
+        case NO__LIBCMJUSTBOOTED:         { Serial.print(F("LiBCM Powerup")     ); offPeriod_helper = GRID_MIN_OFF_PERIOD__NONE_ms; break; }
+        case NO__RECENTLY_TURNED_OFF:     { Serial.print(F("Turnoff Delay")     ); offPeriod_helper = minGridOffPeriod_ms;          break; }
+        //unknown reason
+        default:                          { Serial.print(F("Unknown Reason")    );                                                  break; }
+    }
+
+    minGridOffPeriod_ms = offPeriod_helper;
+    buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, buzzer_helper);
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
+void chargerControlSignals_handler(void)
+{
+    static uint8_t isChargingAllowed_previous = NO__UNINITIALIZED;
+           uint8_t isChargingAllowed_now      = isChargingAllowed();
+
+    if(isChargingAllowed_now == YES__CHARGING_ALLOWED)
+    {        
+        if(isChargingAllowed_previous != YES__CHARGING_ALLOWED)
+        {
+            Serial.print(F("\nCharging"));
+            adc_calibrateBatteryCurrentSensorOffset();
+        }
+
+        runFansIfNeeded(); //JTS2doNow: run fans as needed even when charging not allowed (e.g. to cool a hot pack)
+        gpio_turnGridCharger_on();
+        gpio_setGridCharger_powerLevel('H'); //JTS2doNow: Reduce power as temp increases
+        adc_updateBatteryCurrent();
+        buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, BUZZER_OFF);
+    }
+    else
+    {
+        gpio_turnGridCharger_off();
+
+        if(isChargingAllowed_now == NO__CHARGER_UNPLUGGED) { gpio_setGridCharger_powerLevel('Z'); } //saves power
+        else                                               { gpio_setGridCharger_powerLevel('0'); } //redundant safety when charger plugged in but disabled
+
+        if(isChargingAllowed_previous == YES__CHARGING_ALLOWED)
+        {
+            latestChargerDisable_ms = millis();
+            //gpio_turnPowerSensors_off();
+        }
+        
+        if(isChargingAllowed_previous != isChargingAllowed_now) { processChargerDisableReason(isChargingAllowed_now); }
+
+        fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF); //JTS2doNow: see note ("cool a hot pack")
+
+        //JTS2doNow: Since the charger should be off now, sound an alarm if battery current isn't ~0 amps.
+    }
+
+    isChargingAllowed_previous = isChargingAllowed_now;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -164,7 +161,8 @@ void handleEvent_plugin(void)
 {
     Serial.print(F("Plugged In"));
     gpio_setGridCharger_powerLevel('0');
-    lastPlugin_ms = millis();
+    gpio_turnPowerSensors_on(); //so we can measure current //to save power, it would be nice to move this into YES__CHARGING_ALLOWED (solve powerup hysteresis)
+    latestPlugin_ms = millis();
 	LiDisplay_gridChargerPluggedIn(); //JTS2doNow: Move inside LiDisplay.c... LiDisplay handler should check key state
 }
 
@@ -174,31 +172,34 @@ void handleEvent_unplug(void)
 {
     Serial.print(F("Unplugged"));
     gpio_turnGridCharger_off();
-    buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, BUZZER_OFF);
     gpio_setGridCharger_powerLevel('Z'); //reduces power consumption
+    gpio_turnPowerSensors_off();
     fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);
+    buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, BUZZER_OFF);
     LiDisplay_gridChargerUnplugged();
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
+void chargerPowerInput_handler(void)
+{
+    static bool isGridChargerPluggedIn_previous = NO;
+           bool isGridChargerPluggedIn_now      = gpio_isGridChargerPluggedInNow();
+
+    if(isGridChargerPluggedIn_previous != isGridChargerPluggedIn_now)
+    {
+        Serial.print(F("\nGrid: "));
+        if(isGridChargerPluggedIn_now == YES) { handleEvent_plugin(); }
+        else                                  { handleEvent_unplug(); }
+
+        isGridChargerPluggedIn_previous = isGridChargerPluggedIn_now;
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 
 void gridCharger_handler(void)
 {
-    static bool isGridChargerPluggedIn_previous = NO;
-           bool isGridChargerPluggedIn          = gpio_isGridChargerPluggedInNow();
-
-    if(isGridChargerPluggedIn_previous != isGridChargerPluggedIn)
-    {
-        Serial.print(F("\nGrid: "));
-
-        if(isGridChargerPluggedIn == YES) { handleEvent_plugin(); }
-        else                              { handleEvent_unplug(); }
-
-        isGridChargerPluggedIn_previous = isGridChargerPluggedIn;
-    }
-
-    if(isGridChargerPluggedIn == YES) { powered_handler();   }
-    else                              { unpowered_handler(); }
+    chargerPowerInput_handler();
+    chargerControlSignals_handler();
 }
-
-//////////////////////////////////////////////////////////////////////////////////

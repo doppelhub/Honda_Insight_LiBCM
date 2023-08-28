@@ -14,7 +14,7 @@
 #include "libcm.h"
 
 uint8_t spoofedVoltageToSend_Counts = 0; //formatted as MCM expects to see it (Vpack / 2) //2 volts per count
-int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2048 - amps * 20) //50 mA per count
+int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2048 - deciAmps * 2) //50 mA per count
 
 uint8_t framePeriod_ms = 33;
 
@@ -99,8 +99,8 @@ void BATTSCI_setPackVoltage(uint8_t spoofedVoltage) { spoofedVoltageToSend_Count
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//Convert battery current (unit: amps) into BATTSCI format (unit: 50 mA per count)
-void BATTSCI_setSpoofedCurrent(int16_t spoofedCurrent) { spoofedCurrentToSend_Counts = (2048 - (spoofedCurrent * 20)); }
+//Convert from battery current (unit: deciAmps) to BATTSCI format (unit: 50 mA per count)
+void BATTSCI_setSpoofedCurrent_deciAmps(int16_t deciAmps) { spoofedCurrentToSend_Counts = 2048 - (deciAmps << 1); } 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -130,18 +130,19 @@ uint8_t BATTSCI_calculateTemperatureByte(void)
 //calculate cell voltage measurement offet caused by equivalent series resistance (ESR)
 //returns ESR-based voltage offset in counts
 //each count is 100 uV (e.g. -01234 counts = -123.4 mV)
-//returns positive number during assist //Example @ +140 amps assist: 140 * 20 = +2800 counts = +0.2800 volts
-//returns negative number during regen  //Example @ -070 amps  regen: -70 * 20 = -1400 counts = -0.1400 volts
+//returns positive number during assist //Example @ +140 amps assist (1400 deciAmps): 1400 * 2 = +2800 counts = +0.2800 volts
+//returns negative number during regen  //Example @ -070 amps  regen ( 700 deciAmps): -700 * 2 = -1400 counts = -0.1400 volts
 int16_t cellVoltageOffsetDueToESR(void)
 {
-  #define CELL_ESR_mOHM 2
-  #define CELL_ESR_COUNTS (CELL_ESR_mOHM * 10) //ten counts is one mOhm
-
+  constexpr uint8_t CELL_ESR_mOHM = 2;
   //Derivation:
   //  vCellCorrection_ESR = Icell_amps                * ESR
   //  vCellCorrection_ESR = Icell_amps                *  2 mOhm
   //  vCellCorrection_ESR = Icell_amps                * 20 counts
-  return (int16_t)(adc_getLatestBatteryCurrent_amps() * CELL_ESR_COUNTS);
+  //  vCellCorrection_ESR = Icell_deciAmps / 10       * 20 counts
+  //  vCellCorrection_ESR = Icell_deciAmps            * 2
+  //  vCellCorrection_ESR = Icell_deciAmps            * CELL_ESR_mOHM
+  return (int16_t)(adc_getLatestBatteryCurrent_deciAmps() * CELL_ESR_mOHM); //100 uV = 1 deciAmp * 1 mOhm 
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

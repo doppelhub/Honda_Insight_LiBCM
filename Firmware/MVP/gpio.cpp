@@ -56,9 +56,9 @@ void gpio_begin(void)
 	pinMode(PIN_ABSTRACTED_GRID_EN,OUTPUT);
 	pinMode(PIN_TEMP_EN,OUTPUT);
 	pinMode(PIN_SPI_EXT_CS,OUTPUT);
-	digitalWrite(PIN_SPI_EXT_CS,HIGH); //JTS2doNow: Move this somewhere else logical
+	digitalWrite(PIN_SPI_EXT_CS,HIGH);
 
-	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
+	analogReference(EXTERNAL); //5V AREF pin is coupled to filtered VCC
 
 	//JTS2doLater: Turn all this stuff off when the key is off
 	TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D11(fan) & D12()

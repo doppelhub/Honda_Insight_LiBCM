@@ -4,7 +4,7 @@
 #ifndef gridCharger_h
     #define gridCharger_h
 
-    #define VCELL_HYSTERESIS 200 // '200' = 20 mV //prevents rapid grid charger on/off toggling when first cell is full
+    #define VCELL_HYSTERESIS 150 // '150' = 15 mV //prevents rapid grid charger on/off toggling when first cell is full
 
     #define YES__CHARGING_ALLOWED       0b01111111 //if charging allowed,  first three bits are '011'
     #define NO__UNINITIALIZED           0b10000000 //if charging disabled, first three bits are '100' //safety feature in case a single bit flips 
@@ -22,6 +22,8 @@
     #define NO__LIBCMJUSTBOOTED         0b10001100
     #define NO__RECENTLY_TURNED_OFF     0b10001101
     #define NO__KEY_IS_ON               0b10001110
+    #define NO__CELL_VOLTAGE_HYSTERESIS 0b10001111
+    #define NO__CHARGER_UNPLUGGED       0b10010000
 
     #define DISABLE_GRIDCHARGING_ABOVE_CHARGER_TEMP_C 60
     #define DISABLE_GRIDCHARGING_BELOW_BATTERY_TEMP_C (TEMP_FREEZING_DEGC + 2)
@@ -35,9 +37,9 @@
     #define DISABLE_GRIDCHARGING_LIBCM_BOOT_DELAY_ms  2500 //prevents grid charging at poweron, so that the grid charger will never turn on if the watchdog continuously resets
     #define DISABLE_GRIDCHARGING_PLUGIN_DELAY_ms 1000 //prevent current inrush while plugging in grid charger
 
-    #define GRID_MIN_TIME_OFF_NONE_ms      0
-    #define GRID_MIN_TIME_OFF_SHORT_ms  2000 //prevents rapid grid charger cycling
-    #define GRID_MIN_TIME_OFF_LONG_ms  30000
+    #define GRID_MIN_OFF_PERIOD__NONE_ms      0
+    #define GRID_MIN_OFF_PERIOD__SHORT_ms  2000 //prevents rapid grid charger cycling
+    #define GRID_MIN_OFF_PERIOD__LONG_ms  30000
 
     void gridCharger_handler(void);
 

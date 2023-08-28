@@ -60,7 +60,7 @@ void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 	// deltaCharge_uCoulomb            =  deltaCharge_counts                     *  ADC_MILLIAMPS_PER_COUNT                                                       *  time_loopPeriod_ms_get()
 	//int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * (ADC_MILLIAMPS_PER_COUNT * time_loopPeriod_ms_get());
 	//One final change: The battery current sensor isn't updated every time through the loop... so multiply by the number of loops per result
-	int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * time_loopPeriod_ms_get() * (ADC_MILLIAMPS_PER_COUNT * ADC_NUMLOOPS_PER_RESULT);
+	int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * (time_loopPeriod_ms_get() * ADC_MILLIAMPS_PER_COUNT);
 
 	//Notes:
 	//5 Ah is 18.0E9 uCoulombs, whereas 2^32 is ~4.3E9 counts...

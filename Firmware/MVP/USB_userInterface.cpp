@@ -33,45 +33,69 @@ void printDebug(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
+void printText_UNUSED(void) { Serial.print(F("Unused")); }
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
 void USB_userInterface_runTestCode(uint8_t testToRun)
 {
 	Serial.print(F("\nRunning Test: "));
 
 	//Add whatever code you want to run whenever the user types '$TEST1'/2/3/etc into the Serial Monitor Window
 	//Numbered tests ($TEST1/2/3) are temporary, for internal testing during firmware development
-	if(testToRun == '1')
+	if(testToRun == '0')
 	{
 		Serial.print(F("FAN_REQUESTOR_USER: OFF"));
 		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF);
 	}
-	else if(testToRun == '2')
-	{
-		Serial.print(F("FAN_REQUESTOR_USER: LOW"));
-		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_LOW);
-	}
-	else if(testToRun == '3')
+	else if(testToRun == '1')
 	{
 		Serial.print(F("FAN_REQUESTOR_USER: HIGH"));
 		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_HIGH);
 	}
+	else if(testToRun == '2')
+	{
+		gpio_turnPowerSensors_on();
+		Serial.print(F("Calibrating Current Sensor"));
+		adc_calibrateBatteryCurrentSensorOffset();
+	}
+	else if(testToRun == '3')
+	{
+		Serial.print(F("updateBatteryCurrent"));
+		adc_updateBatteryCurrent();
+	}
 	else if(testToRun == '4')
 	{
-		Serial.print(F("fanSpeed_allRequestors mask: "));
-		Serial.print(String(fan_getAllRequestors_mask(),DEC));
+		printText_UNUSED();
 	}
-	else if(testToRun == '5') { Serial.print(F("Unused")); }
+	else if(testToRun == '5')
+	{
+		printText_UNUSED();
+	}
 	else if(testToRun == '6')
 	{
-		Serial.print(F("LiBCM turning off 5V rail.\nLiBCM will stay on if USB's +5V connected."));
-		gpio_turnLiBCM_off();
+		printText_UNUSED();
 	}
-	else if(testToRun == '7') { Serial.print(F("Unused")); }
-	else if(testToRun == '8') { Serial.print(F("Unused")); }
+	else if(testToRun == '7')
+	{
+		printText_UNUSED();
+	}
+	else if(testToRun == '8')
+	{
+		printText_UNUSED();
+	}
+	else if(testToRun == '9')
+	{
+		Serial.print(F("\nadcResult_CurrentSensor(10b): "));
+		Serial.print(analogRead(PIN_BATTCURRENT));
+		adc_calibrateBatteryCurrentSensorOffset();
+	}
 
 	//Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
 	else if(testToRun == 'T') { temperature_measureAndPrintAll(); }
 	else if(testToRun == 'C')
 	{
+		LTC68042cell_sampleGatherAndProcessAllCellVoltages();
 		for( uint8_t ii = 0; ii < TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages(ii, FOUR_DECIMAL_PLACES); }
 	}
 	else if(testToRun == 'H')

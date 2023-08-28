@@ -12,12 +12,6 @@
 //  Example: cellVoltages_counts[3][11] is IC_4 cell_12
 uint16_t cellVoltages_counts[TOTAL_IC][CELLS_PER_IC];
 
-
-//JTS2doLater: add the ability to determine when LTC6804 VREF1 has gone bad.  This could include measuring VREF2,
-//and also testing whether all QTY12 cells on any given IC have a similar offset from all other cells in the pack.
-
-//JTS2doNow: Increase cell balancing delta cutoffs to twice the LTC6804's specified reference accuracy
-
 //JTS2doLater: Add cell voltage test that sets user alert if a cell voltage suddenly changes from 'balanced' to 'majorly imbalanced'
 
 //JTS2doNow: If too many sequential errors occur, assume isoSPI bus has failed and assert alarm
@@ -84,7 +78,7 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
 {
     const uint8_t NUM_BYTES_IN_REG  = 6; //QTY3 cells * 2B/cell
     const uint8_t NUM_RX_BYTES      = 8; //NUM_BYTES_IN_REG + 2B PEC
-    const uint8_t MAX_READ_ATTEMPTS = 4; //max attempts to read back CVR without PEC error
+    const uint8_t MAX_READ_ATTEMPTS = 3; //max attempts to read back CVR without PEC error
 
     uint8_t attemptCounter = 0;
     uint16_t received_pec;
@@ -109,28 +103,36 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
         calculated_pec = LTC68042configure_calcPEC15(NUM_BYTES_IN_REG, &returnedData[0]);
 
         attemptCounter++; //prevent while loop hang
+
+        if(attemptCounter > 1) { LTC68042result_errorCount_increment(); } //log each PEC error
+
     } while( (received_pec != calculated_pec) && (attemptCounter < MAX_READ_ATTEMPTS) ); //retry if isoSPI error
 
-    if (attemptCounter > 1) { LTC68042result_errorCount_increment(); } //log PEC error 
-    else //data transmitted correctly
-    { //Determine which LTC cell voltages were read into returnedData
-        uint8_t cellX=0; //1st cell in returnedData (LTC cell 1, 4, 7, or 10)
-        uint8_t cellY=0; //2nd cell in returnedData (LTC cell 2, 5, 8, or 11) 
-        uint8_t cellZ=0; //3rd cell in returnedData (LTC cell 3, 6, 9, or 12)
-        switch(cellVoltageRegister)  //LUT to prevent QTY3 multiplies & QTY12 adds per call
-        {
-            case 'A': cellX=0;  cellY=1;  cellZ=2 ; break; //LTC cells  1/ 2/ 3 (LTC 1-indexed, array 0-indexed)
-            case 'B': cellX=3;  cellY=4;  cellZ=5 ; break; //LTC cells  4/ 5/ 6
-            case 'C': cellX=6;  cellY=7;  cellZ=8 ; break; //LTC cells  7/ 8/ 9
-            case 'D': cellX=9;  cellY=10; cellZ=11; break; //LTC cells 10/11/12
-            default: Serial.print(F("\nillegal CVR index")); while(1) {;} //hang here until watchdog resets.
-        }
+    if (attemptCounter >= MAX_READ_ATTEMPTS)
+    {
+        //too many errors occurred
+        cellX_Voltage_counts = 0;
+        cellY_Voltage_counts = 0;
+        cellZ_Voltage_counts = 0;
+    } 
 
-        //store valid cell voltage results
-        cellVoltages_counts[chipAddress - FIRST_IC_ADDR][cellX] = cellX_Voltage_counts;
-        cellVoltages_counts[chipAddress - FIRST_IC_ADDR][cellY] = cellY_Voltage_counts;
-        cellVoltages_counts[chipAddress - FIRST_IC_ADDR][cellZ] = cellZ_Voltage_counts;
+    //Determine which LTC cell voltages were read into returnedData
+    uint8_t cellX=0; //1st cell in returnedData (LTC cell 1, 4, 7, or 10)
+    uint8_t cellY=0; //2nd cell in returnedData (LTC cell 2, 5, 8, or 11) 
+    uint8_t cellZ=0; //3rd cell in returnedData (LTC cell 3, 6, 9, or 12)
+    switch(cellVoltageRegister)  //LUT to prevent QTY3 multiplies & QTY12 adds per call
+    {
+        case 'A': cellX=0;  cellY=1;  cellZ=2 ; break; //LTC cells  1/ 2/ 3 (LTC 1-indexed, array 0-indexed)
+        case 'B': cellX=3;  cellY=4;  cellZ=5 ; break; //LTC cells  4/ 5/ 6
+        case 'C': cellX=6;  cellY=7;  cellZ=8 ; break; //LTC cells  7/ 8/ 9
+        case 'D': cellX=9;  cellY=10; cellZ=11; break; //LTC cells 10/11/12
+        default: Serial.print(F("\nillegal CVR index")); while(1) {;} //hang here until watchdog resets.
     }
+
+    //store cell voltage results
+    cellVoltages_counts[chipAddress - FIRST_IC_ADDR][cellX] = cellX_Voltage_counts;
+    cellVoltages_counts[chipAddress - FIRST_IC_ADDR][cellY] = cellY_Voltage_counts;
+    cellVoltages_counts[chipAddress - FIRST_IC_ADDR][cellZ] = cellZ_Voltage_counts;
 }
 
 //---------------------------------------------------------------------------------------
