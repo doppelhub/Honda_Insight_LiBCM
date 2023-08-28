@@ -63,6 +63,8 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	{
 		Serial.print(F("updateBatteryCurrent"));
 		adc_updateBatteryCurrent();
+		Serial.print(F("\ndeciAmps: "));
+		Serial.print(adc_getLatestBatteryCurrent_deciAmps());
 	}
 	else if(testToRun == '4')
 	{
