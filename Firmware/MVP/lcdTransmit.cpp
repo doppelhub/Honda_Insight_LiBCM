@@ -259,9 +259,16 @@ bool lcd_printCurrent(void)
 		int16_t deciAmps = adc_getLatestBatteryCurrent_deciAmps();
 		
 		lcd2.setCursor(15,1);
-		if     (deciAmps > 0) { lcd2.print('-'); } //When discharging battery (i.e. assist), we display '-' symbol, even though internally it's '+' 
-		else if(deciAmps < 0) { lcd2.print('+'); } //When    charging battery (i.e. regen ), we display '+' symbol, even though internally it's '-' 
-		else                  { lcd2.print(' '); }
+
+		#ifdef DISPLAY_NEGATIVE_SIGN_DURING_ASSIST
+			if     (deciAmps > 0) { lcd2.print('-'); } //When discharging battery (i.e. assist), we display '-' symbol, even though internally it's '+' 
+			else if(deciAmps < 0) { lcd2.print('+'); } //When    charging battery (i.e. regen ), we display '+' symbol, even though internally it's '-' 
+			else                  { lcd2.print(' '); }
+		#elif defined DISPLAY_POSITIVE_SIGN_DURING_ASSIST
+			if     (deciAmps > 0) { lcd2.print('+'); } //When discharging battery (i.e. assist), we display '+' symbol
+			else if(deciAmps < 0) { lcd2.print('-'); } //When    charging battery (i.e. regen ), we display '+' symbol 
+			else                  { lcd2.print(' '); }
+		#endif
 
 		int16_t abs_deciAmps = abs(deciAmps);
 
@@ -326,9 +333,15 @@ bool lcd_printPower(void)
 	{
 		lcd2.setCursor(15,3);
 
-		if     (deci_kW > 0) { lcd2.print('-'); } //When discharging battery (i.e. assist), we display '-' symbol, even though internally it's '+' 
-		else if(deci_kW < 0) { lcd2.print('+'); } //When    charging battery (i.e. regen ), we display '+' symbol, even though internally it's '-' 
-		else                 { lcd2.print(' '); }
+		#ifdef DISPLAY_NEGATIVE_SIGN_DURING_ASSIST
+			if     (deci_kW > 0) { lcd2.print('-'); } //When discharging battery (i.e. assist), we display '-' symbol, even though internally it's '+' 
+			else if(deci_kW < 0) { lcd2.print('+'); } //When    charging battery (i.e. regen ), we display '+' symbol, even though internally it's '-' 
+			else                 { lcd2.print(' '); }
+		#elif defined DISPLAY_POSITIVE_SIGN_DURING_ASSIST
+			if     (deci_kW > 0) { lcd2.print('+'); } //When discharging battery (i.e. assist), we display '+' symbol
+			else if(deci_kW < 0) { lcd2.print('-'); } //When    charging battery (i.e. regen ), we display '-' symbol 
+			else                 { lcd2.print(' '); }
+		#endif
 
 		int16_t abs_deci_kW = abs(deci_kW);
 

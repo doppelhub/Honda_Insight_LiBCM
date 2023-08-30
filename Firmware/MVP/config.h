@@ -7,7 +7,7 @@
 	#define config_h
 	#include "libcm.h"
 
-	#define FW_VERSION "0.9.1f"
+	#define FW_VERSION "0.9.1g"
 	#define BUILD_DATE "2023AUG29"
 
 	//////////////////////////////////////////////////////////////////
@@ -45,13 +45,6 @@
 	//choose which grid charger is installed
 		#define GRIDCHARGER_IS_NOT_1500W
 		//#define GRIDCHARGER_IS_1500W //Uncomment if using the optional "+15% SoC per hour" charger (UHP-1500-230) //sold only with FoMoCo Kits
-		
-	//JTS2doNow: Implement this feature	
-	//if using 1500 watt charger with 120 volt extension cord, choose input current limit 
-		//#define CHARGER_INPUT_CURRENT__15A_MAX //select this option if using 12 AWG extension cord up to 100 feet, or 14 AWG up to 50 feet**, else if;
-		//#define CHARGER_INPUT_CURRENT__13A_MAX //select this option if using 14 AWG extension cord up to 100 feet, or 16 AWG up to 50 feet**, else if;
-		//#define CHARGER_INPUT_CURRENT__10A_MAX //select this option if using 16 AWG extension cord up to 100 feet, or 18 AWG up to 50 feet**.
-			//**please verify maximum continuous current rating for your specific extension cord
 
 	//////////////////////////////////////////////////////////////////
 
@@ -90,6 +83,10 @@
 	#define KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES 10 //Even with low SoC, LiBCM will remain on for this many minutes after keyOFF.
 		//to turn LiBCM back on: turn ignition 'ON', or turn IMA switch off and on, or plug in USB cable
 
+	//Choose which sign (±) the LCD displays when the battery is discharging
+	#define DISPLAY_POSITIVE_SIGN_DURING_ASSIST //current is positive when battery is discharging
+	//#define DISPLAY_NEGATIVE_SIGN_DURING_ASSIST //current is negative when battery is discharging
+
 	//////////////////////////////////////////////////////////////////
 
 	////////////////////////
@@ -124,3 +121,10 @@ JTS2doLater:
 	With these two changes, a user only needs to edit config.h if they want to change a previously sent parameter.
 	If user doesn't uncomment anything, then the previously uploaded value remains in EEPROM
 */
+
+//JTS2doNow: Implement this feature	
+//if using 1500 watt charger with 120 volt extension cord, choose input current limit 
+	//#define CHARGER_INPUT_CURRENT__15A_MAX //select this option if using 12 AWG extension cord up to 100 feet, or 14 AWG up to 50 feet**, else if;
+	//#define CHARGER_INPUT_CURRENT__13A_MAX //select this option if using 14 AWG extension cord up to 100 feet, or 16 AWG up to 50 feet**, else if;
+	//#define CHARGER_INPUT_CURRENT__10A_MAX //select this option if using 16 AWG extension cord up to 100 feet, or 18 AWG up to 50 feet**.
+		//**please verify maximum continuous current rating for your specific extension cord
