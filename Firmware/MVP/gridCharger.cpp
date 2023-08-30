@@ -129,7 +129,6 @@ void chargerControlSignals_handler(void)
         runFansIfNeeded(); //JTS2doNow: run fans as needed even when charging not allowed (e.g. to cool a hot pack)
         gpio_turnGridCharger_on();
         gpio_setGridCharger_powerLevel('H'); //JTS2doNow: Reduce power as temp increases
-        adc_updateBatteryCurrent();
         buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, BUZZER_OFF);
     }
     else
@@ -151,6 +150,7 @@ void chargerControlSignals_handler(void)
 
         //JTS2doNow: Since the charger should be off now, sound an alarm if battery current isn't ~0 amps.
     }
+    adc_updateBatteryCurrent();
 
     isChargingAllowed_previous = isChargingAllowed_now;
 }

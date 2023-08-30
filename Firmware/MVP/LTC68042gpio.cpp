@@ -133,19 +133,29 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
 
 //---------------------------------------------------------------------------------------
 
-void LTC6804gpio_printVREF(void)
+bool LTC6804gpio_areAllVoltageReferencesPassing(void)
 {
-  for(uint8_t ii = 0; ii<TOTAL_IC; ii++)
-  {
-    uint16_t countsVREF = aux_codes[ii][5];
+    //JTS2doNow: Add to keyOFF routine
+    //verify LTC6804 VREF is in bounds
+    LTC6804_adax();
+    delay(5);
+    LTC6804_rdaux(0,TOTAL_IC,FIRST_IC_ADDR);
 
-    Serial.print(F("\nIC"));
-    Serial.print(String(ii));
-    Serial.print(F(" VREF2 is "));
-    Serial.print(String(countsVREF));
-    Serial.print(F(", "));
+    bool didTestPass = true;
 
-    if((countsVREF < 30150) && (countsVREF > 29850)) { Serial.print("ok");   }
-    else                                             { Serial.print("FAIL"); }
-  }
+    for(uint8_t ii = 0; ii<TOTAL_IC; ii++)
+    {
+      uint16_t countsVREF = aux_codes[ii][5];
+
+      Serial.print(F("\nIC"));
+      Serial.print(String(ii));
+      Serial.print(F(" VREF2 is "));
+      Serial.print(String(countsVREF));
+      Serial.print(F(", "));
+
+      if((countsVREF < 30150) && (countsVREF > 29850)) { Serial.print("ok"); }
+      else                                             { Serial.print("FAIL"); didTestPass = false; }
+    }
+
+    return didTestPass;
 }

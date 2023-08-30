@@ -209,6 +209,9 @@ void bringupTester_motherboard(void)
 				LTC68042configure_wakeup();
 				delay(50);
 
+				Serial.print(F("\nLTC6804 - VREF test: "));
+				if( LTC6804gpio_areAllVoltageReferencesPassing() == false ) { Serial.print(F("FAIL!! !! !! !! !")); didTestFail = true; }
+
 				//start cell conversion, read back all cell voltages, validate, and store in array
 				for(int ii=0; ii<100; ii++) { LTC68042cell_nextVoltages(); delay(5); } //generate a bunch of isoSPI traffic to check for errors
 
@@ -306,11 +309,27 @@ void bringupTester_motherboard(void)
 				serialUSB_waitForEmptyBuffer();
 				{
 					uint8_t numberToLoopback = 0b10101110;
+					
+					Serial1.begin(38400,SERIAL_8E1);
+
 					LiDisplay_writeByte(numberToLoopback);
 					delay(10);
 
+					Serial.print(F("\nValue sent: "));
+					Serial.print(numberToLoopback,BIN);
+					
 					uint8_t numberLoopedBack = 0;
-					while ( LiDisplay_bytesAvailableToRead() != 0 ) { numberLoopedBack = LiDisplay_readByte(); }
+					
+					do
+					{
+						numberLoopedBack = LiDisplay_readByte();
+
+						Serial.print(F(" received: "));
+						Serial.print(numberLoopedBack,BIN);
+						Serial.print(',');
+
+					} while ( LiDisplay_bytesAvailableToRead() != 0 );
+
 					if(numberLoopedBack == numberToLoopback) { Serial.print(F("pass")); }
 					else                                     { Serial.print(F("FAIL!! !! !! !! !! !! !! !! ")); didTestFail = true; }
 				}

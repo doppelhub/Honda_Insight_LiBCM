@@ -95,6 +95,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 
 	//Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
 	else if(testToRun == 'T') { temperature_measureAndPrintAll(); }
+	else if(testToRun == 'R') { LTC6804gpio_areAllVoltageReferencesPassing(); }
 	else if(testToRun == 'C')
 	{
 		LTC68042cell_sampleGatherAndProcessAllCellVoltages();
@@ -113,15 +114,6 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 			delay(100);
 			gpio_turnPackHeater_off();
 		}
-	}
-	else if(testToRun == 'R')
-	{
-		//JTS2doNow: Add to keyOFF routine
-		//verify LTC6804 VREF is in bounds
-		LTC6804_adax();
-		delay(5);
-		LTC6804_rdaux(0,TOTAL_IC,FIRST_IC_ADDR);
-		LTC6804gpio_printVREF();
 	}
 
 	//invalid entry

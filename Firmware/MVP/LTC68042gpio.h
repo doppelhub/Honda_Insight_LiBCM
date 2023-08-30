@@ -8,6 +8,6 @@
 
 	void LTC6804_adax(void);
 
-	void LTC6804gpio_printVREF(void);
+	bool LTC6804gpio_areAllVoltageReferencesPassing(void);
 
 #endif
