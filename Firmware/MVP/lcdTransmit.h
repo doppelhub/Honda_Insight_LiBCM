@@ -67,6 +67,7 @@
 	#define LCD_WARN_KEYON_GRID 1
 	#define LCD_WARN_FW_EXPIRED 2
 	#define LCD_WARN_COVER_GONE 3
+	#define LCD_WARN_CELL_COUNT 4
 	void lcd_displayWarning(uint8_t warningToDisplay);
 
 #endif

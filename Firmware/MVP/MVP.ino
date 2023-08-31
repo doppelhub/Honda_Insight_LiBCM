@@ -22,7 +22,7 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 	  	bringupTester_motherboard(); //this function never returns
 	#endif
 
-	if(gpio_keyStateNow() == KEYSTATE_ON){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while keyON (e.g. while driving)
+	if(gpio_keyStateNow() == GPIO_KEY_ON){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while driving
 
 	EEPROM_verifyDataValid();
 

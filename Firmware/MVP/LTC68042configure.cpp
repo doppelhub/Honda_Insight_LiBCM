@@ -100,9 +100,55 @@ void LTC68042configure_programVolatileDefaults(void)
 
 //---------------------------------------------------------------------------------------
 
+LTC68042configure_verifyConfiguredCellQTY()
+{
+  if(gpio_keyStateNow() == GPIO_KEY_OFF)
+  {
+    LTC6804_adax(); //send any broadcast command
+    delay(6); //wait for all LTC6804 ICs to process this command
+
+    bool helper_doesActualPackSizeMatchUserConfig = true;
+
+    //read data back from either QTY4 ICs (if user selects PACK_IS_48S in config.h), or QTY5 ICs (if user selects PACK_IS_60S in config.h)
+    //we don't care about the actual data; only that the PEC error count doesn't increment 
+    uint8_t errorCount_allUserSpecifiedLTC6804s = LTC6804_rdaux(0,TOTAL_IC,FIRST_IC_ADDR); 
+
+    if(errorCount_allUserSpecifiedLTC6804s != 0) { helper_doesActualPackSizeMatchUserConfig = false; } //at least one IC had data transmissions errors
+
+    if(TOTAL_IC == 4)
+    {
+      uint8_t errorCount_onlyFifthLTC6804 = LTC6804_rdaux(0,1,FIRST_IC_ADDR+4); 
+
+      //the fifth LTC6804 (cells 49:60) should be unpowered (i.e. it should return errors)
+      if(errorCount_onlyFifthLTC6804 == 0) { helper_doesActualPackSizeMatchUserConfig = false; }
+    }
+
+    if(helper_doesActualPackSizeMatchUserConfig == false)
+    {
+      Serial.print(F("\nError: measured cell count disagrees with user specified cell count in config.h"));
+
+      lcd_begin();
+      delay(50); //delay doesn't matter because this is a fatal error
+      lcd_turnDisplayOnNow();
+      delay(50); //delay doesn't matter because this is a fatal error
+      lcd_displayWarning(LCD_WARN_CELL_COUNT);
+
+      delay(5000); //allow time for user to read screen //delay doesn't matter because this is a fatal error
+
+      buzzer_requestTone(BUZZER_REQUESTOR_USER, BUZZER_HIGH); //buzzer stays on forever
+    }
+  }
+}
+
+
+
+//---------------------------------------------------------------------------------------
+
 void LTC68042configure_initialize(void)
 {
   spi_enable(SPI_CLOCK_DIV64); //JTS2doLater: increase clock speed //DIV16 & DIV32 work on bench
+
+  LTC68042configure_verifyConfiguredCellQTY();
 }
 
 //---------------------------------------------------------------------------------------

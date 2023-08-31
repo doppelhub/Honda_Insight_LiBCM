@@ -129,6 +129,9 @@ void spoofVoltage_calculateValue(void)
 	//////////////////////////////////////////////////////////////////////////
 
 	#elif defined VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY
+		#ifdef STACK_IS_60S
+			#error (60S only works with VOLTAGE_SPOOFING_DISABLE selected in config.h)
+		#endif
 		if(adc_getLatestBatteryCurrent_amps() > MAXIMIZE_POWER_ABOVE_CURRENT_AMPS) { spoofedPackVoltage = VSPOOF_TO_MAXIMIZE_POWER; } //more power during heavy assist
 		else { spoofedPackVoltage = maxPossibleVspoof; } //no voltage spoofing during regen, idle, or light assist
 
@@ -140,6 +143,9 @@ void spoofVoltage_calculateValue(void)
 	//Recommendation: use VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE
 
 	#elif defined VOLTAGE_SPOOFING_ASSIST_AND_REGEN
+		#ifdef STACK_IS_60S
+			#error (60S only works with VOLTAGE_SPOOFING_DISABLE selected in config.h)
+		#endif
 		//Derivation:
 		//Maximum assist occurs when MCM thinks pack is at 120 volts.
 		//Therefore, we want to adjust the pack voltage over that range:
@@ -184,6 +190,10 @@ void spoofVoltage_calculateValue(void)
 	//////////////////////////////////////////////////////////////////////////
 
 	#elif defined	VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE
+		#ifdef STACK_IS_60S
+			#error (60S only works with VOLTAGE_SPOOFING_DISABLE selected in config.h)
+		#endif
+		
 		if( (maxPossibleVspoof < VSPOOF_TO_MAXIMIZE_POWER) || //pack voltage too low     
 		        (adc_getLatestBatteryCurrent_amps() < BEGIN_SPOOFING_VOLTAGE_ABOVE_AMPS)  ) { spoofedPackVoltage = maxPossibleVspoof; } //regen, idle, or light assist
 		else if (adc_getLatestBatteryCurrent_amps() > MAXIMIZE_POWER_ABOVE_CURRENT_AMPS)    { spoofedPackVoltage = VSPOOF_TO_MAXIMIZE_POWER; } //heavy assist

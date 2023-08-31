@@ -446,6 +446,14 @@ void lcd_displayWarning(uint8_t warningToDisplay)
 		else if(whichRowToPrint == 3) { lcd2.print(F("  www.linsight.org  ")); }
 	}
 
+	else if(warningToDisplay == LCD_WARN_CELL_COUNT)
+	{
+		lcd2.setCursor(0,0); lcd2.print(F("ALERT: Measured cell"));
+		lcd2.setCursor(0,1); lcd2.print(F("       count doesn't"));
+		lcd2.setCursor(0,2); lcd2.print(F("       match setting"));
+		lcd2.setCursor(0,3); lcd2.print(F("       in config.h )"));
+	}	
+
 	if(++whichRowToPrint > 3) { whichRowToPrint = 0; }
 
 	areAllStaticValuesDisplayed = NO; //reprint static values once warning message goes away

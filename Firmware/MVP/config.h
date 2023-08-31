@@ -7,7 +7,7 @@
 	#define config_h
 	#include "libcm.h"
 
-	#define FW_VERSION "0.9.1g"
+	#define FW_VERSION "0.9.1h"
 	#define BUILD_DATE "2023AUG29"
 
 	//////////////////////////////////////////////////////////////////
@@ -18,21 +18,26 @@
 	//                          //
 	//////////////////////////////
 
+	//Note: 'choose' exactly one hardware option from each group below, which must match the actual installed hardware.
+	//      'choose' an option by removing both forward slashes ('//') at the beginning of that line. 
+	//      All other options in each section MUST begin with two forward slashes (i.e. they are not chosen).
+
 	//choose your battery type:
-		#define BATTERY_TYPE_5AhG3 //previously (incorrectly) referred to as "EHW5"
+		#define BATTERY_TYPE_5AhG3
 		//#define BATTERY_TYPE_47AhFoMoCo
 
-	//JTS2doNow: Come up with method to determine if user has selected correct option before allowing contactor to fire.
-	//choose how many cells in series
-		#define STACK_IS_48S
-		//#define STACK_IS_60S
+	//choose how many cells are in series:
+		#define STACK_IS_48S //All 5AhG3 Kits & QTY4 module FoMoCo Kits
+		//#define STACK_IS_60S //QTY5 module FoMoCo Kits
 
-	//choose ONE of the following:
+	//choose ONE of the following
+	//must match "current hack" hardware configuration:
 		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
 		//#define SET_CURRENT_HACK_20 //actually +25.0%
 		#define SET_CURRENT_HACK_40 //actually +45.8%
 
-	//choose ONE of the following:
+	//48S ONLY: choose ONE of the following
+	//60S MUST use 'VOLTAGE_SPOOFING_DISABLE':
 		#define VOLTAGE_SPOOFING_DISABLE              //spoof maximum possible pack voltage at all times //closest to OEM behavior
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE //increase assist power by variably   spoofing pack voltage during assist
 		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //increase assist power by statically spoofing pack voltage during heavy assist
@@ -43,8 +48,8 @@
 		//#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
 
 	//choose which grid charger is installed
-		#define GRIDCHARGER_IS_NOT_1500W
-		//#define GRIDCHARGER_IS_1500W //Uncomment if using the optional "+15% SoC per hour" charger (UHP-1500-230) //sold only with FoMoCo Kits
+		#define GRIDCHARGER_IS_NOT_1500W //All 5AhG3 Kits & 'standard' 47Ah FoMoCo Kits
+		//#define GRIDCHARGER_IS_1500W //'faster' 47Ah FoMoCo Kits only
 
 	//////////////////////////////////////////////////////////////////
 
@@ -57,7 +62,7 @@
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
 
-	#define CELL_VMAX_REGEN                     43500 //43500 = 4.3500 volts
+	#define CELL_VMAX_REGEN                     43000 //43000 = 4.3000 volts
 	#define CELL_VMIN_ASSIST                    31900
 	#define CELL_VMAX_GRIDCHARGER               39600 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
 	#define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
@@ -95,6 +100,8 @@
 	//                    //
 	////////////////////////
 
+	//Note: Don't modify these parameters unless you know what you're doing.  They are primary for mudder's internal testing
+
 	//#define RUN_BRINGUP_TESTER_MOTHERBOARD //requires external test PCB (that you don't have)
 	//#define RUN_BRINGUP_TESTER_GRIDCHARGER //requires external test equipment
 
@@ -109,22 +116,22 @@
 	//choose which functions control the LEDs
 		#define LED_NORMAL //enable "LED()" functions (see debug.c)
 		//#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
+
+	/*
+	JTS2doLater:
+		#define SERIAL_H_LINE_CONNECTED NO //H-Line wire connected to OEM BCM connector pin B01
+		#define KEYOFF_TURNOFF_LIBCM_AFTER_HOURS 48 //LiBCM turns off this many hours after keyOFF.
+
+		Change these #define statements so that all they do is reconfigure EEPROM values.
+		Also, change this file so that all #define statements are commented out by default.
+		With these two changes, a user only needs to edit config.h if they want to change a previously sent parameter.
+		If user doesn't uncomment anything, then the previously uploaded value remains in EEPROM
+	*/
+
+	//JTS2doNow: Implement this feature	
+	//if using 1500 watt charger with 120 volt extension cord, choose input current limit 
+		//#define CHARGER_INPUT_CURRENT__15A_MAX //select this option if using 12 AWG extension cord up to 100 feet, or 14 AWG up to 50 feet**, else if;
+		//#define CHARGER_INPUT_CURRENT__13A_MAX //select this option if using 14 AWG extension cord up to 100 feet, or 16 AWG up to 50 feet**, else if;
+		//#define CHARGER_INPUT_CURRENT__10A_MAX //select this option if using 16 AWG extension cord up to 100 feet, or 18 AWG up to 50 feet**.
+			//**please verify maximum continuous current rating for your specific extension cord
 #endif
-
-/*
-JTS2doLater:
-	#define SERIAL_H_LINE_CONNECTED NO //H-Line wire connected to OEM BCM connector pin B01
-	#define KEYOFF_TURNOFF_LIBCM_AFTER_HOURS 48 //LiBCM turns off this many hours after keyOFF.
-
-	Change these #define statements so that all they do is reconfigure EEPROM values.
-	Also, change this file so that all #define statements are commented out by default.
-	With these two changes, a user only needs to edit config.h if they want to change a previously sent parameter.
-	If user doesn't uncomment anything, then the previously uploaded value remains in EEPROM
-*/
-
-//JTS2doNow: Implement this feature	
-//if using 1500 watt charger with 120 volt extension cord, choose input current limit 
-	//#define CHARGER_INPUT_CURRENT__15A_MAX //select this option if using 12 AWG extension cord up to 100 feet, or 14 AWG up to 50 feet**, else if;
-	//#define CHARGER_INPUT_CURRENT__13A_MAX //select this option if using 14 AWG extension cord up to 100 feet, or 16 AWG up to 50 feet**, else if;
-	//#define CHARGER_INPUT_CURRENT__10A_MAX //select this option if using 16 AWG extension cord up to 100 feet, or 18 AWG up to 50 feet**.
-		//**please verify maximum continuous current rating for your specific extension cord

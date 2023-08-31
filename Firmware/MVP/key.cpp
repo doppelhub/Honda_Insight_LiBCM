@@ -65,7 +65,8 @@ bool key_didStateChange(void)
 {
 	bool didKeyStateChange = NO;
 
-	keyState_sampled = gpio_keyStateNow();
+	if(gpio_keyStateNow() == GPIO_KEY_ON) { keyState_sampled = KEYSTATE_ON; }
+	else                                  { keyState_sampled = KEYSTATE_OFF; }
 
 	if( (keyState_sampled == KEYSTATE_OFF) &&
 		((keyState_previous == KEYSTATE_ON) || (keyState_previous == KEYSTATE_UNINITIALIZED)) )

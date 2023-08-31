@@ -609,7 +609,7 @@ void bringupTester_motherboard(void)
 				{
 					gpio_setGridCharger_powerLevel('Z'); //open drain is left floating (negative logic)
 					delay(100);
-					if( gpio_keyStateNow() == true ) { Serial.print(F("pass")); } //key appears on
+					if( gpio_keyStateNow() == GPIO_KEY_ON ) { Serial.print(F("pass")); } //key appears on
 					else { Serial.print(F("FAIL!! !! !! !")); didTestFail = true; }
 				}
 
@@ -618,14 +618,14 @@ void bringupTester_motherboard(void)
 				{
 					gpio_setGridCharger_powerLevel('0'); //open drain is shorted (negative logic)
 					delay(100);
-					if( gpio_keyStateNow() == false ) { Serial.print(F("pass")); } //GRID_PWM's open collector is pulling to 0V
+					if( gpio_keyStateNow() == GPIO_KEY_OFF ) { Serial.print(F("pass")); } //GRID_PWM's open collector is pulling to 0V
 					else { Serial.print(F("FAIL!! !! !! !")); didTestFail = true; }
 				}
 				//Don't add any code here
 				Serial.print(F("\nTesting 12V_KEYON state is OFF: "));
 				serialUSB_waitForEmptyBuffer();
 				{
-					if( gpio_keyStateNow() == false ) { Serial.print(F("pass")); } //key appears off
+					if( gpio_keyStateNow() == GPIO_KEY_OFF ) { Serial.print(F("pass")); } //key appears off
 					else { Serial.print(F("FAIL!! !! !! !")); didTestFail = true; }
 				}
 

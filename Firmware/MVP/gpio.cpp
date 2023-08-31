@@ -147,7 +147,11 @@ void gpio_setGridCharger_powerLevel(char powerLevel)
 {
 	switch(powerLevel)
 	{
-		#ifdef GRIDCHARGER_IS_1500W //wiring is different from other chargers		
+		#ifdef GRIDCHARGER_IS_1500W //wiring is different from other chargers
+			#ifdef BATTERY_TYPE_5AhG3
+				#error (invalid grid charger selection in config.h: 5AhG3 LiBCM kits don't support 1500 watt charging)
+			#endif
+
 			case '0': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
 			     digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  HIGH); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    0); break; //disable grid charger
 		  case 'L': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);

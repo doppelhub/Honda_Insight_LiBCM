@@ -68,7 +68,8 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	}
 	else if(testToRun == '4')
 	{
-		printText_UNUSED();
+		Serial.print(F("Turn Buzzer Off"));
+		buzzer_requestTone(BUZZER_REQUESTOR_USER, BUZZER_OFF);
 	}
 	else if(testToRun == '5')
 	{
