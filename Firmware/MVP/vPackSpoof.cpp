@@ -121,7 +121,7 @@ void spoofVoltage_calculateValue(void)
 
 		#elif defined STACK_IS_60S
 			spoofedPackVoltage = LTC68042result_packVoltage_get() * 0.67; //Vspoof(60S)=136 @ Vcell=3.4 //Vspoof(60S)=169 @ Vcell=4.2
-			if(spoofedPackVoltage < 155) { spoofedPackVoltage = 155; } //prevent P1440 during heavy assist (due to MCM increasing current as voltage drops) //JTS2doNow: Add user selects, set default higher
+			if(spoofedPackVoltage < MIN_SPOOFED_VOLTAGE_60S) { spoofedPackVoltage = MIN_SPOOFED_VOLTAGE_60S; } //prevent P1440 during heavy assist (due to MCM increasing current as voltage drops) //JTS2doLater: Automate this process (e.g. limit output power to 23 kW) 
 		#endif
 
 	//JTS2doLater: Add 60S logic to all other modes (below)

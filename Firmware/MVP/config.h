@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"
 
-	#define FW_VERSION "0.9.1h"
-	#define BUILD_DATE "2023AUG29"
+	#define FW_VERSION "0.9.1j"
+	#define BUILD_DATE "2023AUG30"
 
 	//////////////////////////////////////////////////////////////////
 
@@ -36,13 +36,6 @@
 		//#define SET_CURRENT_HACK_20 //actually +25.0%
 		#define SET_CURRENT_HACK_40 //actually +45.8%
 
-	//48S ONLY: choose ONE of the following
-	//60S MUST use 'VOLTAGE_SPOOFING_DISABLE':
-		#define VOLTAGE_SPOOFING_DISABLE              //spoof maximum possible pack voltage at all times //closest to OEM behavior
-		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE //increase assist power by variably   spoofing pack voltage during assist
-		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //increase assist power by statically spoofing pack voltage during heavy assist
-		//#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //increase assist and regen power by variably spoofing pack voltage //DEPRECATED (regen too strong)
-
 	//choose which display(s) is/are connected:
 		#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
 		//#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
@@ -50,6 +43,23 @@
 	//choose which grid charger is installed
 		#define GRIDCHARGER_IS_NOT_1500W //All 5AhG3 Kits & 'standard' 47Ah FoMoCo Kits
 		//#define GRIDCHARGER_IS_1500W //'faster' 47Ah FoMoCo Kits only
+
+	//48S ONLY: choose ONE of the following
+	//60S MUST use 'VOLTAGE_SPOOFING_DISABLE':
+		#define VOLTAGE_SPOOFING_DISABLE              //spoof maximum possible pack voltage at all times //closest to OEM behavior
+		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE //increase assist power by variably   spoofing pack voltage during assist
+		//#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //increase assist power by statically spoofing pack voltage during heavy assist
+		//#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //increase assist and regen power by variably spoofing pack voltage //DEPRECATED (regen too strong)
+
+	//48S ignores this parameter (choose any value)
+	//60S ONLY: to increase assist power, choose the lowest spoofed voltage doesn't cause p-codes during heavy assist
+		//#define MIN_SPOOFED_VOLTAGE_60S 180 //voltage spoofing related p-codes won't occur in any car
+		//#define MIN_SPOOFED_VOLTAGE_60S 175
+		#define MIN_SPOOFED_VOLTAGE_60S 170 //recommended starting value //choose higher voltage if p-codes occur during heavy assist
+		//#define MIN_SPOOFED_VOLTAGE_60S 165
+		//#define MIN_SPOOFED_VOLTAGE_60S 160
+		//#define MIN_SPOOFED_VOLTAGE_60S 155
+		//#define MIN_SPOOFED_VOLTAGE_60S 150 //voltage spoofing related p-codes will occur in most cars during heavy assist
 
 	//////////////////////////////////////////////////////////////////
 
@@ -134,4 +144,6 @@
 		//#define CHARGER_INPUT_CURRENT__13A_MAX //select this option if using 14 AWG extension cord up to 100 feet, or 16 AWG up to 50 feet**, else if;
 		//#define CHARGER_INPUT_CURRENT__10A_MAX //select this option if using 16 AWG extension cord up to 100 feet, or 18 AWG up to 50 feet**.
 			//**please verify maximum continuous current rating for your specific extension cord
+
+	//JTS2doNow: change tabs to QTY4 spaces everywhere
 #endif
