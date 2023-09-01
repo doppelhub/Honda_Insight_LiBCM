@@ -41,7 +41,7 @@
 		//#define SET_CURRENT_HACK_20 //actually +25.0%
 		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
 
-		//choose which display to use
+	//choose which display to use
 	//using both displays simultaneously could cause timing issues (FYI: the Serial Monitor prints '*' each time the loop period is violated)
 		#define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
 		//#define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
@@ -83,7 +83,7 @@
 	//                     //
 	/////////////////////////
 
-	//the default value below will work in any car.
+	//the default values below will work in any car.
 	//you only need to modify these parameters if you don't like the default behavior.
 
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
@@ -127,7 +127,7 @@
 	//                    //
 	////////////////////////
 
-	//Note: Don't modify these parameters unless you know what you're doing.  They are primary for mudder's internal testing
+	//don't modify these parameters unless you know what you're doing.  They are primary for mudder's internal testing
 
 	//#define RUN_BRINGUP_TESTER_MOTHERBOARD //requires external test PCB (that you don't have)
 	//#define RUN_BRINGUP_TESTER_GRIDCHARGER //requires external test equipment

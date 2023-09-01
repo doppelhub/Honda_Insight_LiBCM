@@ -73,7 +73,7 @@
       //1500 watt charger controlled by daughterboard, which uses different pinout
       #ifdef GRIDCHARGER_IS_1500W
         #ifdef BATTERY_TYPE_5AhG3
-          #error (5AhG3 doesn't support 1500 watt grid charger. Verify settings in config.h)
+          #error (invalid grid charger selection in config.h: 5AhG3 LiBCM kits don't support 1500 watt charging)
         #endif
         #define PIN_ABSTRACTED_GRID_CURRENT PIN_GPIO3
         #define PIN_ABSTRACTED_GRID_EN      PIN_GRID_PWM

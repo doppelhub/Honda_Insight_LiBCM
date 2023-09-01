@@ -162,6 +162,7 @@ void handleEvent_plugin(void)
     Serial.print(F("Plugged In"));
     gpio_setGridCharger_powerLevel('0');
     gpio_turnPowerSensors_on(); //so we can measure current //to save power, it would be nice to move this into YES__CHARGING_ALLOWED (solve powerup hysteresis)
+                                //JTS2doNow: Does turning these sensors on with the key off cause LiBCM's BATTSCI RS485 driver to output voltage into MCM?
     latestPlugin_ms = millis();
 	LiDisplay_gridChargerPluggedIn(); //JTS2doNow: Move inside LiDisplay.c... LiDisplay handler should check key state
 }
