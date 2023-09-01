@@ -59,7 +59,8 @@ void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 	//therefore:
 	// deltaCharge_uCoulomb            =  deltaCharge_counts                     *  ADC_MILLIAMPS_PER_COUNT                                                       *  time_loopPeriod_ms_get()
 	//int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * (ADC_MILLIAMPS_PER_COUNT * time_loopPeriod_ms_get());
-	//One final change: The battery current sensor isn't updated every time through the loop... so multiply by the number of loops per result
+	//Note: if the battery current value isn't updated each loop, then multiply by the number of loops required for each result
+	//JTS2doLater: change time_loopPeriod_ms_get() to delta millis since last run //prevents accumulated error if we don't meet our loop time
 	int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * (time_loopPeriod_ms_get() * ADC_MILLIAMPS_PER_COUNT);
 
 	//Notes:

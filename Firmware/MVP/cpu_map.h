@@ -72,6 +72,9 @@
 
       //1500 watt charger controlled by daughterboard, which uses different pinout
       #ifdef GRIDCHARGER_IS_1500W
+        #ifdef BATTERY_TYPE_5AhG3
+          #error (5AhG3 doesn't support 1500 watt grid charger. Verify settings in config.h)
+        #endif
         #define PIN_ABSTRACTED_GRID_CURRENT PIN_GPIO3
         #define PIN_ABSTRACTED_GRID_EN      PIN_GRID_PWM
         #define PIN_ABSTRACTED_GRID_VOLTAGE PIN_GPIO2
@@ -79,8 +82,10 @@
         #define PIN_ABSTRACTED_GRID_CURRENT PIN_GRID_PWM
         #define PIN_ABSTRACTED_GRID_EN      PIN_GRID_EN
         //these chargers don't support voltage control
-    
+      #else
+        #error (Grid charger type not specified in config.h)
       #endif
+
   #endif
 
 #endif

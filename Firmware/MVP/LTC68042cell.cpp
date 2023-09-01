@@ -14,8 +14,6 @@ uint16_t cellVoltages_counts[TOTAL_IC][CELLS_PER_IC];
 
 //JTS2doLater: Add cell voltage test that sets user alert if a cell voltage suddenly changes from 'balanced' to 'majorly imbalanced'
 
-//JTS2doNow: If too many sequential errors occur, assume isoSPI bus has failed and assert alarm
-
 //---------------------------------------------------------------------------------------
 
 

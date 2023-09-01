@@ -12,37 +12,51 @@
 
 	//////////////////////////////////////////////////////////////////
 
-	//////////////////////////////
-	//                          //
-	//  Hardware Configuration  //
-	//                          //
-	//////////////////////////////
+	///////////////////////////////////////
+	//                                   //
+	//  Hardware Specific Configuration  //
+	//                                   //
+	///////////////////////////////////////
 
-	//Note: 'choose' exactly one hardware option from each group below, which must match the actual installed hardware.
-	//      'choose' an option by removing both forward slashes ('//') at the beginning of that line. 
-	//      All other options in each section MUST begin with two forward slashes (i.e. they are not chosen).
+	//'choose' exactly one hardware option from each group below, which must match the actual installed hardware.
+	//'choose' an option by removing both forward slashes ('//') at the beginning of that line. 
+	//all other options in each group MUST begin with two forward slashes (i.e. they are not chosen).
+	//there are no default options because this firmware works with all LiBCM variants... you need to specify which hardware you have installed
 
 	//choose your battery type:
-		#define BATTERY_TYPE_5AhG3
+		//#define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
 		//#define BATTERY_TYPE_47AhFoMoCo
 
 	//choose how many cells are in series:
-		#define STACK_IS_48S //All 5AhG3 Kits & QTY4 module FoMoCo Kits
-		//#define STACK_IS_60S //QTY5 module FoMoCo Kits
-
-	//choose ONE of the following
-	//must match "current hack" hardware configuration:
-		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
-		//#define SET_CURRENT_HACK_20 //actually +25.0%
-		#define SET_CURRENT_HACK_40 //actually +45.8%
-
-	//choose which display(s) is/are connected:
-		#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
-		//#define LIDISPLAY_CONNECTED  //Comment to disable all LiDisplay commands //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
+		//#define STACK_IS_48S //All 5AhG3 Kits & FoMoCo Kits with QTY4 modules
+		//#define STACK_IS_60S //FoMoCo Kits with QTY5 modules
 
 	//choose which grid charger is installed
-		#define GRIDCHARGER_IS_NOT_1500W //All 5AhG3 Kits & 'standard' 47Ah FoMoCo Kits
+		//#define GRIDCHARGER_IS_NOT_1500W //All 5AhG3 Kits & 'standard' 47Ah FoMoCo Kits
 		//#define GRIDCHARGER_IS_1500W //'faster' 47Ah FoMoCo Kits only
+
+	//choose ONE of the following
+	//must match actual "current hack" hardware configuration:
+		//#define SET_CURRENT_HACK_40 //actually +45.8% //most LiBCM users installed this hardware option
+		//#define SET_CURRENT_HACK_20 //actually +25.0%
+		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
+
+		//choose which display to use
+	//using both displays simultaneously could cause timing issues (FYI: the Serial Monitor prints '*' each time the loop period is violated)
+		#define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
+		//#define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
+	
+	//////////////////////////////////////////////////////////////////
+
+	////////////////////////
+	//                    //
+	//  Voltage Spoofing  //
+	//                    //
+	////////////////////////
+
+	//'choose' exactly one option from each group below.
+	//the default values below should work in all cars.
+	//modify these parameters if you want more power during heavy assist and/or regen.
 
 	//48S ONLY: choose ONE of the following
 	//60S MUST use 'VOLTAGE_SPOOFING_DISABLE':
@@ -52,7 +66,7 @@
 		//#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //increase assist and regen power by variably spoofing pack voltage //DEPRECATED (regen too strong)
 
 	//48S ignores this parameter (choose any value)
-	//60S ONLY: to increase assist power, choose the lowest spoofed voltage doesn't cause p-codes during heavy assist
+	//60S ONLY: to increase assist power, choose the lowest spoofed voltage that doesn't cause p-codes during heavy assist (e.g. P1440)
 		//#define MIN_SPOOFED_VOLTAGE_60S 180 //voltage spoofing related p-codes won't occur in any car
 		//#define MIN_SPOOFED_VOLTAGE_60S 175
 		#define MIN_SPOOFED_VOLTAGE_60S 170 //recommended starting value //choose higher voltage if p-codes occur during heavy assist
@@ -68,6 +82,9 @@
 	//  Firmware Settings  //
 	//                     //
 	/////////////////////////
+
+	//the default value below will work in any car.
+	//you only need to modify these parameters if you don't like the default behavior.
 
 	#define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
 	#define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled

@@ -86,7 +86,7 @@ void adc_updateBatteryCurrent(void)
 	#elif defined(SET_CURRENT_HACK_00)
 		spoofedCurrent_deciAmps = battCurrent_deciAmps;
 	#else
-		#error (SET_CURRENT_HACK_xx value not selected in config.c)
+		#error (SET_CURRENT_HACK_xx value not selected in config.h)
 	#endif
 
 	BATTSCI_setSpoofedCurrent_deciAmps(spoofedCurrent_deciAmps);
