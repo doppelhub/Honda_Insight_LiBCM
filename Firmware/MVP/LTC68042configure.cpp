@@ -100,14 +100,14 @@ void LTC68042configure_programVolatileDefaults(void)
 
 //---------------------------------------------------------------------------------------
 
-LTC68042configure_verifyConfiguredCellQTY()
+bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
 {
-  if(gpio_keyStateNow() == GPIO_KEY_OFF)
+  bool helper_doesActualPackSizeMatchUserConfig = true;
+
+  if(gpio_keyStateNow() == GPIO_KEY_OFF) //we don't have time to run this test if the key is on when LiBCM first boots
   {
     LTC6804_adax(); //send any broadcast command
     delay(6); //wait for all LTC6804 ICs to process this command
-
-    bool helper_doesActualPackSizeMatchUserConfig = true;
 
     //read data back from either QTY4 ICs (if user selects PACK_IS_48S in config.h), or QTY5 ICs (if user selects PACK_IS_60S in config.h)
     //we don't care about the actual data; only that the PEC error count doesn't increment 
@@ -138,6 +138,7 @@ LTC68042configure_verifyConfiguredCellQTY()
       buzzer_requestTone(BUZZER_REQUESTOR_USER, BUZZER_HIGH); //buzzer stays on forever
     }
   }
+  return helper_doesActualPackSizeMatchUserConfig;
 }
 
 
@@ -148,7 +149,7 @@ void LTC68042configure_initialize(void)
 {
   spi_enable(SPI_CLOCK_DIV64); //JTS2doLater: increase clock speed //DIV16 & DIV32 work on bench
 
-  LTC68042configure_verifyConfiguredCellQTY();
+  LTC68042configure_doesActualPackSizeMatchUserConfig();
 }
 
 //---------------------------------------------------------------------------------------

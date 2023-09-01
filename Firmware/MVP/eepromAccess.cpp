@@ -7,6 +7,7 @@
 
 //store the day customer compiled the source code in program memory
 const uint8_t COMPILE_DATE_PROGRAM[BYTES_IN_DATE]= __DATE__; //Format: Mmm DD YYYY //Ex: Jan 23 2022 //Mar  5 2022
+//JTS2doLater: Add __TIME__ as well //returns compile time in 24 hour format HH:MM:SS (e.g. 'compile time: '16:30:31') 
 
 //EEPROM address map:
 const uint16_t EEPROM_ADDRESS_COMPILE_DATE       = 0x000; //EEPROM range is 0x000:0x00B (12B)
