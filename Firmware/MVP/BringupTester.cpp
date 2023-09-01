@@ -1,9 +1,11 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //Tests PCB (using custom external hardware)
 
 //Not used when deployed in vehicle
 
 #include "libcm.h"
+
+//////////////////////////////////////////////////////////////////
 
 void serialUSB_waitForEmptyBuffer(void)
 {	//This function verifies serial data is sent to host prior to starting each test (in case of brownout/reset)
@@ -11,9 +13,172 @@ void serialUSB_waitForEmptyBuffer(void)
 }
 
 //the 'quality' of this code is... poor.  Not written to be good/fast/etc... just to test each PCB after assembly
-void bringupTester_run(void)
+
+//////////////////////////////////////////////////////////////////
+
+void serialUSB_waitForAnyUserInput(void)
 {
-	#ifdef RUN_BRINGUP_TESTER
+	const uint32_t maxTestPeriod_ms = 60000; //prevent overcharging modules if user walks off mid-test
+	uint32_t timestamp_testStartTime_ms = millis();
+	static bool hasTooMuchTimePassed = false;
+
+	if(hasTooMuchTimePassed == true)
+	{
+		gpio_turnGridCharger_off();
+		gpio_setGridCharger_powerLevel('0');
+		Serial.print(F("\nTest timed out. Grid charger disabled. Reboot to continue"));
+		while(1) { ; } //hang here forever
+	}
+
+	while((Serial.available() == 0) && (hasTooMuchTimePassed == false))
+	{
+		if((millis() - timestamp_testStartTime_ms) > maxTestPeriod_ms) { hasTooMuchTimePassed = true; }
+	}
+	while(Serial.read() != -1) { delay(10); } //empty read buffer
+}
+
+//////////////////////////////////////////////////////////////////
+
+void bringupTester_gridcharger(void)
+{
+	#ifdef RUN_BRINGUP_TESTER_GRIDCHARGER
+		while(1) //this function never returns
+		{		
+			Serial.print(F("\nRunning Grid Charger Test: "));
+			#ifdef GRIDCHARGER_IS_1500W
+				Serial.print(F("GRIDCHARGER_IS_1500W"));
+
+				//Verify charger Vin sense is working when unplugged
+				gpio_turnGridCharger_off();
+				gpio_setGridCharger_powerLevel('0');
+				Serial.print(F("\n\nUnplug charger from wall, disconnect battery, then press 'enter' to continue. "));
+				serialUSB_waitForAnyUserInput();
+				Serial.print(F("Result: "));
+				if(gpio_isGridChargerPluggedInNow() == false) { Serial.print(F("pass")); }
+				else                                          { Serial.print(F("FAIL")); }
+
+				//Verify charger Vin sense is working when plugged in
+				Serial.print(F("\n\nPlug charger into wall, then press 'enter' to continue. "));
+				serialUSB_waitForAnyUserInput();
+				Serial.print(F("Result: "));
+				if(gpio_isGridChargerPluggedInNow() == true) { Serial.print(F("pass")); }
+				else                                         { Serial.print(F("FAIL")); }
+
+				//Charger disabled, verify fans off, Vout == 0
+				gpio_turnGridCharger_off(); //signal under test
+				gpio_setGridCharger_powerLevel('H'); //other signals set to least safe value
+				Serial.print(F("\n\nVerify:\n -fans off\n -Vout ~= 0"));
+				serialUSB_waitForAnyUserInput();
+
+				//Charger enabled, verify fans on, Vout is high
+				gpio_turnGridCharger_on();
+				gpio_setGridCharger_powerLevel('H');
+				Serial.print(F("\n\nVerify:\n -fans on\n -Vout ~= 250"));
+				serialUSB_waitForAnyUserInput();
+
+				//Verify voltage and current won't charge pack if on/off gets stuck on
+				gpio_turnGridCharger_on(); //assume this signal gets stuck on (unsafe)
+				gpio_setGridCharger_powerLevel('0'); //do these reduntant signals prevent charging?
+				Serial.print(F("\n\nVerify:\n -fans on\n -Vout ~= 105\n -Daughterboard 'V' is ~0.7 volts\n -Daughterboard 'I' is ~0.7 volts"));
+				serialUSB_waitForAnyUserInput();
+
+				//connect battery
+				gpio_turnGridCharger_off();
+				Serial.print(F("\n\nConnect battery, then press 'enter' to continue. "));
+				serialUSB_waitForAnyUserInput();
+
+				//Charger enabled, Vout is high, Iout is high
+				gpio_turnGridCharger_on();
+				gpio_setGridCharger_powerLevel('H');
+				Serial.print(F("\n\nVerify P_in ~= 1200|1500 watts @ Vin ~= 120|240 volts"));
+				serialUSB_waitForAnyUserInput();
+
+				//Charger enabled, Vout is high, Iout is low
+				gpio_turnGridCharger_on();
+				gpio_setGridCharger_powerLevel('L');
+				Serial.print(F("\n\nVerify P_in ~= 950|950 watts @ Vin ~= 120|240 volts"));
+				serialUSB_waitForAnyUserInput();
+
+			#else //GRIDCHARGER_IS_NOT_1500W
+				Serial.print(F("GRIDCHARGER_IS_NOT_1500W"));
+
+				//Verify charger Vin sense is working when unplugged
+				gpio_turnGridCharger_off();
+				gpio_setGridCharger_powerLevel('0');
+				Serial.print(F("\n\nUnplug charger from wall, disconnect battery, then press 'enter' to continue. "));
+				serialUSB_waitForAnyUserInput();
+				Serial.print(F("Result: "));
+				if(gpio_isGridChargerPluggedInNow() == false) { Serial.print(F("pass")); }
+				else                                          { Serial.print(F("FAIL")); }
+
+				//Verify charger Vin sense is working when plugged in
+				Serial.print(F("\n\nPlug charger into wall, then press 'enter' to continue. "));
+				serialUSB_waitForAnyUserInput();
+				Serial.print(F("Result: "));
+				if(gpio_isGridChargerPluggedInNow() == true) { Serial.print(F("pass")); }
+				else                                         { Serial.print(F("FAIL")); }
+
+				//Charger disabled, verify Vout == 0
+				gpio_turnGridCharger_off(); //signal under test
+				gpio_setGridCharger_powerLevel('H'); //other signals set to least safe value
+				Serial.print(F("\n\nVerify Vout ~= 0"));
+				serialUSB_waitForAnyUserInput();
+
+				//Charger enabled, verify fans on, Vout is high
+				gpio_turnGridCharger_on();
+				gpio_setGridCharger_powerLevel('H');
+				Serial.print(F("\n\nVerify Vout ~= 275"));
+				serialUSB_waitForAnyUserInput();
+
+				//Verify voltage and current won't charge pack if on/off gets stuck on
+				gpio_turnGridCharger_on(); //assume this signal gets stuck on (unsafe)
+				gpio_setGridCharger_powerLevel('0'); //do these reduntant signals prevent charging?
+				Serial.print(F("\n\nVerify Vout ~= 0"));
+				serialUSB_waitForAnyUserInput();
+
+				//connect battery
+				gpio_turnGridCharger_off();
+				Serial.print(F("\n\nConnect battery, then press 'enter' to continue. "));
+				serialUSB_waitForAnyUserInput();
+
+				//Charger enabled, Vout is high, Iout is high
+				gpio_turnGridCharger_on();
+				gpio_setGridCharger_powerLevel('H');
+				Serial.print(F("\n\nVerify P_in ~= 500 watts"));
+				serialUSB_waitForAnyUserInput();
+
+				//Charger enabled, Vout is high, Iout is low
+				gpio_turnGridCharger_on();
+				gpio_setGridCharger_powerLevel('L');
+				Serial.print(F("\n\nVerify P_in ~= 100 watts"));
+				serialUSB_waitForAnyUserInput();
+			#endif
+
+			//test heater (if installed)
+			gpio_turnGridCharger_off();
+			gpio_setGridCharger_powerLevel('0');
+			if(heater_isConnected() == HEATER_NOT_CONNECTED) { Serial.print(F("\nHeater NOT Connected. Skipping test.")); }
+			else
+			{
+				Serial.print(F("\nHeater connected to: "));
+				if(heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)   { Serial.print(F("Daughterboard")); }
+				if(heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM) { Serial.print(F("LiBCM Header"));  }
+				Serial.print(F("\nTurning heater on for 5 seconds"));
+				gpio_turnPackHeater_on();
+				delay(5000);
+				gpio_turnPackHeater_off();
+			}
+
+			Serial.print(F("\nGRID CHARGER TEST COMPLETE.  Restarting test.\n-----------------------------------------------------------------\n"));
+		}
+	#endif
+}
+
+//////////////////////////////////////////////////////////////////
+
+void bringupTester_motherboard(void)
+{
+	#ifdef RUN_BRINGUP_TESTER_MOTHERBOARD
 		while(1) //this function never returns
 		{
 			uint8_t testToRun = TEST_TYPE_UNDEFINED;
@@ -44,6 +209,9 @@ void bringupTester_run(void)
 				LTC68042configure_wakeup();
 				delay(50);
 
+				Serial.print(F("\nLTC6804 - VREF test: "));
+				if( LTC6804gpio_areAllVoltageReferencesPassing() == false ) { Serial.print(F("FAIL!! !! !! !! !")); didTestFail = true; }
+
 				//start cell conversion, read back all cell voltages, validate, and store in array
 				for(int ii=0; ii<100; ii++) { LTC68042cell_nextVoltages(); delay(5); } //generate a bunch of isoSPI traffic to check for errors
 
@@ -70,7 +238,7 @@ void bringupTester_run(void)
 				    (LTC68042result_hiCellVoltage_get() < 41000) ) //default returned data is 65535 (if no data sent)
 				{
 					Serial.print(F("pass"));
-					if( LTC68042result_hiCellVoltage_get() > 30000 ) { testToRun = TEST_TYPE_THERMAL_IMAGER; } //lithium batteries connected //JTS2doNow: Make this beep constantly
+					if( LTC68042result_hiCellVoltage_get() > 30000 ) { testToRun = TEST_TYPE_THERMAL_IMAGER; } //lithium batteries connected
 					else                                             { testToRun = TEST_TYPE_GAUNTLET;       } //LED BMS board connected
 
 				} else {
@@ -141,11 +309,27 @@ void bringupTester_run(void)
 				serialUSB_waitForEmptyBuffer();
 				{
 					uint8_t numberToLoopback = 0b10101110;
+					
+					Serial1.begin(38400,SERIAL_8E1);
+
 					LiDisplay_writeByte(numberToLoopback);
 					delay(10);
 
+					Serial.print(F("\nValue sent: "));
+					Serial.print(numberToLoopback,BIN);
+					
 					uint8_t numberLoopedBack = 0;
-					while ( LiDisplay_bytesAvailableToRead() != 0 ) { numberLoopedBack = LiDisplay_readByte(); }
+					
+					do
+					{
+						numberLoopedBack = LiDisplay_readByte();
+
+						Serial.print(F(" received: "));
+						Serial.print(numberLoopedBack,BIN);
+						Serial.print(',');
+
+					} while ( LiDisplay_bytesAvailableToRead() != 0 );
+
 					if(numberLoopedBack == numberToLoopback) { Serial.print(F("pass")); }
 					else                                     { Serial.print(F("FAIL!! !! !! !! !! !! !! !! ")); didTestFail = true; }
 				}
@@ -425,7 +609,7 @@ void bringupTester_run(void)
 				{
 					gpio_setGridCharger_powerLevel('Z'); //open drain is left floating (negative logic)
 					delay(100);
-					if( gpio_keyStateNow() == true ) { Serial.print(F("pass")); } //key appears on
+					if( gpio_keyStateNow() == GPIO_KEY_ON ) { Serial.print(F("pass")); } //key appears on
 					else { Serial.print(F("FAIL!! !! !! !")); didTestFail = true; }
 				}
 
@@ -434,14 +618,14 @@ void bringupTester_run(void)
 				{
 					gpio_setGridCharger_powerLevel('0'); //open drain is shorted (negative logic)
 					delay(100);
-					if( gpio_keyStateNow() == false ) { Serial.print(F("pass")); } //GRID_PWM's open collector is pulling to 0V
+					if( gpio_keyStateNow() == GPIO_KEY_OFF ) { Serial.print(F("pass")); } //GRID_PWM's open collector is pulling to 0V
 					else { Serial.print(F("FAIL!! !! !! !")); didTestFail = true; }
 				}
 				//Don't add any code here
 				Serial.print(F("\nTesting 12V_KEYON state is OFF: "));
 				serialUSB_waitForEmptyBuffer();
 				{
-					if( gpio_keyStateNow() == false ) { Serial.print(F("pass")); } //key appears off
+					if( gpio_keyStateNow() == GPIO_KEY_OFF ) { Serial.print(F("pass")); } //key appears off
 					else { Serial.print(F("FAIL!! !! !! !")); didTestFail = true; }
 				}
 

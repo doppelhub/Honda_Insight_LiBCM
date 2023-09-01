@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 #ifndef lcdTransmit_h
@@ -67,6 +67,7 @@
 	#define LCD_WARN_KEYON_GRID 1
 	#define LCD_WARN_FW_EXPIRED 2
 	#define LCD_WARN_COVER_GONE 3
+	#define LCD_WARN_CELL_COUNT 4
 	void lcd_displayWarning(uint8_t warningToDisplay);
 
 #endif

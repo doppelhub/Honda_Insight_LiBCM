@@ -20,9 +20,12 @@
 	#define HW_REV_E 0b00000001
 	#define HW_REV_F 0b00000000
 
+	#define GPIO_KEY_ON   true
+	#define GPIO_KEY_OFF false
+
 	void gpio_begin(void);
 
-	bool gpio_keyStateNow(void);
+	bool gpio_keyStateNow(void); //recommendation: use key_getSampledState() instead
 
 	void gpio_setFanSpeed_OEM(char speed); //don't call directly (use fan_requestSpeed() instead)
 	void gpio_setFanSpeed_PCB(char speed); //don't call directly (use fan_requestSpeed() instead)

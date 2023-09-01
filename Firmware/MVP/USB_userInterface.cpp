@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //Handles user interactions with LiBCM (data query/response)
@@ -33,70 +33,91 @@ void printDebug(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
+void printText_UNUSED(void) { Serial.print(F("Unused")); }
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
 void USB_userInterface_runTestCode(uint8_t testToRun)
 {
 	Serial.print(F("\nRunning Test: "));
 
 	//Add whatever code you want to run whenever the user types '$TEST1'/2/3/etc into the Serial Monitor Window
 	//Numbered tests ($TEST1/2/3) are temporary, for internal testing during firmware development
-	//Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
-	if(testToRun == '1')
+	if(testToRun == '0')
 	{
 		Serial.print(F("FAN_REQUESTOR_USER: OFF"));
 		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF);
 	}
-	else if(testToRun == '2')
-	{
-		Serial.print(F("FAN_REQUESTOR_USER: LOW"));
-		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_LOW);
-	}
-	else if(testToRun == '3')
+	else if(testToRun == '1')
 	{
 		Serial.print(F("FAN_REQUESTOR_USER: HIGH"));
 		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_HIGH);
 	}
+	else if(testToRun == '2')
+	{
+		gpio_turnPowerSensors_on();
+		Serial.print(F("Calibrating Current Sensor"));
+		adc_calibrateBatteryCurrentSensorOffset();
+	}
+	else if(testToRun == '3')
+	{
+		Serial.print(F("updateBatteryCurrent"));
+		adc_updateBatteryCurrent();
+		Serial.print(F("\ndeciAmps: "));
+		Serial.print(adc_getLatestBatteryCurrent_deciAmps());
+	}
 	else if(testToRun == '4')
 	{
-		Serial.print(F("fanSpeed_allRequestors mask: "));
-		Serial.print(String(fan_getAllRequestors_mask(),DEC));
+		Serial.print(F("Turn Buzzer Off"));
+		buzzer_requestTone(BUZZER_REQUESTOR_USER, BUZZER_OFF);
 	}
 	else if(testToRun == '5')
 	{
-		Serial.print(F("Unused"));
+		printText_UNUSED();
 	}
 	else if(testToRun == '6')
 	{
-		Serial.print(F("LiBCM turning off 5V rail.\nLiBCM will stay on if USB's +5V connected."));
-		gpio_turnLiBCM_off();
+		printText_UNUSED();
 	}
 	else if(testToRun == '7')
 	{
-		Serial.print(F("Unused"));
+		printText_UNUSED();
 	}
 	else if(testToRun == '8')
 	{
-		Serial.print(F("Unused"));
+		printText_UNUSED();
 	}
-	else if(testToRun == 'T')
+	else if(testToRun == '9')
 	{
-		temperature_measureAndPrintAll();
+		Serial.print(F("\nadcResult_CurrentSensor(10b): "));
+		Serial.print(analogRead(PIN_BATTCURRENT));
+		adc_calibrateBatteryCurrentSensorOffset();
+	}
+
+	//Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
+	else if(testToRun == 'T') { temperature_measureAndPrintAll(); }
+	else if(testToRun == 'R') { LTC6804gpio_areAllVoltageReferencesPassing(); }
+	else if(testToRun == 'C')
+	{
+		LTC68042cell_sampleGatherAndProcessAllCellVoltages();
+		for( uint8_t ii = 0; ii < TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages(ii, FOUR_DECIMAL_PLACES); }
 	}
 	else if(testToRun == 'H')
 	{
-		Serial.print(F("Blink Heater LED"));
-		gpio_turnPackHeater_on();
-		delay(100);
-		gpio_turnPackHeater_off();
+		if(heater_isConnected() == HEATER_NOT_CONNECTED) { Serial.print(F("\nHeater NOT Connected")); }
+		else
+		{
+			Serial.print(F("\nHeater connected to: "));
+			if(heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)   { Serial.print(F("Daughterboard")); }
+			if(heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM) { Serial.print(F("LiBCM Header"));  }
+			Serial.print(F("\nBlink Heater LED"));
+			gpio_turnPackHeater_on();
+			delay(100);
+			gpio_turnPackHeater_off();
+		}
 	}
-	else if(testToRun == 'R')
-	{
-		//JTS2doNow: Add to keyOFF routine
-		//verify LTC6804 VREF is in bounds
-		LTC6804_adax();
-		delay(5);
-		LTC6804_rdaux(0,TOTAL_IC,FIRST_IC_ADDR);
-		LTC6804gpio_printVREF();
-	}
+
+	//invalid entry
 	else { Serial.print(F("Error: Unknown Test")); }
 }
 
@@ -111,7 +132,11 @@ void printHelp(void)
 {
 	Serial.print(F("\n\nLiBCM commands:"
 		"\n -'$BOOT': restart LiBCM"
-		"\n -'$TEST1'/2/3/4: run test code. See 'USB_userInterface_runTestCode()')"
+		"\n -'$TESTR': run LTC6804 VREF test"
+		"\n -'$TESTH': blink heater LED"
+		"\n -'$TESTC': print cell voltages"
+		"\n -'$TESTT': print temperatures"
+		"\n -'$TEST1'/2/3/4: run temporary debug test code. See 'USB_userInterface_runTestCode()')"
 		"\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
 		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
 		"\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"

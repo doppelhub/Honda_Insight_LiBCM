@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //Handles serial debug data transfers from LIBCM to  host
@@ -204,10 +204,20 @@ void debugUSB_printData_temperatures(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doLater: Add debug data
+
 void debugUSB_printData_debug(void)
 {
-	status_printState();
+	//status_printState(); //JTS2doLater: Add debug data
+
+	static uint32_t lastDebugUpdate_millis = 0;
+
+	if(millis() - lastDebugUpdate_millis > 500)
+	{
+		//put whatever debug data you want to display
+
+		lastDebugUpdate_millis = millis();
+	}
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -282,6 +292,6 @@ void debugUSB_printConfigParameters(void)
 	#endif
 
 	Serial.print(F("/Heat:"));
-	if(heater_isInstalled() == YES) { Serial.print('Y'); }
-	else                            { Serial.print('N'); }
+	if(heater_isConnected() == HEATER_NOT_CONNECTED) { Serial.print('N'); }
+	else                                             { Serial.print('Y'); }
 }

@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //maintains battery state of charge
@@ -59,8 +59,9 @@ void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 	//therefore:
 	// deltaCharge_uCoulomb            =  deltaCharge_counts                     *  ADC_MILLIAMPS_PER_COUNT                                                       *  time_loopPeriod_ms_get()
 	//int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * (ADC_MILLIAMPS_PER_COUNT * time_loopPeriod_ms_get());
-	//One final change: The battery current sensor isn't updated every time through the loop... so multiply by the number of loops per result
-	int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * time_loopPeriod_ms_get() * (ADC_MILLIAMPS_PER_COUNT * ADC_NUMLOOPS_PER_RESULT);
+	//Note: if the battery current value isn't updated each loop, then multiply by the number of loops required for each result
+	//JTS2doLater: change time_loopPeriod_ms_get() to delta millis since last run //prevents accumulated error if we don't meet our loop time
+	int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * (time_loopPeriod_ms_get() * ADC_MILLIAMPS_PER_COUNT);
 
 	//Notes:
 	//5 Ah is 18.0E9 uCoulombs, whereas 2^32 is ~4.3E9 counts...

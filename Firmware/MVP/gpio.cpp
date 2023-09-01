@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //all digitalRead(), digitalWrite(), analogRead(), analogWrite() functions live here
@@ -53,12 +53,12 @@ void gpio_begin(void)
 	pinMode(PIN_FAN_PWM,OUTPUT);
 	pinMode(PIN_FANOEM_LOW,OUTPUT);
 	pinMode(PIN_FANOEM_HI,OUTPUT);
-	pinMode(PIN_GRID_EN,OUTPUT);
+	pinMode(PIN_ABSTRACTED_GRID_EN,OUTPUT);
 	pinMode(PIN_TEMP_EN,OUTPUT);
-	pinMode(PIN_GPIO0,OUTPUT);
-	digitalWrite(PIN_GPIO0,HIGH); //JTS2doLater: Move into LiControl function
+	pinMode(PIN_SPI_EXT_CS,OUTPUT);
+	digitalWrite(PIN_SPI_EXT_CS,HIGH);
 
-	analogReference(EXTERNAL); //use 5V AREF pin, which is coupled to filtered VCC
+	analogReference(EXTERNAL); //5V AREF pin is coupled to filtered VCC
 
 	//JTS2doLater: Turn all this stuff off when the key is off
 	TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D11(fan) & D12()
@@ -133,13 +133,13 @@ bool gpio_HMIStateNow(void) { return digitalRead(PIN_HMI_EN); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-bool gpio_isGridChargerPluggedInNow(void) { return !(digitalRead(PIN_GRID_SENSE)); }
-bool gpio_isGridChargerChargingNow(void)  { return   digitalRead(PIN_GRID_EN);     }
+bool gpio_isGridChargerPluggedInNow(void) { return !(digitalRead(PIN_GRID_SENSE)       ); }
+bool gpio_isGridChargerChargingNow(void)  { return   digitalRead(PIN_ABSTRACTED_GRID_EN); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-void gpio_turnGridCharger_on(void)  { digitalWrite(PIN_GRID_EN, HIGH); }
-void gpio_turnGridCharger_off(void) { digitalWrite(PIN_GRID_EN, LOW);  }
+void gpio_turnGridCharger_on(void)  { digitalWrite(PIN_ABSTRACTED_GRID_EN, HIGH); }
+void gpio_turnGridCharger_off(void) { digitalWrite(PIN_ABSTRACTED_GRID_EN, LOW);  }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -147,22 +147,26 @@ void gpio_setGridCharger_powerLevel(char powerLevel)
 {
 	switch(powerLevel)
 	{
-		#ifdef GRIDCHARGER_IS_1500W //wiring is different from other chargers		
-			//JTS2doNow: Add #define in gpio.c to remap this to the correct daughterboard pin
-			//JTS2doNow: Add #define in gpio.c to add charger on/off pin
-			case '0': analogWrite(PIN_GRID_PWM,   0); break; //disable grid charger
-			//case 'L' //this pin is connected to simple on/off control, so there are no intermediate states
-			//case 'M' //this pin is connected to simple on/off control, so there are no intermediate states
-			case 'H': analogWrite(PIN_GRID_PWM, 255); break; //enable grid charger
-			case 'Z': pinMode(PIN_GRID_PWM, INPUT);   break; //reduces power consumption
-			default:  analogWrite(PIN_GRID_PWM,   0); break; //disable charger
-		#else
-			case '0': analogWrite(PIN_GRID_PWM, 255); break; //negative logic
-			case 'L': analogWrite(PIN_GRID_PWM, 160); break; //JTS2doLater: Determine correct grid charger values
-			case 'M': analogWrite(PIN_GRID_PWM,  80); break;
-			case 'H': analogWrite(PIN_GRID_PWM,   0); break;
-			case 'Z': pinMode(PIN_GRID_PWM, INPUT);   break; //reduces power consumption
-			default:  analogWrite(PIN_GRID_PWM, 255); break; //disable charger
+		#ifdef GRIDCHARGER_IS_1500W //wiring is different from other chargers
+			case '0': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
+			     digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  HIGH); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    0); break; //disable grid charger
+		  	case 'L': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
+			     digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    0); break; //enable grid charger low power
+		  //case 'M': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
+			   //digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   60); break; //PWM value TBD
+			case 'H': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
+			     digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,  255); break; //enable grid charger high power
+			case 'Z': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE, INPUT);     pinMode(PIN_ABSTRACTED_GRID_CURRENT,INPUT); break; //reduces power consumption	 
+			default:  pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
+			     digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  HIGH); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    0); break; //disable charger
+		
+		#elif defined GRIDCHARGER_IS_NOT_1500W
+			case '0': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   255); break; //negative logic
+			case 'L': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    80); break; //JTS2doLater: Determine correct grid charger values
+			case 'M': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    40); break;
+			case 'H': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,     0); break;
+			case 'Z':     pinMode(PIN_ABSTRACTED_GRID_CURRENT, INPUT); break; //reduces power consumption
+			default:  analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   255); break; //disable charger
 		#endif
 	}
 }
@@ -219,7 +223,7 @@ bool gpio_isCoverInstalled(void)
 
 bool gpio1_getState(void) { return digitalRead(PIN_GPIO1); }
 bool gpio2_getState(void) { return digitalRead(PIN_GPIO2); }
-bool gpio3_getState(void) { return digitalRead(PIN_GPIO3_HEATER); }
+bool gpio3_getState(void) { return digitalRead(PIN_GPIO3); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -228,8 +232,35 @@ void gpio_turnTemperatureSensors_off(void) {digitalWrite(PIN_TEMP_EN,LOW ); }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-void gpio_turnPackHeater_on(void) { pinMode(PIN_GPIO3_HEATER,OUTPUT); digitalWrite(PIN_GPIO3_HEATER,HIGH); }
-void gpio_turnPackHeater_off(void){ pinMode(PIN_GPIO3_HEATER,INPUT);  digitalWrite(PIN_GPIO3_HEATER,LOW);  }
+void gpio_turnPackHeater_on(void)
+{
+	if(heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM)
+	{
+		pinMode(PIN_GPIO3,OUTPUT);
+		digitalWrite(PIN_GPIO3,HIGH);
+	}
+	else if(heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)
+	{
+		pinMode(PIN_GPIO1,OUTPUT);
+		digitalWrite(PIN_GPIO1,HIGH);
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void gpio_turnPackHeater_off(void)
+{
+	if(heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM)
+	{
+		pinMode(PIN_GPIO3,INPUT);
+		digitalWrite(PIN_GPIO3,LOW);
+	}
+	else if(heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)
+	{
+		pinMode(PIN_GPIO1,INPUT);
+		digitalWrite(PIN_GPIO1,LOW);
+	}
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 

@@ -1,0 +1,26 @@
+J22 text in schematic pdf is incorrect:
+
+RevD (Incorrect):
+VCC
+SCK
+MOSI
+MISO
+GPIO0
+CS_EXT
+GND
+GND
+
+Correct:
+VCC
+MOSI
+SCK
+MISO
+GPIO0
+CS_EXT
+GND
+GND
+
+To fix:
+Swap "MOSI" and "SCK" text.  The electrical connections should not change.
+The silkscreen doesn't change... just the text for J22 in the schematic.
+The silkscreen on both RevC and RevD is correct.

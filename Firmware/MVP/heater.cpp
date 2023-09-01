@@ -5,27 +5,41 @@
 
 #include "libcm.h"
 
-bool heaterInstalled = NO;
+uint8_t heaterLocation = HEATER_NOT_CONNECTED;
 
 //JTS2doLater: Add indicator to 4x20 when heater is off/on
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-bool heater_isInstalled(void) { return heaterInstalled; }
+uint8_t heater_isConnected(void) { return heaterLocation; }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//only call this function at powerup
-//pin floats when called, which can cause switching FET to continuously operate in active region (bad)
+bool isHeaterConnectedtoPin(int16_t pinToTest)
+{
+	uint8_t initialPinMode = gpio_getPinMode(pinToTest);
+	bool isHeaterConnectedToThisPin = NO;
+
+	pinMode(pinToTest,INPUT_PULLUP);
+
+	if(digitalRead(pinToTest) == false)
+	{
+		isHeaterConnectedToThisPin = YES; //if connected, the isolated driver on the heater PCB will pull signal low
+		digitalWrite(pinToTest,LOW); //turn heater off
+		pinMode(pinToTest,INPUT); //switch pin to input (redundant, for safety)
+	} 
+	else { pinMode(pinToTest,initialPinMode); } //heater not connected to this pin
+
+	return isHeaterConnectedToThisPin;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+//determine if heater installed, and if so, which GPIO pin it's connected to
 void heater_init(void)
 {
-	pinMode(PIN_GPIO3_HEATER,INPUT_PULLUP);
-
-	if(digitalRead(PIN_GPIO3_HEATER) == false) { heaterInstalled = YES; } //if connected, the isolated driver on the heater PCB will pull signal low
-	else                                       { heaterInstalled = NO;  } //if heater PCB disconnected, the CPU pullup will pull signal high
-
-	digitalWrite(PIN_GPIO3_HEATER,LOW); //turn heater off
-	pinMode(PIN_GPIO3_HEATER,INPUT); //switch pin to input (redundant, for safety)
+	if(isHeaterConnectedtoPin(PIN_GPIO1) == true) { heaterLocation = HEATER_CONNECTED_DAUGHTERBOARD;   }
+	if(isHeaterConnectedtoPin(PIN_GPIO3) == true) { heaterLocation = HEATER_CONNECTED_DIRECT_TO_LICBM; }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -59,9 +73,9 @@ bool heater_isPackTooHot(void)
 
 void heater_handler(void)
 {
-	if( (SoC_isThermalManagementAllowed() == NO) || //not enough energy to heat pack
-		(heater_isInstalled() == NO            ) || //heater not installed         
-	    (heater_isPackTooHot() == YES)            ) //pack is too hot
+	if( (SoC_isThermalManagementAllowed() == NO)       || //not enough energy to heat pack
+		(heater_isConnected() == HEATER_NOT_CONNECTED) || //heater not installed         
+	    (heater_isPackTooHot() == YES)                  ) //pack is too hot
 	{ gpio_turnPackHeater_off(); } //heater not allowed
 
 	else //heater is allowed

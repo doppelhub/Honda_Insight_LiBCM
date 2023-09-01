@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //stores various system millisecond timers
@@ -45,10 +45,8 @@ bool time_hasKeyBeenOffLongEnough_toTurnOffLiBCM(void)
 {
   bool keyOffForLongEnough = false;
 
-  if( (uint32_t)(millis() - key_latestTurnOffTime_ms_get() ) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000) )
-  {
-    keyOffForLongEnough = true;
-  }
+  if( (gpio_isGridChargerChargingNow() == NO)                                                   &&
+      (millis() - key_latestTurnOffTime_ms_get()) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000) ) { keyOffForLongEnough = true; }
 
   return keyOffForLongEnough;
 }

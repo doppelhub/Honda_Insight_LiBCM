@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 #ifndef soc_h
@@ -30,6 +30,8 @@
 		#define CELL_VREST_85_PERCENT_SoC 39700
 		#define CELL_VREST_10_PERCENT_SoC 34000
 		#define STACK_mAh_NOM 47000
+	#else
+		#error (Battery type not specified in config.h)
 	#endif
 
 #endif

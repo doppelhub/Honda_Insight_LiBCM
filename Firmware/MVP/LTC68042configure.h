@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 #ifndef LTC68042configure_h
@@ -6,12 +6,17 @@
 
 	//JTS2doLater: LiBCM also needs to determine cell count, and then sound an alarm if different from user-entered value (safety issue)
 	//choose number of LTC ICs in isoSPI network
-	#ifdef RUN_BRINGUP_TESTER
+	#ifdef RUN_BRINGUP_TESTER_MOTHERBOARD
 		#define TOTAL_IC 5
 	#elif defined STACK_IS_48S
 		#define TOTAL_IC 4
+		#ifdef STACK_IS_60S
+			#error (pack is specified as both 48S and 60S. Select only one option in config.h)
+		#endif
 	#elif defined STACK_IS_60S
 		#define TOTAL_IC 5
+	#else
+		#error (Select pack size - 48S or 60S - in config.h)
 	#endif
 
 	#define FIRST_IC_ADDR  2 //lowest address.  All additional IC addresses must be sequential
@@ -80,7 +85,7 @@
 	#define DCP_DISABLED 0
 	#define DCP_ENABLED 1
 
-	#ifdef RUN_BRINGUP_TESTER
+	#ifdef RUN_BRINGUP_TESTER_MOTHERBOARD
 		#define IS_DISCHARGE_ALLOWED_DURING_CONVERSION DCP_ENABLED
 	#else
 		#define IS_DISCHARGE_ALLOWED_DURING_CONVERSION DCP_DISABLED
@@ -173,9 +178,9 @@
 
 	bool LTC68042configure_wakeup(void);
 
-	uint16_t LTC68042configure_calcPEC15(uint8_t len, uint8_t *data);
+	uint16_t LTC68042configure_calcPEC15(uint8_t len, uint8_t const data[]);
 
-	void LTC68042configure_spiWrite( uint8_t length, uint8_t *data);
+	void LTC68042configure_spiWrite( uint8_t length, uint8_t const data[]);
 
 	void LTC68042configure_spiWriteRead(uint8_t *TxData, uint8_t TXlen, uint8_t *rx_data, uint8_t RXlen);
 
