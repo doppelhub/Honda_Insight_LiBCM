@@ -14,6 +14,8 @@
 			#error (pack is specified as both 48S and 60S. Select only one option in config.h)
 		#endif
 	#elif defined STACK_IS_60S
+		#ifdef BATTERY_TYPE_5AhG3
+			#error (incompatible config.h parameters selected: 60S not supported with 5AhG3 cells)
 		#define TOTAL_IC 5
 	#else
 		#error (Select pack size - 48S or 60S - in config.h)
