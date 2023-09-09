@@ -9,7 +9,7 @@
 	#define HEATER_CONNECTED_DIRECT_TO_LICBM 1 //without daughterboard, heater is attached to GPIO3
 	#define HEATER_CONNECTED_DAUGHTERBOARD   2 //with    daughterboard, heater is attached to GPIO1 
 
-	void heater_init(void);
+	void heater_begin(void);
 
 	uint8_t heater_isConnected(void);
 	

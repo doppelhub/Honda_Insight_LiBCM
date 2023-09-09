@@ -468,7 +468,7 @@
 						splash_millis = millis();
 						return;
 					} else if ((millis() - splash_millis) == (LIDISPLAY_UPDATE_RATE_MILLIS)) {
-						LiDisplay_updateNumericVal(1, "n0", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - EEPROM_uptimeStoredInEEPROM_hours_get()));
+						LiDisplay_updateNumericVal(1, "n0", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get()));
 						return;
 					} else if ((millis() - splash_millis) > (LIDISPLAY_SPLASH_PAGE_MS)) {
 						gpio_turnHMI_off();
@@ -529,7 +529,7 @@
 							switch(LiDisplayElementToUpdate)
 							{
 								case 0: LiDisplay_updateStringVal(1, "t1", 0, String(FW_VERSION)); break;
-								case 1: LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - EEPROM_uptimeStoredInEEPROM_hours_get())); break;
+								case 1: LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get())); break;
 							}
 							LiDisplayElementToUpdate += 1;
 						}

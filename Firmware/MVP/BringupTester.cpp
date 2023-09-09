@@ -536,7 +536,7 @@ void bringupTester_motherboard(void)
 
 					uint16_t resultADC = analogRead(PIN_BATTCURRENT); // 0A is 330 counts
 					Serial.print(String(resultADC));
-					Serial.print(" counts: ");
+					Serial.print(F(" counts: "));
 					if((resultADC > 324) && (resultADC < 336)) { Serial.print(F("pass")); }
 					else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
 				}

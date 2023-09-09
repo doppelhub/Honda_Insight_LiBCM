@@ -179,13 +179,13 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
   #ifndef DISABLE_ASSIST
     if(BATTSCI_isPackEmpty() == YES)
   #endif
-    { flags |= BATTSCI_DISABLE_ASSIST_FLAG; EEPROM_hasLibcmDisabledAssist_set(EEPROM_LICBM_DISABLED_ASSIST); }
+    { flags |= BATTSCI_DISABLE_ASSIST_FLAG; eeprom_hasLibcmDisabledAssist_set(EEPROM_LICBM_DISABLED_ASSIST); }
 
   #ifndef DISABLE_REGEN
     if( (BATTSCI_isPackFull() == YES)                                                                  || //pack is full
         ( (temperature_battery_getLatest() < TEMP_FREEZING_DEGC + 2) && (BATTSCI_isPackEmpty() == NO) ) ) //pack is charged enough (to power DCDC), but too cold to safely regen
   #endif
-    { flags |= BATTSCI_DISABLE_REGEN_FLAG; EEPROM_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN); } //when this flag is set, MCM draws zero power from IMA motor
+    { flags |= BATTSCI_DISABLE_REGEN_FLAG; eeprom_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN); } //when this flag is set, MCM draws zero power from IMA motor
 
   return flags;
 }

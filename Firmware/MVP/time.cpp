@@ -67,7 +67,7 @@ void time_waitForLoopPeriod(void)
     if( (key_getSampledState() == KEYSTATE_ON) && (timingMet == false) )
     {
       Serial.print('*');
-      EEPROM_hasLibcmFailedTiming_set(EEPROM_LIBCM_LOOPPERIOD_EXCEEDED);
+      eeprom_hasLibcmFailedTiming_set(EEPROM_LIBCM_LOOPPERIOD_EXCEEDED);
     }
 
     timestamp_previousLoopStart_ms = millis(); //placed at end to prevent delay at keyON event

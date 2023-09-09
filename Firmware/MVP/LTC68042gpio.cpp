@@ -149,8 +149,8 @@ bool LTC6804gpio_areAllVoltageReferencesPassing(void)
       Serial.print(String(countsVREF));
       Serial.print(F(", "));
 
-      if((countsVREF < 30150) && (countsVREF > 29850)) { Serial.print("ok"); }
-      else                                             { Serial.print("FAIL"); didTestPass = false; }
+      if((countsVREF < 30150) && (countsVREF > 29850)) { Serial.print(F("ok")); }
+      else                                             { Serial.print(F("FAIL")); didTestPass = false; }
     }
 
     return didTestPass;

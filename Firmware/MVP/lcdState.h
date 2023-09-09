@@ -17,5 +17,4 @@
 
 	void lcdState_handler(void);
 
-
 #endif
