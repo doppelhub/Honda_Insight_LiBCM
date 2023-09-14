@@ -42,28 +42,27 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	//Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
 	if(testToRun == '1')
 	{
-		Serial.print(F("Not Defined"));
+		Serial.print(F("FAN_REQUESTOR_USER: OFF"));
+		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF);
 	}
 	else if(testToRun == '2')
 	{
-		Serial.print(F("Not Defined"));
+		Serial.print(F("FAN_REQUESTOR_USER: LOW"));
+		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_LOW);
 	}
 	else if(testToRun == '3')
 	{
-		Serial.print(F("PCB Fan off"));
-		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF);
+		Serial.print(F("FAN_REQUESTOR_USER: HIGH"));
+		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_HIGH);
 	}
 	else if(testToRun == '4')
 	{
-		Serial.print(F("fanSpeed_now: "));
-		Serial.print(String(fan_getSpeed_now(),BIN));
-		Serial.print('\n');
+		Serial.print(F("fanSpeed_allRequestors mask: "));
+		Serial.print(String(fan_getAllRequestors_mask(),DEC));
 	}
 	else if(testToRun == '5')
 	{
-		Serial.print(F("Heater PCB: "));
-		if(heater_isInstalled() == YES) { Serial.print("Connected"); }
-		if(heater_isInstalled() == NO ) { Serial.print("Not Found"); }
+		Serial.print(F("Unused"));
 	}
 	else if(testToRun == '6')
 	{
@@ -72,13 +71,11 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	}
 	else if(testToRun == '7')
 	{
-		Serial.print(F("Turn Heater PCB off."));
-		gpio_turnPackHeater_off();
+		Serial.print(F("Unused"));
 	}
 	else if(testToRun == '8')
 	{
-		Serial.print(F("Turn Heater PCB on."));
-		gpio_turnPackHeater_on();
+		Serial.print(F("Unused"));
 	}
 	else if(testToRun == 'T')
 	{
@@ -90,6 +87,15 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 		gpio_turnPackHeater_on();
 		delay(100);
 		gpio_turnPackHeater_off();
+	}
+	else if(testToRun == 'R')
+	{
+		//JTS2doNow: Add to keyOFF routine
+		//verify LTC6804 VREF is in bounds
+		LTC6804_adax();
+		delay(5);
+		LTC6804_rdaux(0,TOTAL_IC,FIRST_IC_ADDR);
+		LTC6804gpio_printVREF();
 	}
 	else { Serial.print(F("Error: Unknown Test")); }
 }

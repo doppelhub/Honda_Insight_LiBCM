@@ -47,7 +47,6 @@ void LTC6804_adax()
 //Reads and parses aux voltages from LTC6804 registers into 'aux_codes' variable.
 int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read (0=all, 1=A, 2=B)
                      uint8_t total_ic,
-                     uint16_t aux_codes[][6],
                      uint8_t addr_first_ic )
 {
   const uint8_t NUM_RX_BYTES = 8;
@@ -66,7 +65,7 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
     for (uint8_t gpio_reg = 1; gpio_reg<3; gpio_reg++) //executes once for each aux voltage register
     {
       data_counter = 0;
-      LTC6804_rdaux_reg(gpio_reg, total_ic,data, addr_first_ic);
+      LTC6804_rdaux_reg(gpio_reg, total_ic, data, addr_first_ic);
       for (uint8_t current_ic = 0 ; current_ic < total_ic; current_ic++) //executes once for each LTC6804
       {
         //Parse raw GPIO voltage data in aux_codes array
@@ -118,7 +117,7 @@ int8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read 
 //not used outside LTC6804_rdaux() 
 void LTC6804_rdaux_reg(uint8_t reg, //GPIO voltage register to read back (1:A, 2:B)
                        uint8_t total_ic,
-                       uint8_t *data, //array of the unparsed aux codes
+                       uint8_t *data, //array of unparsed aux codes
                        uint8_t addr_first_ic )
 {
   uint8_t cmd[4];
@@ -145,3 +144,25 @@ void LTC6804_rdaux_reg(uint8_t reg, //GPIO voltage register to read back (1:A, 2
     LTC68042configure_spiWriteRead(cmd,4,&data[current_ic*8],8);
   }
 }
+
+//---------------------------------------------------------------------------------------
+
+void LTC6804gpio_printVREF(void)
+{
+  for(uint8_t ii = 0; ii<TOTAL_IC; ii++)
+  {
+    uint16_t countsVREF = aux_codes[ii][5];
+
+    Serial.print(F("\nIC"));
+    Serial.print(String(ii));
+    Serial.print(F(" VREF2 is "));
+    Serial.print(String(countsVREF));
+    Serial.print(F(", "));
+
+    if((countsVREF < 30150) && (countsVREF > 29850)) { Serial.print("ok");   }
+    else                                             { Serial.print("FAIL"); }
+  }
+}
+
+
+
