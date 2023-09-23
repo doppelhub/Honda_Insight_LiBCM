@@ -14,7 +14,8 @@
     #define EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE 0xFF
     #define EEPROM_ADDRESS_FORMATTED_VALUE       0x00
 
-    #define BYTES_IN_DATE 12
+    #define BYTES_IN_DATE 12 //JTS2doNow: Is this 11 bytes or 12?
+    #define BYTES_IN_TIME  9 //JTS2doNow: Is this  9 bytes or  8?
 
 	#define REQUIRED_FIRMWARE_UPDATE_PERIOD_DAYS 40
     #define REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS (REQUIRED_FIRMWARE_UPDATE_PERIOD_DAYS * 24)
@@ -51,5 +52,7 @@
     uint16_t eeprom_batteryHistory_getValue(uint8_t indexTemperature, uint8_t indexSoC);
 
     void eeprom_begin(void);
+
+    void writeToEEPROM_uint16(uint16_t startAddress, uint16_t value);
 
 #endif

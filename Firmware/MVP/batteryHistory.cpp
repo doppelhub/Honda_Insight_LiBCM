@@ -6,7 +6,7 @@
 //Y axis: Temp
 //Z axis: uint16 value is hours spent at this Temp & SoC
 
-#include "libcm.h" //JTS2doNow: won't compile when libcm.h included
+#include "libcm.h"
 
 ////////////////////////////////////////////////////////////////////////////////////
 

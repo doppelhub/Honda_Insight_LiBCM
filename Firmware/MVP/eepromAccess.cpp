@@ -4,14 +4,14 @@
 #include "libcm.h"
 
 //atmega2560 has 4kB EEPROM
-//eeprom  reads halt CPU for QTY4 cycles
-//eeprom writes halt CPU for QTY2 cycles
+//eeprom  read halts CPU for QTY4 cycles
+//eeprom write halts CPU for QTY2 cycles and takes ~3.3 ms to complete
 
-//JTS2do: does Arduino implement 2560 brownout detector?
+//JTS2doLater: does Arduino implement 2560 brownout detector?
 
-//store the day customer compiled the source code in program memory
-const uint8_t COMPILE_DATE_PROGRAM[BYTES_IN_DATE]= __DATE__; //Format: Mmm DD YYYY //Ex: Jan 23 2022 //Mar  5 2022
-//JTS2doLater: Add __TIME__ as well //returns compile time in 24 hour format HH:MM:SS (e.g. 'compile time: '16:30:31') 
+//store the date and time customer compiled the source code in program memory
+const uint8_t COMPILE_DATE_PROGRAM[BYTES_IN_DATE] = __DATE__; //Format: 'Mmm DD YYYY' //Ex: 'Jan 23 2022' //'Mar  5 2022'
+const uint8_t COMPILE_TIME_PROGRAM[BYTES_IN_TIME] = __TIME__; //Format: 'HH:MM:SS'    //Ex: '16:30:31'
 
 const uint16_t EEPROM_LAST_USABLE_ADDRESS         = 0xF9F; //atmega2560 has 4kB EEPROM
 
@@ -23,12 +23,14 @@ const uint16_t EEPROM_ADDRESS_BATTSCI_REGEN       = 0x00F; //EEPROM range is 0x0
 const uint16_t EEPROM_ADDRESS_BATTSCI_ASSIST      = 0x010; //EEPROM range is 0x010:0x010 ( 1B)
 const uint16_t EEPROM_ADDRESS_KEYON_DELAY         = 0x011; //EEPROM range is 0x011:0x011 ( 1B)
 const uint16_t EEPROM_ADDRESS_LOOPPERIOD_MET      = 0x012; //EEPROM range is 0x012:0x012 ( 1B)
+const uint16_t EEPROM_ADDRESS_COMPILE_TIME        = 0x013; //EEPROM range is 0x013:0x01B ( 9B)
 //this EEPROM space still available
 const uint16_t EEPROM_ADDRESS_BATT_HISTORY = EEPROM_LAST_USABLE_ADDRESS - NUM_BYTES_BATTERY_HISTORY; //stored last
 const uint16_t EEPROM_ADDRESS_BATT_HISTORY_UNINITIALIZED = EEPROM_ADDRESS_BATT_HISTORY - 1; //0xFF if updating from old version
 
-//compile date previously stored in EEPROM (the last time the firmware was updated)
-uint8_t compileDateEEPROM[BYTES_IN_DATE] = {};
+//compile date & time stored in EEPROM the last time the firmware was updated
+uint8_t compileDateEEPROM[BYTES_IN_DATE] = {}; //JTS2doLater: Move these into single function (to save RAM)
+uint8_t compileTimeEEPROM[BYTES_IN_TIME] = {};
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -44,35 +46,53 @@ uint16_t readFromEEPROM_uint16(uint16_t startAddress)
 void writeToEEPROM_uint16(uint16_t startAddress, uint16_t value)
 {
   EEPROM.update( startAddress    , highByte(value) ); //write lower byte
+  Serial.print(F("\nwriting uint16 hiByte value(DEC):"));
+  Serial.print(highByte(value),DEC);
+  Serial.print(F(" at address(HEX):"));
+  Serial.print(startAddress,HEX);
+  Serial.print(F(", Reads back as(DEC):"));
+  Serial.print(EEPROM.read(startAddress));
+
   EEPROM.update( startAddress + 1,  lowByte(value) ); //write upper byte
+  Serial.print(F("\nwriting uint16 loByte value(DEC):"));
+  Serial.print(lowByte(value),DEC);
+  Serial.print(F(" at address(HEX):"));
+  Serial.print(startAddress,HEX);
+  Serial.print(F(", Reads back as(DEC):"));
+  Serial.print(EEPROM.read(startAddress+1));
+
+  Serial.print(F("\nuint16 'value' written is(DEC):"));
+  Serial.print(value);
+  Serial.print(F(", reads back as(DEC):"));
+  Serial.print(readFromEEPROM_uint16(startAddress));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//copy compile date into RAM (stored in array compileDateEEPROM[]) //Example: "Jan 23 2022"
-//t =
-void compileDateStoredInEEPROM_get(void)
+//copy compile date and time into RAM (stored in array compileDateEEPROM[]) //Example: "Jan 23 2022"
+void compileTimestamp_loadFromEEPROM(void)
 {
   for(int ii = 0; ii < BYTES_IN_DATE; ii++) { compileDateEEPROM[ii] = EEPROM.read(ii + EEPROM_ADDRESS_COMPILE_DATE); }  
+  for(int ii = 0; ii < BYTES_IN_TIME; ii++) { compileTimeEEPROM[ii] = EEPROM.read(ii + EEPROM_ADDRESS_COMPILE_TIME); }  
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//store compile date into EEPROM (i.e. after the firmware is updated)
+//store compile date and time into EEPROM (i.e. after the firmware is updated)
 //Limit calls to this function (EEPROM has limited write lifetime)
-void compileDateStoredInEEPROM_set(void)
+void compileTimestamp_writeToEEPROM(void)
 {
   for(int ii = 0; ii < BYTES_IN_DATE; ii++) { EEPROM.update( (ii + EEPROM_ADDRESS_COMPILE_DATE), COMPILE_DATE_PROGRAM[ii] ); }
+  for(int ii = 0; ii < BYTES_IN_TIME; ii++) { EEPROM.update( (ii + EEPROM_ADDRESS_COMPILE_TIME), COMPILE_TIME_PROGRAM[ii] ); }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add __TIME__ to this function, too
-//compare compile date to last date stored in EEPROM
-//if dates are different, then firmware was updated since the last keyOFF event
+//compare compile date & time to last values stored in EEPROM
+//if timestamps are different, then firmware was just updated
 bool wasFirmwareJustUpdated(void)
 {
-  compileDateStoredInEEPROM_get(); //result stored in array 'compileDateEEPROM[]' (in RAM)
+  compileTimestamp_loadFromEEPROM(); //result stored in 'compileDateEEPROM[]' & 'compileTimeTTPROM[]'
 
   bool areDatesIdentical = true;
 
@@ -80,6 +100,12 @@ bool wasFirmwareJustUpdated(void)
   {
     if(compileDateEEPROM[ii] != COMPILE_DATE_PROGRAM[ii]) { areDatesIdentical = false; }
   }
+
+  for(uint8_t ii = 0; ii < BYTES_IN_TIME; ii++)
+  {
+    if(compileTimeEEPROM[ii] != COMPILE_TIME_PROGRAM[ii]) { areDatesIdentical = false; }
+  }
+  
   if(areDatesIdentical == true) { return false; } //firmware NOT updated
   else                          { return  true; } //firmware was updated
 }
@@ -119,7 +145,7 @@ void EEPROM_expirationStatus_set(uint8_t newFirmwareStatus) { EEPROM.update(EEPR
 //add value stored in EEPROM (from last keyOFF event) to previous keyOFF time
 uint16_t EEPROM_calculateTotalHoursSinceLastFirmwareUpdate(void)
 {
-  uint32_t timeSincePreviousKeyOff_ms = (uint32_t)(millis() - key_latestTurnOffTime_ms_get());
+  uint32_t timeSincePreviousKeyOff_ms = millis() - key_latestTurnOffTime_ms_get();
   uint16_t timeSincePreviousKeyOff_hours = (uint16_t)(timeSincePreviousKeyOff_ms / MILLISECONDS_PER_HOUR);
   
   uint16_t totalHours = eeprom_uptimeStoredInEEPROM_hours_get() + timeSincePreviousKeyOff_hours;
@@ -134,9 +160,10 @@ void eeprom_checkForExpiredFirmware(void)
 { 
 	if(wasFirmwareJustUpdated() == true)
   {
-  	//user recently updated the firmware, so...
+
+  	//user just updated the firmware, so...
     uptimeStoredInEEPROM_hours_set(0); //reset hour counter to zero
-    compileDateStoredInEEPROM_set(); //store new compile date in EEPROM (so we can compare again on future keyOFF events)
+    compileTimestamp_writeToEEPROM(); //store new compile date in EEPROM (so we can compare again on future keyOFF events)
     EEPROM_expirationStatus_set(FIRMWARE_UNEXPIRED);
 
     Serial.print(F("\nFirmwareUpdated"));
@@ -144,7 +171,9 @@ void eeprom_checkForExpiredFirmware(void)
   }
   else //user didn't update the firmware
   { 
-    uint16_t newUptime_hours = EEPROM_calculateTotalHoursSinceLastFirmwareUpdate(); 
+    uint16_t newUptime_hours = EEPROM_calculateTotalHoursSinceLastFirmwareUpdate();
+    Serial.print(F("\nnewUpdate_hours:"));
+    Serial.print(newUptime_hours,DEC);
     uptimeStoredInEEPROM_hours_set(newUptime_hours); //store new total uptime in EEPROM
 
     Serial.print(F("\nTotal hours since firmware last uploaded: "));
@@ -227,7 +256,6 @@ void eeprom_resetDebugValues(void)
 
 uint16_t convertTemperatureAndSoC_toAddress(uint8_t indexTemperature, uint8_t indexSoC)
 {
-  //JTS2doNow
   uint16_t address = (indexTemperature * TOTAL_TEMP_BINS + indexSoC) * NUM_BYTES_PER_BIN + EEPROM_ADDRESS_BATT_HISTORY;
 
   return address;
@@ -247,8 +275,12 @@ uint16_t eeprom_batteryHistory_getValue(uint8_t indexTemperature, uint8_t indexS
 void eeprom_batteryHistory_incrementValue(uint8_t indexTemperature, uint8_t indexSoC)
 {
   uint16_t address = convertTemperatureAndSoC_toAddress(indexTemperature, indexSoC);
+  Serial.print(F("\nEEPROM addres 0x"));
+  Serial.print(address,HEX);
 
   uint16_t existingValue = readFromEEPROM_uint16(address);
+  Serial.print(F("\nExistingValue:"));
+  Serial.print(existingValue,HEX);
 
   if(existingValue != 65535) { writeToEEPROM_uint16(address, existingValue + 1); }
 }

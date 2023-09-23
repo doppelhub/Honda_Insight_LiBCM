@@ -73,7 +73,14 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	}
 	else if(testToRun == '5')
 	{
-		printText_UNUSED();
+		Serial.print(F("\nWriting 12345 to EEPROM address 0x510"));
+		writeToEEPROM_uint16(0x510, 12345);
+
+		Serial.print(F("\nWriting 54321 to EEPROM address 0xC71"));
+		writeToEEPROM_uint16(0xC71, 54321);
+
+		Serial.print(F("\nWriting 36912 to EEPROM address 0xF9F"));
+		writeToEEPROM_uint16(0xF9F, 36912);
 	}
 	else if(testToRun == '6')
 	{

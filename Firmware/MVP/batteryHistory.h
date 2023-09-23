@@ -4,7 +4,7 @@
 #ifndef batteryHistory_h
 	#define batteryHistory_h
 
-	#define BATTERY_HISTORY_UPDATE_PERIOD_ms 1000 //JTS2doNow: Increase to MILLISECONDS_PER_HOUR
+	#define BATTERY_HISTORY_UPDATE_PERIOD_ms 60000  //JTS2doNow: Change to MILLISECONDS_PER_HOUR
 
 	#define TEMP_BIN_WIDTH_DEGC          4 //must be 2^n //e.g. -26 to -23, -22 d to -19, etc
 	#define TEMP_BIN_WIDTH_RIGHTSHIFTS   2 //must match above (DEGC = 2^RIGHTSHIFTS)
