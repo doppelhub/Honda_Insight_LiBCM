@@ -112,15 +112,15 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
 //prevents over-discharge during extended keyOFF
 void SoC_turnOffLiBCM_ifPackEmpty(void)
 {
-	static uint8_t numConsecutiveTimesCellVoltageTooLow = 0; 
+	static uint8_t numConsecutiveLoopsCellVoltageTooLow = 0; 
 		
 	if( (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER) || //turn off immediately if pack severely empty
 	   ((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true)) )
 	{	
-		if(numConsecutiveTimesCellVoltageTooLow <= 200 )
+		if(numConsecutiveLoopsCellVoltageTooLow <= 200 ) //arbitrary number... just make sure the cell is actually low
 		{ 
 			//verify voltage remains low for several LTC6804 measurement cycles 
-			numConsecutiveTimesCellVoltageTooLow++; 
+			numConsecutiveLoopsCellVoltageTooLow++; 
 		}
 		else
 		{
@@ -129,7 +129,7 @@ void SoC_turnOffLiBCM_ifPackEmpty(void)
 			gpio_turnLiBCM_off(); //game over, thanks for playing
 		}
 	}
-	else { numConsecutiveTimesCellVoltageTooLow = 0; } //pack is charged enough for LiBCM to stay on
+	else { numConsecutiveLoopsCellVoltageTooLow = 0; } //pack is charged enough for LiBCM to stay on
 }
 
 /////////////////////////////////////////////////////////////////////
