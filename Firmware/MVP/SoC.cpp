@@ -110,31 +110,26 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
 //turn LiBCM off if any cell voltage is too low
 //LiBCM remains off until the next keyON occurs
 //prevents over-discharge during extended keyOFF
-//JTS2doNow: Don't turn off if grid charger is plugged in
 void SoC_turnOffLiBCM_ifPackEmpty(void)
 {
-	static uint8_t numConsecutiveTimesCellVoltageTooLow = 0; 
+	static uint8_t numConsecutiveLoopsCellVoltageTooLow = 0; 
 		
-	#define NUM_CELLS_MEASURED_PER_LOOP  3	
-	#define NUM_CELLS_PER_IC            12
-	#define NUM_LOOPS_TO_MEASURE_ALL_CELLS (TOTAL_IC * NUM_CELLS_PER_IC / NUM_CELLS_MEASURED_PER_LOOP) //math handled by preprocessor
-
-	if( (LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //at least one cell voltage is too low
-		(time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true ) ) //gives user time to plug in grid charger
+	if( (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER) || //turn off immediately if pack severely empty
+	   ((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true)) ) //give user time to plug in charger
 	{	
-		if(numConsecutiveTimesCellVoltageTooLow <= (NUM_LOOPS_TO_MEASURE_ALL_CELLS << 2) )
+		if(numConsecutiveLoopsCellVoltageTooLow <= 200 ) //arbitrary number... just make sure the cell is actually low
 		{ 
 			//verify voltage remains low for several LTC6804 measurement cycles 
-			numConsecutiveTimesCellVoltageTooLow++; 
+			numConsecutiveLoopsCellVoltageTooLow++; 
 		}
 		else
 		{
 			//cell remained below minimum voltage for several LTC6804 mesurement cycles
 			Serial.print(F("\nLow cell voltage"));
-			gpio_turnLiBCM_off(); //turn LiBCM off... game over, thanks for playing
+			gpio_turnLiBCM_off(); //game over, thanks for playing
 		}
 	}
-	else { numConsecutiveTimesCellVoltageTooLow = 0; } //pack is charged enough for LiBCM to stay on
+	else { numConsecutiveLoopsCellVoltageTooLow = 0; } //pack is charged enough for LiBCM to stay on
 }
 
 /////////////////////////////////////////////////////////////////////

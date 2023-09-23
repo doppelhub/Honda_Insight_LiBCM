@@ -22,13 +22,13 @@ void printDebug(void)
 	Serial.print(F("\nDebug data persists in EEPROM until cleared ('$DEBUG=CLR' to clear)"));
 
 	Serial.print(F("\n -Has LiBCM limited assist since last cleared?: "));
-	(EEPROM_hasLibcmDisabledAssist_get() == EEPROM_LICBM_DISABLED_ASSIST) ? Serial.print(F("YES")) : Serial.print(F("NO"));
+	(eeprom_hasLibcmDisabledAssist_get() == EEPROM_LICBM_DISABLED_ASSIST) ? Serial.print(F("YES")) : Serial.print(F("NO"));
 
 	Serial.print(F("\n -Has LiBCM limited regen since last cleared?: "));
-	(EEPROM_hasLibcmDisabledRegen_get() == EEPROM_LICBM_DISABLED_REGEN) ? Serial.print(F("YES")) : Serial.print(F("NO"));
+	(eeprom_hasLibcmDisabledRegen_get() == EEPROM_LICBM_DISABLED_REGEN) ? Serial.print(F("YES")) : Serial.print(F("NO"));
 
 	Serial.print(F("\n -loopPeriod exceeded since last cleared?: "));
-	(EEPROM_hasLibcmFailedTiming_get() == EEPROM_LIBCM_LOOPPERIOD_EXCEEDED) ? Serial.print(F("YES")) : Serial.print(F("NO"));
+	(eeprom_hasLibcmFailedTiming_get() == EEPROM_LIBCM_LOOPPERIOD_EXCEEDED) ? Serial.print(F("YES")) : Serial.print(F("NO"));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,6 +97,8 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	//Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
 	else if(testToRun == 'T') { temperature_measureAndPrintAll(); }
 	else if(testToRun == 'R') { LTC6804gpio_areAllVoltageReferencesPassing(); }
+	else if(testToRun == 'W') { batteryHistory_printAll(); }
+	else if(testToRun == 'E') { eeprom_resetAll(); }
 	else if(testToRun == 'C')
 	{
 		LTC68042cell_sampleGatherAndProcessAllCellVoltages();
@@ -133,9 +135,11 @@ void printHelp(void)
 	Serial.print(F("\n\nLiBCM commands:"
 		"\n -'$BOOT': restart LiBCM"
 		"\n -'$TESTR': run LTC6804 VREF test"
+		"\n -'$TESTW': battery temp & SoC history"
 		"\n -'$TESTH': blink heater LED"
 		"\n -'$TESTC': print cell voltages"
 		"\n -'$TESTT': print temperatures"
+		"\n -'$TESTE': EEPROM factory reset"
 		"\n -'$TEST1'/2/3/4: run temporary debug test code. See 'USB_userInterface_runTestCode()')"
 		"\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
 		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
@@ -163,8 +167,8 @@ void printHelp(void)
 		));
 	//When adding new commands, make sure to add cases to the following functions:
 		//USB_userInterface_executeUserInput()
-		//EEPROM_resetDebugValues() //if debug data is stored in EEPROM
-		//EEPROM_verifyDataValid() //if data is stored in EEPROM
+		//eeprom_resetDebugValues() //if debug data is stored in EEPROM
+		//eeprom_verifyDataValid() //if data is stored in EEPROM
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -218,7 +222,7 @@ void USB_userInterface_executeUserInput(void)
 			if     ( (line[6] == '=') && (line[7] == 'C') && (line[8] == 'L') && (line[9] == 'R') )
 			{
 				Serial.print(F("\nRestoring default DEBUG values"));
-				EEPROM_resetDebugValues();
+				eeprom_resetDebugValues();
 			}
 			else if(line[6] == STRING_TERMINATION_CHARACTER) { printDebug(); }
 		}
@@ -235,13 +239,14 @@ void USB_userInterface_executeUserInput(void)
 			if (line[6] == '=')
 			{
 				uint8_t newKeyOnDelay_ms = get_uint8_FromInput(line[7],line[8],line[9]);
-				Serial.print("\nnewKeyOnDelay_ms is " + String(newKeyOnDelay_ms) );
-				EEPROM_delayKeyON_ms_set(newKeyOnDelay_ms);
+				Serial.print(F("\nnewKeyOnDelay_ms is "));
+				Serial.print(newKeyOnDelay_ms, DEC);
+				eeprom_delayKeyON_ms_set(newKeyOnDelay_ms);
 			}
 			else if(line[6] == STRING_TERMINATION_CHARACTER)
 			{
 				Serial.print(F("\n Additional delay before LiBCM responds to keyON event (ms): "));
-				Serial.print( EEPROM_delayKeyON_ms_get(), DEC);
+				Serial.print( eeprom_delayKeyON_ms_get(), DEC);
 			}
 		}
 
@@ -251,7 +256,8 @@ void USB_userInterface_executeUserInput(void)
 			if (line[4] == '=')
 			{
 				uint8_t newSoC_percent = get_uint8_FromInput(line[5],line[6],line[7]);
-				Serial.print("\nnewSoC is " + String(newSoC_percent) );
+				Serial.print(F("\nnewSoC is "));
+				Serial.print(newSoC_percent, DEC);
 				SoC_setBatteryStateNow_percent(newSoC_percent);
 			}
 			else if(line[4] == STRING_TERMINATION_CHARACTER)

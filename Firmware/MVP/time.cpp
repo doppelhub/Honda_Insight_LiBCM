@@ -45,8 +45,11 @@ bool time_hasKeyBeenOffLongEnough_toTurnOffLiBCM(void)
 {
   bool keyOffForLongEnough = false;
 
-  if( (gpio_isGridChargerChargingNow() == NO)                                                   &&
-      (millis() - key_latestTurnOffTime_ms_get()) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000) ) { keyOffForLongEnough = true; }
+  if((gpio_isGridChargerChargingNow() == NO) /* don't turn off while grid charging */          &&
+     (millis() - key_latestTurnOffTime_ms_get()) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000) )
+  {
+    keyOffForLongEnough = true;
+  }
 
   return keyOffForLongEnough;
 }
@@ -67,7 +70,7 @@ void time_waitForLoopPeriod(void)
     if( (key_getSampledState() == KEYSTATE_ON) && (timingMet == false) )
     {
       Serial.print('*');
-      EEPROM_hasLibcmFailedTiming_set(EEPROM_LIBCM_LOOPPERIOD_EXCEEDED);
+      eeprom_hasLibcmFailedTiming_set(EEPROM_LIBCM_LOOPPERIOD_EXCEEDED);
     }
 
     timestamp_previousLoopStart_ms = millis(); //placed at end to prevent delay at keyON event

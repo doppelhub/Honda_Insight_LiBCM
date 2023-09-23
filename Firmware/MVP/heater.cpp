@@ -36,7 +36,7 @@ bool isHeaterConnectedtoPin(int16_t pinToTest)
 ////////////////////////////////////////////////////////////////////////////////////
 
 //determine if heater installed, and if so, which GPIO pin it's connected to
-void heater_init(void)
+void heater_begin(void)
 {
 	if(isHeaterConnectedtoPin(PIN_GPIO1) == true) { heaterLocation = HEATER_CONNECTED_DAUGHTERBOARD;   }
 	if(isHeaterConnectedtoPin(PIN_GPIO3) == true) { heaterLocation = HEATER_CONNECTED_DIRECT_TO_LICBM; }

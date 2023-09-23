@@ -5,7 +5,7 @@
 //central pin mapping selection file for different processor types
 
 #ifndef cpu_map_h
-#define cpu_map_h
+  #define cpu_map_h
 
   #define CPU_MAP_MEGA2560
 

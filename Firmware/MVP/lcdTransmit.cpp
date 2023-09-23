@@ -468,7 +468,7 @@ void lcd_splashscreen_keyOff(void)
 	lcd2.print(F("LiBCM v")); lcd2.print(String(FW_VERSION));
 	lcd2.setCursor(0,1);
 	lcd2.print(F("FW Hours Left: "));
-	lcd2.print(String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - EEPROM_uptimeStoredInEEPROM_hours_get() ));
+	lcd2.print(String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get() ));
 }
 
 ////////////////////////////////////////////////////////////////////////

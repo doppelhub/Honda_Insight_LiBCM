@@ -36,7 +36,7 @@ void key_handleKeyEvent_off(void)
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
 	LiDisplay_keyOff();
-    EEPROM_checkForExpiredFirmware();
+    eeprom_checkForExpiredFirmware(); //JTS2doNow: Run every few days when car is off 
 
     key_latestTurnOffTime_ms_set(millis()); //MUST RUN LAST!
 }
@@ -45,7 +45,7 @@ void key_handleKeyEvent_off(void)
 
 void key_handleKeyEvent_on(void)
 {
-	delay( EEPROM_delayKeyON_ms_get() ); //this is a test tool to verify LiBCM is turning on fast enough to prevent P-code //JTS2doLater: Delete
+	delay( eeprom_delayKeyON_ms_get() ); //this is a test tool to verify LiBCM is turning on fast enough to prevent P-code //JTS2doLater: Delete
 	Serial.print(F("ON"));
 	BATTSCI_enable();
 	METSCI_enable();

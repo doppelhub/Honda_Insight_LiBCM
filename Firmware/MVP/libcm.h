@@ -48,5 +48,6 @@
   #include "status.h"
   #include "heater.h"
   #include "LiControl.h"
+  #include "batteryHistory.h"
 
 #endif

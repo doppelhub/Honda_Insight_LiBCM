@@ -209,7 +209,7 @@ void METSCI_processLatestFrame(void)
     }
 
     //If we get here, then we've read the first byte, which is 0xE6
-    if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { Serial.print(" MET:E6,"); }
+    if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { Serial.print(F(" MET:E6,")); }
 
     //now read the remaining five bytes in the frame
     uint8_t packetType = 0xE6;              //Byte0 (always 0xE6) (we discarded it above)

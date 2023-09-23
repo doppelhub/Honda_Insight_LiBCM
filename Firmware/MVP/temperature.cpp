@@ -131,7 +131,7 @@ void temperature_measureAndPrintAll(void)
 	else
 	{
 		gpio_turnTemperatureSensors_on();
-		Serial.print("\nturned sensors on. Repeat command to display temp.");
+		Serial.print(F("\nturned sensors on. Repeat command to display temp."));
 	}
 }
 
