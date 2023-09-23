@@ -290,10 +290,16 @@ void eeprom_resetAll(void)
   
   Serial.print(F("\nEEPROM factory reset"));
 
+  wdt_disable();
+
   for(uint16_t address=minAddress; address<=maxAddress; address++)
   {
     EEPROM.update(address, EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE);
   }
+
+  wdt_enable(WDTO_2S);
+
+  while(1) { ; } //wait for watchdog reboot
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
