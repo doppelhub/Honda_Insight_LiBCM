@@ -39,32 +39,16 @@ uint16_t readFromEEPROM_uint16(uint16_t startAddress)
   uint16_t valueFromEEPROM_uint16 = 0;
   valueFromEEPROM_uint16 =  ( EEPROM.read(startAddress    ) << 8 ); //retrieve upper byte
   valueFromEEPROM_uint16 += ( EEPROM.read(startAddress + 1)      ); //retrieve lower byte
+
+  return valueFromEEPROM_uint16;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
 void writeToEEPROM_uint16(uint16_t startAddress, uint16_t value)
 {
-  EEPROM.update( startAddress    , highByte(value) ); //write lower byte
-  Serial.print(F("\nwriting uint16 hiByte value(DEC):"));
-  Serial.print(highByte(value),DEC);
-  Serial.print(F(" at address(HEX):"));
-  Serial.print(startAddress,HEX);
-  Serial.print(F(", Reads back as(DEC):"));
-  Serial.print(EEPROM.read(startAddress));
-
-  EEPROM.update( startAddress + 1,  lowByte(value) ); //write upper byte
-  Serial.print(F("\nwriting uint16 loByte value(DEC):"));
-  Serial.print(lowByte(value),DEC);
-  Serial.print(F(" at address(HEX):"));
-  Serial.print(startAddress,HEX);
-  Serial.print(F(", Reads back as(DEC):"));
-  Serial.print(EEPROM.read(startAddress+1));
-
-  Serial.print(F("\nuint16 'value' written is(DEC):"));
-  Serial.print(value);
-  Serial.print(F(", reads back as(DEC):"));
-  Serial.print(readFromEEPROM_uint16(startAddress));
+  EEPROM.update( startAddress    , highByte(value) );
+  EEPROM.update( startAddress + 1,  lowByte(value) );
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -254,9 +238,9 @@ void eeprom_resetDebugValues(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-uint16_t convertTemperatureAndSoC_toAddress(uint8_t indexTemperature, uint8_t indexSoC)
+uint16_t convert_temperatureAndSoC_arrayIndexToEepromAddress(uint8_t indexTemperature, uint8_t indexSoC)
 {
-  uint16_t address = (indexTemperature * TOTAL_TEMP_BINS + indexSoC) * NUM_BYTES_PER_BIN + EEPROM_ADDRESS_BATT_HISTORY;
+  uint16_t address = ((indexTemperature * TOTAL_TEMP_BINS + indexSoC) * NUM_BYTES_PER_BIN) + EEPROM_ADDRESS_BATT_HISTORY;
 
   return address;
 }
@@ -265,7 +249,7 @@ uint16_t convertTemperatureAndSoC_toAddress(uint8_t indexTemperature, uint8_t in
 
 uint16_t eeprom_batteryHistory_getValue(uint8_t indexTemperature, uint8_t indexSoC)
 {
-  uint16_t address = convertTemperatureAndSoC_toAddress(indexTemperature, indexSoC);
+  uint16_t address = convert_temperatureAndSoC_arrayIndexToEepromAddress(indexTemperature, indexSoC);
 
   return readFromEEPROM_uint16(address);
 }
@@ -274,15 +258,11 @@ uint16_t eeprom_batteryHistory_getValue(uint8_t indexTemperature, uint8_t indexS
 
 void eeprom_batteryHistory_incrementValue(uint8_t indexTemperature, uint8_t indexSoC)
 {
-  uint16_t address = convertTemperatureAndSoC_toAddress(indexTemperature, indexSoC);
-  Serial.print(F("\nEEPROM addres 0x"));
-  Serial.print(address,HEX);
+  uint16_t address = convert_temperatureAndSoC_arrayIndexToEepromAddress(indexTemperature, indexSoC);
 
   uint16_t existingValue = readFromEEPROM_uint16(address);
-  Serial.print(F("\nExistingValue:"));
-  Serial.print(existingValue,HEX);
 
-  if(existingValue != 65535) { writeToEEPROM_uint16(address, existingValue + 1); }
+  if(existingValue != 0xFFFF) { writeToEEPROM_uint16(address, existingValue + 1); }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -299,6 +279,21 @@ void eeprom_batteryHistory_reset(void)
     EEPROM.update(address, EEPROM_ADDRESS_FORMATTED_VALUE);
   }
 
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void eeprom_resetAll(void)
+{
+  uint16_t minAddress = 0;
+  uint16_t maxAddress = EEPROM_LAST_USABLE_ADDRESS;
+  
+  Serial.print(F("\nEEPROM factory reset"));
+
+  for(uint16_t address=minAddress; address<=maxAddress; address++)
+  {
+    EEPROM.update(address, EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

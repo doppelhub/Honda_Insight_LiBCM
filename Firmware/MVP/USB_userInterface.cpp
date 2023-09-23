@@ -73,14 +73,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	}
 	else if(testToRun == '5')
 	{
-		Serial.print(F("\nWriting 12345 to EEPROM address 0x510"));
-		writeToEEPROM_uint16(0x510, 12345);
-
-		Serial.print(F("\nWriting 54321 to EEPROM address 0xC71"));
-		writeToEEPROM_uint16(0xC71, 54321);
-
-		Serial.print(F("\nWriting 36912 to EEPROM address 0xF9F"));
-		writeToEEPROM_uint16(0xF9F, 36912);
+		printText_UNUSED();
 	}
 	else if(testToRun == '6')
 	{
@@ -105,6 +98,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 	else if(testToRun == 'T') { temperature_measureAndPrintAll(); }
 	else if(testToRun == 'R') { LTC6804gpio_areAllVoltageReferencesPassing(); }
 	else if(testToRun == 'W') { batteryHistory_printAll(); }
+	else if(testToRun == 'E') { eeprom_resetAll(); }
 	else if(testToRun == 'C')
 	{
 		LTC68042cell_sampleGatherAndProcessAllCellVoltages();
@@ -145,6 +139,7 @@ void printHelp(void)
 		"\n -'$TESTH': blink heater LED"
 		"\n -'$TESTC': print cell voltages"
 		"\n -'$TESTT': print temperatures"
+		"\n -'$TESTE': EEPROM factory reset"
 		"\n -'$TEST1'/2/3/4: run temporary debug test code. See 'USB_userInterface_runTestCode()')"
 		"\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
 		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
