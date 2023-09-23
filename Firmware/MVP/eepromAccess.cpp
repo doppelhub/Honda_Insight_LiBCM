@@ -156,8 +156,6 @@ void eeprom_checkForExpiredFirmware(void)
   else //user didn't update the firmware
   { 
     uint16_t newUptime_hours = EEPROM_calculateTotalHoursSinceLastFirmwareUpdate();
-    Serial.print(F("\nnewUpdate_hours:"));
-    Serial.print(newUptime_hours,DEC);
     uptimeStoredInEEPROM_hours_set(newUptime_hours); //store new total uptime in EEPROM
 
     Serial.print(F("\nTotal hours since firmware last uploaded: "));
