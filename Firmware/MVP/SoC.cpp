@@ -115,7 +115,7 @@ void SoC_turnOffLiBCM_ifPackEmpty(void)
 	static uint8_t numConsecutiveLoopsCellVoltageTooLow = 0; 
 		
 	if( (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER) || //turn off immediately if pack severely empty
-	   ((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true)) )
+	   ((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true)) ) //give user time to plug in charger
 	{	
 		if(numConsecutiveLoopsCellVoltageTooLow <= 200 ) //arbitrary number... just make sure the cell is actually low
 		{ 
