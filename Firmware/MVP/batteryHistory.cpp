@@ -8,6 +8,8 @@
 
 #include "libcm.h"
 
+//JTS2doLater: add two similar graphs showing the cumulative Ah (both charge and discharge) at each SoC+Temperature.
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t calcArrayIndex_temperature(void)
