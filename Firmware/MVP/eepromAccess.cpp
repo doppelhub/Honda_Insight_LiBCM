@@ -275,9 +275,17 @@ void eeprom_batteryHistory_reset(void)
   for(uint16_t address=minAddress; address<=maxAddress; address++)
   {
     EEPROM.update(address, EEPROM_ADDRESS_FORMATTED_VALUE);
-    wdt_reset(); //each eeprom write takes ~3.3 ms
+    
+    Serial.print('.');
+
+    if((address & 0b1111111) == 0) //divisible by 128
+    {
+      wdt_reset();
+      Serial.print('\n');
+    }
   }
 
+  Serial.print(F("\nDone"));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -292,9 +300,17 @@ void eeprom_resetAll(void)
   for(uint16_t address=minAddress; address<=maxAddress; address++)
   {
     EEPROM.update(address, EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE);
-    wdt_reset(); //each eeprom write takes ~3.3 ms
+    
+    Serial.print('.');
+
+    if((address & 0b1111111) == 0) //divisible by 128
+    {
+      wdt_reset();
+      Serial.print('\n');
+    }
   }
 
+  Serial.print(F("\nDone. Rebooting."));
   while(1) { ; } //wait for watchdog reboot
 }
 

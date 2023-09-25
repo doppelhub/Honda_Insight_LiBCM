@@ -7,7 +7,7 @@
 	#define config_h
 	#include "libcm.h"
 
-	#define FW_VERSION "0.9.2f"
+	#define FW_VERSION "0.9.2g"
 	#define BUILD_DATE "2023SEP24"
 
 	//////////////////////////////////////////////////////////////////
@@ -25,19 +25,19 @@
 
 	//choose your battery type:
 		//#define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
-		//#define BATTERY_TYPE_47AhFoMoCo
+		#define BATTERY_TYPE_47AhFoMoCo
 
 	//choose how many cells are in series:
 		//#define STACK_IS_48S //All 5AhG3 Kits & FoMoCo Kits with QTY4 modules
-		//#define STACK_IS_60S //FoMoCo Kits with QTY5 modules
+		#define STACK_IS_60S //FoMoCo Kits with QTY5 modules
 
 	//choose which grid charger is installed
 		//#define GRIDCHARGER_IS_NOT_1500W //All 5AhG3 Kits & 'standard' 47Ah FoMoCo Kits
-		//#define GRIDCHARGER_IS_1500W //'faster' 47Ah FoMoCo Kits only
+		#define GRIDCHARGER_IS_1500W //'faster' 47Ah FoMoCo Kits only
 
 	//choose ONE of the following
 	//must match actual "current hack" hardware configuration:
-		//#define SET_CURRENT_HACK_40 //actually +45.8% //most LiBCM users installed this hardware option
+		#define SET_CURRENT_HACK_40 //actually +45.8% //most LiBCM users installed this hardware option
 		//#define SET_CURRENT_HACK_20 //actually +25.0%
 		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
 
