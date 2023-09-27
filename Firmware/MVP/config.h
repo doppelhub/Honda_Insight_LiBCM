@@ -20,9 +20,9 @@
 		//#define STACK_IS_60S
 
 	//choose ONE of the following:
-		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
+		#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
 		//#define SET_CURRENT_HACK_20 //+20%
-		#define SET_CURRENT_HACK_40 //+40%
+		//#define SET_CURRENT_HACK_40 //+40%
 		//#define SET_CURRENT_HACK_60 //+60% //Note: LiBCM can only measure between 71 A regen & 147 A assist //higher current values will (safely) rail the ADC
 
 	//choose ONE of the following:

@@ -7,8 +7,8 @@
 
 #define LIDISPLAY_DRIVING_PAGE_ID 0
 #define LIDISPLAY_SPLASH_PAGE_ID 1
-#define LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID 2
 #define LIDISPLAY_GRIDCHARGE_PAGE_ID 3
+#define LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID 2
 #define LIDISPLAY_SETTINGS_PAGE_ID 4
 // #define CMD 0x23								// May be used when reading from nextion.  0x23 = "#"
 #define LIDISPLAY_UPDATE_RATE_MILLIS 40		// One element is updated each time
@@ -67,6 +67,11 @@ void LiDisplay_begin(void)
  		Serial.print(F("\nLiDisplay BEGIN"));
 		//Serial1.begin(9600,SERIAL_8E1);
 		Serial1.begin(38400,SERIAL_8E1);
+
+		#ifdef BATTERY_TYPE_47AhFoMoCo
+			#undef LIDISPLAY_GRIDCHARGE_PAGE_ID
+			#define LIDISPLAY_GRIDCHARGE_PAGE_ID 5
+		#endif
 
 		LiDisplayElementToUpdate = 0;
 
@@ -150,6 +155,7 @@ LiDisplay_updateNextCellValue() {
 	LiDisplayAverageCellVoltage = ((LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get()) * 0.5);
 
 	cell_avg_voltage = (LiDisplayAverageCellVoltage + LTC68042result_loCellVoltage_get());
+	LiDisplayAverageCellVoltage = (cell_avg_voltage); // TODO_NATALYA - get rid of cell_avg_voltage
 	temp_cell_voltage = LTC68042result_specificCellVoltage_get(ic_index, ic_cell_num);
 
 	cell_voltage_diff_from_avg = cell_avg_voltage - temp_cell_voltage;
@@ -360,7 +366,7 @@ void LiDisplay_refresh(void)
 
 		// 09 Feb 2023 -- This was the beginning of LiBCM trying to receive commands from the Nextion.
 		// This never worked properly, possibly due to interference.  I am leaving this stubbed out so it can be picked up on later.
-		/*
+
 		if (LiDisplayWaitingForCommand > 0) {
 			LiDisplayWaitingForCommand -= 1;
 		}
@@ -369,27 +375,28 @@ void LiDisplay_refresh(void)
 
 			LiDisplayWaitingForCommand -= 1;
 
-			Serial.print(Serial1.read());
-			Serial.print(' ');
-			Serial.print(Serial1.read());
-			Serial.print(' ');
-			Serial.print(Serial1.read());
-			Serial.print(' ');
-			Serial.print(Serial1.read());
-			Serial.print(' ');
-			Serial.print(Serial1.read());
-			Serial.print(' ');
-			Serial.print(Serial1.read());
-			Serial.print(' ');
 
+      /*
+			while(Serial1.available())
+			{
+				cmd_str += char(Serial.read());
+			}
+      */
+			cmd_str = (String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()));
+
+			LiDisplay_updateStringVal(0, "t12", 0, String(cmd_str));
+			Serial.print(F("\n"));
+			Serial.print(String(cmd_str));
+
+			cmd_str = "";
 			buffer = 0;
 		}
 
 		if (Serial1.available() && (LiDisplayWaitingForCommand == 0)) {
 			Serial.print(F("\nSerial1 Available: "));
-			LiDisplayWaitingForCommand = 100;
+			LiDisplayWaitingForCommand = 100;	// 100 ms cooldown
 		}
-		*/
+
 		// Above stuff doesn't work properly yet.
 
 		LiDisplay_calculateCorrectPage();
@@ -436,7 +443,7 @@ void LiDisplay_refresh(void)
 				hmi_power_millis = millis();
 				return;
 			}
-			if ((millis() - hmi_power_millis) < 100) { // ensure at least 100ms have passed since screen turned on
+			if ((millis() - hmi_power_millis) < 400) { // ensure at least 400ms have passed since screen turned on.  Note Sept 2023 -- Smaller values like 100ms were not enough
 				return;
 			} else {
 				// Ready to show GC page, but first check if key is on
@@ -487,18 +494,17 @@ void LiDisplay_refresh(void)
 							// 4 elements update very frequently so we won't track their previous value
 							case 0: LiDisplay_updateStringVal(0, "t3", 0, String((LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps())/1000)); break;
 							case 1: LiDisplay_calculateChrgAsstGaugeBars(); LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId));	break;
-							case 2: LiDisplay_updateStringVal(0, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.1)))); break;
-							case 3: LiDisplay_updateStringVal(0, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.1)))); break;
+							case 2: LiDisplay_updateStringVal(0, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
+							case 3: LiDisplay_updateStringVal(0, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
 							// The other 4 elements update less frequently.  We will update 1 of them.
 							// Priority is from least-likely to change to most-likely to change.
 							case 4:
 								LiDisplay_calclateFanSpeedStr();
+								LiDisplay_calculateSoCGaugeBars();
 								if (LiDisplayFanSpeed_onScreen != currentFanSpeed) {
-									LiDisplay_calclateFanSpeedStr();
 									LiDisplay_updateStringVal(0, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed])));
 									LiDisplayFanSpeed_onScreen = currentFanSpeed;
 								} else if (LiDisplaySoCBars_onScreen != LiDisplaySoCBarCount) {
-									LiDisplay_calculateSoCGaugeBars();
 									LiDisplay_updateNumericVal(0, "p0", 2, String(LiDisplaySoCBarCount));
 									LiDisplaySoCBars_onScreen = LiDisplaySoCBarCount;
 								} else if (LiDisplaySoC_onScreen != SoC_getBatteryStateNow_percent()) {
@@ -540,13 +546,12 @@ void LiDisplay_refresh(void)
 									LiDisplay_updateStringVal(3, "t7", 0, "CHARGING");
 								} else LiDisplay_updateStringVal(3, "t7", 0, "NOT CHARGING");
 							break;
-							case 1: LiDisplay_updateStringVal(3, "t3", 0, String(LiDisplayAverageCellVoltage * 0.1)); break;
+							case 1: LiDisplay_updateStringVal(3, "t3", 0, String(LiDisplayAverageCellVoltage * 0.0001,3)); break;
 							case 2: LiDisplay_updateNextCellValue();	break;
 							case 3: LiDisplay_updateStringVal(3, "t8", 0, String(gc_time));	break;
 							case 4:
 								LiDisplay_calclateFanSpeedStr();
 								if (LiDisplayFanSpeed_onScreen != currentFanSpeed) {
-									LiDisplay_calclateFanSpeedStr();
 									LiDisplay_updateStringVal(3, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed])));
 									LiDisplayFanSpeed_onScreen = currentFanSpeed;
 								} else if (LiDisplaySoC_onScreen != SoC_getBatteryStateNow_percent()) {
