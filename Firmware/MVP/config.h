@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"
 
-	#define FW_VERSION "0.9.2f"
-	#define BUILD_DATE "2023SEP24"
+	#define FW_VERSION "0.9.3"
+	#define BUILD_DATE "2023SEP27"
 
 	//////////////////////////////////////////////////////////////////
 
@@ -19,7 +19,7 @@
 	///////////////////////////////////////
 
 	//'choose' exactly one hardware option from each group below, which must match the actual installed hardware.
-	//'choose' an option by removing both forward slashes ('//') at the beginning of that line. 
+	//'choose' an option by removing both forward slashes ('//') at the beginning of that line.
 	//all other options in each group MUST begin with two forward slashes (i.e. they are not chosen).
 	//there are no default options because this firmware works with all LiBCM variants... you need to specify which hardware you have installed
 
@@ -45,7 +45,7 @@
 	//using both displays simultaneously could cause timing issues (FYI: the Serial Monitor prints '*' each time the loop period is violated)
 		#define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
 		//#define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
-	
+
 	//////////////////////////////////////////////////////////////////
 
 	////////////////////////
@@ -155,8 +155,8 @@
 		If user doesn't uncomment anything, then the previously uploaded value remains in EEPROM
 	*/
 
-	//JTS2doNow: Implement this feature	
-	//if using 1500 watt charger with 120 volt extension cord, choose input current limit 
+	//JTS2doNow: Implement this feature
+	//if using 1500 watt charger with 120 volt extension cord, choose input current limit
 		//#define CHARGER_INPUT_CURRENT__15A_MAX //select this option if using 12 AWG extension cord up to 100 feet, or 14 AWG up to 50 feet**, else if;
 		//#define CHARGER_INPUT_CURRENT__13A_MAX //select this option if using 14 AWG extension cord up to 100 feet, or 16 AWG up to 50 feet**, else if;
 		//#define CHARGER_INPUT_CURRENT__10A_MAX //select this option if using 16 AWG extension cord up to 100 feet, or 18 AWG up to 50 feet**.

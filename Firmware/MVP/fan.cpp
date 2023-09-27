@@ -256,9 +256,9 @@ void fan_handler(void)
 		    ((millis() - key_latestTurnOnTime_ms_get()) > FAN_SPEED_INCREASE_HYSTERESIS_ms) )
 		{
 			gpio_setFanSpeed_OEM(FAN_LOW); //PDU fan defaults to low speed when keyON
-		} 
+		}
 		else { gpio_setFanSpeed_OEM(FAN_OFF); }
 	#endif
-	
+
 	gpio_setFanSpeed_PCB(fanSpeed_now);
 }
