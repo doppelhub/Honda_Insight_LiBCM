@@ -24,7 +24,6 @@ uint8_t LiDisplayCurrentPageNum = 0;
 uint8_t LiDisplaySetPageNum = 0;
 uint8_t LiDisplaySoCBarCount = 0;
 uint8_t LiDisplayChrgAsstPicId = 22;
-bool LiDisplayDebugMode = false;
 uint8_t LiDisplayWaitingForCommand = 0;
 
 // Initializing to 100 (absurd number for all 4 variables) so that on first run they will be updated on screen
@@ -52,8 +51,13 @@ static String gc_begin_soc_str = "0%";
 static String gc_time = "00:00:00";
 static uint8_t currentFanSpeed = 0;
 
-const String attrMap[3] = {
-	"txt", "val", "pic"
+bool gc_sixty_s_fomoco_e_block_enabled = false;
+
+const String attrMap[4] = {
+	"txt",	// text value
+	"val",	// numerical value
+	"pic",	// picture id
+	"bco"	// background colour
 };
 const String fanSpeedDisplay[3] = {
 	"FAN OFF", "FAN LOW", "FAN HIGH"
@@ -66,7 +70,7 @@ void LiDisplay_begin(void)
 	#ifdef LIDISPLAY_CONNECTED
  		Serial.print(F("\nLiDisplay BEGIN"));
 		//Serial1.begin(9600,SERIAL_8E1);
-		Serial1.begin(38400,SERIAL_8E1);
+		//Serial1.begin(38400,SERIAL_8E1); // Only turn on when display is on.
 
 		#ifdef BATTERY_TYPE_47AhFoMoCo
 			#undef LIDISPLAY_GRIDCHARGE_PAGE_ID
@@ -94,7 +98,6 @@ void LiDisplay_calculateCorrectPage() {
 		if (gpio_isGridChargerPluggedInNow()) { LiDisplaySetPageNum = LIDISPLAY_GRIDCHARGE_PAGE_ID; } // Grid Charger Plugged In -- Display GC Page
 		else if (LiDisplaySplashPending) { LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID; }
 		else if (LiDisplaySettingsPageRequested) { LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID; }
-		else if (LiDisplayDebugMode) { LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID; }
 	}
 	return;
 }
@@ -351,7 +354,15 @@ void LiDisplay_updatePage() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void LiDisplay_refresh(void)
+void LiDisplay_updateDebugTextBox(String raw_data_string) {
+	#ifdef LIDISPLAY_DEBUG_ENABLED
+		LiDisplay_updateStringVal(0, "t12", 0, raw_data_string);	// T12 is a text box on the bottom of the driving page screen.
+	#endif
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void LiDisplay_handler(void)
 {
 	#ifdef LIDISPLAY_CONNECTED
 
@@ -360,56 +371,45 @@ void LiDisplay_refresh(void)
 		static uint32_t hmi_read_millis = 0;
 
 		// Below stuff doesn't work properly yet.
-		static uint8_t cmd = 0;
-		//static uint8_t buffer = 0;
 		static String cmd_str = "";
 
-		// 09 Feb 2023 -- This was the beginning of LiBCM trying to receive commands from the Nextion.
-		// This never worked properly, possibly due to interference.  I am leaving this stubbed out so it can be picked up on later.
+		// 27 Sept 2023 -- This is the beginning of LiBCM trying to receive commands from the Nextion.  It doesn't work 100% yet.
 
 		if (LiDisplayWaitingForCommand > 0) {
 			LiDisplayWaitingForCommand -= 1;
 		}
 
 		if (LiDisplayWaitingForCommand == 1) {
-
 			LiDisplayWaitingForCommand -= 1;
 
+			while (Serial1.available()) {
+				cmd_str += char(Serial1.read());
+			};
 
-      /*
-			while(Serial1.available())
-			{
-				cmd_str += char(Serial.read());
-			}
-      */
-			cmd_str = (String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()) + String(Serial1.read()));
+			LiDisplay_updateDebugTextBox(String(cmd_str));
 
-			LiDisplay_updateStringVal(0, "t12", 0, String(cmd_str));
 			Serial.print(F("\n"));
 			Serial.print(String(cmd_str));
 
 			cmd_str = "";
-			//buffer = 0;
 		}
 
 		if (Serial1.available() && (LiDisplayWaitingForCommand == 0)) {
-			Serial.print(F("\nSerial1 Available: "));
 			LiDisplayWaitingForCommand = 100;	// 100 ms cooldown
 		}
-
 		// Above stuff doesn't work properly yet.
+
 
 		LiDisplay_calculateCorrectPage();
 
+
+		// TODO_NATALYA: Probably should put this into a new function -- LiDisplay_calculateCorrectPowerState()
 		if (LiDisplayPowerOffPending) {
 			if (LiDisplayOnGridChargerConnected) {
 				// GC plugged in before relay in IPU compartment clicked off, or just after, but before splash screen complete.
 				Serial.print(F("\nLiDisplayPowerOffPending CANCELLED because grid charger was plugged in."));
 				LiDisplaySplashPending = false;
 				LiDisplayPowerOffPending = false;
-			} else if (LiDisplayDebugMode) {
-				LiDisplayPowerOffPending = false;
-				LiDisplaySplashPending = false;
 			} else if ((millis() - hmi_power_millis) < 100) { // ensure at least 100ms have passed since last refresh loop
 				return;
 			} else if (LiDisplaySplashPending) {
@@ -418,11 +418,12 @@ void LiDisplay_refresh(void)
 				splash_millis = millis();
 				return;
 			} else if ((millis() - splash_millis) == (LIDISPLAY_UPDATE_RATE_MILLIS)) {
-				LiDisplay_updateNumericVal(1, "n0", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - EEPROM_uptimeStoredInEEPROM_hours_get()));
+				LiDisplay_updateNumericVal(1, "n0", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get()));
 				return;
 			} else if ((millis() - splash_millis) > (LIDISPLAY_SPLASH_PAGE_MS)) {
 				gpio_turnHMI_off();
 				LiDisplayPowerOffPending = false;
+				Serial1.end(); // Turn Serial1 off to empty buffer.
 				return;
 			}
 		} else if (LiDisplaySplashPending) {
@@ -440,6 +441,7 @@ void LiDisplay_refresh(void)
 			if (!gpio_HMIStateNow()) {
 				// If screen power is off we need to turn on LiDisplay
 				gpio_turnHMI_on();
+				Serial1.begin(38400,SERIAL_8E1);
 				hmi_power_millis = millis();
 				return;
 			}
@@ -447,8 +449,7 @@ void LiDisplay_refresh(void)
 				return;
 			} else {
 				// Ready to show GC page, but first check if key is on
-				// 2022 Sept 07 -- NM To Do: We may be able to delete this now because of LiDisplay_calculateCorrectPage()
-				// We may need to create a LiDisplay_calculateCorrectPowerState() function instead of this
+				// 2022 Sept 07 -- TODO_NATALYA: We may be able to delete this now because of LiDisplay_calculateCorrectPage()
 				if (key_getSampledState() == KEYSTATE_ON) {
 					LiDisplay_setPageNumber(LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID);
 				} else {
@@ -479,12 +480,13 @@ void LiDisplay_refresh(void)
 					switch(LiDisplayElementToUpdate)
 					{
 						case 0: LiDisplay_updateStringVal(1, "t1", 0, String(FW_VERSION)); break;
-						case 1: LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - EEPROM_uptimeStoredInEEPROM_hours_get())); break;
+						case 1: LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get())); break;
 					}
 					LiDisplayElementToUpdate += 1;
 				}
 			} else {	// Main page loop
-				// 2022 Sept 11 -- NM To Do:  Replace grid charge display code w/ code that only updates elements which have changed since last cycle.
+				if(!gpio_HMIStateNow()) return; //LiDisplay is off, so we don't need to run the loop.
+
 				switch(LiDisplayCurrentPageNum) {
 					case LIDISPLAY_DRIVING_PAGE_ID:
 
@@ -541,17 +543,24 @@ void LiDisplay_refresh(void)
 						LiDisplay_calculateGCTimeStr();
 						switch(LiDisplayElementToUpdate)
 						{
-							case 0:
+							// 4 elements update very frequently so we won't track their previous value
+							case 0:	// This one doesn't update frequently, but its priority is high because we want to notify the user the instant it does update.
 								if (gpio_isGridChargerChargingNow()) {
 									LiDisplay_updateStringVal(3, "t7", 0, "CHARGING");
+								} else if (debugUSB_cellsAreBalancing()) {
+									LiDisplay_updateStringVal(3, "t7", 0, "BALANCING");
 								} else LiDisplay_updateStringVal(3, "t7", 0, "NOT CHARGING");
+
 							break;
 							case 1: LiDisplay_updateStringVal(3, "t3", 0, String(LiDisplayAverageCellVoltage * 0.0001,3)); break;
 							case 2: LiDisplay_updateNextCellValue();	break;
 							case 3: LiDisplay_updateStringVal(3, "t8", 0, String(gc_time));	break;
 							case 4:
 								LiDisplay_calclateFanSpeedStr();
-								if (LiDisplayFanSpeed_onScreen != currentFanSpeed) {
+								if (!gc_sixty_s_fomoco_e_block_enabled && (MAX_CELL_INDEX == 59)) {
+									LiDisplay_updateNumericVal(3, "t16", 3, "65516"); // E block label will be missing on a 60S FoMoCo pack display if we don't run this once.
+									gc_sixty_s_fomoco_e_block_enabled = true;
+								} else if (LiDisplayFanSpeed_onScreen != currentFanSpeed) {
 									LiDisplay_updateStringVal(3, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed])));
 									LiDisplayFanSpeed_onScreen = currentFanSpeed;
 								} else if (LiDisplaySoC_onScreen != SoC_getBatteryStateNow_percent()) {
@@ -588,6 +597,7 @@ void LiDisplay_keyOn(void) {
 		Serial.print(F("\nLiDisplay_keyOn"));
 		Serial.print(F("\nLiDisplay HMI Power On"));
 		gpio_turnHMI_on();
+		Serial1.begin(38400,SERIAL_8E1);
 		hmi_power_millis = millis();
 		LiDisplaySplashPending = true;
 		LiDisplaySetPageNum = 1;
@@ -597,7 +607,6 @@ void LiDisplay_keyOn(void) {
 		LiDisplaySoC_onScreen = 100;
 		LiDisplayFanSpeed_onScreen = 100;
 		LiDisplaySoCBars_onScreen = 100;
-		LiDisplayDebugMode = false;
 	#endif
 }
 
@@ -608,8 +617,6 @@ void LiDisplay_keyOff(void) {
 		// Check if gpio HMI was already off
 		Serial.print(F("\nLiDisplay_keyOff:  gpio_HMIStateNow = "));
 		Serial.print(String(gpio_HMIStateNow()));
-
-		LiDisplayDebugMode = false;
 
 		if (gpio_HMIStateNow()) {
 			if (!gpio_isGridChargerPluggedInNow()) {
@@ -631,6 +638,7 @@ void LiDisplay_gridChargerPluggedIn(void) {
 		Serial.print(String(gpio_HMIStateNow()));
 		if (!gpio_HMIStateNow()) {
 			gpio_turnHMI_on();
+			Serial1.begin(38400,SERIAL_8E1);
 			hmi_power_millis = millis();
 		}
 		LiDisplayOnGridChargerConnected = true;
@@ -639,7 +647,6 @@ void LiDisplay_gridChargerPluggedIn(void) {
 		gc_connected_minutes = 0;
 		gc_connected_hours = 0;
 		gc_begin_soc_str = (String(SoC_getBatteryStateNow_percent()) + "%");
-		LiDisplayDebugMode = false;
 		LiDisplaySoC_onScreen = 100;
 		LiDisplayFanSpeed_onScreen = 100;
 		maxElementId = 6;
@@ -671,34 +678,6 @@ void LiDisplay_setPageNumber(uint8_t page) {
 	LiDisplaySetPageNum = page;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*
-void LiDisplay_setDebugMode(uint8_t mode) {
-	Serial.print(F("\nLiDisplay_setDebugMode = "));
-	Serial.print(String((char)mode));
-	if (mode == 49) {
-
-		LiDisplayDebugMode = true;
-		if (!gpio_HMIStateNow()) {
-			// If screen power is off we need to turn on LiDisplay
-			Serial.print(F("\nLiDisplay Turning On for Debug Mode"));
-			gpio_turnHMI_on();
-		}
-	} else {
-		LiDisplayDebugMode = false;
-		Serial.print(F("\nLiDisplay Exiting Debug Mode"));
-		if (gpio_HMIStateNow()) {
-			Serial.print(F("\nLiDisplay Screen Still On"));
-			if ((key_getSampledState() != KEYSTATE_ON) && !gpio_isGridChargerPluggedInNow()) {
-				gpio_turnHMI_off();
-				Serial.print(F("\nLiDisplay Turning Off Screen"));
-			} else {
-				LiDisplay_calculateCorrectPage();
-			}
-		}
-	}
-}
-*/
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t LiDisplay_bytesAvailableForWrite(void)

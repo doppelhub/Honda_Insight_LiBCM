@@ -24,7 +24,7 @@
 
 	uint8_t LiDisplay_bytesAvailableForWrite(void);
 
-	void LiDisplay_writeByte(uint8_t data);
+	uint8_t LiDisplay_writeByte(uint8_t data);
 
 	uint8_t LiDisplay_readByte(void);
 

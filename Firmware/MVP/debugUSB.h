@@ -3,7 +3,7 @@
 
 #ifndef debugUSB_h
 	#define debugUSB_h
-	
+
 	#define TWO_DECIMAL_PLACES 2
 	#define FOUR_DECIMAL_PLACES 4
 
@@ -17,6 +17,8 @@
 	void debugUSB_displayUptime_seconds(void);
 
 	void debugUSB_printCellBalanceStatus(void);
+
+	bool debugUSB_cellsAreBalancing(void);
 
 	void debugUSB_printHardwareRevision(void);
 
@@ -37,5 +39,5 @@
 
 	#define TRANSMITTING_LARGE_MESSAGE     0x66
 	#define NOT_TRANSMITTING_LARGE_MESSAGE 0x55
-	
+
 #endif

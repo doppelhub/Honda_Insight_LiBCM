@@ -13,6 +13,7 @@ uint16_t cellBalanceThreshold = CELL_VMAX_REGEN; //no cells are reported as bala
 uint8_t dataTypeToStream = DEBUGUSB_STREAM_POWER;
 uint32_t dataUpdatePeriod_ms = 250;
 uint8_t transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE;
+bool cellsAreBalancing = false;
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -27,7 +28,7 @@ uint16_t debugUSB_dataUpdatePeriod_ms_get(void) { return dataUpdatePeriod_ms; }
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 //print one IC's QTY12 cell voltages
-//the first IC's data is stored in the 0th array element, regardless of the first IC's actual address (e.g. 0x2),  
+//the first IC's data is stored in the 0th array element, regardless of the first IC's actual address (e.g. 0x2),
 //t=2.4 milliseconds worst case
 //JTS2doLater: Place inside debugUSB_printData_cellVoltages()
 void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces)
@@ -51,7 +52,7 @@ void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces)
 
 void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap, uint16_t cellDischargeVoltageThreshold)
 {
-	//For readability, need to flip cellBitmap bit-order (e.g.'0b000010000101' becomes '0b101000010000'), so that LSB/MSB is cell12/cell01, respectively  
+	//For readability, need to flip cellBitmap bit-order (e.g.'0b000010000101' becomes '0b101000010000'), so that LSB/MSB is cell12/cell01, respectively
 	uint16_t bitUnderTest = 0;
 	uint16_t flippedBitmap = 0;
 
@@ -88,13 +89,19 @@ void debugUSB_printCellBalanceStatus(void)
 		    Serial.print(String(cellBalanceBitmaps[ii], HEX));
 		   	Serial.print(',');
 		}
+		cellsAreBalancing = true;
 	}
 	else //(anyCellsBalancing == NO)
 	{
 		//JTS2doLater: Change text if pack is unbalanced, but something else is preventing balancing
 		Serial.print(F("\nPack Balanced"));
+		cellsAreBalancing = false;
 	}
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+bool debugUSB_cellsAreBalancing(void) { return cellsAreBalancing; }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -109,7 +116,7 @@ void debugUSB_displayUptime_seconds(void)
 //This function can print more than 63 characters in a single call
 //t=29 ms in v0.7.2
 void debugUSB_printLatest_data_gridCharger(void)
-{	
+{
 	static uint32_t previousMillisGrid = 0;
 
 	if( (uint32_t)(millis() - previousMillisGrid) >= DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS)
@@ -129,7 +136,7 @@ void debugUSB_printLatest_data_gridCharger(void)
 void debugUSB_printData_power(void)
 {
 	//t= 1080 microseconds max
-	//comma delimiter to simplify data analysis 
+	//comma delimiter to simplify data analysis
 	//Complete string should be 63 characters or less (to prevent waiting for the buffer to empty)
 	//                        111111111122222222223333333333444444444455555555556666
 	//               123456789012345678901234567890123456789012345678901234567890123
@@ -148,11 +155,11 @@ void debugUSB_printData_power(void)
 	Serial.print(F(                            ","                                  ));
 	Serial.print(String( (LTC68042result_loCellVoltage_get() * 0.0001), 3           ));
 	Serial.print(F(                                 ",V, "                          ));
-	Serial.print(String( SoC_getBatteryStateNow_mAh()                               ));		
+	Serial.print(String( SoC_getBatteryStateNow_mAh()                               ));
 	Serial.print(F(                                          ",mAh, "               ));
 	Serial.print(String( (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001), 1 ));
 	Serial.print(F(                                                    ",kW, "      ));
-	Serial.print(String( temperature_battery_getLatest()                            ));		
+	Serial.print(String( temperature_battery_getLatest()                            ));
 	Serial.print(F(                                                           ",C " ));
 
 	transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE;
@@ -224,13 +231,13 @@ void debugUSB_printData_debug(void)
 
 //Sending more than 63 characters per call makes this function blocking (until the buffer empties)!
 void debugUSB_printLatestData(void)
-{	
+{
 	static uint32_t previousMillis = 0;
 
 	//print debug data if enabled ('$DISP=DBG')
 	//this will overflow serial transmit buffer if too much data transmitted //necessary to capture all debug data, even though timing may exceed loopPeriod_ms
 	if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_DEBUG) { debugUSB_printData_debug(); }
-	
+
 	//print message if it's time and there's room in the serial transmit buffer
 	else if( ( ((uint32_t)(millis() - previousMillis) >= debugUSB_dataUpdatePeriod_ms_get()) || (transmitStatus == TRANSMITTING_LARGE_MESSAGE) ) &&
 		(Serial.availableForWrite() > 62) )
