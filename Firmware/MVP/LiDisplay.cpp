@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //LiDisplay (HMI) Serial Functions
@@ -547,8 +547,6 @@ void LiDisplay_handler(void)
 							case 0:	// This one doesn't update frequently, but its priority is high because we want to notify the user the instant it does update.
 								if (gpio_isGridChargerChargingNow()) {
 									LiDisplay_updateStringVal(3, "t7", 0, "CHARGING");
-								} else if (debugUSB_cellsAreBalancing()) {
-									LiDisplay_updateStringVal(3, "t7", 0, "BALANCING");
 								} else LiDisplay_updateStringVal(3, "t7", 0, "NOT CHARGING");
 
 							break;

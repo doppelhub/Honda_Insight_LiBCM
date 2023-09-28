@@ -18,8 +18,6 @@
 
 	void debugUSB_printCellBalanceStatus(void);
 
-	bool debugUSB_cellsAreBalancing(void);
-
 	void debugUSB_printHardwareRevision(void);
 
 	void debugUSB_dataTypeToStream_set(uint8_t dataType);

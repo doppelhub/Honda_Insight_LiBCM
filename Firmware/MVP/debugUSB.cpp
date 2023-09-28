@@ -13,7 +13,6 @@ uint16_t cellBalanceThreshold = CELL_VMAX_REGEN; //no cells are reported as bala
 uint8_t dataTypeToStream = DEBUGUSB_STREAM_POWER;
 uint32_t dataUpdatePeriod_ms = 250;
 uint8_t transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE;
-bool cellsAreBalancing = false;
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -89,19 +88,13 @@ void debugUSB_printCellBalanceStatus(void)
 		    Serial.print(String(cellBalanceBitmaps[ii], HEX));
 		   	Serial.print(',');
 		}
-		cellsAreBalancing = true;
 	}
 	else //(anyCellsBalancing == NO)
 	{
 		//JTS2doLater: Change text if pack is unbalanced, but something else is preventing balancing
 		Serial.print(F("\nPack Balanced"));
-		cellsAreBalancing = false;
 	}
 }
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-
-bool debugUSB_cellsAreBalancing(void) { return cellsAreBalancing; }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -39,12 +39,12 @@
 	//must match actual "current hack" hardware configuration:
 		//#define SET_CURRENT_HACK_40 //actually +45.8% //most LiBCM users installed this hardware option
 		//#define SET_CURRENT_HACK_20 //actually +25.0%
-		#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
+		//#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
 
 	//choose which display to use
 	//using both displays simultaneously could cause timing issues (FYI: the Serial Monitor prints '*' each time the loop period is violated)
 		//#define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
-		#define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
+		//#define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
 
 
 	//////////////////////////////////////////////////////////////////
