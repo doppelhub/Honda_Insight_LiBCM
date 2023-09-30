@@ -546,31 +546,31 @@ void LiDisplay_handler(void)
 							// 4 elements update very frequently so we won't track their previous value
 							case 0:	// This one doesn't update frequently, but its priority is high because we want to notify the user the instant it does update.
 								if (gpio_isGridChargerChargingNow()) {
-									LiDisplay_updateStringVal(3, "t7", 0, "CHARGING");
-								} else LiDisplay_updateStringVal(3, "t7", 0, "NOT CHARGING");
+									LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "CHARGING");
+								} else LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "NOT CHARGING");
 
 							break;
-							case 1: LiDisplay_updateStringVal(3, "t3", 0, String(LiDisplayAverageCellVoltage * 0.0001,3)); break;
+							case 1: LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t3", 0, String(LiDisplayAverageCellVoltage * 0.0001,3)); break;
 							case 2: LiDisplay_updateNextCellValue();	break;
-							case 3: LiDisplay_updateStringVal(3, "t8", 0, String(gc_time));	break;
+							case 3: LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t8", 0, String(gc_time));	break;
 							case 4:
 								LiDisplay_calclateFanSpeedStr();
 								if (!gc_sixty_s_fomoco_e_block_enabled && (MAX_CELL_INDEX == 59)) {
-									LiDisplay_updateNumericVal(3, "t16", 3, "65516"); // E block label will be missing on a 60S FoMoCo pack display if we don't run this once.
+									LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t16", 3, "65516"); // E block label will be missing on a 60S FoMoCo pack display if we don't run this once.
 									gc_sixty_s_fomoco_e_block_enabled = true;
 								} else if (LiDisplayFanSpeed_onScreen != currentFanSpeed) {
-									LiDisplay_updateStringVal(3, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed])));
+									LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed])));
 									LiDisplayFanSpeed_onScreen = currentFanSpeed;
 								} else if (LiDisplaySoC_onScreen != SoC_getBatteryStateNow_percent()) {
-									LiDisplay_updateStringVal(3, "t1", 0, (String(SoC_getBatteryStateNow_percent()) + "%"));
+									LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t1", 0, (String(SoC_getBatteryStateNow_percent()) + "%"));
 									LiDisplaySoC_onScreen = SoC_getBatteryStateNow_percent();
 								} else if (LiDisplayPackVoltageActual_onScreen != LTC68042result_packVoltage_get()) {
-									LiDisplay_updateStringVal(3, "t4", 0, String(LTC68042result_packVoltage_get()));
+									LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t4", 0, String(LTC68042result_packVoltage_get()));
 									LiDisplayPackVoltageActual_onScreen = LTC68042result_packVoltage_get();
 								} else LiDisplay_updateNextCellValue();		break;
 
 							case 5: LiDisplay_updateNextCellValue();	break;
-							case 6: maxElementId = 5; LiDisplay_updateStringVal(3, "t10", 0, (String(gc_begin_soc_str))); break;
+							case 6: maxElementId = 5; LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t10", 0, (String(gc_begin_soc_str))); break;
 						}
 					break;
 					default : break;
