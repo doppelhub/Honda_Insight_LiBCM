@@ -49,6 +49,7 @@ static uint8_t gc_connected_hours = 0;
 
 static String gc_begin_soc_str = "0%";
 static String gc_time = "00:00:00";
+static String key_time = "00:00:00";
 static uint8_t currentFanSpeed = 0;
 
 bool gc_sixty_s_fomoco_e_block_enabled = false;
@@ -314,7 +315,7 @@ void LiDisplay_calculateSoCGaugeBars() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void LiDisplay_calclateFanSpeedStr() {
+void LiDisplay_calculateFanSpeedStr() {
 	if (fan_getSpeed_now() == FAN_HIGH) {
 		currentFanSpeed = 2;
 	} else if (fan_getSpeed_now() == FAN_LOW) {
@@ -322,13 +323,14 @@ void LiDisplay_calclateFanSpeedStr() {
 	} else {
 		currentFanSpeed = 0;
 	}
-	/*
-	Serial.print(F("\n"));
-	Serial.print("LiDisplay currentFanSpeed: ");
-	Serial.print(currentFanSpeed);
-	Serial.print("   fan speed now: ");
-	Serial.print(String(fan_getSpeed_now()));
-	*/
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void LiDisplay_calculateCellDelta() {
+	static uint16_t LiDisplay_deltaVoltage_LTC6804 = 0;
+	LiDisplay_deltaVoltage_LTC6804 = LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get();
+	return LiDisplay_deltaVoltage_LTC6804;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -391,6 +393,12 @@ void LiDisplay_handler(void)
 			Serial.print(F("\n"));
 			Serial.print(String(cmd_str));
 
+			// 03 Oct 2023 -- Switched to 57600 baud
+			// P0 Screen Btn Expected:	SCRbtn0PRESSED
+			// P0 Fan Btn Expected:		FANbtn0PRESSED
+			// P0 Screen Btn Actual:	CRbnRE
+			// P0 Fan Btn Actual:		FbnRE
+
 			cmd_str = "";
 		}
 
@@ -441,7 +449,7 @@ void LiDisplay_handler(void)
 			if (!gpio_HMIStateNow()) {
 				// If screen power is off we need to turn on LiDisplay
 				gpio_turnHMI_on();
-				Serial1.begin(38400,SERIAL_8E1);
+				Serial1.begin(57600,SERIAL_8E1);
 				hmi_power_millis = millis();
 				return;
 			}
@@ -490,7 +498,7 @@ void LiDisplay_handler(void)
 				switch(LiDisplayCurrentPageNum) {
 					case LIDISPLAY_DRIVING_PAGE_ID:
 
-						maxElementId = 4;
+						maxElementId = 6;
 						switch(LiDisplayElementToUpdate)
 						{
 							// 4 elements update very frequently so we won't track their previous value
@@ -498,10 +506,12 @@ void LiDisplay_handler(void)
 							case 1: LiDisplay_calculateChrgAsstGaugeBars(); LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId));	break;
 							case 2: LiDisplay_updateStringVal(0, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
 							case 3: LiDisplay_updateStringVal(0, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
+							case 4: LiDisplay_updateStringVal(0, "t13", 0, String(key_time));	break;	// Doesn't work yet
+							case 5: LiDisplay_updateStringVal(0, "t14", 0, String((LiDisplay_calculateCellDelta(),3) + "V"));	break;	// Doesn't work yet
 							// The other 4 elements update less frequently.  We will update 1 of them.
 							// Priority is from least-likely to change to most-likely to change.
-							case 4:
-								LiDisplay_calclateFanSpeedStr();
+							case 6:
+								LiDisplay_calculateFanSpeedStr();
 								LiDisplay_calculateSoCGaugeBars();
 								if (LiDisplayFanSpeed_onScreen != currentFanSpeed) {
 									LiDisplay_updateStringVal(0, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed])));
@@ -554,7 +564,7 @@ void LiDisplay_handler(void)
 							case 2: LiDisplay_updateNextCellValue();	break;
 							case 3: LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t8", 0, String(gc_time));	break;
 							case 4:
-								LiDisplay_calclateFanSpeedStr();
+								LiDisplay_calculateFanSpeedStr();
 								if (!gc_sixty_s_fomoco_e_block_enabled && (MAX_CELL_INDEX == 59)) {
 									LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t16", 3, "65516"); // E block label will be missing on a 60S FoMoCo pack display if we don't run this once.
 									gc_sixty_s_fomoco_e_block_enabled = true;
@@ -595,7 +605,7 @@ void LiDisplay_keyOn(void) {
 		Serial.print(F("\nLiDisplay_keyOn"));
 		Serial.print(F("\nLiDisplay HMI Power On"));
 		gpio_turnHMI_on();
-		Serial1.begin(38400,SERIAL_8E1);
+		Serial1.begin(57600,SERIAL_8E1);
 		hmi_power_millis = millis();
 		LiDisplaySplashPending = true;
 		LiDisplaySetPageNum = 1;
@@ -636,7 +646,7 @@ void LiDisplay_gridChargerPluggedIn(void) {
 		Serial.print(String(gpio_HMIStateNow()));
 		if (!gpio_HMIStateNow()) {
 			gpio_turnHMI_on();
-			Serial1.begin(38400,SERIAL_8E1);
+			Serial1.begin(57600,SERIAL_8E1);
 			hmi_power_millis = millis();
 		}
 		LiDisplayOnGridChargerConnected = true;
