@@ -50,6 +50,9 @@ static uint8_t gc_connected_hours = 0;
 static String gc_begin_soc_str = "0%";
 static String gc_time = "00:00:00";
 static String key_time = "00:00:00";
+
+static uint32_t key_time_begin_ms = 0;
+
 static uint8_t currentFanSpeed = 0;
 
 bool gc_sixty_s_fomoco_e_block_enabled = false;
@@ -197,6 +200,55 @@ LiDisplay_updateNextCellValue() {
 	Serial.print("  cell_voltage_diff_from_avg:");
 	Serial.print(cell_voltage_diff_from_avg);
 */
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void LiDisplay_calculateKeyTimeStr(bool reset) {
+	static uint32_t current_key_on_ms = 0;
+	static uint16_t current_key_time_seconds = 0;
+	static uint8_t kt_s = 0;
+	static uint8_t kt_m = 0;
+	static uint8_t kt_h = 0;
+
+	if (reset) {
+		kt_s = 0;
+		kt_m = 0;
+		kt_h = 0;
+	}
+
+	current_key_on_ms = (uint32_t)(millis() - key_time_begin_ms);
+	//current_key_on_ms *= 0.001;
+	current_key_time_seconds = (uint16_t)(current_key_on_ms * 0.001);
+
+	if (current_key_time_seconds >= 1) {
+		kt_s += current_key_time_seconds;
+		key_time_begin_ms += current_key_on_ms;	// Ratcheting key_time_begin_ms upwards so we don't introduce an error of more than 1s
+		key_time_begin_ms += 6;	// Adding current_key_on_ms is insufficient - it doesn't account for run time of this frame, so the seconds counter begins to lag after a while.
+	}
+
+	if (kt_s >= 60) {	// Assumes < 60s passing between runs of this function.  If that's not the case there is a much more serious issue at hand.
+		kt_s -= 60;
+		kt_m += 1;
+	}
+	if (kt_m >= 60) {
+		kt_m -= 60;
+		kt_h += 1;
+	}
+	if (kt_h >= 99) {
+		kt_h = 0;	// Will someone leave the car key-on for +99 hours?
+	}
+
+	//key_time = "";
+	//key_time = key_time + current_key_time_seconds;
+
+	key_time = "";
+	(kt_h > 9) ? key_time = key_time + kt_h : key_time = key_time + "0" + kt_h;
+	key_time = key_time + ":";
+	(kt_m > 9) ? key_time = key_time + kt_m : key_time = key_time + "0" + kt_m;
+	key_time = key_time + ":";
+	(kt_s > 9) ? key_time = key_time + kt_s : key_time = key_time + "0" + kt_s;
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -495,6 +547,10 @@ void LiDisplay_handler(void)
 			} else {	// Main page loop
 				if(!gpio_HMIStateNow()) return; //LiDisplay is off, so we don't need to run the loop.
 
+				if (key_getSampledState() == KEYSTATE_ON) {
+					LiDisplay_calculateKeyTimeStr(false);	// Increment key time outside the loop in case driver switches to settings page
+				}
+
 				switch(LiDisplayCurrentPageNum) {
 					case LIDISPLAY_DRIVING_PAGE_ID:
 
@@ -506,8 +562,8 @@ void LiDisplay_handler(void)
 							case 1: LiDisplay_calculateChrgAsstGaugeBars(); LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId));	break;
 							case 2: LiDisplay_updateStringVal(0, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
 							case 3: LiDisplay_updateStringVal(0, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
-							case 4: LiDisplay_updateStringVal(0, "t13", 0, String(key_time));	break;	// Doesn't work yet
-							case 5: LiDisplay_updateStringVal(0, "t14", 0, (String((LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get()))+""));	break;	// Doesn't work yet
+							case 4: LiDisplay_updateStringVal(0, "t13", 0, key_time); break;	// Doesn't work yet
+							case 5: LiDisplay_updateStringVal(0, "t14", 0, (String((LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get()))+""));	break;
 							// The other 4 elements update less frequently.  We will update 1 of them.
 							// Priority is from least-likely to change to most-likely to change.
 							case 6:
@@ -607,6 +663,8 @@ void LiDisplay_keyOn(void) {
 		gpio_turnHMI_on();
 		Serial1.begin(57600,SERIAL_8E1);
 		hmi_power_millis = millis();
+		key_time_begin_ms = millis();
+		LiDisplay_calculateKeyTimeStr(true);
 		LiDisplaySplashPending = true;
 		LiDisplaySetPageNum = 1;
 
