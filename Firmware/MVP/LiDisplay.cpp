@@ -394,8 +394,8 @@ void LiDisplay_handler(void)
 			Serial.print(String(cmd_str));
 
 			// 03 Oct 2023 -- Switched to 57600 baud
-			// P0 Screen Btn Expected:	SCRbtn0PRESSED
-			// P0 Fan Btn Expected:		FANbtn0PRESSED
+			// P0 Screen Btn Expected:	SCRbtn0PRESS
+			// P0 Fan Btn Expected:		FANbtn0PRESS
 			// P0 Screen Btn Actual:	CRbnRE
 			// P0 Fan Btn Actual:		FbnRE
 
@@ -507,7 +507,7 @@ void LiDisplay_handler(void)
 							case 2: LiDisplay_updateStringVal(0, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
 							case 3: LiDisplay_updateStringVal(0, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
 							case 4: LiDisplay_updateStringVal(0, "t13", 0, String(key_time));	break;	// Doesn't work yet
-							case 5: LiDisplay_updateStringVal(0, "t14", 0, String((LiDisplay_calculateCellDelta(),3) + "V"));	break;	// Doesn't work yet
+							case 5: LiDisplay_updateStringVal(0, "t14", 0, (String((LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get()))+""));	break;	// Doesn't work yet
 							// The other 4 elements update less frequently.  We will update 1 of them.
 							// Priority is from least-likely to change to most-likely to change.
 							case 6:
