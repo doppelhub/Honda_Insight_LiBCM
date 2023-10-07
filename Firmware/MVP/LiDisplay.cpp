@@ -218,13 +218,13 @@ void LiDisplay_calculateKeyTimeStr(bool reset) {
 	}
 
 	current_key_on_ms = (uint32_t)(millis() - key_time_begin_ms);
-	//current_key_on_ms *= 0.001;
 	current_key_time_seconds = (uint16_t)(current_key_on_ms * 0.001);
 
 	if (current_key_time_seconds >= 1) {
 		kt_s += current_key_time_seconds;
 		key_time_begin_ms += current_key_on_ms;	// Ratcheting key_time_begin_ms upwards so we don't introduce an error of more than 1s
-		key_time_begin_ms += 6;	// Adding current_key_on_ms is insufficient - it doesn't account for run time of this frame, so the seconds counter begins to lag after a while.
+		//key_time_begin_ms += time_loopPeriod_ms_get();	// Adding current_key_on_ms is insufficient - it doesn't account for run time of the loop, so it begins to lag after a while.
+		key_time_begin_ms += 12;	// 12ms still too little.  time_loopPeriod_ms_get was also too little.
 	}
 
 	if (kt_s >= 60) {	// Assumes < 60s passing between runs of this function.  If that's not the case there is a much more serious issue at hand.
@@ -238,9 +238,6 @@ void LiDisplay_calculateKeyTimeStr(bool reset) {
 	if (kt_h >= 99) {
 		kt_h = 0;	// Will someone leave the car key-on for +99 hours?
 	}
-
-	//key_time = "";
-	//key_time = key_time + current_key_time_seconds;
 
 	key_time = "";
 	(kt_h > 9) ? key_time = key_time + kt_h : key_time = key_time + "0" + kt_h;
@@ -269,8 +266,8 @@ void LiDisplay_calculateGCTimeStr() {
 
 		gc_connected_millis_most_recent_diff = (millis() - gc_connected_millis);
 
-		// 09 Feb 2023 -- NM To Do:  Get rid of modulo and division
-		// Note to JTS: LiDisplay_calculateGCTimeStr() is only run while the grid charger is plugged in AND key is off.
+		// 05 Oct 2023 -- TODO_NATALYA:  Get rid of modulo and division -- if LiDisplay_calculateKeyTimeStr() works out we can adopt its method
+		// 09 Feb 2023 -- Note to JTS: LiDisplay_calculateGCTimeStr() is only run while the grid charger is plugged in AND key is off.
 		// I'd like to address this issue later if possible because it doesn't affect key-on cycle or driving cycle of LiBCM.
 		gc_connected_hours = (gc_connected_millis_most_recent_diff / 3600000);
 		gc_connected_minutes = (gc_connected_millis_most_recent_diff / 60000) % 60;
@@ -283,7 +280,6 @@ void LiDisplay_calculateGCTimeStr() {
 		if (gc_connected_hours > 9) { gc_hour_prefix = ""; }
 		else gc_hour_prefix = String(0);
 
-		//gc_time = String("M:") + String(gc_connected_minutes) + String(" S:") + String(gc_connected_seconds);
 		gc_time = String(gc_hour_prefix) + String(gc_connected_hours) + String(":") + String(gc_min_prefix) + String(gc_connected_minutes) + String(":") + String(gc_sec_prefix) + String(gc_connected_seconds);
 	} else {
 		// Still plugged in but not charging
@@ -437,6 +433,9 @@ void LiDisplay_handler(void)
 			LiDisplayWaitingForCommand -= 1;
 
 			while (Serial1.available()) {
+				cmd_str += Serial1.read();	// Gives numbers
+				// Fan:  70981108269
+				// Scrn:  6782981108269
 				cmd_str += char(Serial1.read());
 			};
 
@@ -557,14 +556,14 @@ void LiDisplay_handler(void)
 						maxElementId = 6;
 						switch(LiDisplayElementToUpdate)
 						{
-							// 4 elements update very frequently so we won't track their previous value
-							case 0: LiDisplay_updateStringVal(0, "t3", 0, String((LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps())/1000)); break;
+							// 6 elements update very frequently so we won't track their previous value
+							case 0: LiDisplay_updateStringVal(0, "t3", 0, String((LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps())*0.001)); break;
 							case 1: LiDisplay_calculateChrgAsstGaugeBars(); LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId));	break;
 							case 2: LiDisplay_updateStringVal(0, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
 							case 3: LiDisplay_updateStringVal(0, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
-							case 4: LiDisplay_updateStringVal(0, "t13", 0, key_time); break;	// Doesn't work yet
+							case 4: LiDisplay_updateStringVal(0, "t13", 0, key_time); break;
 							case 5: LiDisplay_updateStringVal(0, "t14", 0, (String((LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get()))+""));	break;
-							// The other 4 elements update less frequently.  We will update 1 of them.
+							// The other elements update less frequently.  We will update 1 of them.
 							// Priority is from least-likely to change to most-likely to change.
 							case 6:
 								LiDisplay_calculateFanSpeedStr();
