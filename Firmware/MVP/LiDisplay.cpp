@@ -50,6 +50,7 @@ static uint8_t gc_connected_hours = 0;
 static String gc_begin_soc_str = "0%";
 static String gc_time = "00:00:00";
 static String key_time = "00:00:00";
+String gc_currently_selected_cell_id_str = "99";	// An absurd initialization value.
 
 static uint32_t key_time_begin_ms = 0;
 
@@ -57,11 +58,12 @@ static uint8_t currentFanSpeed = 0;
 
 bool gc_sixty_s_fomoco_e_block_enabled = false;
 
-const String attrMap[4] = {
+const String attrMap[5] = {
 	"txt",	// text value
 	"val",	// numerical value
 	"pic",	// picture id
-	"bco"	// background colour
+	"bco",	// background colour
+	"pco"	// primary colour
 };
 const String fanSpeedDisplay[3] = {
 	"FAN OFF", "FAN LOW", "FAN HIGH"
@@ -73,8 +75,6 @@ void LiDisplay_begin(void)
 {
 	#ifdef LIDISPLAY_CONNECTED
  		Serial.print(F("\nLiDisplay BEGIN"));
-		//Serial1.begin(9600,SERIAL_8E1);
-		//Serial1.begin(38400,SERIAL_8E1); // Only turn on when display is on.
 
 		#ifdef BATTERY_TYPE_47AhFoMoCo
 			#undef LIDISPLAY_GRIDCHARGE_PAGE_ID
@@ -99,7 +99,10 @@ void LiDisplay_calculateCorrectPage() {
 		else { LiDisplaySetPageNum = LIDISPLAY_DRIVING_PAGE_ID; }
 	} else {
 		// Key is Off
-		if (gpio_isGridChargerPluggedInNow()) { LiDisplaySetPageNum = LIDISPLAY_GRIDCHARGE_PAGE_ID; } // Grid Charger Plugged In -- Display GC Page
+		if (gpio_isGridChargerPluggedInNow()) {
+			if (LiDisplaySettingsPageRequested) { LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID; }
+			else LiDisplaySetPageNum = LIDISPLAY_GRIDCHARGE_PAGE_ID;
+		}
 		else if (LiDisplaySplashPending) { LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID; }
 		else if (LiDisplaySettingsPageRequested) { LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID; }
 	}
@@ -113,7 +116,8 @@ void LiDisplay_updateNumericVal(uint8_t page, String elementName, uint8_t elemen
 		static String LiDisplay_Number_Str;
 
 		LiDisplay_Number_Str = "page" + String(page) + "." + String(elementName) + "." + attrMap[elementAttrIndex] + "=" + value;
-
+		//Serial.print("\n");
+		//Serial.print(LiDisplay_Number_Str);
 		Serial1.print(LiDisplay_Number_Str);
 		Serial1.write(0xFF);
 		Serial1.write(0xFF);
@@ -135,6 +139,36 @@ void LiDisplay_updateStringVal(uint8_t page, String elementName, uint8_t element
 		Serial1.write(0xFF);
 	#endif
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+String LiDisplay_getCellVoltage(String cell_id_str) {
+	uint8_t cell_id = cell_id_str.toInt();
+	uint8_t ic_index = 0;
+	uint8_t ic_cell_num = 0;
+	String formatted_cell_voltage = "0.0000";
+	String returned_voltage = "";
+
+
+	if (cell_id > MAX_CELL_INDEX) return "ERROR";
+
+	if (cell_id <= 11) { ic_index = 0; ic_cell_num = (cell_id); }
+	else if (cell_id <= 23) { ic_index = 1; ic_cell_num = (cell_id - 12); }
+	else if (cell_id <= 35) { ic_index = 2; ic_cell_num = (cell_id - 24); }
+	else if (cell_id <= 47) { ic_index = 3; ic_cell_num = (cell_id - 36); }
+	else if (cell_id <= 59) { ic_index = 4; ic_cell_num = (cell_id - 48); }
+
+	returned_voltage = String(LTC68042result_specificCellVoltage_get(ic_index, ic_cell_num));
+	formatted_cell_voltage[0] = returned_voltage[0];
+	formatted_cell_voltage[2] = returned_voltage[1];
+	formatted_cell_voltage[3] = returned_voltage[2];
+	formatted_cell_voltage[4] = returned_voltage[3];
+	formatted_cell_voltage[5] = returned_voltage[4];
+
+	return formatted_cell_voltage;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 LiDisplay_updateNextCellValue() {
 	static String LiDisplay_Color_Str;
@@ -168,13 +202,15 @@ LiDisplay_updateNextCellValue() {
 	cell_voltage_diff_from_avg = cell_avg_voltage - temp_cell_voltage;
 
 	// 04 Feb 2023 -- CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE is 32 so we are centering on -16 to +16, and then using increments of 32 to determine bar colour.
-	if (cell_voltage_diff_from_avg >= 80) { cell_color_number = "63488"; }			// 63488 = Red
-	else if (cell_voltage_diff_from_avg >= 48) { cell_color_number = "64480"; }	// 64480 = Orange
-	else if (cell_voltage_diff_from_avg >= 16) { cell_color_number = "65504"; }	// 65504 = Yellow
-	else if (cell_voltage_diff_from_avg >= -16) { cell_color_number = "2016"; }	// 2016 = Green
-	else if (cell_voltage_diff_from_avg >= -48) { cell_color_number = "2047"; }	// 2047 = Cyan
-	else { cell_color_number = "31"; }								// 31 = Blue
-	// We could add a darker blue on this line if we wanted to
+	// 17 Oct 2023 -- Feedback from users and JTS indicates we should have the window larger than 3.2mV
+	// So now we will use LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW and are defaulting it to 6.4mV
+	if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW * 2.5)) { cell_color_number = "63488"; }		// 63488 = Red
+	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW * 1.5)) { cell_color_number = "64480"; }	// 64480 = Orange
+	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW * 0.5)) { cell_color_number = "65504"; }	// 65504 = Yellow
+	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW * -0.5)) { cell_color_number = "2016"; }	// 2016 = Green
+	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW * -1.5)) { cell_color_number = "2047"; }	// 2047 = Cyan
+	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW * -2.5)) { cell_color_number = "31"; }		// 31 = Blue
+	else { cell_color_number = "22556"; }	// 22556 = Purple
 
 	LiDisplay_Color_Str = "page" + String(LIDISPLAY_GRIDCHARGE_PAGE_ID) + ".j" + String(cellToUpdate) + ".pco" + "=" + cell_color_number;
 
@@ -182,6 +218,12 @@ LiDisplay_updateNextCellValue() {
 	Serial1.write(0xFF);
 	Serial1.write(0xFF);
 	Serial1.write(0xFF);
+
+	if (gc_currently_selected_cell_id_str.toInt() == cellToUpdate) {
+		//Serial.print("  CELL TO UPDATE SAME  ");
+		LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t17", 4, "44373");
+		gc_currently_selected_cell_id_str = "99";
+	}
 
 	cellToUpdate += 1;
 /*
@@ -205,6 +247,7 @@ LiDisplay_updateNextCellValue() {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_calculateKeyTimeStr(bool reset) {
+	// TODO_NATALYA:  When this is finalized we need to replace code in LiDisplay_calculateGCTimeStr with code more like this
 	static uint32_t current_key_on_ms = 0;
 	static uint16_t current_key_time_seconds = 0;
 	static uint8_t kt_s = 0;
@@ -224,7 +267,7 @@ void LiDisplay_calculateKeyTimeStr(bool reset) {
 		kt_s += current_key_time_seconds;
 		key_time_begin_ms += current_key_on_ms;	// Ratcheting key_time_begin_ms upwards so we don't introduce an error of more than 1s
 		//key_time_begin_ms += time_loopPeriod_ms_get();	// Adding current_key_on_ms is insufficient - it doesn't account for run time of the loop, so it begins to lag after a while.
-		key_time_begin_ms += 12;	// 12ms still too little.  time_loopPeriod_ms_get was also too little.
+		key_time_begin_ms += 13;	// 12ms still too little.  time_loopPeriod_ms_get was also too little.
 	}
 
 	if (kt_s >= 60) {	// Assumes < 60s passing between runs of this function.  If that's not the case there is a much more serious issue at hand.
@@ -375,10 +418,18 @@ void LiDisplay_calculateFanSpeedStr() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void LiDisplay_calculateCellDelta() {
-	static uint16_t LiDisplay_deltaVoltage_LTC6804 = 0;
-	LiDisplay_deltaVoltage_LTC6804 = LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get();
-	return LiDisplay_deltaVoltage_LTC6804;
+void LiDisplay_exitSettingsPage(void) {
+	LiDisplaySettingsPageRequested = false;
+
+	LiDisplay_calculateCorrectPage();
+
+	switch(LiDisplayCurrentPageNum) {
+		case LIDISPLAY_DRIVING_PAGE_ID: LiDisplaySoCBars_onScreen = 100; break;	// Resets SoC Bar Display for Driving Page
+		case LIDISPLAY_SPLASH_PAGE_ID: break;	// Nothing here yet.
+		case LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID: LiDisplaySoCBars_onScreen = 100; maxElementId = 6; gc_sixty_s_fomoco_e_block_enabled = false; break;
+		case LIDISPLAY_GRIDCHARGE_PAGE_ID: maxElementId = 6; gc_sixty_s_fomoco_e_block_enabled = false; break;
+		default : break;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -412,6 +463,83 @@ void LiDisplay_updateDebugTextBox(String raw_data_string) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+String LiDisplay_readCommand() {
+	String ret = "";
+	char buffer = "";
+
+	while (Serial1.available() > 0) {
+		buffer = Serial1.read();
+		if ((uint8_t)buffer != 0xff) {	// Ignore Termination character
+			if ((uint8_t)buffer != 26) ret += buffer;	// Ignore Empty Spaces
+		}
+		//ret += char(Serial1.read());  // 2023-OCT-17: Serial1 sometimes saw loads of empty spaces in loop and was adding them to ret, so I added the above.
+	};
+
+	return ret;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void LiDisplay_processCommand(String cmd_str) {
+	uint8_t cmd_page_id = 0;
+	char cmd_obj_type = "";
+	//char cmd_obj_id_a = "";
+	String cmd_obj_id_str = "";
+	uint8_t ic_cell_address[2] = {0,0};
+
+	cmd_page_id = cmd_str[1] - '0';	// Subtract '0' from a char to get the actual integer value.
+	cmd_obj_type = cmd_str[3];
+
+	/*	2023 OCT 17
+	Command strings are sent by Nextion to LiBCM when you press, then (usually) release, certain objects on the screen.
+
+	Command string format:
+	page . object . action
+
+	Examples:
+	p0.b0.rel		// On page 0, button 0 was pressed then released
+	p3.j04.rel		// On page 3, bar-graph 04 was pressed then released
+
+	Most commands will be either 9 or 10 characters.
+
+	On the grid charging pages, cells are represented as rectangles, which in the Nextion software are bar-graph objects.
+	For simplicity, they are always full (1 solid colour) and we colour-code them to show balance relative to the other cells.
+	*/
+
+
+	// TODO_NATALYA 2023 OCT 17 -- We should probably organize this with page first, then object type second
+	if (String(cmd_obj_type) == "b") {
+		// Button Pressed
+		if ((cmd_page_id == (uint8_t)LIDISPLAY_DRIVING_PAGE_ID) || (cmd_page_id == (uint8_t)LIDISPLAY_GRIDCHARGE_PAGE_ID)) {
+			//cmd_obj_id_a = cmd_str[4] - '0';
+			if ((cmd_str[4] - '0') == (uint8_t)0) LiDisplaySettingsPageRequested = true;	// Screen Button from either Driving or GC Page
+
+		} else if (cmd_page_id == (uint8_t)LIDISPLAY_SETTINGS_PAGE_ID) {
+			//cmd_obj_id_a = cmd_str[4] - '0';
+			if ((cmd_str[4] - '0') == (uint8_t)0) LiDisplay_exitSettingsPage();	// Screen Button from Settings Page
+		}
+	} else if (String(cmd_obj_type) == "j") {
+		// Bar-Graph Pressed
+		cmd_obj_id_str = (String(cmd_str[4]) + String(cmd_str[5]));
+
+		LiDisplay_updateStringVal(cmd_page_id, "t17", 0, ("Cell " + cmd_obj_id_str + ": " + LiDisplay_getCellVoltage(cmd_obj_id_str) + "V"));
+		if (cmd_obj_id_str.toInt() < 10) cmd_obj_id_str = cmd_obj_id_str[1];	// Nextion gets confused by leading 0.
+		LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, String("j" + cmd_obj_id_str), 4, "65535");
+		LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t17", 4, "65535");
+
+		gc_currently_selected_cell_id_str = cmd_obj_id_str;
+	}
+
+	/*	Can probably delete this now that most variables here are not static */
+	cmd_str = "";
+	cmd_page_id = 0;
+	cmd_obj_type = "";
+	cmd_obj_id_str = "";
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void LiDisplay_handler(void)
 {
 	#ifdef LIDISPLAY_CONNECTED
@@ -420,11 +548,9 @@ void LiDisplay_handler(void)
 		static uint32_t splash_millis = 0;
 		static uint32_t hmi_read_millis = 0;
 
-		// Below stuff doesn't work properly yet.
-		static String cmd_str = "";
+		String cmd_str = "";
 
-		// 27 Sept 2023 -- This is the beginning of LiBCM trying to receive commands from the Nextion.  It doesn't work 100% yet.
-
+		// 2023 OCT 17 TODO_NATALYA: Evaluate whether or not we need this cooldown anymore now that comms have been fixed
 		if (LiDisplayWaitingForCommand > 0) {
 			LiDisplayWaitingForCommand -= 1;
 		}
@@ -432,31 +558,18 @@ void LiDisplay_handler(void)
 		if (LiDisplayWaitingForCommand == 1) {
 			LiDisplayWaitingForCommand -= 1;
 
-			while (Serial1.available()) {
-				cmd_str += Serial1.read();	// Gives numbers
-				// Fan:  70981108269
-				// Scrn:  6782981108269
-				cmd_str += char(Serial1.read());
-			};
+			cmd_str = LiDisplay_readCommand();
 
-			LiDisplay_updateDebugTextBox(String(cmd_str));
+			if (cmd_str != "") {
+				LiDisplay_updateDebugTextBox(String(cmd_str));
+				LiDisplay_processCommand(cmd_str);
+			}
 
-			Serial.print(F("\n"));
-			Serial.print(String(cmd_str));
-
-			// 03 Oct 2023 -- Switched to 57600 baud
-			// P0 Screen Btn Expected:	SCRbtn0PRESS
-			// P0 Fan Btn Expected:		FANbtn0PRESS
-			// P0 Screen Btn Actual:	CRbnRE
-			// P0 Fan Btn Actual:		FbnRE
-
-			cmd_str = "";
 		}
 
 		if (Serial1.available() && (LiDisplayWaitingForCommand == 0)) {
 			LiDisplayWaitingForCommand = 100;	// 100 ms cooldown
 		}
-		// Above stuff doesn't work properly yet.
 
 
 		LiDisplay_calculateCorrectPage();
@@ -500,7 +613,7 @@ void LiDisplay_handler(void)
 			if (!gpio_HMIStateNow()) {
 				// If screen power is off we need to turn on LiDisplay
 				gpio_turnHMI_on();
-				Serial1.begin(57600,SERIAL_8E1);
+				Serial1.begin(57600,SERIAL_8N1);
 				hmi_power_millis = millis();
 				return;
 			}
@@ -660,7 +773,7 @@ void LiDisplay_keyOn(void) {
 		Serial.print(F("\nLiDisplay_keyOn"));
 		Serial.print(F("\nLiDisplay HMI Power On"));
 		gpio_turnHMI_on();
-		Serial1.begin(57600,SERIAL_8E1);
+		Serial1.begin(57600,SERIAL_8N1);	// 2023 OCT -- Credit to IC User AfterEffect for finding that SERIAL_8N1 fixes comms issues with the Nextion
 		hmi_power_millis = millis();
 		key_time_begin_ms = millis();
 		LiDisplay_calculateKeyTimeStr(true);
@@ -682,6 +795,7 @@ void LiDisplay_keyOff(void) {
 		// Check if gpio HMI was already off
 		Serial.print(F("\nLiDisplay_keyOff:  gpio_HMIStateNow = "));
 		Serial.print(String(gpio_HMIStateNow()));
+		LiDisplaySettingsPageRequested = false;
 
 		if (gpio_HMIStateNow()) {
 			if (!gpio_isGridChargerPluggedInNow()) {
@@ -703,9 +817,10 @@ void LiDisplay_gridChargerPluggedIn(void) {
 		Serial.print(String(gpio_HMIStateNow()));
 		if (!gpio_HMIStateNow()) {
 			gpio_turnHMI_on();
-			Serial1.begin(57600,SERIAL_8E1);
+			Serial1.begin(57600,SERIAL_8N1);
 			hmi_power_millis = millis();
 		}
+		gc_sixty_s_fomoco_e_block_enabled = false;
 		LiDisplayOnGridChargerConnected = true;
 		gc_connected_millis = millis();
 		gc_connected_seconds = 0;
