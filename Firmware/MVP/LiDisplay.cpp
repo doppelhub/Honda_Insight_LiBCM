@@ -128,8 +128,7 @@ void LiDisplay_updateNumericVal(uint8_t page, String elementName, uint8_t elemen
 		static String LiDisplay_Number_Str;
 
 		LiDisplay_Number_Str = "page" + String(page) + "." + String(elementName) + "." + attrMap[elementAttrIndex] + "=" + value;
-		//Serial.print("\n");
-		//Serial.print(LiDisplay_Number_Str);
+
 		Serial1.print(LiDisplay_Number_Str);
 		Serial1.write(0xFF);
 		Serial1.write(0xFF);
@@ -159,8 +158,7 @@ void LiDisplay_updateGlobalObjectVal(String elementName, uint8_t elementAttrInde
 		static String LiDisplay_ObjectUpdate_Str;
 
 		LiDisplay_ObjectUpdate_Str = String(elementName) + "." + attrMap[elementAttrIndex] + "=" + value;
-		//Serial.print("\n");
-		//Serial.print(LiDisplay_Number_Str);
+
 		Serial1.print(LiDisplay_ObjectUpdate_Str);
 		Serial1.write(0xFF);
 		Serial1.write(0xFF);
@@ -248,28 +246,11 @@ LiDisplay_updateNextCellValue() {
 	Serial1.write(0xFF);
 
 	if (gc_currently_selected_cell_id_str.toInt() == cellToUpdate) {
-		//Serial.print("  CELL TO UPDATE SAME  ");
 		LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t17", 4, "44373");
 		gc_currently_selected_cell_id_str = "99";
 	}
 
 	cellToUpdate += 1;
-/*
-	Serial.print(F("\n"));
-	Serial.print("LiDisplay ColorStr ");
-	Serial.print(LiDisplay_Color_Str);
-	Serial.print(F("\n"));
-	Serial.print("LiDisplay cell_avg_voltage ");
-	Serial.print(cell_avg_voltage);
-	Serial.print("  V:");
-	Serial.print(String(temp_cell_voltage));
-	Serial.print("  IC:");
-	Serial.print(ic_index);
-	Serial.print("  Cell:");
-	Serial.print(ic_cell_num);
-	Serial.print("  cell_voltage_diff_from_avg:");
-	Serial.print(cell_voltage_diff_from_avg);
-*/
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -294,7 +275,6 @@ void LiDisplay_calculateKeyTimeStr(bool reset) {
 	if (current_key_time_seconds >= 1) {
 		kt_s += current_key_time_seconds;
 		key_time_begin_ms += current_key_on_ms;	// Ratcheting key_time_begin_ms upwards so we don't introduce an error of more than 1s
-		//key_time_begin_ms += time_loopPeriod_ms_get();	// Adding current_key_on_ms is insufficient - it doesn't account for run time of the loop, so it begins to lag after a while.
 		key_time_begin_ms += 13;	// 12ms still too little.  time_loopPeriod_ms_get was also too little.
 	}
 
@@ -451,7 +431,6 @@ void LiDisplay_initializeSettingsPage() {
 	LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t3", 0, editableParamMap[0]);
 	LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t4", 0, String(CELL_VMAX_GRIDCHARGER));
 	LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t5", 0, editableParamDescriptions[0]);
-	//LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "n0", 0, String(CELL_VMAX_GRIDCHARGER));
 	LiDisplay_updateGlobalObjectVal("n0", 1, String(CELL_VMAX_GRIDCHARGER));
 }
 
@@ -892,34 +871,44 @@ void LiDisplay_gridChargerUnplugged(void) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_setPageNumber(uint8_t page) {
-	LiDisplaySetPageNum = page;
+	#ifdef LIDISPLAY_CONNECTED
+		LiDisplaySetPageNum = page;
+	#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t LiDisplay_bytesAvailableForWrite(void)
 {
-  return Serial1.availableForWrite();
+	#ifdef LIDISPLAY_CONNECTED
+		return Serial1.availableForWrite();
+	#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t LiDisplay_writeByte(uint8_t data)
 {
-  Serial1.write(data);
-  return data;
+	#ifdef LIDISPLAY_CONNECTED
+        Serial1.write(data);
+        return data;
+	#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t LiDisplay_readByte(void)
 {
-  return Serial1.read();
+	#ifdef LIDISPLAY_CONNECTED
+		return Serial1.read();
+	#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t LiDisplay_bytesAvailableToRead()
 {
-  return Serial1.available();
+	#ifdef LIDISPLAY_CONNECTED
+		return Serial1.available();
+	#endif
 }
