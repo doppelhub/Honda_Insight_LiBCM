@@ -8,7 +8,7 @@
 	#include "libcm.h"
 
 	#define FW_VERSION "0.9.3"
-	#define BUILD_DATE "2023OCT17"
+	#define BUILD_DATE "2023OCT23"
 
 	//////////////////////////////////////////////////////////////////
 
@@ -43,7 +43,7 @@
 
 	//choose which display to use
 	//using both displays simultaneously could cause timing issues (FYI: the Serial Monitor prints '*' each time the loop period is violated)
-		//#define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
+		#define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
 		//#define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
 
 
@@ -146,7 +146,7 @@
 		//#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
 	//#define LIDISPLAY_DEBUG_ENABLED //uncomment to enable updates to text box ID # T12 on LiDisplay driving page -- this shows raw comm data from LiDisplay to LiBCM
-	#define LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW 64		// 64 = 6.4mV window between cell colours on the grid charging page.  Don't go below CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
+	#define LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS 64 //64 = 6.4mVwindow between cell colours on the grid charging page.  Don't go below CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
 
 	/*
 	JTS2doLater:

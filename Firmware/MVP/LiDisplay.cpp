@@ -68,6 +68,18 @@ const String attrMap[5] = {
 const String fanSpeedDisplay[3] = {
 	"FAN OFF", "FAN LOW", "FAN HIGH"
 };
+const String editableParamMap[2] = {
+	"CELL_VMAX_GRIDCHARGER",
+	"LiDisp Cell Bal Res Window"
+};
+const String editableParamDescriptions[2] = {
+	"Charge cells up to this voltage\r\nMin: 37000\r\nMax: 41000\r\nDefault: 39600",
+	"Higher numbers mean cell colours\r\nchange less frequently.\r\nMin: 32  Max: 255\r\nDefault: 64"
+};
+const uint16_t editableParamMinMax[2][2] = {
+	{37000,41000},
+	{32,255}
+};
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -142,6 +154,22 @@ void LiDisplay_updateStringVal(uint8_t page, String elementName, uint8_t element
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void LiDisplay_updateGlobalObjectVal(String elementName, uint8_t elementAttrIndex, String value) {
+	#ifdef LIDISPLAY_CONNECTED
+		static String LiDisplay_ObjectUpdate_Str;
+
+		LiDisplay_ObjectUpdate_Str = String(elementName) + "." + attrMap[elementAttrIndex] + "=" + value;
+		//Serial.print("\n");
+		//Serial.print(LiDisplay_Number_Str);
+		Serial1.print(LiDisplay_ObjectUpdate_Str);
+		Serial1.write(0xFF);
+		Serial1.write(0xFF);
+		Serial1.write(0xFF);
+	#endif
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 String LiDisplay_getCellVoltage(String cell_id_str) {
 	uint8_t cell_id = cell_id_str.toInt();
 	uint8_t ic_index = 0;
@@ -203,13 +231,13 @@ LiDisplay_updateNextCellValue() {
 
 	// 04 Feb 2023 -- CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE is 32 so we are centering on -16 to +16, and then using increments of 32 to determine bar colour.
 	// 17 Oct 2023 -- Feedback from users and JTS indicates we should have the window larger than 3.2mV
-	// So now we will use LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW and are defaulting it to 6.4mV
-	if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW * 2.5)) { cell_color_number = "63488"; }		// 63488 = Red
-	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW * 1.5)) { cell_color_number = "64480"; }	// 64480 = Orange
-	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW * 0.5)) { cell_color_number = "65504"; }	// 65504 = Yellow
-	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW * -0.5)) { cell_color_number = "2016"; }	// 2016 = Green
-	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW * -1.5)) { cell_color_number = "2047"; }	// 2047 = Cyan
-	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_BALANCE_RESOLUTION_WINDOW * -2.5)) { cell_color_number = "31"; }		// 31 = Blue
+	// So now we will use LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS and are defaulting it to 6.4mV
+	if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * 2.5)) { cell_color_number = "63488"; }		// 63488 = Red
+	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * 1.5)) { cell_color_number = "64480"; }	// 64480 = Orange
+	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * 0.5)) { cell_color_number = "65504"; }	// 65504 = Yellow
+	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -0.5)) { cell_color_number = "2016"; }	// 2016 = Green
+	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -1.5)) { cell_color_number = "2047"; }	// 2047 = Cyan
+	else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -2.5)) { cell_color_number = "31"; }		// 31 = Blue
 	else { cell_color_number = "22556"; }	// 22556 = Purple
 
 	LiDisplay_Color_Str = "page" + String(LIDISPLAY_GRIDCHARGE_PAGE_ID) + ".j" + String(cellToUpdate) + ".pco" + "=" + cell_color_number;
@@ -418,6 +446,17 @@ void LiDisplay_calculateFanSpeedStr() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void LiDisplay_initializeSettingsPage() {
+	// Start off at CELL_VMAX_GRIDCHARGER
+	LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t3", 0, editableParamMap[0]);
+	LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t4", 0, String(CELL_VMAX_GRIDCHARGER));
+	LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t5", 0, editableParamDescriptions[0]);
+	//LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "n0", 0, String(CELL_VMAX_GRIDCHARGER));
+	LiDisplay_updateGlobalObjectVal("n0", 1, String(CELL_VMAX_GRIDCHARGER));
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void LiDisplay_exitSettingsPage(void) {
 	LiDisplaySettingsPageRequested = false;
 
@@ -450,6 +489,8 @@ void LiDisplay_updatePage() {
 		Serial1.write(0xFF);
 
 		LiDisplayCurrentPageNum = LiDisplaySetPageNum;
+
+		if (LiDisplaySetPageNum == LIDISPLAY_SETTINGS_PAGE_ID) LiDisplay_initializeSettingsPage();
 	#endif
 }
 
@@ -484,7 +525,6 @@ String LiDisplay_readCommand() {
 void LiDisplay_processCommand(String cmd_str) {
 	uint8_t cmd_page_id = 0;
 	char cmd_obj_type = "";
-	//char cmd_obj_id_a = "";
 	String cmd_obj_id_str = "";
 	uint8_t ic_cell_address[2] = {0,0};
 
@@ -512,11 +552,8 @@ void LiDisplay_processCommand(String cmd_str) {
 	if (String(cmd_obj_type) == "b") {
 		// Button Pressed
 		if ((cmd_page_id == (uint8_t)LIDISPLAY_DRIVING_PAGE_ID) || (cmd_page_id == (uint8_t)LIDISPLAY_GRIDCHARGE_PAGE_ID)) {
-			//cmd_obj_id_a = cmd_str[4] - '0';
 			if ((cmd_str[4] - '0') == (uint8_t)0) LiDisplaySettingsPageRequested = true;	// Screen Button from either Driving or GC Page
-
 		} else if (cmd_page_id == (uint8_t)LIDISPLAY_SETTINGS_PAGE_ID) {
-			//cmd_obj_id_a = cmd_str[4] - '0';
 			if ((cmd_str[4] - '0') == (uint8_t)0) LiDisplay_exitSettingsPage();	// Screen Button from Settings Page
 		}
 	} else if (String(cmd_obj_type) == "j") {
