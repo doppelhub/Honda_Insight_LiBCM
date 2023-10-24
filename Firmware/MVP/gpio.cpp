@@ -143,6 +143,7 @@ void gpio_turnGridCharger_off(void) { digitalWrite(PIN_ABSTRACTED_GRID_EN, LOW);
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doLater: 1500W charger requires different PWM values due to additional parallel 2k7 resistor on voltage control pin
 void gpio_setGridCharger_powerLevel(char powerLevel)
 {
 	switch(powerLevel)
