@@ -174,6 +174,39 @@ void bringupTester_gridcharger(void)
 	#endif
 }
 
+
+//////////////////////////////////////////////////////////////////
+
+void testDischargeFETs(void)
+{
+	Serial.print(F("\nTesting LTC6804 discharge circuitry"));
+
+	LTC68042configure_wakeup();
+
+	uint16_t cellDischargeBitmaps[4] = { 0x0, 0b0000010101010101, 0b0000101010101010, 0x0}; //no discharge, discharge odd cells, discharge even cells, no discharge
+
+	for(uint8_t bitmapPattern = 0; bitmapPattern < 4; bitmapPattern++)
+	{
+
+		Serial.print(F("\n\nbitmapPattern: "));
+		Serial.print(String(cellDischargeBitmaps[bitmapPattern],BIN));
+		//Test each LTC6804 IC separately
+		for(uint8_t ii=0; ii<TOTAL_IC; ii++)
+		{
+			LTC68042configure_setBalanceResistors(FIRST_IC_ADDR + ii, cellDischargeBitmaps[bitmapPattern], LTC6804_DISCHARGE_TIMEOUT_02_SECONDS);
+		}
+			
+		delay(500); //wait for filter network to settle
+
+		LTC68042cell_sampleGatherAndProcessAllCellVoltages();
+		LTC68042cell_sampleGatherAndProcessAllCellVoltages();
+
+		for(uint8_t ii=0; ii<TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages( ii, 3); }
+		//right now you must manually copy the results into a spreadsheet to verify everything is working properly
+		//JTS2do: Automate test results.
+	}
+}
+
 //////////////////////////////////////////////////////////////////
 
 void bringupTester_motherboard(void)
@@ -238,20 +271,18 @@ void bringupTester_motherboard(void)
 				    (LTC68042result_hiCellVoltage_get() < 41000) ) //default returned data is 65535 (if no data sent)
 				{
 					Serial.print(F("pass"));
-					if( LTC68042result_hiCellVoltage_get() > 30000 ) { testToRun = TEST_TYPE_THERMAL_IMAGER; } //lithium batteries connected
-					else                                             { testToRun = TEST_TYPE_GAUNTLET;       } //LED BMS board connected
-
+					if( LTC68042result_hiCellVoltage_get() > 30000 ) { testToRun = TEST_TYPE_GAUNTLET; }
 				} else {
 					Serial.print(F("FAIL!! !! !! !! !! ! (check BMS leads & supply)"));
 					didTestFail = true;
 				}
 			}
 
-			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			//////////////////////////////////////////////////////////////////
 
 			if(testToRun == TEST_TYPE_GAUNTLET)
 			{
-				/////////////////////////////////////////////////////////////////////
+				testDischargeFETs();
 
 				//test LEDs/display
 				Serial.print(F("\nTesting LED1/2/3/4"));
@@ -642,50 +673,7 @@ void bringupTester_motherboard(void)
 
 			}
 
-			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-			if(testToRun == TEST_TYPE_THERMAL_IMAGER)
-			{
-				//(manually) verify discharge FETs working (with thermal imager)
-
-				//JTS note: The LTC6804 cannot enable discharge resistors with high impedance spoofed BMS voltage (i.e. from series LED chain).
-				//This is due to -2.5V PFET gate threshold voltage & also LTC6804 "Discharge Switch On-Resistance vs Cell Voltage" (p14).
-				//Therefore, to test discharge resistors, run test again with actual batteries plugged in, then use thermal imager.
-
-				Serial.print(F("\nTesting LTC6804 discharge circuitry"));
-
-				for(uint8_t ii=0; ii<3; ii++)
-				{
-					gpio_turnBuzzer_on_highFreq();
-					delay(100);
-					gpio_turnBuzzer_off();
-					delay(100);
-				}
-
-				LTC68042configure_wakeup();
-
-				uint16_t cellDischargeBitmaps[4] = { 0x0, 0b0000010101010101, 0b0000101010101010, 0x0}; //no discharge, discharge odd cells, discharge even cells, no discharge
-
-				for(uint8_t bitmapPattern = 0; bitmapPattern < 4; bitmapPattern++)
-				{
-
-					Serial.print(F("\n\nbitmapPattern: "));
-					Serial.print(String(cellDischargeBitmaps[bitmapPattern],BIN));
-					//Test each LTC6804 IC separately
-					for(uint8_t ii=0; ii<TOTAL_IC; ii++)
-					{
-						LTC68042configure_setBalanceResistors(FIRST_IC_ADDR + ii, cellDischargeBitmaps[bitmapPattern], LTC6804_DISCHARGE_TIMEOUT_02_SECONDS);
-					}
-						
-					delay(500); //wait for filter network to settle
-
-					LTC68042cell_sampleGatherAndProcessAllCellVoltages();
-					LTC68042cell_sampleGatherAndProcessAllCellVoltages();
-
-					for(uint8_t ii=0; ii<TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages( ii, 3); }
-				}
-			}
-			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			//////////////////////////////////////////////////////////////////
 
 			blinkLED2(); //Heartbeat
 		}
