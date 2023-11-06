@@ -105,7 +105,7 @@ void adc_calibrateBatteryCurrentSensorOffset(void)
 	Serial.print(delta);
 
 	//verify returned value is in the right ballpark
-	if( (delta > -8) && (delta < +8) ) 
+	if( (delta > -10) && (delta < +10) ) 
 	{
 		calibratedCurrentSensorOffset = delta;
 		Serial.print(F(" (pass)"));
