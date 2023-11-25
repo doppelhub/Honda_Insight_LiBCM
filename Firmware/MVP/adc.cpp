@@ -94,7 +94,9 @@ void adc_updateBatteryCurrent(void)
 
 /////////////////////////////////////////////////////////////////////
 
-//only call this function when no current is flowing through the sensor (e.g. when key is off)
+//only call this function when no current is flowing through the sensor (e.g. when key is off).
+//JTS2doNow: call this function immediately at keyOn.  MCM fires pre-contact ~190 ms after keyOn,
+//then fires main contactor at ~330 ms after keyOnWe have ~200 ms after keyOn before the MCM fires the pre-charge relay
 void adc_calibrateBatteryCurrentSensorOffset(void)
 {
 	uint16_t adcResult = analogRead(PIN_BATTCURRENT);
