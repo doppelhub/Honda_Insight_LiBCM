@@ -18,13 +18,11 @@
 
 	void LiDisplay_gridChargerPluggedIn(void);
 
-	void LiDisplay_setPageNumber(uint8_t page);
-
-//	void LiDisplay_setDebugMode(uint8_t mode);
+	void LiDisplay_setPageNumber(uint8_t page);	// Candidate for deletion -- page selection should probably only be done within LiDisplay.cpp
 
 	uint8_t LiDisplay_bytesAvailableForWrite(void);
 
-	void LiDisplay_writeByte(uint8_t data);
+	uint8_t LiDisplay_writeByte(uint8_t data);
 
 	uint8_t LiDisplay_readByte(void);
 
