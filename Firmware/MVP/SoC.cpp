@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //maintains battery state of charge
@@ -59,8 +59,9 @@ void SoC_integrateCharge_adcCounts(int16_t adcCounts)
 	//therefore:
 	// deltaCharge_uCoulomb            =  deltaCharge_counts                     *  ADC_MILLIAMPS_PER_COUNT                                                       *  time_loopPeriod_ms_get()
 	//int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * (ADC_MILLIAMPS_PER_COUNT * time_loopPeriod_ms_get());
-	//One final change: The battery current sensor isn't updated every time through the loop... so multiply by the number of loops per result
-	int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * time_loopPeriod_ms_get() * (ADC_MILLIAMPS_PER_COUNT * ADC_NUMLOOPS_PER_RESULT);
+	//Note: if the battery current value isn't updated each loop, then multiply by the number of loops required for each result
+	//JTS2doLater: change time_loopPeriod_ms_get() to delta millis since last run //prevents accumulated error if we don't meet our loop time
+	int32_t deltaCharge_uCoulomb = (int32_t)deltaCharge_counts * (time_loopPeriod_ms_get() * ADC_MILLIAMPS_PER_COUNT);
 
 	//Notes:
 	//5 Ah is 18.0E9 uCoulombs, whereas 2^32 is ~4.3E9 counts...
@@ -111,28 +112,24 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
 //prevents over-discharge during extended keyOFF
 void SoC_turnOffLiBCM_ifPackEmpty(void)
 {
-	static uint8_t numConsecutiveTimesCellVoltageTooLow = 0; 
+	static uint8_t numConsecutiveLoopsCellVoltageTooLow = 0; 
 		
-	#define NUM_CELLS_MEASURED_PER_LOOP  3	
-	#define NUM_CELLS_PER_IC            12
-	#define NUM_LOOPS_TO_MEASURE_ALL_CELLS (TOTAL_IC * NUM_CELLS_PER_IC / NUM_CELLS_MEASURED_PER_LOOP) //math handled by preprocessor
-
-	if( (LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //at least one cell voltage is too low
-		(time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true ) ) //gives user time to plug in grid charger
+	if( (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER) || //turn off immediately if pack severely empty
+	   ((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true)) ) //give user time to plug in charger
 	{	
-		if(numConsecutiveTimesCellVoltageTooLow <= (NUM_LOOPS_TO_MEASURE_ALL_CELLS << 2) )
+		if(numConsecutiveLoopsCellVoltageTooLow <= 200 ) //arbitrary number... just make sure the cell is actually low
 		{ 
 			//verify voltage remains low for several LTC6804 measurement cycles 
-			numConsecutiveTimesCellVoltageTooLow++; 
+			numConsecutiveLoopsCellVoltageTooLow++; 
 		}
 		else
 		{
 			//cell remained below minimum voltage for several LTC6804 mesurement cycles
 			Serial.print(F("\nLow cell voltage"));
-			gpio_turnLiBCM_off(); //turn LiBCM off... game over, thanks for playing
+			gpio_turnLiBCM_off(); //game over, thanks for playing
 		}
 	}
-	else { numConsecutiveTimesCellVoltageTooLow = 0; } //pack is charged enough for LiBCM to stay on
+	else { numConsecutiveLoopsCellVoltageTooLow = 0; } //pack is charged enough for LiBCM to stay on
 }
 
 /////////////////////////////////////////////////////////////////////

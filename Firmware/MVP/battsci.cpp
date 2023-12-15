@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //BATTSCI Serial Functions
@@ -14,7 +14,7 @@
 #include "libcm.h"
 
 uint8_t spoofedVoltageToSend_Counts = 0; //formatted as MCM expects to see it (Vpack / 2) //2 volts per count
-int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2048 - amps * 20) //50 mA per count
+int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2048 - deciAmps * 2) //50 mA per count
 
 uint8_t framePeriod_ms = 33;
 
@@ -99,8 +99,8 @@ void BATTSCI_setPackVoltage(uint8_t spoofedVoltage) { spoofedVoltageToSend_Count
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//Convert battery current (unit: amps) into BATTSCI format (unit: 50 mA per count)
-void BATTSCI_setSpoofedCurrent(int16_t spoofedCurrent) { spoofedCurrentToSend_Counts = (2048 - (spoofedCurrent * 20)); }
+//Convert from battery current (unit: deciAmps) to BATTSCI format (unit: 50 mA per count)
+void BATTSCI_setSpoofedCurrent_deciAmps(int16_t deciAmps) { spoofedCurrentToSend_Counts = 2048 - (deciAmps << 1); } 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -130,22 +130,24 @@ uint8_t BATTSCI_calculateTemperatureByte(void)
 //calculate cell voltage measurement offet caused by equivalent series resistance (ESR)
 //returns ESR-based voltage offset in counts
 //each count is 100 uV (e.g. -01234 counts = -123.4 mV)
-//returns positive number during assist //Example @ +140 amps assist: 140 * 20 = +2800 counts = +0.2800 volts
-//returns negative number during regen  //Example @ -070 amps  regen: -70 * 20 = -1400 counts = -0.1400 volts
+//returns positive number during assist //Example @ +140 amps assist (1400 deciAmps): 1400 * 2 = +2800 counts = +0.2800 volts
+//returns negative number during regen  //Example @ -070 amps  regen ( 700 deciAmps): -700 * 2 = -1400 counts = -0.1400 volts
 int16_t cellVoltageOffsetDueToESR(void)
 {
-  #define CELL_ESR_mOHM 2
-  #define CELL_ESR_COUNTS (CELL_ESR_mOHM * 10) //ten counts is one mOhm
-
+  constexpr uint8_t CELL_ESR_mOHM = 2;
   //Derivation:
   //  vCellCorrection_ESR = Icell_amps                * ESR
   //  vCellCorrection_ESR = Icell_amps                *  2 mOhm
   //  vCellCorrection_ESR = Icell_amps                * 20 counts
-  return (int16_t)(adc_getLatestBatteryCurrent_amps() * CELL_ESR_COUNTS);
+  //  vCellCorrection_ESR = Icell_deciAmps / 10       * 20 counts
+  //  vCellCorrection_ESR = Icell_deciAmps            * 2
+  //  vCellCorrection_ESR = Icell_deciAmps            * CELL_ESR_mOHM
+  return (int16_t)(adc_getLatestBatteryCurrent_deciAmps() * CELL_ESR_mOHM); //100 uV = 1 deciAmp * 1 mOhm 
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doLater: Add five second timeout
 bool BATTSCI_isPackFull(void)
 {
   if( (LTC68042result_hiCellVoltage_get() < CELL_VMAX_REGEN ) && //below maximum cell voltage limit (if SoC estimator is wrong)
@@ -166,6 +168,7 @@ bool BATTSCI_isPackEmpty(void)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doLater: Disable assist and regen if pack too hot
 //JTS2doLater: Add hysteresis and/or different SoC setpoints
 //JTS2doNow: If SoC drops below 1%, spoof very different HVDC voltages, which will force MCM to open contactor (to prevent further discharge)
 //sternly demand no regen and/or assist from MCM
@@ -176,13 +179,13 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
   #ifndef DISABLE_ASSIST
     if(BATTSCI_isPackEmpty() == YES)
   #endif
-    { flags |= BATTSCI_DISABLE_ASSIST_FLAG; EEPROM_hasLibcmDisabledAssist_set(EEPROM_LICBM_DISABLED_ASSIST); }
+    { flags |= BATTSCI_DISABLE_ASSIST_FLAG; eeprom_hasLibcmDisabledAssist_set(EEPROM_LICBM_DISABLED_ASSIST); }
 
   #ifndef DISABLE_REGEN
     if( (BATTSCI_isPackFull() == YES)                                                                  || //pack is full
         ( (temperature_battery_getLatest() < TEMP_FREEZING_DEGC + 2) && (BATTSCI_isPackEmpty() == NO) ) ) //pack is charged enough (to power DCDC), but too cold to safely regen
   #endif
-    { flags |= BATTSCI_DISABLE_REGEN_FLAG; EEPROM_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN); } //when this flag is set, MCM draws zero power from IMA motor
+    { flags |= BATTSCI_DISABLE_REGEN_FLAG; eeprom_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN); } //when this flag is set, MCM draws zero power from IMA motor
 
   return flags;
 }

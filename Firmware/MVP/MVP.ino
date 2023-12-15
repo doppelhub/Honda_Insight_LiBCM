@@ -4,25 +4,26 @@
 
 #include "libcm.h"
 
-void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup or bootloader delay 
+void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup or bootloader delay
 {
 	gpio_begin();
 	wdt_disable();
 	Serial.begin(115200); //USB
 	METSCI_begin();
 	BATTSCI_begin();
-	heater_init();
+	heater_begin();
 	LiDisplay_begin();
-	lcd_begin();
+	LiControl_begin();
 	LTC68042configure_initialize();
+	eeprom_begin();
 
-	#ifdef RUN_BRINGUP_TESTER
-	  	bringupTester_run(); //this function never returns
+	#ifdef RUN_BRINGUP_TESTER_GRIDCHARGER
+	  	bringupTester_gridcharger(); 
+	#elif defined RUN_BRINGUP_TESTER_MOTHERBOARD
+	  	bringupTester_motherboard(); //this function never returns
 	#endif
 
-	if(gpio_keyStateNow() == KEYSTATE_ON){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while keyON (e.g. while driving)
-	
-	EEPROM_verifyDataValid();
+	if(gpio_keyStateNow() == GPIO_KEY_ON){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while driving
 
 	Serial.print(F("\n\nLiBCM v" FW_VERSION ", " BUILD_DATE "\n'$HELP' for info\n"));
 	debugUSB_printHardwareRevision();
@@ -34,32 +35,37 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 void loop()
 {
 	key_stateChangeHandler();
-	
+
 	temperature_handler();
 	SoC_handler();
 	fan_handler();
 	heater_handler();
 	gridCharger_handler();
+	buzzer_handler();
 	lcdState_handler();
+	LiDisplay_handler();
+	batteryHistory_handler();
 
 	if( key_getSampledState() == KEYSTATE_ON )
 	{
-		if(EEPROM_firmwareStatus_get() != FIRMWARE_EXPIRED) { BATTSCI_sendFrames(); } //P1648 occurs if firmware is expired
+		//JTS2doNow: only read eeprom status once per keyOn event (it won't expire while car is running`)
+		if(eeprom_expirationStatus_get() != FIRMWARE_EXPIRED) { BATTSCI_sendFrames(); } //P1648 occurs if firmware is expired
 
 		LTC68042cell_nextVoltages(); //round-robin handler measures QTY3 cell voltages per call
 		METSCI_processLatestFrame();
 		adc_updateBatteryCurrent();
 		vPackSpoof_setVoltage();
 		debugUSB_printLatestData();
+		LiControl_handler();
 	}
 	else if( key_getSampledState() == KEYSTATE_OFF )
-	{	
+	{
 		if( time_toUpdate_keyOffValues() == true )
-		{ 
-			LTC68042cell_sampleGatherAndProcessAllCellVoltages();			
+		{
+			LTC68042cell_sampleGatherAndProcessAllCellVoltages();
 			SoC_updateUsingLatestOpenCircuitVoltage();
 			SoC_turnOffLiBCM_ifPackEmpty();
-			cellBalance_handler();			
+			cellBalance_handler();
 			debugUSB_printLatest_data_gridCharger();
 		}
 	}

@@ -1,0 +1,3 @@
+Add 7k32 pulldown between GPIO & GND.  This lets LiBCM detect when heater PCB is plugged in.  This is actually the same issue from the RevB 12S heater PCB (see that PCB's CAR folder)... However, I forgot I had made this change, hence it didn't make it to Daughterboard, either.  
+
+Workaround: On existing PCBs solder 7k32 resistor between GPIO & GND pins.  You can easily add said resistor to J8, which is only populated when using 5AhG3 12S heater PCB (which already has the pull-down).

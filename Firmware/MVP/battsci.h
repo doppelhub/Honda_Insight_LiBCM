@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 #ifndef battsci_h
@@ -29,7 +29,7 @@
 
 	void BATTSCI_setPackVoltage(uint8_t voltage);
 
-	void BATTSCI_setSpoofedCurrent(int16_t packCurrent);
+	void BATTSCI_setSpoofedCurrent_deciAmps(int16_t deciAmps);
 
 	uint8_t BATTSCI_writeByte(uint8_t data);
 

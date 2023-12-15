@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //functions related to ignition (key) status
@@ -35,25 +35,25 @@ void key_handleKeyEvent_off(void)
     gpio_turnPowerSensors_off();
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
-    gpio_turnHMI_off();
-    EEPROM_checkForExpiredFirmware();
+	LiDisplay_keyOff();
+    eeprom_checkForExpiredFirmware(); //JTS2doNow: Run every few days when car is off
 
-    key_latestTurnOffTime_ms_set(millis()); //MUST RUN LAST!   
+    key_latestTurnOffTime_ms_set(millis()); //MUST RUN LAST!
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
 void key_handleKeyEvent_on(void)
 {
-	delay( EEPROM_delayKeyON_ms_get() ); //this is a test tool to verify LiBCM is turning on fast enough to prevent P-code //JTS2doLater: Delete
+	delay( eeprom_delayKeyON_ms_get() ); //this is a test tool to verify LiBCM is turning on fast enough to prevent P-code //JTS2doLater: Delete
 	Serial.print(F("ON"));
 	BATTSCI_enable();
 	METSCI_enable();
-	gpio_turnHMI_on();
 	gpio_turnPowerSensors_on();
 	LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
 	LTC68042configure_handleKeyStateChange();
 	LED(1,HIGH);
+	LiDisplay_keyOn();
 
 	key_latestTurnOnTime_ms_set(millis()); //MUST RUN LAST!
 }
@@ -64,9 +64,10 @@ bool key_didStateChange(void)
 {
 	bool didKeyStateChange = NO;
 
-	keyState_sampled = gpio_keyStateNow();
+	if(gpio_keyStateNow() == GPIO_KEY_ON) { keyState_sampled = KEYSTATE_ON; }
+	else                                  { keyState_sampled = KEYSTATE_OFF; }
 
-	if( (keyState_sampled == KEYSTATE_OFF) && 
+	if( (keyState_sampled == KEYSTATE_OFF) &&
 		((keyState_previous == KEYSTATE_ON) || (keyState_previous == KEYSTATE_UNINITIALIZED)) )
 	{	//key state just changed from 'ON' to 'OFF'.
 		//don't immediately handle keyOFF event, in case this is due to noise.

@@ -1,4 +1,4 @@
-//Copyright 2021-2022(c) John Sullivan
+//Copyright 2021-2023(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //Handles user interactions with LiBCM (data query/response)
@@ -22,81 +22,104 @@ void printDebug(void)
 	Serial.print(F("\nDebug data persists in EEPROM until cleared ('$DEBUG=CLR' to clear)"));
 
 	Serial.print(F("\n -Has LiBCM limited assist since last cleared?: "));
-	(EEPROM_hasLibcmDisabledAssist_get() == EEPROM_LICBM_DISABLED_ASSIST) ? Serial.print(F("YES")) : Serial.print(F("NO"));
-	
+	(eeprom_hasLibcmDisabledAssist_get() == EEPROM_LICBM_DISABLED_ASSIST) ? Serial.print(F("YES")) : Serial.print(F("NO"));
+
 	Serial.print(F("\n -Has LiBCM limited regen since last cleared?: "));
-	(EEPROM_hasLibcmDisabledRegen_get() == EEPROM_LICBM_DISABLED_REGEN) ? Serial.print(F("YES")) : Serial.print(F("NO"));
+	(eeprom_hasLibcmDisabledRegen_get() == EEPROM_LICBM_DISABLED_REGEN) ? Serial.print(F("YES")) : Serial.print(F("NO"));
 
 	Serial.print(F("\n -loopPeriod exceeded since last cleared?: "));
-	(EEPROM_hasLibcmFailedTiming_get() == EEPROM_LIBCM_LOOPPERIOD_EXCEEDED) ? Serial.print(F("YES")) : Serial.print(F("NO"));
+	(eeprom_hasLibcmFailedTiming_get() == EEPROM_LIBCM_LOOPPERIOD_EXCEEDED) ? Serial.print(F("YES")) : Serial.print(F("NO"));
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void printText_UNUSED(void) { Serial.print(F("Unused")); }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 void USB_userInterface_runTestCode(uint8_t testToRun)
 {
 	Serial.print(F("\nRunning Test: "));
-	
+
 	//Add whatever code you want to run whenever the user types '$TEST1'/2/3/etc into the Serial Monitor Window
 	//Numbered tests ($TEST1/2/3) are temporary, for internal testing during firmware development
-	//Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
-	if(testToRun == '1')
+	if(testToRun == '0')
 	{
 		Serial.print(F("FAN_REQUESTOR_USER: OFF"));
 		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF);
 	}
-	else if(testToRun == '2')
-	{
-		Serial.print(F("FAN_REQUESTOR_USER: LOW"));
-		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_LOW);
-	}
-	else if(testToRun == '3')
+	else if(testToRun == '1')
 	{
 		Serial.print(F("FAN_REQUESTOR_USER: HIGH"));
 		fan_requestSpeed(FAN_REQUESTOR_USER, FAN_HIGH);
 	}
+	else if(testToRun == '2')
+	{
+		gpio_turnPowerSensors_on();
+		Serial.print(F("Calibrating Current Sensor"));
+		adc_calibrateBatteryCurrentSensorOffset();
+	}
+	else if(testToRun == '3')
+	{
+		Serial.print(F("updateBatteryCurrent"));
+		adc_updateBatteryCurrent();
+		Serial.print(F("\ndeciAmps: "));
+		Serial.print(adc_getLatestBatteryCurrent_deciAmps());
+	}
 	else if(testToRun == '4')
 	{
-		Serial.print(F("fanSpeed_allRequestors mask: "));
-		Serial.print(String(fan_getAllRequestors_mask(),DEC));
+		Serial.print(F("Turn Buzzer Off"));
+		buzzer_requestTone(BUZZER_REQUESTOR_USER, BUZZER_OFF);
 	}
 	else if(testToRun == '5')
 	{
-		Serial.print(F("Unused"));
+		printText_UNUSED();
 	}
 	else if(testToRun == '6')
 	{
-		Serial.print(F("LiBCM turning off 5V rail.\nLiBCM will stay on if USB's +5V connected."));
-		gpio_turnLiBCM_off();
+		printText_UNUSED();
 	}
 	else if(testToRun == '7')
 	{
-		Serial.print(F("Unused"));
+		printText_UNUSED();
 	}
 	else if(testToRun == '8')
 	{
-		Serial.print(F("Unused"));
+		printText_UNUSED();
 	}
-	else if(testToRun == 'T')
+	else if(testToRun == '9')
 	{
-		temperature_measureAndPrintAll();
+		Serial.print(F("\nadcResult_CurrentSensor(10b): "));
+		Serial.print(analogRead(PIN_BATTCURRENT));
+		adc_calibrateBatteryCurrentSensorOffset();
+	}
+
+	//Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
+	else if(testToRun == 'T') { temperature_measureAndPrintAll(); }
+	else if(testToRun == 'R') { LTC6804gpio_areAllVoltageReferencesPassing(); }
+	else if(testToRun == 'W') { batteryHistory_printAll(); }
+	else if(testToRun == 'E') { eeprom_resetAll(); }
+	else if(testToRun == 'C')
+	{
+		LTC68042cell_sampleGatherAndProcessAllCellVoltages();
+		for( uint8_t ii = 0; ii < TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages(ii, FOUR_DECIMAL_PLACES); }
 	}
 	else if(testToRun == 'H')
 	{
-		Serial.print(F("Blink Heater LED"));
-		gpio_turnPackHeater_on();
-		delay(100);
-		gpio_turnPackHeater_off();
+		if(heater_isConnected() == HEATER_NOT_CONNECTED) { Serial.print(F("\nHeater NOT Connected")); }
+		else
+		{
+			Serial.print(F("\nHeater connected to: "));
+			if(heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)   { Serial.print(F("Daughterboard")); }
+			if(heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM) { Serial.print(F("LiBCM Header"));  }
+			Serial.print(F("\nBlink Heater LED"));
+			gpio_turnPackHeater_on();
+			delay(100);
+			gpio_turnPackHeater_off();
+		}
 	}
-	else if(testToRun == 'R')
-	{
-		//JTS2doNow: Add to keyOFF routine
-		//verify LTC6804 VREF is in bounds
-		LTC6804_adax();
-		delay(5);
-		LTC6804_rdaux(0,TOTAL_IC,FIRST_IC_ADDR);
-		LTC6804gpio_printVREF();
-	}
+
+	//invalid entry
 	else { Serial.print(F("Error: Unknown Test")); }
 }
 
@@ -111,7 +134,13 @@ void printHelp(void)
 {
 	Serial.print(F("\n\nLiBCM commands:"
 		"\n -'$BOOT': restart LiBCM"
-		"\n -'$TEST1'/2/3/4: run test code. See 'USB_userInterface_runTestCode()')"
+		"\n -'$TESTR': run LTC6804 VREF test"
+		"\n -'$TESTW': battery temp & SoC history"
+		"\n -'$TESTH': blink heater LED"
+		"\n -'$TESTC': print cell voltages"
+		"\n -'$TESTT': print temperatures"
+		"\n -'$TESTE': EEPROM factory reset"
+		"\n -'$TEST1'/2/3/4: run temporary debug test code. See 'USB_userInterface_runTestCode()')"
 		"\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
 		"\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
 		"\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"
@@ -138,8 +167,8 @@ void printHelp(void)
 		));
 	//When adding new commands, make sure to add cases to the following functions:
 		//USB_userInterface_executeUserInput()
-		//EEPROM_resetDebugValues() //if debug data is stored in EEPROM
-		//EEPROM_verifyDataValid() //if data is stored in EEPROM
+		//eeprom_resetDebugValues() //if debug data is stored in EEPROM
+		//eeprom_verifyDataValid() //if data is stored in EEPROM
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,7 +183,7 @@ uint8_t get_uint8_FromInput(uint8_t digit1, uint8_t digit2, uint8_t digit3)
 	if     (digit1 == STRING_TERMINATION_CHARACTER) { errorOccurred = true; }
 	else if(digit2 == STRING_TERMINATION_CHARACTER) { numDecimalDigits = 1; }
 	else if(digit3 == STRING_TERMINATION_CHARACTER) { numDecimalDigits = 2; }
-	
+
 	if(errorOccurred == true) { Serial.print(F("\nInvalid uint8_t Entry")); }
 	else
 	{
@@ -186,17 +215,23 @@ void USB_userInterface_executeUserInput(void)
 
 		//$TEST
 		else if( (line[1] == 'T') && (line[2] == 'E') && (line[3] == 'S') && (line[4] == 'T') ) { USB_userInterface_runTestCode(line[5]); }
-		
+
 		//$DEBUG
 		else if( (line[1] == 'D') && (line[2] == 'E') && (line[3] == 'B') && (line[4] == 'U') && (line[5] == 'G') )
-		{ 
+		{
 			if     ( (line[6] == '=') && (line[7] == 'C') && (line[8] == 'L') && (line[9] == 'R') )
-			{ 
+			{
 				Serial.print(F("\nRestoring default DEBUG values"));
-				EEPROM_resetDebugValues();
+				eeprom_resetDebugValues();
 			}
 			else if(line[6] == STRING_TERMINATION_CHARACTER) { printDebug(); }
 		}
+/*
+		//$LIDISP //Natalya TODO: Move to '$TEST' //JTS2doLater: Delete if no longer used
+		else if( (line[1] == 'L') && (line[2] == 'I') && (line[3] == 'D') && (line[4] == 'I') && (line[5] == 'S') && (line[6] == 'P'))
+		{
+			LiDisplay_setDebugMode(line[7]);
+		} */
 
 		//KEYms
 		else if( (line[1] == 'K') && (line[2] == 'E') && (line[3] == 'Y') && (line[4] == 'M') && (line[5] == 'S') )
@@ -204,13 +239,14 @@ void USB_userInterface_executeUserInput(void)
 			if (line[6] == '=')
 			{
 				uint8_t newKeyOnDelay_ms = get_uint8_FromInput(line[7],line[8],line[9]);
-				Serial.print("\nnewKeyOnDelay_ms is " + String(newKeyOnDelay_ms) );
-				EEPROM_delayKeyON_ms_set(newKeyOnDelay_ms);
+				Serial.print(F("\nnewKeyOnDelay_ms is "));
+				Serial.print(newKeyOnDelay_ms, DEC);
+				eeprom_delayKeyON_ms_set(newKeyOnDelay_ms);
 			}
 			else if(line[6] == STRING_TERMINATION_CHARACTER)
 			{
 				Serial.print(F("\n Additional delay before LiBCM responds to keyON event (ms): "));
-				Serial.print( EEPROM_delayKeyON_ms_get(), DEC);
+				Serial.print( eeprom_delayKeyON_ms_get(), DEC);
 			}
 		}
 
@@ -220,7 +256,8 @@ void USB_userInterface_executeUserInput(void)
 			if (line[4] == '=')
 			{
 				uint8_t newSoC_percent = get_uint8_FromInput(line[5],line[6],line[7]);
-				Serial.print("\nnewSoC is " + String(newSoC_percent) );
+				Serial.print(F("\nnewSoC is "));
+				Serial.print(newSoC_percent, DEC);
 				SoC_setBatteryStateNow_percent(newSoC_percent);
 			}
 			else if(line[4] == STRING_TERMINATION_CHARACTER)
@@ -300,7 +337,7 @@ void USB_userInterface_handler(void)
 		//user-typed characters are waiting in serial buffer
 
 		latestCharacterRead = Serial.read(); //read next character in buffer
-	
+
 		if( (latestCharacterRead == '\n') || (latestCharacterRead == '\r'))
 		{
 			//line is now complete
@@ -313,7 +350,7 @@ void USB_userInterface_handler(void)
 
 			numCharactersReceived = 0; //reset for next line
 		}
-		else //add (non-EOL) character to array 
+		else //add (non-EOL) character to array
 		{
 			if(inputFlags && INPUT_FLAG_INSIDE_COMMENT)
 			{
@@ -338,7 +375,7 @@ void USB_userInterface_handler(void)
 				{
 					//empty serial receive buffer
 					uint8_t byte = Serial.read();
-					if((byte == '\n') || (byte == '\r')) { break; } 
+					if((byte == '\n') || (byte == '\r')) { break; }
 				}
 				numCharactersReceived = 0;
 			}

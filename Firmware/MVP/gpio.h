@@ -1,6 +1,6 @@
 #ifndef gpio_h
 	#define gpio_h
-	
+
 	#define GPIO_CHARGER_INIT 0
 	#define GPIO_CHARGER_ON   1
 	#define GPIO_CHARGER_OFF  2
@@ -20,9 +20,12 @@
 	#define HW_REV_E 0b00000001
 	#define HW_REV_F 0b00000000
 
+	#define GPIO_KEY_ON   true
+	#define GPIO_KEY_OFF false
+
 	void gpio_begin(void);
 
-	bool gpio_keyStateNow(void);
+	bool gpio_keyStateNow(void); //recommendation: use key_getSampledState() instead
 
 	void gpio_setFanSpeed_OEM(char speed); //don't call directly (use fan_requestSpeed() instead)
 	void gpio_setFanSpeed_PCB(char speed); //don't call directly (use fan_requestSpeed() instead)
@@ -47,6 +50,7 @@
 
 	void gpio_turnHMI_on(void);
 	void gpio_turnHMI_off(void);
+	bool gpio_HMIStateNow(void);
 
 	void gpio_turnTemperatureSensors_on(void);
 	void gpio_turnTemperatureSensors_off(void);

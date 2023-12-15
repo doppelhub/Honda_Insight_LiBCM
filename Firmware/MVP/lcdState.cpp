@@ -40,6 +40,7 @@ uint8_t requestDisplayOff(uint8_t state)
 		return LCDSTATE_PREOFF_DELAY_READTEXT;
 	}
 	
+	//JTS2doLater: Make display stay on longer after keyOff
 	else if(state == LCDSTATE_PREOFF_DELAY_READTEXT)
 	{
 		if( (millis() - timestamp_helper_ms) < LCD_PREOFF_DELAY_TOREADSCREEN_ms ) { return LCDSTATE_PREOFF_DELAY_READTEXT; } //repeat this state until delay finishes
@@ -93,10 +94,10 @@ void lcdState_handler(void)
 		//if we get here, 4x20 LCD is on and ready to display data
 		else if(key_getSampledState() == KEYSTATE_ON)
 		{
-			if     (gpio_isGridChargerPluggedInNow() == YES)         { lcd_displayWarning(LCD_WARN_KEYON_GRID); }	
-			else if(gpio_isCoverInstalled() == false)                { lcd_displayWarning(LCD_WARN_COVER_GONE); }
-			else if(EEPROM_firmwareStatus_get() == FIRMWARE_EXPIRED) { lcd_displayWarning(LCD_WARN_FW_EXPIRED); }
-			else /* no warnings... update next screen element */     { lcdTransmit_printNextElement_keyOn();    }
+			if     (gpio_isGridChargerPluggedInNow() == YES)           { lcd_displayWarning(LCD_WARN_KEYON_GRID); }	
+			else if(gpio_isCoverInstalled() == false)                  { lcd_displayWarning(LCD_WARN_COVER_GONE); }
+			else if(eeprom_expirationStatus_get() == FIRMWARE_EXPIRED) { lcd_displayWarning(LCD_WARN_FW_EXPIRED); }
+			else /* no warnings... update next screen element */       { lcdTransmit_printNextElement_keyOn();    }
 		}
 
 		else if(gpio_isGridChargerPluggedInNow() == YES) { lcdTransmit_printNextElement_keyOn(); } //JTS2doLater: Make separate grid charging UI

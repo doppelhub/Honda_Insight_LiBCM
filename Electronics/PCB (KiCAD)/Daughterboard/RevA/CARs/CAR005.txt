@@ -1,0 +1,4 @@
+Swap MOSI and MISO pins on 2x3 header, so ribbon cable can pass straight through.
+
+Did not implement.
+Changing pinout on LiControl instead.
