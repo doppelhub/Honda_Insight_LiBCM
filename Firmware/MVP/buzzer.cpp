@@ -5,6 +5,8 @@
 //LiBCM allows different subsystems to independently control buzzer tone.
 //The buzzer will sound at the highest requested tone (OFF/LOW/HIGH)
 
+//JTS2doNow: Buzzer sometimes doesn't work even though we're exciting it.  Come up with routine that guarantees buzzer vibrates
+
 #include "libcm.h"
 
 uint8_t buzzerTone_now  = BUZZER_OFF; //actual buzzer state now (OFF/LOW/HIGH)
