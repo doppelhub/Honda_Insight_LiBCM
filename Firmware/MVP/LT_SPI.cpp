@@ -63,97 +63,87 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <SPI.h>
 #include "LT_SPI.h"
 
-// Reads and sends a byte
-// Return 0 if successful, 1 if failed
 void spi_transfer_byte(uint8_t cs_pin, uint8_t tx, uint8_t *rx)
 {
-  digitalWrite(cs_pin,LOW);                 //! 1) Pull CS low
-
-  *rx = SPI.transfer(tx);             //! 2) Read byte and send byte
-
-  digitalWrite(cs_pin,HIGH);                //! 3) Pull CS high
+    digitalWrite(cs_pin,LOW);
+    *rx = SPI.transfer(tx); //read and send byte
+    digitalWrite(cs_pin,HIGH);
 }
 
-// Reads and sends a word
-// Return 0 if successful, 1 if failed
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void spi_transfer_word(uint8_t cs_pin, uint16_t tx, uint16_t *rx)
 {
-  union
-  {
-    uint8_t b[2];
-    uint16_t w;
-  } data_tx;
+    union { uint8_t b[2]; uint16_t w; } data_tx;
+    union { uint8_t b[2]; uint16_t w; } data_rx;
 
-  union
-  {
-    uint8_t b[2];
-    uint16_t w;
-  } data_rx;
+    data_tx.w = tx;
 
-  data_tx.w = tx;
+    digitalWrite(cs_pin,LOW);
 
-  digitalWrite(cs_pin,LOW);                         //! 1) Pull CS low
+    data_rx.b[1] = SPI.transfer(data_tx.b[1]);  //read and send MSB
+    data_rx.b[0] = SPI.transfer(data_tx.b[0]);  //read and send LSB
 
-  data_rx.b[1] = SPI.transfer(data_tx.b[1]);  //! 2) Read MSB and send MSB
-  data_rx.b[0] = SPI.transfer(data_tx.b[0]);  //! 3) Read LSB and send LSB
+    *rx = data_rx.w;
 
-  *rx = data_rx.w;
-
-  digitalWrite(cs_pin,HIGH);                        //! 4) Pull CS high
+    digitalWrite(cs_pin,HIGH);
 }
 
-// Reads and sends a byte array
+/////////////////////////////////////////////////////////////////////////////////////////
+
+//read and send byte array
 void spi_transfer_block(uint8_t cs_pin, uint8_t *tx, uint8_t *rx, uint8_t length)
 {
-  int8_t i;
+    int8_t i;
 
-  digitalWrite(cs_pin,LOW);                 //! 1) Pull CS low
-
-  for (i=(length-1);  i >= 0; i--)
-    rx[i] = SPI.transfer(tx[i]);    //! 2) Read and send byte array
-
-  digitalWrite(cs_pin,HIGH);                //! 3) Pull CS high
+    digitalWrite(cs_pin,LOW);
+    for (i=(length-1);  i >= 0; i--) { rx[i] = SPI.transfer(tx[i]); }
+    digitalWrite(cs_pin,HIGH);
 }
 
-// Setup the processor for hardware SPI communication.
-// Must be called before using the other SPI routines.
-// Alternatively, call quikeval_SPI_connect(), which automatically
-// calls this function.
-void spi_enable(uint8_t spi_clock_divider) // Configures SCK frequency. Use constant defined in header file.
+/////////////////////////////////////////////////////////////////////////////////////////
+
+//setup hardware for SPI communication
+//must call before using other SPI functions
+//configures SCK frequency using constant defined in header file
+void spi_enable(uint8_t spi_clock_divider)
 {
-  //pinMode(SCK, OUTPUT);             //! 1) Setup SCK as output
-  //pinMode(MOSI, OUTPUT);            //! 2) Setup MOSI as output
-  //pinMode(QUIKEVAL_CS, OUTPUT);     //! 3) Setup CS as output
-  SPI.begin();
-  SPI.setClockDivider(spi_clock_divider);
+    //pinMode(SCK, OUTPUT);
+    //pinMode(MOSI, OUTPUT);
+    //pinMode(QUIKEVAL_CS, OUTPUT);
+    SPI.begin();
+    SPI.setClockDivider(spi_clock_divider);
 }
 
-// Disable the SPI hardware port
-void spi_disable()
-{
-  SPI.end();
-}
+/////////////////////////////////////////////////////////////////////////////////////////
 
-// Write a data byte using the SPI hardware
+void spi_disable() { SPI.end(); }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void spi_write(int8_t  data)  // Byte to be written to SPI port
 {
-#if defined(ARDUINO_ARCH_AVR)
-  SPDR = data;                  //! 1) Start the SPI transfer
-  while (!(SPSR & _BV(SPIF)));  //! 2) Wait until transfer complete
-#else
-  SPI.transfer(data);
-#endif
+    #if defined(ARDUINO_ARCH_AVR)
+        SPDR = data;                  //start the SPI transfer
+        while (!(SPSR & _BV(SPIF)));  //wait for transfer to complete
+    #else
+        SPI.transfer(data);
+    #endif
 }
 
-// Read and write a data byte using the SPI hardware
-// Returns the data byte read
-int8_t spi_read(int8_t  data) //!The data byte to be written
+/////////////////////////////////////////////////////////////////////////////////////////
+
+//read and write data byte
+//return read data byte
+int8_t spi_read(int8_t data) //'data' is byte to write
 {
-#if defined(ARDUINO_ARCH_AVR)
-  SPDR = data;                  //! 1) Start the SPI transfer
-  while (!(SPSR & _BV(SPIF)));  //! 2) Wait until transfer complete
-  return SPDR;                  //! 3) Return the data read
-#else
-  return SPI.transfer(data);
-#endif
+    #if defined(ARDUINO_ARCH_AVR)
+        SPDR = data;                  //start SPI transfer
+        while (!(SPSR & _BV(SPIF)));  //wait for transfer to complete
+        return SPDR;                  //return read data
+    #else
+        return SPI.transfer(data);
+    #endif
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////

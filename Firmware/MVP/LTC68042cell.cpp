@@ -14,8 +14,7 @@ uint16_t cellVoltages_counts[TOTAL_IC][CELLS_PER_IC];
 
 //JTS2doLater: Add cell voltage test that sets user alert if a cell voltage suddenly changes from 'balanced' to 'majorly imbalanced'
 
-//---------------------------------------------------------------------------------------
-
+/////////////////////////////////////////////////////////////////////////////////////////
 
 //tell all LTC68042 ICs to measure all cells
 void startCellConversion(void)
@@ -39,9 +38,7 @@ void startCellConversion(void)
     LTC68042configure_spiWrite(4,cmd); //send 'adcv' command to all LTC6804s (broadcast command) 
 }
 
-
-//---------------------------------------------------------------------------------------
-
+/////////////////////////////////////////////////////////////////////////////////////////
 
 //Read a single 8 byte CVR and store the result in *data
 //This function is ONLY used by validateAndStoreNextCVR().
@@ -51,7 +48,7 @@ void serialReadCVR( uint8_t chipAddress, char cellVoltageRegister, uint8_t *data
 
     cmd[0] = 0x80 + (chipAddress<<3); //configure LTC address (p46:Table33)
 
-    switch(cellVoltageRegister) //choose which "cell voltage register" to read
+    switch (cellVoltageRegister) //choose which "cell voltage register" to read
     {
         case 'A': cmd[1] = 0x04; break;
         case 'B': cmd[1] = 0x06; break;
@@ -66,9 +63,7 @@ void serialReadCVR( uint8_t chipAddress, char cellVoltageRegister, uint8_t *data
     LTC68042configure_spiWriteRead(cmd,4,&data[0],8);
 }
 
-
-//---------------------------------------------------------------------------------------
-
+/////////////////////////////////////////////////////////////////////////////////////////
 
 //Validate specified LTC6804's specified CVR
 //store valid cell voltages in cellVoltages_counts[][]
@@ -102,9 +97,9 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
 
         attemptCounter++; //prevent while loop hang
 
-        if(attemptCounter > 1) { LTC68042result_errorCount_increment(); } //log each PEC error
+        if (attemptCounter > 1) { LTC68042result_errorCount_increment(); } //log each PEC error
 
-    } while( (received_pec != calculated_pec) && (attemptCounter < MAX_READ_ATTEMPTS) ); //retry if isoSPI error
+    } while ((received_pec != calculated_pec) && (attemptCounter < MAX_READ_ATTEMPTS)); //retry if isoSPI error
 
     if (attemptCounter >= MAX_READ_ATTEMPTS)
     {
@@ -118,13 +113,13 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
     uint8_t cellX=0; //1st cell in returnedData (LTC cell 1, 4, 7, or 10)
     uint8_t cellY=0; //2nd cell in returnedData (LTC cell 2, 5, 8, or 11) 
     uint8_t cellZ=0; //3rd cell in returnedData (LTC cell 3, 6, 9, or 12)
-    switch(cellVoltageRegister)  //LUT to prevent QTY3 multiplies & QTY12 adds per call
+    switch (cellVoltageRegister)  //LUT to prevent QTY3 multiplies & QTY12 adds per call
     {
         case 'A': cellX=0;  cellY=1;  cellZ=2 ; break; //LTC cells  1/ 2/ 3 (LTC 1-indexed, array 0-indexed)
         case 'B': cellX=3;  cellY=4;  cellZ=5 ; break; //LTC cells  4/ 5/ 6
         case 'C': cellX=6;  cellY=7;  cellZ=8 ; break; //LTC cells  7/ 8/ 9
         case 'D': cellX=9;  cellY=10; cellZ=11; break; //LTC cells 10/11/12
-        default: Serial.print(F("\nillegal CVR index")); while(1) {;} //hang here until watchdog resets.
+        default: Serial.print(F("\nillegal CVR index")); while (1) {;} //hang here until watchdog resets.
     }
 
     //store cell voltage results
@@ -133,7 +128,7 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
     cellVoltages_counts[chipAddress - FIRST_IC_ADDR][cellZ] = cellZ_Voltage_counts;
 }
 
-//---------------------------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////////////////////
 
 //results stored in LTC68042results.c
 void processAllCellVoltages(void)
@@ -192,13 +187,13 @@ void processAllCellVoltages(void)
             packVoltage_RAW += cellVoltageUnderTest;
             
             //find hi/lo cells
-            if( cellVoltageUnderTest < loCellVoltage ) { loCellVoltage = cellVoltageUnderTest; }
-            if( cellVoltageUnderTest > hiCellVoltage ) { hiCellVoltage = cellVoltageUnderTest; }
+            if (cellVoltageUnderTest < loCellVoltage) { loCellVoltage = cellVoltageUnderTest; }
+            if (cellVoltageUnderTest > hiCellVoltage) { hiCellVoltage = cellVoltageUnderTest; }
 
             //check for new maxEver/minEver cells (if any)
             //If LTC68042_ENABLE_C19_VOLTAGE_CORRECTION is defined, cell 19 voltage cannot become maxEver or minEver right now, but we'll check again down below
-            if (cellVoltageUnderTest > LTC68042result_maxEverCellVoltage_get() ) {LTC68042result_maxEverCellVoltage_set(cellVoltageUnderTest); }
-            if (cellVoltageUnderTest < LTC68042result_minEverCellVoltage_get() ) {LTC68042result_minEverCellVoltage_set(cellVoltageUnderTest); }
+            if (cellVoltageUnderTest > LTC68042result_maxEverCellVoltage_get()) {LTC68042result_maxEverCellVoltage_set(cellVoltageUnderTest); }
+            if (cellVoltageUnderTest < LTC68042result_minEverCellVoltage_get()) {LTC68042result_minEverCellVoltage_set(cellVoltageUnderTest); }
 
             LTC68042result_specificCellVoltage_set(chip, cell, cellVoltageUnderTest);
         }
@@ -218,31 +213,29 @@ void processAllCellVoltages(void)
         uint16_t cell19deltaMagnitude_adjusted = 0;
 
         //find measured voltage magnitude from midpoint
-        if(cell19Voltage_measured > midpointVoltage) { cell19deltaMagnitude_measured = cell19Voltage_measured - midpointVoltage; }
-        else                                         { cell19deltaMagnitude_measured = midpointVoltage - cell19Voltage_measured; } 
+        if (cell19Voltage_measured > midpointVoltage) { cell19deltaMagnitude_measured = cell19Voltage_measured - midpointVoltage; }
+        else                                          { cell19deltaMagnitude_measured = midpointVoltage - cell19Voltage_measured; } 
 
         //find adjusted voltage magnitude from midpoint
-        if(cell19Voltage_adjusted > midpointVoltage) { cell19deltaMagnitude_adjusted = cell19Voltage_adjusted - midpointVoltage; }
-        else                                         { cell19deltaMagnitude_adjusted = midpointVoltage - cell19Voltage_adjusted; } 
+        if (cell19Voltage_adjusted > midpointVoltage) { cell19deltaMagnitude_adjusted = cell19Voltage_adjusted - midpointVoltage; }
+        else                                          { cell19deltaMagnitude_adjusted = midpointVoltage - cell19Voltage_adjusted; } 
 
         uint16_t cell19Voltage_final = 0;
 
-        if(cell19deltaMagnitude_measured > cell19deltaMagnitude_adjusted) { cell19Voltage_final = cell19Voltage_adjusted; } //adjusted value is closer to midpoint
-        else                                                              { cell19Voltage_final = cell19Voltage_measured; } //measured value is closer to midpoint
+        if (cell19deltaMagnitude_measured > cell19deltaMagnitude_adjusted) { cell19Voltage_final = cell19Voltage_adjusted; } //adjusted value is closer to midpoint
+        else                                                               { cell19Voltage_final = cell19Voltage_measured; } //measured value is closer to midpoint
 
         //store whichever cell 19 voltage is closest to the other cells
         LTC68042result_specificCellVoltage_set(CELL19_CHIP_NUMBER, CELL19_CELL_NUMBER, cell19Voltage_final);
 
         //finally, we need to check if cell 19 is either the highest or lowest voltage
-        if(cell19Voltage_final > hiCellVoltage) { LTC68042result_hiCellVoltage_set(cell19Voltage_final); }
-        if(cell19Voltage_final < loCellVoltage) { LTC68042result_loCellVoltage_set(cell19Voltage_final); }
+        if (cell19Voltage_final > hiCellVoltage) { LTC68042result_hiCellVoltage_set(cell19Voltage_final); }
+        if (cell19Voltage_final < loCellVoltage) { LTC68042result_loCellVoltage_set(cell19Voltage_final); }
 
     #endif
 }
 
-
-//---------------------------------------------------------------------------------------
-
+/////////////////////////////////////////////////////////////////////////////////////////
 
 //either gather next QTY3 cell voltages from LTC6804, or process a complete batch of returned cell voltage data.
 //raw cell voltages are stored in file-scoped "cellVoltages_counts[][]"" array
@@ -259,9 +252,9 @@ bool LTC68042cell_nextVoltages(void)
     static uint8_t presentState = LTC_STATE_FIRSTRUN;
     static bool actionPerformedThisCall = GATHERED_LTC6804_DATA;
 
-    if(LTC68042configure_wakeup() == LTC6804_CORE_JUST_WOKE_UP) { presentState = LTC_STATE_FIRSTRUN; }
+    if (LTC68042configure_wakeup() == LTC6804_CORE_JUST_WOKE_UP) { presentState = LTC_STATE_FIRSTRUN; }
 
-    if(presentState == LTC_STATE_GATHER)
+    if (presentState == LTC_STATE_GATHER)
     { //retrieve next CVR from LTC, then validate and store in cellVoltages_counts[][] array
 
         //round-robin state handlers
@@ -272,12 +265,12 @@ bool LTC68042cell_nextVoltages(void)
 
         //determine which LTC68042 IC & CVR to read next
         cellVoltageRegister++;
-        if(cellVoltageRegister >= 'E' )
+        if (cellVoltageRegister >= 'E')
         { 
             //LTC6804 only has registers A,B,C,D
             cellVoltageRegister = 'A'; //reset back to first CVR
 
-            if(++chipAddress >= (FIRST_IC_ADDR + TOTAL_IC) )
+            if (++chipAddress >= (FIRST_IC_ADDR + TOTAL_IC))
             { 
                 //just finished reading last IC's last CVR... all cell voltages stored in cellVoltages_counts[][]
                 startCellConversion(); //start the next cell conversion //takes a while to finish
@@ -290,7 +283,7 @@ bool LTC68042cell_nextVoltages(void)
         actionPerformedThisCall = GATHERED_LTC6804_DATA;
     }
 
-    else if(presentState == LTC_STATE_PROCESS)
+    else if (presentState == LTC_STATE_PROCESS)
     {   
         //all cell voltages read... 
         processAllCellVoltages(); //do math and store in LTC68042_result.c
@@ -298,7 +291,7 @@ bool LTC68042cell_nextVoltages(void)
         presentState = LTC_STATE_GATHER; //gather data on next run
     }
 
-    else if(presentState == LTC_STATE_FIRSTRUN)
+    else if (presentState == LTC_STATE_FIRSTRUN)
     {
         //LTC6804 ICs were previously off
         LTC68042configure_programVolatileDefaults(); 
@@ -311,20 +304,20 @@ bool LTC68042cell_nextVoltages(void)
     {
         Serial.print(F("\nillegal LTC68042cell state"));
         actionPerformedThisCall = GATHERED_LTC6804_DATA;
-        while(1) {;} //hang here until watchdog resets.
+        while (1) {;} //hang here until watchdog resets.
     }
 
     return actionPerformedThisCall;
 }
 
-//---------------------------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////////////////////
 
 //Only call when keyOFF //takes too long to execute when keyON (causes check engine light)
 //Results are stored in "LTC68042_results.c"
 void LTC68042cell_sampleGatherAndProcessAllCellVoltages(void)
 {
-    while( LTC68042cell_nextVoltages() != PROCESSED_LTC6804_DATA ) { ; } //clear old data (if any) //increases measurement accuracy
-    while( LTC68042cell_nextVoltages() != PROCESSED_LTC6804_DATA ) { ; } //gather new data
+    while (LTC68042cell_nextVoltages() != PROCESSED_LTC6804_DATA) { ; } //clear old data (if any) //increases measurement accuracy
+    while (LTC68042cell_nextVoltages() != PROCESSED_LTC6804_DATA) { ; } //gather new data
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -366,3 +359,5 @@ void LTC68042cell_openShortTest(void)
 
     // cleanup: Turn off all sense resistors
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////
