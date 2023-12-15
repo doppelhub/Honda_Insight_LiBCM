@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"
 
-	#define FW_VERSION "0.9.2h"
-	#define BUILD_DATE "2023NOV06"
+	#define FW_VERSION "0.9.3a"
+	#define BUILD_DATE "2023NOV07"
 
 	//////////////////////////////////////////////////////////////////
 
@@ -43,7 +43,7 @@
 
 	//choose which display to use
 	//using both displays simultaneously could cause timing issues (FYI: the Serial Monitor prints '*' each time the loop period is violated)
-		//#define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
+		#define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
 		//#define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
 	
 	//////////////////////////////////////////////////////////////////
