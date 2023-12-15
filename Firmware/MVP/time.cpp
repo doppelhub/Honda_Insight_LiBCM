@@ -7,54 +7,54 @@
 
 uint8_t loopPeriod_ms = 10; //JTS2doLater: see how long period can be, then make this a constant
 
-////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 void time_loopPeriod_ms_set(uint8_t period_ms) { loopPeriod_ms = period_ms; }
 uint8_t time_loopPeriod_ms_get(void) { return loopPeriod_ms; }
 
-////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 bool time_toUpdate_keyOffValues(void)
 {
-  uint32_t keyOffUpdatePeriod_ms = 0;
-  static uint32_t timestamp_lastUpdate_ms = 0;
-  bool isItTimeToUpdate = false;
+    uint32_t keyOffUpdatePeriod_ms = 0;
+    static uint32_t timestamp_lastUpdate_ms = 0;
+    bool isItTimeToUpdate = false;
 
-  //determine period between LTC cell voltage reads (saves power)
-  if( ((cellBalance_areCellsBalanced() == false) && (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC)) ||
-      ((cellBalance_areCellsBalanced() == false) && (gpio_isGridChargerPluggedInNow() == YES)                ) ||
-      (gpio_isGridChargerChargingNow() == YES                                                                )  )
-  { 
-    keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_ONE_SECOND_ms; //if over 1800 ms, LTC ICs will turn off (bad)
-  } 
-  else { keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_TEN_MINUTES_ms; }
+    //determine period between LTC cell voltage reads (saves power)
+    if ( ((cellBalance_areCellsBalanced() == false) && (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC)) ||
+         ((cellBalance_areCellsBalanced() == false) && (gpio_isGridChargerPluggedInNow() == YES)                ) ||
+         (gpio_isGridChargerChargingNow() == YES                                                                )  )
+    { 
+        keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_ONE_SECOND_ms; //if over 1800 ms, LTC ICs will turn off (bad)
+    } 
+    else { keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_TEN_MINUTES_ms; }
   
-  //Has enough time passed yet?
-  if( (millis() - timestamp_lastUpdate_ms) > keyOffUpdatePeriod_ms )
-  { 
-    isItTimeToUpdate = true;
-    timestamp_lastUpdate_ms = millis();
-  }
+    //Has enough time passed yet?
+    if ((millis() - timestamp_lastUpdate_ms) > keyOffUpdatePeriod_ms)
+    { 
+        isItTimeToUpdate = true;
+        timestamp_lastUpdate_ms = millis();
+    }
 
-  return isItTimeToUpdate;
+    return isItTimeToUpdate;
 }
 
-////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 bool time_hasKeyBeenOffLongEnough_toTurnOffLiBCM(void)
 {
-  bool keyOffForLongEnough = false;
+    bool keyOffForLongEnough = false;
 
-  if((gpio_isGridChargerChargingNow() == NO) /* don't turn off while grid charging */          &&
-     (millis() - key_latestTurnOffTime_ms_get()) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000) )
-  {
-    keyOffForLongEnough = true;
-  }
+    if ((gpio_isGridChargerChargingNow() == NO) /* don't turn off while grid charging */          &&
+        (millis() - key_latestTurnOffTime_ms_get()) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000) )
+    {
+        keyOffForLongEnough = true;
+    }
 
-  return keyOffForLongEnough;
+    return keyOffForLongEnough;
 }
 
-////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 //loop execution time (0.9.0c): 8.0 ms with 4x20 enabled
 //loop execution time (0.9.0c): 2.8 ms with no display
@@ -64,10 +64,10 @@ void time_waitForLoopPeriod(void)
     bool timingMet = false;
 
     LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left
-    while( (millis() - timestamp_previousLoopStart_ms) < time_loopPeriod_ms_get() ) { timingMet = true; } //wait here to start next loop
+    while ((millis() - timestamp_previousLoopStart_ms) < time_loopPeriod_ms_get()) { timingMet = true; } //wait here to start next loop
     LED(4,LOW);
     
-    if( (key_getSampledState() == KEYSTATE_ON) && (timingMet == false) )
+    if ((key_getSampledState() == KEYSTATE_ON) && (timingMet == false))
     {
       Serial.print('*');
       eeprom_hasLibcmFailedTiming_set(EEPROM_LIBCM_LOOPPERIOD_EXCEEDED);
@@ -76,33 +76,35 @@ void time_waitForLoopPeriod(void)
     timestamp_previousLoopStart_ms = millis(); //placed at end to prevent delay at keyON event
 }
 
-////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 //calculate delta between start and stop time
 //store start time: START_TIMER
 //calculate delta:  STOP_TIMER
 void time_stopwatch(bool timerAction)
 {
-  static uint32_t startTime = 0;
+    static uint32_t startTime = 0;
 
-  if(timerAction == START_TIMER) { startTime = millis(); }
-  else
-  {
-      uint32_t stopTime = millis();
-      Serial.print(F("\nDelta: "));
-      Serial.print(stopTime - startTime);
-      Serial.print(F(" ms\n"));
-  }
+    if (timerAction == START_TIMER) { startTime = millis(); }
+    else
+    {
+        uint32_t stopTime = millis();
+        Serial.print(F("\nDelta: "));
+        Serial.print(stopTime - startTime);
+        Serial.print(F(" ms\n"));
+    }
 }
 
-////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 //only works from 1 to 255 Hz
 uint16_t time_hertz_to_milliseconds(uint8_t hertz)
 {
-  uint16_t milliseconds = 0;
+    uint16_t milliseconds = 0;
 
-  if( (hertz != 0) ) { milliseconds = 1000 / hertz; } //division
+    if (hertz != 0) { milliseconds = 1000 / hertz; } //division
 
-  return milliseconds;
+    return milliseconds;
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////

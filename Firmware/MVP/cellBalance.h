@@ -2,13 +2,13 @@
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 #ifndef cellbalance_h
-	#define cellbalance_h
+    #define cellbalance_h
 
-	#define BALANCING_DISABLED 0
-	#define BALANCING_ALLOWED  1
+    #define BALANCING_DISABLED 0
+    #define BALANCING_ALLOWED  1
 
-	bool cellBalance_areCellsBalanced(void);
+    bool cellBalance_areCellsBalanced(void);
 
-	void cellBalance_handler(void);
+    void cellBalance_handler(void);
 
 #endif

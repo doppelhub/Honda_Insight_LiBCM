@@ -124,148 +124,151 @@
 
 struct packetTypes
 {
-  uint8_t latestE6Packet_assistLevel;
-  uint8_t latestB4Packet_engine;
-  uint8_t latestB3Packet_engine;
-  uint8_t latestE1Packet_SoC;
+    uint8_t latestE6Packet_assistLevel;
+    uint8_t latestB4Packet_engine;
+    uint8_t latestB3Packet_engine;
+    uint8_t latestE1Packet_SoC;
 } METSCI_Packets;
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t METSCI_getPacketB3(){ return METSCI_Packets.latestB3Packet_engine;      }
+uint8_t METSCI_getPacketB4(){ return METSCI_Packets.latestB4Packet_engine;      }
+uint8_t METSCI_getPacketE1(){ return METSCI_Packets.latestE1Packet_SoC;         }
+uint8_t METSCI_getPacketE6(){ return METSCI_Packets.latestE6Packet_assistLevel; }
+
+/////////////////////////////////////////////////////////////////////////////////////////
 
 void METSCI_begin(void)
 {
-  pinMode(PIN_METSCI_DE, OUTPUT);
-  digitalWrite(PIN_METSCI_DE,LOW);
+    pinMode(PIN_METSCI_DE, OUTPUT);
+    digitalWrite(PIN_METSCI_DE,LOW);
 
-  pinMode(PIN_METSCI_REn, OUTPUT);
-  digitalWrite(PIN_METSCI_REn,HIGH);
+    pinMode(PIN_METSCI_REn, OUTPUT);
+    digitalWrite(PIN_METSCI_REn,HIGH);
 
-  Serial3.begin(9600,SERIAL_8E1);
+    Serial3.begin(9600,SERIAL_8E1);
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 void METSCI_enable(void)
 {
-  digitalWrite(PIN_METSCI_REn,LOW);
+    digitalWrite(PIN_METSCI_REn,LOW);
 
-  //MCM throws CEL if old data sent when key first turned on
-  METSCI_Packets.latestB4Packet_engine = 0x18; //OEM BCM transmits 0x18 on BATTSCI until first valid B4 packet received on METSCI
-  METSCI_Packets.latestE6Packet_assistLevel = 0x40; // 0x40 is "zero bars assist/regen"
-  METSCI_Packets.latestB3Packet_engine = 0x06; //OEM BCM transmits 0x06 on BATTSCI until first valid B3 packet received on METSCI
-  METSCI_Packets.latestE1Packet_SoC = 0x00;
+    //MCM throws CEL if old data sent when key first turned on
+    METSCI_Packets.latestB4Packet_engine = 0x18; //OEM BCM transmits 0x18 on BATTSCI until first valid B4 packet received on METSCI
+    METSCI_Packets.latestE6Packet_assistLevel = 0x40; // 0x40 is "zero bars assist/regen"
+    METSCI_Packets.latestB3Packet_engine = 0x06; //OEM BCM transmits 0x06 on BATTSCI until first valid B3 packet received on METSCI
+    METSCI_Packets.latestE1Packet_SoC = 0x00;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 void METSCI_disable() { digitalWrite(PIN_METSCI_REn,HIGH); } //prevent backdriving MCM (thru METSCI bus)
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t METSCI_readByte(void)
 {
-  uint8_t data = Serial3.read();
-  if( (debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) &&
-      (data != 0xE6) ) //0xE6 is the start of the METSCI frame, which is printed out separately (in METSCI_processLatestFrame())
-  {
-    if(data < 0x10) { Serial.print('0'); } //print leading zero for single digit hex
-    Serial.print(data,HEX);
-    Serial.print(',');
-  }
-  return data;
+    uint8_t data = Serial3.read();
+    if ((debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) &&
+        (data != 0xE6)                                                   ) //METSCI frames begin with 0xE6. 'E6' printed in METSCI_processLatestFrame()
+    {
+        if (data < 0x10) { Serial.print('0'); } //print leading zero for single digit hex
+        Serial.print(data,HEX);
+        Serial.print(',');
+    }
+  
+    return data;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t METSCI_bytesAvailableToRead(void) { return Serial3.available(); }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 //If a new frame isn't available in the serial receive buffer when this function is called,
 //then the previous frame is returned immediately. No time to wait around for 9600 baud frames!
 void METSCI_processLatestFrame(void)
 {
-  while( METSCI_bytesAvailableToRead() > (METSCI_BYTES_IN_FRAME << 1) )
-  {
-    //serial receive buffer contains more than two full frames //we've somehow fallen behind
-    Serial.print(F("\nMETSCI stale.  Discarding frame: "));
-    for(int ii=0; ii < METSCI_BYTES_IN_FRAME; ii++) { Serial.print(String(METSCI_readByte(), HEX) ); } //Display (and delete) oldest frame
-  }
-
-  //At this point the serial receive buffer contains at most the two latest complete frames
-  //If everything is in sync, then the next six bytes are a complete frame, and the first byte is 0xE6.
-  if( METSCI_bytesAvailableToRead() > METSCI_BYTES_IN_FRAME )  //Verify a full frame exists in the buffer
-  {
-    uint8_t resyncAttempt = 0; //prevents endless loop by bailing after N tries
-
-    while( (METSCI_readByte() != 0xE6) )  //Ensure the first byte is 0xE6 //JTS2doLater: See if keyONinitial pattern "E6,E6,E1,E6" occurs with LiBCM installed
+    while (METSCI_bytesAvailableToRead() > (METSCI_BYTES_IN_FRAME << 1))
     {
-      //throw away data until the next frame starts (0xE6 byte)
-      if(resyncAttempt == 0) { Serial.print( F("\nMETSCI buffer sync") ); }
-      else                   { Serial.print('.'); }
-
-      resyncAttempt++;
-      if(resyncAttempt > METSCI_BYTES_IN_FRAME) { return; } //prevent hang if METSCI signal is corrupt (i.e. 0xE6 never occurs)
+        //serial receive buffer contains more than two full frames //we've somehow fallen behind
+        Serial.print(F("\nMETSCI stale.  Discarding frame: "));
+        for (int ii=0; ii < METSCI_BYTES_IN_FRAME; ii++) { Serial.print(String(METSCI_readByte(), HEX) ); } //Display (and delete) oldest frame
     }
 
-    //If we get here, then we've read the first byte, which is 0xE6
-    if(debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { Serial.print(F(" MET:E6,")); }
-
-    //now read the remaining five bytes in the frame
-    uint8_t packetType = 0xE6;              //Byte0 (always 0xE6) (we discarded it above)
-    uint8_t packetData = METSCI_readByte(); //Byte1 (always number of bars assist/regen)
-    uint8_t packetCRC  = METSCI_readByte(); //Byte2 (checksum)
-
-    if( METSCI_isChecksumValid(packetType, packetData, packetCRC) )
+    //At this point the serial receive buffer contains at most the two latest complete frames
+    //If everything is in sync, then the next six bytes are a complete frame, and the first byte is 0xE6.
+    if (METSCI_bytesAvailableToRead() > METSCI_BYTES_IN_FRAME)  //Verify a full frame exists in the buffer
     {
-      METSCI_Packets.latestE6Packet_assistLevel = packetData;
+        uint8_t resyncAttempt = 0; //prevents endless loop by bailing after N tries
 
-      packetType = METSCI_readByte(); //Byte3 (either 0xE1, 0xB3, or 0xB4)
-      packetData = METSCI_readByte(); //Byte4 (data)
-      packetCRC  = METSCI_readByte(); //Byte5 (checksum)
-      if( METSCI_isChecksumValid( packetType, packetData, packetCRC ) )
-      {
-        if     ( packetType == 0xB4 ) { METSCI_Packets.latestB4Packet_engine = packetData; }
-        else if( packetType == 0xB3 ) { METSCI_Packets.latestB3Packet_engine = packetData; }
-        else if( packetType == 0xE1 ) { METSCI_Packets.latestE1Packet_SoC    = packetData; }
-      }
-      else //unknown packet type received
-      {
-        Serial.print(F("\nUnknown METSCI packet type:"));
-        Serial.print(String(packetType,HEX));
-        Serial.print(F(", value:"));
-        Serial.print(String(packetData,HEX));
+        while (METSCI_readByte() != 0xE6)  //Ensure the first byte is 0xE6 //JTS2doLater: See if keyONinitial pattern "E6,E6,E1,E6" occurs with LiBCM installed
+        {
+            //throw away data until the next frame starts (0xE6 byte)
+            if (resyncAttempt == 0) { Serial.print( F("\nMETSCI buffer sync") ); }
+            else                    { Serial.print('.'); }
 
-        //JTS2doLater: Why nuke all values after reading an unknown packet type?
-        METSCI_Packets.latestB4Packet_engine = 0;
-        METSCI_Packets.latestB3Packet_engine = 0;
-        METSCI_Packets.latestE1Packet_SoC    = 0;
-      }
+            resyncAttempt++;
+            if (resyncAttempt > METSCI_BYTES_IN_FRAME) { return; } //prevent hang if METSCI signal is corrupt (i.e. 0xE6 never occurs)
+        }
+
+        //If we get here, then we've read the first byte, which is 0xE6
+        if (debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI) { Serial.print(F(" MET:E6,")); }
+
+        //now read the remaining five bytes in the frame
+        uint8_t packetType = 0xE6;              //Byte0 (always 0xE6) (we discarded it above)
+        uint8_t packetData = METSCI_readByte(); //Byte1 (always number of bars assist/regen)
+        uint8_t packetCRC  = METSCI_readByte(); //Byte2 (checksum)
+
+        if (METSCI_isChecksumValid(packetType, packetData, packetCRC))
+        {
+            METSCI_Packets.latestE6Packet_assistLevel = packetData;
+
+            packetType = METSCI_readByte(); //Byte3 (either 0xE1, 0xB3, or 0xB4)
+            packetData = METSCI_readByte(); //Byte4 (data)
+            packetCRC  = METSCI_readByte(); //Byte5 (checksum)
+            if (METSCI_isChecksumValid(packetType, packetData, packetCRC))
+            {
+                if      ( packetType == 0xB4 ) { METSCI_Packets.latestB4Packet_engine = packetData; }
+                else if ( packetType == 0xB3 ) { METSCI_Packets.latestB3Packet_engine = packetData; }
+                else if ( packetType == 0xE1 ) { METSCI_Packets.latestE1Packet_SoC    = packetData; }
+            }
+            else //unknown packet type received
+            {
+                Serial.print(F("\nUnknown METSCI packet type:"));
+                Serial.print(String(packetType,HEX));
+                Serial.print(F(", value:"));
+                Serial.print(String(packetData,HEX));
+
+                //JTS2doLater: Why nuke all values after reading an unknown packet type?
+                METSCI_Packets.latestB4Packet_engine = 0;
+                METSCI_Packets.latestB3Packet_engine = 0;
+                METSCI_Packets.latestE1Packet_SoC    = 0;
+            }
+        }
+        else
+        {
+            //0xE6 checksum invalid
+            METSCI_Packets.latestE6Packet_assistLevel = 0;
+        }
     }
-    else //0xE6 checksum invalid
-    {
-      METSCI_Packets.latestE6Packet_assistLevel = 0;
-    }
-  }
-  return;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t METSCI_isChecksumValid(uint8_t type, uint8_t data, uint8_t checksum)
 {
-  if( ( (type + data + checksum) & 0x7F ) == 0  )
-  {
-    return 1; //data is valid
-  } else {
-    Serial.println(F("\nMETSCI Bad Checksum"));
-    return 0; //data invalid
-  }
+    if ( ((type + data + checksum) & 0x7F) == 0 ) { return 1; } //data is valid
+    else
+    {
+        //data invalid
+        Serial.println(F("\nMETSCI Bad Checksum"));
+        return 0;
+    }
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  uint8_t METSCI_getPacketB3(){ return METSCI_Packets.latestB3Packet_engine; }
-  uint8_t METSCI_getPacketB4(){ return METSCI_Packets.latestB4Packet_engine; }
-  uint8_t METSCI_getPacketE1(){ return METSCI_Packets.latestE1Packet_SoC; }
-  uint8_t METSCI_getPacketE6(){ return METSCI_Packets.latestE6Packet_assistLevel; }
+/////////////////////////////////////////////////////////////////////////////////////////

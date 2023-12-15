@@ -17,7 +17,7 @@
     #define BYTES_IN_DATE 12 //JTS2doNow: Is this 11 bytes or 12?
     #define BYTES_IN_TIME  9 //JTS2doNow: Is this  9 bytes or  8?
 
-	#define REQUIRED_FIRMWARE_UPDATE_PERIOD_DAYS 40
+    #define REQUIRED_FIRMWARE_UPDATE_PERIOD_DAYS 40
     #define REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS (REQUIRED_FIRMWARE_UPDATE_PERIOD_DAYS * 24)
 
     #define FIRMWARE_EXPIRED   0b10101010 //alternating bit pattern for EEPROM read/write integrity
@@ -36,10 +36,10 @@
     void    eeprom_hasLibcmDisabledRegen_set(uint8_t);
 
     uint8_t eeprom_delayKeyON_ms_get(void);
-	void    eeprom_delayKeyON_ms_set(uint8_t);
+    void    eeprom_delayKeyON_ms_set(uint8_t);
 
-	uint8_t eeprom_hasLibcmFailedTiming_get(void);
-	void    eeprom_hasLibcmFailedTiming_set(uint8_t);
+    uint8_t eeprom_hasLibcmFailedTiming_get(void);
+    void    eeprom_hasLibcmFailedTiming_set(uint8_t);
 
     void eeprom_resetDebugValues(void);
 
