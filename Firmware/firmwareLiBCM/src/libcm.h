@@ -17,7 +17,7 @@
     #include <avr/wdt.h>
 
     //Define LiBCM system include files.  Note: Do not alter order.
-    #include "config.h"
+    #include "../config.h"
     #include "cpu_map.h"
     #include "debugLED.h"
     #include "debugUSB.h"
