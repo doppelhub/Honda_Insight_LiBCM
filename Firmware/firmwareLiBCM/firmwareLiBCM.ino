@@ -2,7 +2,7 @@
 //github.com/doppelhub/Honda_Insight_LiBCM
 //Lithium battery BMS for G1 Honda Insight.  Replaces OEM BCM module.
 
-#include "libcm.h"
+#include "src/libcm.h"
 
 void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup or bootloader delay
 {
