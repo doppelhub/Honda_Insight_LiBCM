@@ -37,6 +37,7 @@ void printText_UNUSED(void) { Serial.print(F("Unused")); }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Add fan test ($TESTF) that briefly runs fans at low speed
 void USB_userInterface_runTestCode(uint8_t testToRun)
 {
     Serial.print(F("\nRunning Test: "));
