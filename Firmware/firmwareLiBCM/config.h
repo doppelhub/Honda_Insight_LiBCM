@@ -7,8 +7,8 @@
     #define config_h
     #include "src/libcm.h"
 
-    #define FW_VERSION "0.9.3b"
-    #define BUILD_DATE "2023DEC16"
+    #define FW_VERSION "0.9.4"
+    #define BUILD_DATE "2024JAN11"
 
     //////////////////////////////////////////////////////////////////
 
@@ -165,5 +165,5 @@
         //#define CHARGER_INPUT_CURRENT__13A_MAX //select this option if using 14 AWG extension cord up to 100 feet, or 16 AWG up to 50 feet**, else if;
         //#define CHARGER_INPUT_CURRENT__10A_MAX //select this option if using 16 AWG extension cord up to 100 feet, or 18 AWG up to 50 feet**.
             //**please verify maximum continuous current rating for your specific extension cord
- 
+
 #endif
