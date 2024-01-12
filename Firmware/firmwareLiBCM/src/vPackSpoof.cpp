@@ -82,20 +82,21 @@ uint8_t calculate_Vspoof_maxPossible(void)
     //Hardware limitations prevent us from spoofing the entire voltage range
     //The max allowed voltage is a function of the actual pack voltage
     //Derivation: ~/Electronics/PCB (KiCAD)/RevD/V&V/VPIN-MCMe Calibration.ods
+    //TTTJM1 suggest that 48S maxspoofing is reduced to improve drieability, may or may not resvole P1444 issue
 
     uint8_t actualPackVoltage = LTC68042result_packVoltage_get();
     uint8_t maxAllowedVspoof = 0;
 
-    if      (actualPackVoltage < 109) { maxAllowedVspoof = actualPackVoltage -  1; }
-    else if (actualPackVoltage < 119) { maxAllowedVspoof = actualPackVoltage -  2; }
-    else if (actualPackVoltage < 128) { maxAllowedVspoof = actualPackVoltage -  3; }
-    else if (actualPackVoltage < 138) { maxAllowedVspoof = actualPackVoltage -  4; }
-    else if (actualPackVoltage < 148) { maxAllowedVspoof = actualPackVoltage -  5; }
-    else if (actualPackVoltage < 158) { maxAllowedVspoof = actualPackVoltage -  6; }
-    else if (actualPackVoltage < 167) { maxAllowedVspoof = actualPackVoltage -  7; } //48S reduced by 5 to prevent P1444
-    else if (actualPackVoltage < 177) { maxAllowedVspoof = actualPackVoltage -  8; } //48S
-    else if (actualPackVoltage < 187) { maxAllowedVspoof = actualPackVoltage -  9; } //48S
-    else if (actualPackVoltage < 197) { maxAllowedVspoof = actualPackVoltage - 10; } //below this is 48S
+    if      (actualPackVoltage < 109) { maxAllowedVspoof = actualPackVoltage -  0; }
+    else if (actualPackVoltage < 119) { maxAllowedVspoof = actualPackVoltage -  0; }
+    else if (actualPackVoltage < 128) { maxAllowedVspoof = actualPackVoltage -  0; }
+    else if (actualPackVoltage < 138) { maxAllowedVspoof = actualPackVoltage -  1; }
+    else if (actualPackVoltage < 148) { maxAllowedVspoof = actualPackVoltage -  2; }
+    else if (actualPackVoltage < 158) { maxAllowedVspoof = actualPackVoltage -  3; } //48S min
+    else if (actualPackVoltage < 167) { maxAllowedVspoof = actualPackVoltage -  4; } //48S 25%SOC
+    else if (actualPackVoltage < 177) { maxAllowedVspoof = actualPackVoltage -  6; } //48S 50%SOC 
+    else if (actualPackVoltage < 187) { maxAllowedVspoof = actualPackVoltage -  9; } //48S 75%SOC
+    else if (actualPackVoltage < 197) { maxAllowedVspoof = actualPackVoltage - 10; } //48S max
     else if (actualPackVoltage < 206) { maxAllowedVspoof = actualPackVoltage - 16; } //above this is 60S - not changed
     else if (actualPackVoltage < 216) { maxAllowedVspoof = actualPackVoltage - 17; }
     else if (actualPackVoltage < 226) { maxAllowedVspoof = actualPackVoltage - 18; }
