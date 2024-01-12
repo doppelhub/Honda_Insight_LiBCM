@@ -24,20 +24,41 @@ uint8_t framePeriod_ms = 33;
 //input: actual lithium SoC (unit: percent integer)
 //output: OEM NiMH SoC equivalent (unit: decipercent integer)
 //Example: if the actual lithium SoC is 85%, then "remap_actualToSpoofedSoC[85]" will return 799d (79.9%), which is the value to send on BATTSCI
-const uint16_t remap_actualToSpoofedSoC[101] = {
-      0, 22, 44, 67, 89,111,133,156,178,190, //LiCBM SoC = 00% to 09%
-    200,209,217,225,232,240,248,256,264,272, //LiCBM SoC = 10% to 19%
-    279,287,295,303,311,319,326,334,342,350, //LiCBM SoC = 20% to 29% //MCM enables heavy regen below 350 (35.0%)
-    355,363,375,387,399,411,423,435,447,459, //LiCBM SoC = 30% to 39% //MCM enables light regen below 700 (70.0%)
-    471,483,495,507,519,532,544,556,568,580, //LiCBM SoC = 40% to 49%
-    592,604,616,628,640,652,664,676,688,700, //LiCBM SoC = 50% to 59% //MCM disables background regen agove 582 (58.2%)
-    701,705,709,713,717,721,725,728,732,736, //LiCBM SoC = 60% to 69% //TODO_NATALYA (not urgent as of 2022JAN21) drive and eval regen behaviour to see if LiBCM 60 to 69 needs to be remapped to a smaller MCM range of 69 to 72, or if this range needs to begin at LiBCM 60 = MCM 68% instead of 70%
-    740,744,748,752,756,760,764,768,772,775, //LiCBM SoC = 70% to 79%
-    779,783,787,791,795,799,800,814,829,843, //LiCBM SoC = 80% to 89% //MCM disables regen above 800 (80.0%)
+
+//TTTJM1 below MCM 700 is 1kW regen, honda regen-assist gauge will display zero.
+//This regen level costs circa 5-10mpg. 
+
+//Sugested map for 5AHg3, will target 55%SOC, at which point background regen starts.
+
+// const uint16_t remap_actualToSpoofedSoC[101] = {
+//      0, 20, 40, 60, 80,100,120,140,160,180, //LiCBM SoC = 00% to 09%
+//    200,277,354,430,506,582,585,588,591,594, //LiCBM SoC = 10% to 19%
+//    597,600,603,606,609,612,615,618,621,624, //LiCBM SoC = 20% to 29% 
+//    627,630,633,636,639,642,645,648,651,654, //LiCBM SoC = 30% to 39% 
+//    657,660,663,666,669,672,675,678,681,684, //LiCBM SoC = 40% to 49%
+//    687,690,693,696,699,702,705,708,711,714, //LiCBM SoC = 50% to 59% 
+//    717,720,723,726,729,732,735,738,741,744, //LiCBM SoC = 60% to 69% 
+//    747,750,753,756,759,762,765,768,771,775, //LiCBM SoC = 70% to 79%
+//    779,783,787,791,795,799,800,814,829,843, //LiCBM SoC = 80% to 89% 
+//    857,871,886,900,914,929,943,957,971,986, //LiCBM SoC = 90% to 99%
+//   1000,                                    //LiCBM SoC = 100%
+//};  
+
+//Sugested map for 47ahFoMoCo, background regen below 15%SOC only.
+
+ const uint16_t remap_actualToSpoofedSoC[101] = {
+      0, 47, 94,141,188,235,282,329,376,423, //LiCBM SoC = 00% to 09%
+    470,517,564,611,658,705,706,707,708,709, //LiCBM SoC = 10% to 19%
+    710,711,712,713,714,715,716,717,718,719, //LiCBM SoC = 20% to 29% 
+    720,721,722,723,724,725,726,727,728,729, //LiCBM SoC = 30% to 39% 
+    730,731,732,733,734,735,736,737,738,739, //LiCBM SoC = 40% to 49%
+    740,741,742,743,744,745,746,747,748,749, //LiCBM SoC = 50% to 59% 
+    750,751,752,754,756,758,760,762,764,768, //LiCBM SoC = 60% to 69% 
+    770,772,774,776,778,780,782,784,786,788, //LiCBM SoC = 70% to 79%
+    779,783,787,791,795,799,800,814,829,843, //LiCBM SoC = 80% to 89% 
     857,871,886,900,914,929,943,957,971,986, //LiCBM SoC = 90% to 99%
     1000,                                    //LiCBM SoC = 100%
-};  //Data empirically gathered from OEM NiMH IMA system //see ../Firmware/Prototype Building Blocks/Remap SoC.ods for calculations
-
+};  
 uint16_t previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()];
 
 
