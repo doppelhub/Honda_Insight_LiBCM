@@ -26,6 +26,7 @@ uint8_t framePeriod_ms = 33;
 //Example: if the actual lithium SoC is 85%, then "remap_actualToSpoofedSoC[85]" will return 799d (79.9%), which is the value to send on BATTSCI
 
 //TTTJM1 below MCM 700 is 1kW regen, honda regen-assist gauge will display zero.
+///update, this may actually be more like 600 - need to validate.
 //This regen level costs circa 5-10mpg. 
 
 //Sugested map for 5AHg3, will target 55%SOC, at which point background regen starts.
