@@ -7,8 +7,8 @@
     #define config_h
     #include "src/libcm.h"
 
-    #define FW_VERSION "0.9.3b"
-    #define BUILD_DATE "2023DEC16"
+    #define FW_VERSION "0.9.3c"
+    #define BUILD_DATE "2024JAN18"
 
     //////////////////////////////////////////////////////////////////
 
@@ -111,9 +111,7 @@
     //other temp settings
     #define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 50 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
 
-    #define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda 5AhG3 lithium modules
-
-    #define KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES 10 //Even with low SoC, LiBCM will remain on for this many minutes after keyOFF.
+    #define KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES 10 //When SoC is between 0 & 10%, LiBCM will remain on for this many minutes after keyOFF.
         //to turn LiBCM back on: turn ignition 'ON', or turn IMA switch off and on, or plug in USB cable
 
     //Choose which sign (±) the LCD displays when the battery is discharging
