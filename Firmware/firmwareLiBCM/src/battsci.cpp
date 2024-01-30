@@ -259,25 +259,12 @@ uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
 
     previousOutputSoC_deciPercent = SoC_mappedToMCM_deciPercent;
 
-#ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING 	
-	
-		#ifdef BATTERY_TYPE_5AhG3
-			if ((SoC_mappedToMCM_deciPercent < 720) && (SoC_mappedToMCM_deciPercent > 584)) { SoC_mappedToMCM_deciPercent = 720; } 
-			else if (SoC_mappedToMCM_deciPercent < 584) { chargeRequestByte |= BATTSCI_REQUEST_REGEN_FLAG ; }
-			//for non-plug in, background regen below 58%SOC = 585MCM (this is 10% less than OEM due to larger usable capacity)
-
-		#elif defined BATTERY_TYPE_47AhFoMoCo
-            if ((SoC_mappedToMCM_deciPercent < 720) && (SoC_mappedToMCM_deciPercent > 520)) { chargeRequestByte |= BATTSCI_REQUEST_NO_REGEN_FLAG ; }
-			else if (SoC_mappedToMCM_deciPercent < 520) { chargeRequestByte |= BATTSCI_REQUEST_REGEN_FLAG ; }
-			//for plug in, check that background regen restarts at 245MCM= 15% SOC in OEM mode
-			//MCM520 used for initial validation
-			
-		#endif
+  #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING
+        if ((SoC_mappedToMCM_deciPercent < 720) && (SoC_mappedToMCM_deciPercent > 250)) { SoC_mappedToMCM_deciPercent = 720; }
         //JTS2doLater: Increase spoofed pack voltage when this mode is activated
         //             Otherwise, MCM ignores LiBCM request when pack is discharged
         //             Need to verify MCM honors BATTSCI "disable assist" flag (so pack isn't over-discharged)
-        
-#endif 
+    #endif
 
     return SoC_mappedToMCM_deciPercent;
 }
