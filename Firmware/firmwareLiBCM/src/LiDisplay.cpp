@@ -121,6 +121,94 @@ void LiDisplay_calculateCorrectPage()
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void LiDisplay_handleKeyOrGCStateChange()
+{
+	// TODO_NATALYA (2024 Jan) -- hmi_power_millis and gc_connected_millis timers to ensure screen is changed can probably be dealt with in here
+	// A new variable new_power_state_millis might be able to replace both.
+
+	static uint8_t power_state = 0; // 0=Key off GC unplug    1=Key on GC unplug    2=Key off GC plugged    3=Key on GC plugged
+	uint8_t new_power_state = 0;
+
+	if (key_getSampledState() == KEYSTATE_ON) { new_power_state += 1; }
+	if (gpio_isGridChargerPluggedInNow() == YES) { new_power_state += 2; }
+
+	if (power_state != new_power_state) {
+		switch (power_state) {
+			case 0:	// Key is OFF and Grid Charger is unplugged
+				switch(new_power_state) {
+					case 0: break;	// Should never end up here
+					case 1: LiDisplay_keyOn(); break; // Key now ON
+					case 2: LiDisplay_gridChargerPluggedIn(); break; // GC now plugged in
+					case 3: LiDisplay_keyOn(); LiDisplay_gridChargerPluggedIn(); break; // Driver Key ON and plugged in GC in same frame (unlikely to happen)
+				}
+				break;
+			case 1: // Key is ON or possibly off but contactor relay hasn't opened yet
+				switch(new_power_state) {
+					case 0: LiDisplay_keyOff(); break; // Contactor relay finally opened
+					case 1: break;	// Should never end up here
+					case 2: LiDisplay_keyOff(); LiDisplay_gridChargerPluggedIn(); break; // Driver plugged in GC on same frame as contactor relay opened (unlikely to happen)
+					case 3: LiDisplay_gridChargerPluggedIn(); break; // Driver plugged in GC, should get LiDisplay warning page and LiBCM will beep
+				}
+				break;
+			case 2: // Grid Charger is plugged in
+				switch(new_power_state) {
+					case 0: LiDisplay_gridChargerUnplugged(); break;
+					case 1: LiDisplay_gridChargerUnplugged(); LiDisplay_keyOn(); break; // Driver unplugged GC on same frame as Key ON (unlikely to happen)
+					case 2: break;	// Should never end up here
+					case 3: LiDisplay_keyOn(); break; // GC is already plugged in, Driver turned Key ON, LiDisplay needs to display warning, LiBCM will beep
+				}
+				break;
+			case 3: // Key On and GC plugged in -- LiBCM should be beeping at driver, driver likely to take action
+				switch(new_power_state) {
+					case 0: LiDisplay_keyOff(); LiDisplay_gridChargerUnplugged(); break; // Driver unplugged GC at exact instant contactor relay opened (might happen -- edge case)
+					case 1: LiDisplay_gridChargerUnplugged(); break; // Driver unplugged GC
+					case 2: LiDisplay_keyOff(); break; // Driver keyed OFF, contactor finally opened
+					case 3: break;	// Should never end up here
+				}
+				break;
+		}
+	}
+	power_state = new_power_state;
+
+/*
+
+	if (LiDisplayPowerOffPending) {
+		if (LiDisplayOnGridChargerConnected) {
+			// GC plugged in before relay in IPU compartment clicked off, or just after, but before splash screen complete.
+			Serial.print(F("\nLiDisplayPowerOffPending CANCELLED because grid charger was plugged in."));
+			LiDisplaySplashPending = false;
+			LiDisplayPowerOffPending = false;
+		} else if ((millis() - hmi_power_millis) < 100) { // ensure at least 100ms have passed since last refresh loop
+			return;
+		} else if (LiDisplaySplashPending) {
+			LiDisplay_updatePage();
+			LiDisplaySplashPending = false;
+			splash_millis = millis();
+			return;
+		} else if ((millis() - splash_millis) == (LIDISPLAY_UPDATE_RATE_MILLIS)) {
+			LiDisplay_updateNumericVal(1, "n0", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get()));
+			return;
+		} else if ((millis() - splash_millis) > (LIDISPLAY_SPLASH_PAGE_MS)) {
+			gpio_turnHMI_off();
+			LiDisplayPowerOffPending = false;
+			Serial1.end(); // Turn Serial1 off to empty buffer.
+			return;
+		}
+	} else if (LiDisplaySplashPending) {
+		if (millis() - hmi_power_millis < 100) {
+			return;
+		} else {
+			LiDisplaySplashPending = false;
+			LiDisplay_updatePage();
+			splash_millis = millis();
+			return;
+		}
+	}
+	*/
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void LiDisplay_updateNumericVal(uint8_t page, String elementName, uint8_t elementAttrIndex, String value) {
     #ifdef LIDISPLAY_CONNECTED
         static String LiDisplay_Number_Str;
@@ -225,7 +313,6 @@ LiDisplay_updateNextCellValue() {
 
     cell_voltage_diff_from_avg = cell_avg_voltage - temp_cell_voltage;
 
-    // 04 Feb 2023 -- CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE is 32 so we are centering on -16 to +16, and then using increments of 32 to determine bar colour.
     // 17 Oct 2023 -- Feedback from users and JTS indicates we should have the window larger than 3.2mV
     // So now we will use LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS and are defaulting it to 6.4mV
     if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * 2.5)) { cell_color_number = "63488"; }        // 63488 = Red
@@ -437,6 +524,9 @@ void LiDisplay_initializeSettingsPage() {
 void LiDisplay_exitSettingsPage(void) {
     LiDisplaySettingsPageRequested = false;
 
+	LiDisplaySoC_onScreen = 100;
+	LiDisplaySoCBars_onScreen = 100;
+
     LiDisplay_calculateCorrectPage();
 
     switch (LiDisplayCurrentPageNum) {
@@ -446,6 +536,18 @@ void LiDisplay_exitSettingsPage(void) {
         case LIDISPLAY_GRIDCHARGE_PAGE_ID: maxElementId = 6; gc_sixty_s_fomoco_e_block_enabled = false; break;
         default : break;
     }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void LiDisplay_checkFirmwareExpiration() {
+	if ((REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get()) <= 0)
+	{
+		#ifdef LIDISPLAY_DEBUG_ENABLED
+			#undef LIDISPLAY_DEBUG_ENABLED
+	    #endif
+		LiDisplay_updateStringVal(0, "t12", 0, "FIRMWARE EXPIRED");
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -546,10 +648,11 @@ void LiDisplay_processCommand(String cmd_str) {
     }
 
     /*  Can probably delete this now that most variables here are not static */
-    cmd_str = "";
+	/*	Commented 30 Jan 2024 -- if no issues when testing in car, then ok to delete this.
+    /* cmd_str = "";
     cmd_page_id = 0;
     cmd_obj_type = "";
-    cmd_obj_id_str = "";
+    cmd_obj_id_str = ""; */
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -581,66 +684,17 @@ void LiDisplay_handler(void)
             }
         }
 
-        if (Serial1.available() && (LiDisplayWaitingForCommand == 0)) {
-            LiDisplayWaitingForCommand = 100;   // 100 ms cooldown
-        }
+        if (Serial1.available() && (LiDisplayWaitingForCommand == 0)) { LiDisplayWaitingForCommand = 100; }  // 100 ms cooldown
 
 
         LiDisplay_calculateCorrectPage();
+        LiDisplay_handleKeyOrGCStateChange();
 
-
-        // TODO_NATALYA: Probably should put this into a new function -- LiDisplay_calculateCorrectPowerState() //JTS: Yes, please do
-        if (LiDisplayPowerOffPending) {
-            if (LiDisplayOnGridChargerConnected) {
-                // GC plugged in before relay in IPU compartment clicked off, or just after, but before splash screen complete.
-                Serial.print(F("\nLiDisplayPowerOffPending CANCELLED because grid charger was plugged in."));
-                LiDisplaySplashPending = false;
-                LiDisplayPowerOffPending = false;
-            } else if ((millis() - hmi_power_millis) < 100) { // ensure at least 100ms have passed since last refresh loop
-                return;
-            } else if (LiDisplaySplashPending) {
-                LiDisplay_updatePage();
-                LiDisplaySplashPending = false;
-                splash_millis = millis();
-                return;
-            } else if ((millis() - splash_millis) == (LIDISPLAY_UPDATE_RATE_MILLIS)) {
-                LiDisplay_updateNumericVal(1, "n0", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get()));
-                return;
-            } else if ((millis() - splash_millis) > (LIDISPLAY_SPLASH_PAGE_MS)) {
-                gpio_turnHMI_off();
-                LiDisplayPowerOffPending = false;
-                Serial1.end(); // Turn Serial1 off to empty buffer.
-                return;
-            }
-        } else if (LiDisplaySplashPending) {
-            if (millis() - hmi_power_millis < 100) {
-                return;
-            } else {
-                LiDisplaySplashPending = false;
-                LiDisplay_updatePage();
-                splash_millis = millis();
-                return;
-            }
-        }
 
         if (LiDisplayOnGridChargerConnected) {
-            if (!gpio_HMIStateNow()) {
-                // If screen power is off we need to turn on LiDisplay
-                gpio_turnHMI_on();
-                Serial1.begin(57600,SERIAL_8N1);
-                hmi_power_millis = millis();
-                return;
-            }
             if ((millis() - hmi_power_millis) < 400) { // ensure at least 400ms have passed since screen turned on.  Note Sept 2023 -- Smaller values like 100ms were not enough
                 return;
             } else {
-                // Ready to show GC page, but first check if key is on
-                // 2022 Sept 07 -- TODO_NATALYA: We may be able to delete this now because of LiDisplay_calculateCorrectPage()
-                if (key_getSampledState() == KEYSTATE_ON) {
-                    LiDisplay_setPageNumber(LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID);
-                } else {
-                    LiDisplay_setPageNumber(LIDISPLAY_GRIDCHARGE_PAGE_ID);
-                }
                 LiDisplay_updatePage();
                 LiDisplayOnGridChargerConnected = false;
                 return;
@@ -654,28 +708,12 @@ void LiDisplay_handler(void)
             if (LiDisplaySetPageNum != LiDisplayCurrentPageNum) {
                 LiDisplay_updatePage();
                 if (LiDisplaySetPageNum == LIDISPLAY_SPLASH_PAGE_ID) {
-                    splash_millis = millis();
+                    splash_millis = millis(); // Start splash page timer
                 }
                 return;
-            } else if (LiDisplayCurrentPageNum == LIDISPLAY_SPLASH_PAGE_ID) {   // Splash page loop
-                if (millis() - splash_millis > LIDISPLAY_SPLASH_PAGE_MS) {
-                    // Splash page has shown long enough.  Switch to main driving screen.
-                    LiDisplay_setPageNumber(LIDISPLAY_DRIVING_PAGE_ID);;
-                } else {
-                    if (LiDisplayElementToUpdate > 2) { LiDisplayElementToUpdate = 0; }
-                    switch (LiDisplayElementToUpdate)
-                    {
-                        case 0: LiDisplay_updateStringVal(1, "t1", 0, String(FW_VERSION)); break;
-                        case 1: LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get())); break;
-                    }
-                    LiDisplayElementToUpdate += 1;
-                }
             } else {    // Main page loop
                 if (!gpio_HMIStateNow()) return; //LiDisplay is off, so we don't need to run the loop.
-
-                if (key_getSampledState() == KEYSTATE_ON) {
-                    LiDisplay_calculateKeyTimeStr(false);   // Increment key time outside the loop in case driver switches to settings page
-                }
+                if (key_getSampledState() == KEYSTATE_ON) { LiDisplay_calculateKeyTimeStr(false); }  // Increment key time outside the loop in case driver switches to settings page
 
                 switch (LiDisplayCurrentPageNum)
                 {
@@ -693,6 +731,7 @@ void LiDisplay_handler(void)
                             // The other elements update less frequently.  We will update 1 of them.
                             // Priority is from least-likely to change to most-likely to change.
                             case 6:
+								LiDisplay_checkFirmwareExpiration();
                                 LiDisplay_calculateFanSpeedStr();
                                 LiDisplay_calculateSoCGaugeBars();
                                 if (LiDisplayFanSpeed_onScreen != currentFanSpeed) {
@@ -718,6 +757,16 @@ void LiDisplay_handler(void)
                             break;
                         }
                     break;
+
+					case LIDISPLAY_SPLASH_PAGE_ID:
+						if (LiDisplayElementToUpdate > 2) { LiDisplayElementToUpdate = 0; }
+						switch (LiDisplayElementToUpdate)
+						{
+							case 0: LiDisplay_updateStringVal(1, "t1", 0, String(FW_VERSION)); break;
+							case 1: LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get())); break;
+						}
+						LiDisplayElementToUpdate += 1;
+					break;
 
                     case LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID:
                         if (key_getSampledState() != KEYSTATE_ON) {
@@ -770,9 +819,7 @@ void LiDisplay_handler(void)
 
                 LiDisplayElementToUpdate += 1;
 
-                if (LiDisplayElementToUpdate > maxElementId) {
-                    LiDisplayElementToUpdate = 0;
-                }
+                if (LiDisplayElementToUpdate > maxElementId) { LiDisplayElementToUpdate = 0; }
             }
         }
 
@@ -800,6 +847,7 @@ void LiDisplay_keyOn(void)
         LiDisplaySoC_onScreen = 100;
         LiDisplayFanSpeed_onScreen = 100;
         LiDisplaySoCBars_onScreen = 100;
+
     #endif
 }
 
@@ -863,9 +911,7 @@ void LiDisplay_gridChargerUnplugged(void)
                 hmi_power_millis = millis();
                 LiDisplaySplashPending = true;
                 LiDisplayPowerOffPending = true;
-            } else {
-                LiDisplay_keyOn();
-            }
+            } else { LiDisplay_keyOn(); }
         }
     #endif
 }

@@ -117,7 +117,7 @@ void chargerControlSignals_handler(void)
            uint8_t isChargingAllowed_now      = isChargingAllowed();
 
     if (isChargingAllowed_now == YES__CHARGING_ALLOWED)
-    {        
+    {
         if (isChargingAllowed_previous != YES__CHARGING_ALLOWED)
         {
             Serial.print(F("\nCharging"));
@@ -141,14 +141,14 @@ void chargerControlSignals_handler(void)
             latestChargerDisable_ms = millis();
             //gpio_turnPowerSensors_off();
         }
-        
+
         if (isChargingAllowed_previous != isChargingAllowed_now) { processChargerDisableReason(isChargingAllowed_now); }
 
         fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF); //JTS2doNow: see note ("cool a hot pack")
 
         //JTS2doNow: Since the charger should be off now, sound an alarm if battery current isn't ~0 amps.
     }
-    
+
     if (gpio_isGridChargerPluggedInNow() == YES) { adc_updateBatteryCurrent(); } //safety: continuously update battery current when grid charger plugged in
 
     isChargingAllowed_previous = isChargingAllowed_now;
@@ -163,7 +163,6 @@ void handleEvent_plugin(void)
     gpio_turnPowerSensors_on(); //so we can measure current //to save power, it would be nice to move this into YES__CHARGING_ALLOWED (solve powerup hysteresis)
                                 //JTS2doNow: Does turning these sensors on with the key off cause LiBCM's BATTSCI RS485 driver to output voltage into MCM?
     latestPlugin_ms = millis();
-    LiDisplay_gridChargerPluggedIn(); //JTS2doNow: Move inside LiDisplay.c... LiDisplay handler should check key state
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -176,7 +175,6 @@ void handleEvent_unplug(void)
     gpio_turnPowerSensors_off();
     fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);
     buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, BUZZER_OFF);
-    LiDisplay_gridChargerUnplugged();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

@@ -35,7 +35,6 @@ void key_handleKeyEvent_off(void)
     gpio_turnPowerSensors_off();
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
-    LiDisplay_keyOff();
     eeprom_checkForExpiredFirmware(); //JTS2doNow: Run every few days when car is off
 
     key_latestTurnOffTime_ms_set(millis()); //MUST RUN LAST!
@@ -53,7 +52,6 @@ void key_handleKeyEvent_on(void)
     LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
     LTC68042configure_handleKeyStateChange();
     LED(1,HIGH);
-    LiDisplay_keyOn();
 
     key_latestTurnOnTime_ms_set(millis()); //MUST RUN LAST!
 }
