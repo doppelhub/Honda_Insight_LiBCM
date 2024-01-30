@@ -23,9 +23,8 @@ uint8_t framePeriod_ms = 33;
 
 //LUT remaps actual lithium battery SoC (unit: percent) to mimic OEM NiMH behavior (unit: deciPercent)
 //roughly: expands battery range from 20-80%SOC (NiMH) to 10-85%SOC (Lithium)
-//note: large deviations from 1:1 will disable brake regen.
+//note: large deviations from 1:1 can disable brake regen etc
 //note: for background regen setpoints see REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING below
-//note: previous curve around circa 60%SOC disabled brake regen in OEM mode
 
 //input: actual lithium SoC (unit: percent integer)
 //output: OEM NiMH SoC equivalent (unit: decipercent integer)
