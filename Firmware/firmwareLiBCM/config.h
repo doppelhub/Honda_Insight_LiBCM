@@ -8,7 +8,7 @@
     #include "src/libcm.h"
 
     #define FW_VERSION "0.9.4"
-    #define BUILD_DATE "2024JAN11"
+    #define BUILD_DATE "2024FEB01"
 
     //////////////////////////////////////////////////////////////////
 
@@ -147,6 +147,7 @@
 
     //#define LIDISPLAY_DEBUG_ENABLED //uncomment to enable updates to text box ID # T12 on LiDisplay driving page -- this shows raw comm data from LiDisplay to LiBCM
     #define LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS 64 //64 = 6.4mVwindow between cell colours on the grid charging page.  Don't go below CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
+	#define LIDISPLAY_SPLASH_PAGE_MS 2000 //How long the splash page shows on LiDisplay.  Default 2000 (2 seconds)
 
     /*
     JTS2doLater:

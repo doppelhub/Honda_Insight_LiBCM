@@ -21,7 +21,7 @@
 
 uint8_t LiDisplayElementToUpdate = 0;
 uint8_t LiDisplayCurrentPageNum = 0;
-uint8_t LiDisplaySetPageNum = 0;
+uint8_t LiDisplaySetPageNum = LIDISPLAY_DRIVING_PAGE_ID;
 uint8_t LiDisplaySoCBarCount = 0;
 uint8_t LiDisplayChrgAsstPicId = 22;
 uint8_t LiDisplayWaitingForCommand = 0;
@@ -34,12 +34,14 @@ static uint8_t  LiDisplaySoCBars_onScreen = 100;
 static uint8_t  LiDisplayTemp_onScreen = 0;
 static uint16_t LiDisplayAverageCellVoltage = 0;
 static uint8_t maxElementId = 8;
+static uint8_t LiDisplay_powerState = 0; // 0=Key off GC unplug    1=Key on GC unplug    2=Key off GC plugged    3=Key on GC plugged
 
 bool LiDisplaySplashPending = false;
 bool LiDisplayPowerOffPending = false;
 bool LiDisplayOnGridChargerConnected = false;
 bool LiDisplaySettingsPageRequested = false;
 
+static uint32_t new_power_state_millis = 0;
 static uint32_t hmi_power_millis = 0;
 static uint32_t gc_connected_millis = 0;
 static uint32_t gc_connected_millis_most_recent_diff = 0;
@@ -93,6 +95,7 @@ void LiDisplay_begin(void)
 
         LiDisplaySplashPending = false;
         LiDisplayPowerOffPending = false;
+		new_power_state_millis = 0;
     #endif
 }
 
@@ -125,19 +128,24 @@ void LiDisplay_handleKeyOrGCStateChange()
 {
 	// TODO_NATALYA (2024 Jan) -- hmi_power_millis and gc_connected_millis timers to ensure screen is changed can probably be dealt with in here
 	// A new variable new_power_state_millis might be able to replace both.
+	// As far as I can tell, Nextion does NOT allow Arduino to ask "what page are you on?" which is why we will need delays around key cycle/gc plugging events
 
-	static uint8_t power_state = 0; // 0=Key off GC unplug    1=Key on GC unplug    2=Key off GC plugged    3=Key on GC plugged
+	if (millis() < 50) {
+		Serial.print(F("\nLiDisplay_handleKeyOrGCStateChange - millis less than 50 - not changing power state."));
+		return;	// key_getSampledState might not be accurate yet.
+	}
+
 	uint8_t new_power_state = 0;
 
 	if (key_getSampledState() == KEYSTATE_ON) { new_power_state += 1; }
 	if (gpio_isGridChargerPluggedInNow() == YES) { new_power_state += 2; }
 
-	if (power_state != new_power_state) {
-		switch (power_state) {
+	if (LiDisplay_powerState != new_power_state) {
+		switch (LiDisplay_powerState) {
 			case 0:	// Key is OFF and Grid Charger is unplugged
 				switch(new_power_state) {
 					case 0: break;	// Should never end up here
-					case 1: LiDisplay_keyOn(); break; // Key now ON
+					case 1: Serial.print(F("\nLiDisplay_handleKeyOrGCStateChange - calling LiDisplay_keyOn()")); LiDisplay_keyOn(); break; // Key now ON
 					case 2: LiDisplay_gridChargerPluggedIn(); break; // GC now plugged in
 					case 3: LiDisplay_keyOn(); LiDisplay_gridChargerPluggedIn(); break; // Driver Key ON and plugged in GC in same frame (unlikely to happen)
 				}
@@ -167,8 +175,10 @@ void LiDisplay_handleKeyOrGCStateChange()
 				}
 				break;
 		}
+		new_power_state_millis = millis();
+		Serial.print(F("\nLiDisplay_handleKeyOrGCStateChange - power state changed - new_power_state_millis has been updated"));
 	}
-	power_state = new_power_state;
+	LiDisplay_powerState = new_power_state;
 
 /*
 
@@ -657,6 +667,31 @@ void LiDisplay_processCommand(String cmd_str) {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void LiDisplay_enforceCorrectPowerState() {
+	switch (LiDisplay_powerState) {
+		case 0:
+			if (gpio_HMIStateNow()) {
+				if (((millis() - new_power_state_millis) > 100) && (LiDisplaySplashPending)) {
+					LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID;
+					LiDisplay_updatePage();
+					LiDisplaySplashPending = false;
+				}
+				if ((millis() - new_power_state_millis) > (100 + LIDISPLAY_SPLASH_PAGE_MS)) {
+					gpio_turnHMI_off();
+					LiDisplayPowerOffPending = false;
+				}
+			}
+			break;
+		case 1:
+			if (!gpio_HMIStateNow()) gpio_turnHMI_on();
+			break;
+		case 2: if (!gpio_HMIStateNow()) gpio_turnHMI_on(); break;
+		case 3: if (!gpio_HMIStateNow()) gpio_turnHMI_on(); break;
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void LiDisplay_handler(void)
 {
     #ifdef LIDISPLAY_CONNECTED
@@ -689,6 +724,7 @@ void LiDisplay_handler(void)
 
         LiDisplay_calculateCorrectPage();
         LiDisplay_handleKeyOrGCStateChange();
+		LiDisplay_enforceCorrectPowerState();
 
 
         if (LiDisplayOnGridChargerConnected) {
@@ -707,9 +743,9 @@ void LiDisplay_handler(void)
 
             if (LiDisplaySetPageNum != LiDisplayCurrentPageNum) {
                 LiDisplay_updatePage();
-                if (LiDisplaySetPageNum == LIDISPLAY_SPLASH_PAGE_ID) {
+/*                if (LiDisplaySetPageNum == LIDISPLAY_SPLASH_PAGE_ID) {
                     splash_millis = millis(); // Start splash page timer
-                }
+                }*/
                 return;
             } else {    // Main page loop
                 if (!gpio_HMIStateNow()) return; //LiDisplay is off, so we don't need to run the loop.
@@ -759,7 +795,7 @@ void LiDisplay_handler(void)
                     break;
 
 					case LIDISPLAY_SPLASH_PAGE_ID:
-						if (LiDisplayElementToUpdate > 2) { LiDisplayElementToUpdate = 0; }
+						if (LiDisplayElementToUpdate > 1) { LiDisplayElementToUpdate = 0; }
 						switch (LiDisplayElementToUpdate)
 						{
 							case 0: LiDisplay_updateStringVal(1, "t1", 0, String(FW_VERSION)); break;
@@ -840,7 +876,7 @@ void LiDisplay_keyOn(void)
         key_time_begin_ms = millis();
         LiDisplay_calculateKeyTimeStr(true);
         LiDisplaySplashPending = true;
-        LiDisplaySetPageNum = 1;
+        LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID;
 
         // Reset these
         LiDisplayPackVoltageActual_onScreen = 100;
