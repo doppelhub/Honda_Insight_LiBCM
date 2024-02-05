@@ -23,7 +23,7 @@ uint8_t framePeriod_ms = 33;
 
 //LUT remaps actual lithium battery SoC (unit: percent) to mimic OEM NiMH behavior (unit: deciPercent)
 //roughly: expands battery range from 20-80%SOC (NiMH) to 10-85%SOC (Lithium)
-//note: large deviations from 1:1 can disable brake regen etc
+//note: large deviations from 1:1 may disable brake regen?
 //note: for background regen setpoints see REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING below
 
 //input: actual lithium SoC (unit: percent integer)
@@ -258,8 +258,14 @@ uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
 
     previousOutputSoC_deciPercent = SoC_mappedToMCM_deciPercent;
 
-  #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING
-        if ((SoC_mappedToMCM_deciPercent < 720) && (SoC_mappedToMCM_deciPercent > 250)) { SoC_mappedToMCM_deciPercent = 720; }
+    #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING  
+	//background regen is not shown on OEM charge/assist gauge, regen under braking is unaffected
+	//only recommended for 47A FoMoCo users (who grid charge)
+        if ((SoC_mappedToMCM_deciPercent < 720) && (SoC_mappedToMCM_deciPercent > 240)) { SoC_mappedToMCM_deciPercent = 720; }      //15%SOC Background charge disabled
+		else if ((SoC_mappedToMCM_deciPercent < 240) && (SoC_mappedToMCM_deciPercent > 232)) { SoC_mappedToMCM_deciPercent = 600; } //14%SOC Background charge enabled
+		else if ((SoC_mappedToMCM_deciPercent < 232) && (SoC_mappedToMCM_deciPercent > 224)) { SoC_mappedToMCM_deciPercent = 400; } //13%SOC Regen during coasting
+		else if ((SoC_mappedToMCM_deciPercent < 224) && (SoC_mappedToMCM_deciPercent > 216)) { SoC_mappedToMCM_deciPercent = 250; } //12%SOC Regen under part-throttle
+		                                                                                                                            //10%SOC Regen at idle, assist is disabled
         //JTS2doLater: Increase spoofed pack voltage when this mode is activated
         //             Otherwise, MCM ignores LiBCM request when pack is discharged
         //             Need to verify MCM honors BATTSCI "disable assist" flag (so pack isn't over-discharged)
