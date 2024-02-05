@@ -88,20 +88,20 @@ uint8_t calculate_Vspoof_maxPossible(void)
 
     if      (actualPackVoltage < 109) { maxAllowedVspoof = actualPackVoltage -  0; }
     else if (actualPackVoltage < 119) { maxAllowedVspoof = actualPackVoltage -  0; }
-    else if (actualPackVoltage < 128) { maxAllowedVspoof = actualPackVoltage -  2; }
-    else if (actualPackVoltage < 138) { maxAllowedVspoof = actualPackVoltage -  4; } 
-    else if (actualPackVoltage < 148) { maxAllowedVspoof = actualPackVoltage -  6; } 
-    else if (actualPackVoltage < 158) { maxAllowedVspoof = actualPackVoltage -  8; } //48S min?
-    else if (actualPackVoltage < 167) { maxAllowedVspoof = actualPackVoltage - 10; } 
-    else if (actualPackVoltage < 177) { maxAllowedVspoof = actualPackVoltage - 12; } 
-    else if (actualPackVoltage < 187) { maxAllowedVspoof = actualPackVoltage - 14; } 
-    else if (actualPackVoltage < 197) { maxAllowedVspoof = actualPackVoltage - 15; } //48S max?
-    else if (actualPackVoltage < 206) { maxAllowedVspoof = actualPackVoltage - 16; } 
-    else if (actualPackVoltage < 216) { maxAllowedVspoof = actualPackVoltage - 17; } 
-    else if (actualPackVoltage < 226) { maxAllowedVspoof = actualPackVoltage - 18; } 
-    else if (actualPackVoltage < 236) { maxAllowedVspoof = actualPackVoltage - 19; } 
-    else if (actualPackVoltage < 245) { maxAllowedVspoof = actualPackVoltage - 20; } 
-    else                              { maxAllowedVspoof = actualPackVoltage - 21; } 
+    else if (actualPackVoltage < 128) { maxAllowedVspoof = actualPackVoltage -  2; } // ramping from 120v improves drivability.
+    else if (actualPackVoltage < 138) { maxAllowedVspoof = actualPackVoltage -  4; } //
+    else if (actualPackVoltage < 148) { maxAllowedVspoof = actualPackVoltage -  6; } //
+    else if (actualPackVoltage < 158) { maxAllowedVspoof = actualPackVoltage -  8; } //48S min
+    else if (actualPackVoltage < 167) { maxAllowedVspoof = actualPackVoltage - 10; } //48S 
+    else if (actualPackVoltage < 177) { maxAllowedVspoof = actualPackVoltage - 12; } //48S
+    else if (actualPackVoltage < 187) { maxAllowedVspoof = actualPackVoltage - 14; } //48S 
+    else if (actualPackVoltage < 197) { maxAllowedVspoof = actualPackVoltage - 17; } //48S max
+    else if (actualPackVoltage < 206) { maxAllowedVspoof = actualPackVoltage - 21; } //60S min..was 16 not tested
+    else if (actualPackVoltage < 216) { maxAllowedVspoof = actualPackVoltage - 26; } //60S ..was 17
+    else if (actualPackVoltage < 226) { maxAllowedVspoof = actualPackVoltage - 32; } //60S ..was 18
+    else if (actualPackVoltage < 236) { maxAllowedVspoof = actualPackVoltage - 40; } //60S ..was 19
+    else if (actualPackVoltage < 245) { maxAllowedVspoof = actualPackVoltage - 48; } //60S max..was 20 =225v, this gives 197v so more power not clear how this works with MIN_SPOOFED_VOLTAGE settings
+    else                              { maxAllowedVspoof = actualPackVoltage - 50; } //..was21
 
     return maxAllowedVspoof;
 }
