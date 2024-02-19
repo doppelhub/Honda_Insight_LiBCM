@@ -126,7 +126,7 @@ void chargerControlSignals_handler(void)
 
         runFansIfNeeded(); //JTS2doNow: run fans as needed even when charging not allowed (e.g. to cool a hot pack)
         gpio_turnGridCharger_on();
-        gpio_setGridCharger_powerLevel('H'); //JTS2doNow: Reduce power as temp increases
+        gpio_setGridCharger_powerLevel('H'); //JTS2doNow: Limit charge current if temp is too high or low
         buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, BUZZER_OFF);
     }
     else

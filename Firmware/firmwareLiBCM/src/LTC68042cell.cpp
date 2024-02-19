@@ -137,7 +137,7 @@ void processAllCellVoltages(void)
     uint16_t loCellVoltage = 65535;
     uint16_t hiCellVoltage = 0;
 
-    #ifdef LTC68042_ENABLE_C19_VOLTAGE_CORRECTION
+    #ifdef BATTERY_TYPE_5AhG3
         //On LiBCM, QTY3 LTC6804 ICs measure QTY2 18S EHW5 modules:
         // -LTC6804 'A' measures the first QTY12 cells in the 1st 18S module (stack cells 01:12).  No problems here.
         // -LTC6804 'C' measures the  last QTY12 cells in the 2nd 18S module (stack cells 25:36).  No problems here.
@@ -157,8 +157,6 @@ void processAllCellVoltages(void)
         //The ideal solution would be to use the LTC6813 - which measures QTY18 cells - on both 18S EHW5 modules.
         //However, that IC is backordered for years, hence the above hardware decision and this workaround.
         //It's not ideal, but it's what we've got.  STFP!
-        //
-        //If you're not using 18S Honda EHW5 modules, then disable "#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION" in config.h.
 
         //cell 19 is the seventh cell on the second IC  
         #define CELL19_CHIP_NUMBER 1 //array is zero-indexed // '1' is the 2nd IC
@@ -191,7 +189,7 @@ void processAllCellVoltages(void)
             if (cellVoltageUnderTest > hiCellVoltage) { hiCellVoltage = cellVoltageUnderTest; }
 
             //check for new maxEver/minEver cells (if any)
-            //If LTC68042_ENABLE_C19_VOLTAGE_CORRECTION is defined, cell 19 voltage cannot become maxEver or minEver right now, but we'll check again down below
+            //If BATTERY_TYPE_5AhG3 is defined, cell 19 voltage cannot become maxEver or minEver right now, but we'll check again down below
             if (cellVoltageUnderTest > LTC68042result_maxEverCellVoltage_get()) {LTC68042result_maxEverCellVoltage_set(cellVoltageUnderTest); }
             if (cellVoltageUnderTest < LTC68042result_minEverCellVoltage_get()) {LTC68042result_minEverCellVoltage_set(cellVoltageUnderTest); }
 
@@ -204,7 +202,7 @@ void processAllCellVoltages(void)
     LTC68042result_loCellVoltage_set(loCellVoltage);
     LTC68042result_hiCellVoltage_set(hiCellVoltage);
 
-    #ifdef LTC68042_ENABLE_C19_VOLTAGE_CORRECTION
+    #ifdef BATTERY_TYPE_5AhG3
         //Now we need to determine which cell 19 voltage is correct (the actual measured value, or the current-adjusted one)
         //We do this by determining which voltage has the smallest magnitude from the max/min cell voltages (determined above).
         
@@ -231,7 +229,6 @@ void processAllCellVoltages(void)
         //finally, we need to check if cell 19 is either the highest or lowest voltage
         if (cell19Voltage_final > hiCellVoltage) { LTC68042result_hiCellVoltage_set(cell19Voltage_final); }
         if (cell19Voltage_final < loCellVoltage) { LTC68042result_loCellVoltage_set(cell19Voltage_final); }
-
     #endif
 }
 

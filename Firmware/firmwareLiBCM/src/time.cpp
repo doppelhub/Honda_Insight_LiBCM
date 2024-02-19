@@ -45,8 +45,7 @@ bool time_hasKeyBeenOffLongEnough_toTurnOffLiBCM(void)
 {
     bool keyOffForLongEnough = false;
 
-    if ((gpio_isGridChargerChargingNow() == NO) /* don't turn off while grid charging */          &&
-        (millis() - key_latestTurnOffTime_ms_get()) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000) )
+    if ((millis() - key_latestTurnOffTime_ms_get()) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000))
     {
         keyOffForLongEnough = true;
     }
