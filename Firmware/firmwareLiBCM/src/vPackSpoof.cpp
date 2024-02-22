@@ -86,22 +86,13 @@ uint8_t calculate_Vspoof_maxPossible(void)
     uint8_t actualPackVoltage = LTC68042result_packVoltage_get();
     uint8_t maxAllowedVspoof = 0;
 
-    if      (actualPackVoltage < 109) { maxAllowedVspoof = actualPackVoltage -  0; }
-    else if (actualPackVoltage < 119) { maxAllowedVspoof = actualPackVoltage -  0; }
-    else if (actualPackVoltage < 128) { maxAllowedVspoof = actualPackVoltage -  2; } // ramping from 120v improves drivability.
-    else if (actualPackVoltage < 138) { maxAllowedVspoof = actualPackVoltage -  4; } //
-    else if (actualPackVoltage < 148) { maxAllowedVspoof = actualPackVoltage -  6; } //
-    else if (actualPackVoltage < 158) { maxAllowedVspoof = actualPackVoltage -  8; } //48S min
-    else if (actualPackVoltage < 167) { maxAllowedVspoof = actualPackVoltage - 10; } //48S 
-    else if (actualPackVoltage < 177) { maxAllowedVspoof = actualPackVoltage - 12; } //48S
-    else if (actualPackVoltage < 187) { maxAllowedVspoof = actualPackVoltage - 14; } //48S 
-    else if (actualPackVoltage < 197) { maxAllowedVspoof = actualPackVoltage - 17; } //48S max
-    else if (actualPackVoltage < 206) { maxAllowedVspoof = actualPackVoltage - 21; } //60S min..was 16 not tested
-    else if (actualPackVoltage < 216) { maxAllowedVspoof = actualPackVoltage - 26; } //60S ..was 17
-    else if (actualPackVoltage < 226) { maxAllowedVspoof = actualPackVoltage - 32; } //60S ..was 18
-    else if (actualPackVoltage < 236) { maxAllowedVspoof = actualPackVoltage - 40; } //60S ..was 19
-    else if (actualPackVoltage < 245) { maxAllowedVspoof = actualPackVoltage - 48; } //60S max..was 20 =225v, this gives 197v so more power not clear how this works with MIN_SPOOFED_VOLTAGE settings
-    else                              { maxAllowedVspoof = actualPackVoltage - 50; } //..was21
+           { maxAllowedVspoof = actualPackVoltage * 0.4 + 72; } 
+		   // adjusts spoof voltage across entire range so that current is 50A nominal, 83A peak
+           // no change at 120V therefore smooth cutin for drievability refinement 
+		   // 48S yields from +19% power
+		   // 60S yields from +28% power
+		   // max spoofing is within 67% of actual fully charged
+		   // this is compatible with standard 100A OEM fuse.
 
     return maxAllowedVspoof;
 }
