@@ -252,23 +252,21 @@ uint8_t BATTSCI_calculateChargeRequestByte(void)
 //Adjust final SoC value as needed to improve driving characteristics
 uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
 {
-    if      (SoC_mappedToMCM_deciPercent > previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent + 1; }
+        #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING  
+	    //note background regen is not shown on OEM charge/assist gauge, regen under braking is unaffected
+		//only recommended for 47A FoMoCo users (who grid charge)
+		//moved to before previousOutputSoC_deciPercent so that all BATTSCI SoC setpoints are triggered, otherwise baground charge may not re-enable etc.
+          if ((SoC_mappedToMCM_deciPercent < 720) && (SoC_mappedToMCM_deciPercent > 240)) { SoC_mappedToMCM_deciPercent = 720; } //Background charge disabled at 15%SOC
+		  else if (SoC_mappedToMCM_deciPercent = 232)                                     { SoC_mappedToMCM_deciPercent = 600; } //14%SOC Background charge enable
+		  else if (SoC_mappedToMCM_deciPercent = 224)                                     { SoC_mappedToMCM_deciPercent = 400; } //13%SOC Regen during coasting
+		  else if (SoC_mappedToMCM_deciPercent = 216)                                     { SoC_mappedToMCM_deciPercent = 250; } //12%SOC Regen under part-throttle
+		  else if (SoC_mappedToMCM_deciPercent = 208)                                     { SoC_mappedToMCM_deciPercent = 200; } //11%SOC Regen at idle, assist is disabled
+        #endif
+	
+	if      (SoC_mappedToMCM_deciPercent > previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent + 1; }
     else if (SoC_mappedToMCM_deciPercent < previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent - 1; }
 
     previousOutputSoC_deciPercent = SoC_mappedToMCM_deciPercent;
-
-   #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING  
-	//background regen is not shown on OEM charge/assist gauge, regen under braking is unaffected
-	//only recommended for 47A FoMoCo users (who grid charge)
-        if ((SoC_mappedToMCM_deciPercent < 720) && (SoC_mappedToMCM_deciPercent > 240)) { SoC_mappedToMCM_deciPercent = 720; }      //15%SOC Background charge disabled
-		else if ((SoC_mappedToMCM_deciPercent < 240) && (SoC_mappedToMCM_deciPercent > 232)) { SoC_mappedToMCM_deciPercent = 600; } //14%SOC Background charge enabled
-		else if ((SoC_mappedToMCM_deciPercent < 232) && (SoC_mappedToMCM_deciPercent > 224)) { SoC_mappedToMCM_deciPercent = 400; } //13%SOC Regen during coasting
-		else if ((SoC_mappedToMCM_deciPercent < 224) && (SoC_mappedToMCM_deciPercent > 216)) { SoC_mappedToMCM_deciPercent = 250; } //12%SOC Regen under part-throttle
-		                                                                                                                            //10%SOC Regen at idle, assist is disabled
-        //JTS2doLater: Increase spoofed pack voltage when this mode is activated
-        //             Otherwise, MCM ignores LiBCM request when pack is discharged
-        //             Need to verify MCM honors BATTSCI "disable assist" flag (so pack isn't over-discharged)
-    #endif
 
     return SoC_mappedToMCM_deciPercent;
 }
