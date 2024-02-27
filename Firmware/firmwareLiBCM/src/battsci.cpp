@@ -20,9 +20,10 @@ uint8_t framePeriod_ms = 33;
 
 //JTS2doLater: Add different SoC profile for "charges every day" crew
 //JTS2doLater: store in 'PROGMEM' to keep out of RAM (but note array elements must be indexed differently)
+
 //LUT remaps actual lithium battery SoC (unit: percent) to mimic OEM NiMH behavior (unit: deciPercent)
-//note: expands battery range from 20-80%SOC (NiMH) to 10-85%SOC (Lithium)
-//note: large deviations from 1:1 may disable brake regen?
+//roughly: expands battery range from 20-80%SOC (NiMH) to 10-85%SOC (Lithium)
+//note: large deviations from 1:1 may disable brake regen
 //note: for background regen setpoints see REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING below
 
 //input: actual lithium SoC (unit: percent integer)
@@ -40,9 +41,9 @@ const uint16_t remap_actualToSpoofedSoC[101] = {
     760,768,776,784,792,800,813,826,839,852, //LiCBM SoC = 80% to 89%
     865,878,891,904,917,930,943,956,969,982, //LiCBM SoC = 90% to 99%
     1000,                                    //LiCBM SoC = 100%
-};  
+};  //Data empirically gathered from OEM NiMH IMA system //see ../Firmware/Prototype Building Blocks/Remap SoC.ods for calculations
 
-uint16_t previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()];
+uint16_t SoC_mappedToMCM_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()];
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -62,7 +63,7 @@ void BATTSCI_begin(void)
 
 void BATTSCI_enable(void) {
     digitalWrite(PIN_BATTSCI_DE,HIGH);
-    previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; // If user grid charged over night SoC may have changed a lot.
+uint16_t  previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[650]; // If user grid charged over night SoC may have changed a lot.
     
     //JTS: Don't want to overload serial buffer on cold boot (will cause check engine light)
     //Serial.print(F("\nLiBCM SoC: "));
@@ -250,7 +251,7 @@ uint8_t BATTSCI_calculateChargeRequestByte(void)
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //Adjust final SoC value as needed to improve driving characteristics
-uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
+uint16_t BATTSCI_SoC_Hysteresis(uint16_t previousOutputSoC_deciPercent)
 {
         #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING  
 	    //note background regen is not shown on OEM charge/assist gauge, regen under braking is unaffected
@@ -263,6 +264,7 @@ uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
 		  else if (SoC_mappedToMCM_deciPercent = 208)                                     { SoC_mappedToMCM_deciPercent = 200; } //11%SOC Regen at idle, assist is disabled
         #endif
 	
+
 	if      (SoC_mappedToMCM_deciPercent > previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent + 1; }
     else if (SoC_mappedToMCM_deciPercent < previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent - 1; }
 
