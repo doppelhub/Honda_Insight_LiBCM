@@ -63,7 +63,8 @@ void BATTSCI_begin(void)
 
 void BATTSCI_enable(void) {
     digitalWrite(PIN_BATTSCI_DE,HIGH);
-uint16_t  previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[650]; // If user grid charged over night SoC may have changed a lot.
+//previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; // If user grid charged over night SoC may have changed a lot.
+  uint16_t  previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[240]; // so that battsci flags are correctly triggered  
     
     //JTS: Don't want to overload serial buffer on cold boot (will cause check engine light)
     //Serial.print(F("\nLiBCM SoC: "));
