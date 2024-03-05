@@ -43,7 +43,7 @@ const uint16_t remap_actualToSpoofedSoC[101] = {
     1000,                                    //LiCBM SoC = 100%
 };  //Data empirically gathered from OEM NiMH IMA system //see ../Firmware/Prototype Building Blocks/Remap SoC.ods for calculations
 
-uint16_t SoC_mappedToMCM_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()];
+uint16_t previousOutputSoC_deciPercent; // leave empty till later
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -57,14 +57,14 @@ void BATTSCI_begin(void)
   digitalWrite(PIN_BATTSCI_REn,HIGH);
 
   Serial2.begin(9600,SERIAL_8E1);
+  previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; // set value when LIBCM powered up
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void BATTSCI_enable(void) {
     digitalWrite(PIN_BATTSCI_DE,HIGH);
-//previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; // If user grid charged over night SoC may have changed a lot.
-  uint16_t  previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[240]; // so that battsci flags are correctly triggered  
+previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[68]; // neutral setting at key-on so that battsci flags are correctly triggered on way up/down SOC curve.
     
     //JTS: Don't want to overload serial buffer on cold boot (will cause check engine light)
     //Serial.print(F("\nLiBCM SoC: "));
@@ -252,7 +252,7 @@ uint8_t BATTSCI_calculateChargeRequestByte(void)
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //Adjust final SoC value as needed to improve driving characteristics
-uint16_t BATTSCI_SoC_Hysteresis(uint16_t previousOutputSoC_deciPercent)
+uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
 {
         #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING  
 	    //note background regen is not shown on OEM charge/assist gauge, regen under braking is unaffected
