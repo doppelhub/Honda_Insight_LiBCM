@@ -62,7 +62,7 @@ void loop()
     {
         if (time_toUpdate_keyOffValues() == true)
         {
-            LTC68042cell_sampleGatherAndProcessAllCellVoltages();
+            LTC68042cell_acquireAllCellVoltages();
             SoC_updateUsingLatestOpenCircuitVoltage();
             SoC_turnOffLiBCM_ifPackEmpty();
             cellBalance_handler();

@@ -29,7 +29,7 @@ void key_handleKeyEvent_off(void)
     LED(1,LOW);
     BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
     METSCI_disable();
-    LTC68042cell_sampleGatherAndProcessAllCellVoltages();
+    LTC68042cell_acquireAllCellVoltages();
     SoC_updateUsingLatestOpenCircuitVoltage(); //JTS2doLater: Add ten minute delay before VoC->SoC LUT
     adc_calibrateBatteryCurrentSensorOffset();
     gpio_turnPowerSensors_off();

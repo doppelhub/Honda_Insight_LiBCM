@@ -16,23 +16,54 @@ lcd_I2C_jts lcd2(0x27);
 //JTS2doLater: Add indicator to 4x20 when fan is off/low/high
 
 //These variables are reset during key or grid charger state change
-uint8_t  packVoltageActual_onScreen = 0;
-uint8_t  packVoltageSpoofed_onScreen = 0;
-uint8_t  errorCount_onScreen = 99;
-uint16_t maxEverCellVoltage_onScreen = 0;
-uint16_t minEverCellVoltage_onScreen = 0;
-uint8_t  SoC_onScreen = 0;
-int8_t   temp_onScreen = 99;
-uint8_t  gridChargerState_onScreen = 'g';
-uint16_t hiCellVoltage_onScreen = 0;
-uint16_t loCellVoltage_onScreen = 0;
+uint8_t  packVoltageActual_onScreen   =   0;
+uint8_t  packVoltageSpoofed_onScreen  =   0;
+uint16_t maxEverCellVoltage_onScreen  =   0;
+uint16_t minEverCellVoltage_onScreen  =   0;
+uint8_t  SoC_onScreen                 =   0;
+uint16_t hiCellVoltage_onScreen       =   0;
+uint16_t loCellVoltage_onScreen       =   0;
+int8_t   battTemp_onScreen            =  99;
+uint8_t  isoSPI_errorFlag_onScreen    = 'e';
+uint8_t  fanSpeed_onScreen            = 'f';
+uint8_t  gridChargerState_onScreen    = 'g';
+uint8_t  heaterState_onScreen         = 'h';
+bool     isBacklightFlashingRequested =  NO;
 
 bool areAllStaticValuesDisplayed = NO;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void lcd_begin(void) { lcd2.begin(20,4); }
-void lcd_end(void)   { Wire.end(); }
+void lcdTransmit_begin(void) { lcd2.begin(20,4); }
+void lcdTransmit_end(void)   { Wire.end();       }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+//flash backlight if one of the functions below requests it
+bool lcd_flashBacklight(void)
+{
+    bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
+    static bool isBacklightOn = YES;
+    static uint32_t lastBacklightStateChange_ms = 0;
+
+    if (isBacklightFlashingRequested == NO)
+    {
+        if (isBacklightOn == NO)
+        {
+            lcd2.backlight();
+            didscreenUpdateOccur = SCREEN_UPDATED;
+        }
+    }
+    else if ((millis() - lastBacklightStateChange_ms) > (BACKLIGHT_FLASHING_PERIOD_ms>>1))
+    {
+        if (isBacklightOn == YES) { lcd2.noBacklight(); isBacklightOn = NO;  }
+        else                      { lcd2.backlight();   isBacklightOn = YES; }
+
+        lastBacklightStateChange_ms = millis();
+        didscreenUpdateOccur = SCREEN_UPDATED;      
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -69,15 +100,16 @@ bool lcd_printTime_seconds(void)
 bool lcd_printSoC(void)
 {
     bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+    uint8_t SoC = SoC_getBatteryStateNow_percent();
 
-    if (SoC_onScreen != SoC_getBatteryStateNow_percent())
+    if (SoC_onScreen != SoC)
     {
-        SoC_onScreen = SoC_getBatteryStateNow_percent();
         lcd2.setCursor(10,3); //SoC screen position
-        if (SoC_onScreen < 10) { lcd2.print( '0');         } //add leading '0' to single digit number
-        if (SoC_onScreen > 99) { lcd2.print(F("99"));      } //can't display '100' (only QTY2 digits)
-        else                   { lcd2.print(SoC_onScreen); } //print actual value
+        if (SoC < 10) { lcd2.print( '0');         } //add leading '0' to single digit number
+        if (SoC > 99) { lcd2.print(F("99"));      } //can't display '100' (only QTY2 digits)
+        else          { lcd2.print(SoC); } //print actual value
 
+        SoC_onScreen = SoC;
         didscreenUpdateOccur = SCREEN_UPDATED;
     }
 
@@ -89,13 +121,16 @@ bool lcd_printSoC(void)
 bool lcd_printStackVoltage_actual(void)
 {
     bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+    uint8_t packVoltageActual = LTC68042result_packVoltage_get();
 
-    if (packVoltageActual_onScreen != LTC68042result_packVoltage_get())
+    if (packVoltageActual_onScreen != packVoltageActual)
     {
-        packVoltageActual_onScreen = LTC68042result_packVoltage_get();
-        lcd2.setCursor(2,2); //actual pack voltage position
-        lcd2.print(packVoltageActual_onScreen);
+        lcd2.setCursor(1,2); //actual pack voltage position
+        if(packVoltageActual <  10) { lcd2.print('0'); }
+        if(packVoltageActual < 100) { lcd2.print('0'); }
+        lcd2.print(packVoltageActual);
 
+        packVoltageActual_onScreen = packVoltageActual;
         didscreenUpdateOccur = SCREEN_UPDATED;
     }
 
@@ -107,13 +142,16 @@ bool lcd_printStackVoltage_actual(void)
 bool lcd_printStackVoltage_spoofed(void)
 {
     bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+    uint8_t packVoltageSpoofed = vPackSpoof_getSpoofedPackVoltage();
 
-    if (packVoltageSpoofed_onScreen != vPackSpoof_getSpoofedPackVoltage())
+    if (packVoltageSpoofed_onScreen != packVoltageSpoofed)
     {
-        packVoltageSpoofed_onScreen = vPackSpoof_getSpoofedPackVoltage();
         lcd2.setCursor(6,2); //spoofed pack voltage position
-        lcd2.print(packVoltageSpoofed_onScreen);
+        if(packVoltageSpoofed <  10) { lcd2.print('0'); }
+        if(packVoltageSpoofed < 100) { lcd2.print('0'); }
+        lcd2.print(packVoltageSpoofed);
 
+        packVoltageSpoofed_onScreen = packVoltageSpoofed;
         didscreenUpdateOccur = SCREEN_UPDATED;
     }
 
@@ -126,15 +164,15 @@ bool lcd_printTempBattery(void)
 {
     bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
-    int8_t batteryTempNow = temperature_battery_getLatest(); //get single ADC measurement
+    int8_t battTemp = temperature_battery_getLatest(); //get single ADC measurement
 
-    if (temp_onScreen != batteryTempNow)
+    if (battTemp_onScreen != battTemp)
     {
-        temp_onScreen = batteryTempNow;
+        battTemp_onScreen = battTemp;
         lcd2.setCursor(12,2);
-        if ((batteryTempNow >= 0) && (batteryTempNow < 10) ) { lcd2.print(' '); } //leading space on " 0" to " 9" degC
-        if (batteryTempNow < -9 )                            { lcd2.print(-9); } //JTS2doLater: Add additional digit for temperatures "-10" and lower
-        else                                                 { lcd2.print(batteryTempNow); }
+        if ((battTemp >= 0) && (battTemp < 10)) { lcd2.print(' '); } //leading space on " 0" to " 9" degC
+        if ( battTemp < -9 )                    { lcd2.print(-9); } //-10 degC and lower are displayed as "-9"
+        else                                    { lcd2.print(battTemp); }
 
         didscreenUpdateOccur = SCREEN_UPDATED;
     }
@@ -144,17 +182,42 @@ bool lcd_printTempBattery(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool lcd_printNumErrors(void)
+bool lcd_printLTC6804Errors(void)
 {
     bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
-    if (errorCount_onScreen != LTC68042result_errorCount_get())
-    {
-        errorCount_onScreen = LTC68042result_errorCount_get();
-        lcd2.setCursor(17,2);
-        if (errorCount_onScreen < 10) { lcd2.print(' '); } //leading space on " 0" to " 9" errors
-        lcd2.print(errorCount_onScreen);
+    uint8_t isoSPI_errorFlag = (LTC68042result_errorCount_get() == 0) ? '_' : 'E';
 
+    if (isoSPI_errorFlag_onScreen != isoSPI_errorFlag)
+    {
+        lcd2.setCursor(16,2);
+        if (isoSPI_errorFlag == 'E') { lcd2.print('E'); }
+        else                         { lcd2.print('_'); }
+
+        isoSPI_errorFlag_onScreen = isoSPI_errorFlag;
+        didscreenUpdateOccur = SCREEN_UPDATED;
+    }
+
+    return didscreenUpdateOccur;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool lcd_printFanStatus(void)
+{
+    bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
+    uint8_t fanSpeed = fan_getSpeed_now();
+
+    if (fanSpeed_onScreen != fanSpeed)
+    {
+        lcd2.setCursor(17,2);
+        if     (fanSpeed == FAN_OFF)  { lcd2.print('_'); }
+        else if(fanSpeed == FAN_LOW)  { lcd2.print('f'); }
+        else if(fanSpeed == FAN_MED)  { lcd2.print('f'); }
+        else if(fanSpeed == FAN_HIGH) { lcd2.print('F'); }
+
+        fanSpeed_onScreen = fanSpeed;
         didscreenUpdateOccur = SCREEN_UPDATED;
     }
 
@@ -176,20 +239,8 @@ bool lcd_printCellVoltage_hi(void)
         didscreenUpdateOccur = SCREEN_UPDATED;
     }
 
-    static bool isBacklightOn = true;
-
-    if ((LTC68042result_hiCellVoltage_get() > CELL_VMAX_REGEN) || (isBacklightOn == false))
-    { //at least one cell overcharged
-
-        if (isBacklightOn == true)
-        {
-            lcd2.noBacklight();
-            isBacklightOn = false;
-        } else {
-            lcd2.backlight();
-            isBacklightOn = true;
-        }
-    }
+    if (LTC68042result_hiCellVoltage_get() > CELL_VMAX_REGEN) { isBacklightFlashingRequested = YES; }
+    else                                                      { isBacklightFlashingRequested =  NO; }
 
     return didscreenUpdateOccur;
 }
@@ -211,17 +262,8 @@ bool lcd_printCellVoltage_lo(void)
 
     static bool isBacklightOn = true;
 
-    if ((LTC68042result_loCellVoltage_get() < CELL_VMIN_ASSIST) || (isBacklightOn == false))
-    { //at least one cell undercharged
-        if (isBacklightOn == true)
-        {
-            lcd2.noBacklight();
-            isBacklightOn = false;
-        } else {
-            lcd2.backlight();
-            isBacklightOn = true;
-        }
-    }
+    if (LTC68042result_loCellVoltage_get() < CELL_VMIN_ASSIST) { isBacklightFlashingRequested = YES; }
+    else                                                       { isBacklightFlashingRequested =  NO; }
 
     return didscreenUpdateOccur;
 }
@@ -360,6 +402,7 @@ bool lcd_printPower(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doLater: Add 'g' when charging below max power
 bool lcd_printGridChargerStatus(void)
 {
     bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
@@ -370,11 +413,36 @@ bool lcd_printGridChargerStatus(void)
 
     if (gridChargerState_onScreen != gridChargerState)
     {
+        lcd2.setCursor(18,2); //grid charger status position
+
+        if (gridChargerState == 'G') { lcd2.print('G'); }
+        else                         { lcd2.print('_'); }
+
+        gridChargerState_onScreen = gridChargerState;
+        didscreenUpdateOccur = SCREEN_UPDATED;
+    }
+
+    return didscreenUpdateOccur;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool lcd_printHeaterStatus(void)
+{
+    bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
+    static uint8_t heaterState = 0;
+    if (gpio_isHeaterOnNow() == YES) { heaterState = 'H'; }
+    else                             { heaterState = '_'; }
+
+    if (heaterState_onScreen != heaterState)
+    {
         lcd2.setCursor(19,2); //grid charger status position
 
-        if (gpio_isGridChargerChargingNow() == YES) { lcd2.print('G'); gridChargerState_onScreen = 'G'; }
-        else                                        { lcd2.print('_'); gridChargerState_onScreen = '_'; }
+        if (heaterState == 'H') { lcd2.print('H'); }
+        else                    { lcd2.print('_'); }
 
+        heaterState_onScreen = heaterState;
         didscreenUpdateOccur = SCREEN_UPDATED;
     }
 
@@ -385,22 +453,23 @@ bool lcd_printGridChargerStatus(void)
 
 void lcd_resetVariablesToDefault(void)
 {
-    packVoltageActual_onScreen  = 0;
-    packVoltageSpoofed_onScreen = 0;
-    errorCount_onScreen         = 99;
-    SoC_onScreen                = 0;
-    temp_onScreen               = 99;
+    packVoltageActual_onScreen  =   0;
+    packVoltageSpoofed_onScreen =   0;
+    SoC_onScreen                =   0;
+    maxEverCellVoltage_onScreen =   0;
+    minEverCellVoltage_onScreen =   0;
+    hiCellVoltage_onScreen      =   0;
+    loCellVoltage_onScreen      =   0;
+    battTemp_onScreen               =  99;
+    isoSPI_errorFlag_onScreen   = 'e';
+    fanSpeed_onScreen           = 'f';
     gridChargerState_onScreen   = 'g';
-    maxEverCellVoltage_onScreen = 0;
-    minEverCellVoltage_onScreen = 0;
-    LTC68042result_errorCount_set(0);
-    hiCellVoltage_onScreen = 0;
-    loCellVoltage_onScreen = 0;
+    heaterState_onScreen        = 'h';
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void lcd_turnDisplayOnNow(void)
+void lcdTransmit_displayOn(void)
 {
     lcd2.backlight();
     lcd2.display();
@@ -409,7 +478,7 @@ void lcd_turnDisplayOnNow(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void lcd_turnDisplayOffNow(void)
+void lcdTransmit_displayOff(void)
 {
     lcd2.noBacklight();
     lcd2.noDisplay();
@@ -417,7 +486,7 @@ void lcd_turnDisplayOffNow(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void lcd_displayWarning(uint8_t warningToDisplay)
+void lcdTransmit_Warning(uint8_t warningToDisplay)
 {
     static uint8_t whichRowToPrint = 0;
 
@@ -463,7 +532,7 @@ void lcd_displayWarning(uint8_t warningToDisplay)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void lcd_splashscreen_keyOff(void)
+void lcdTransmit_splashscreenKeyOff(void)
 {
     lcd2.clear();
     lcd2.setCursor(0,0);
@@ -480,21 +549,24 @@ bool lcd_updateValue(uint8_t stateToUpdate)
     bool didScreenUpdateOccur = SCREEN_DIDNT_UPDATE;
     switch (stateToUpdate)
     {
-        case LCDUPDATE_SECONDS      : didScreenUpdateOccur = lcd_printTime_seconds();         break;
-        case LCDUPDATE_VPACK_ACTUAL : didScreenUpdateOccur = lcd_printStackVoltage_actual();  break;
-        case LCDUPDATE_VPACK_SPOOFED: didScreenUpdateOccur = lcd_printStackVoltage_spoofed(); break;
-        case LCDUPDATE_NUMERRORS    : didScreenUpdateOccur = lcd_printNumErrors();            break;
-        case LCDUPDATE_CELL_HI      : didScreenUpdateOccur = lcd_printCellVoltage_hi();       break;
-        case LCDUPDATE_CELL_LO      : didScreenUpdateOccur = lcd_printCellVoltage_lo();       break;
-        case LCDUPDATE_CELL_DELTA   : didScreenUpdateOccur = lcd_printCellVoltage_delta();    break;
-        case LCDUPDATE_POWER        : didScreenUpdateOccur = lcd_printPower();                break;
-        case LCDUPDATE_CELL_MAXEVER : didScreenUpdateOccur = lcd_printMaxEverVoltage();       break;
-        case LCDUPDATE_CELL_MINEVER : didScreenUpdateOccur = lcd_printMinEverVoltage();       break;
-        case LCDUPDATE_SoC          : didScreenUpdateOccur = lcd_printSoC();                  break;
-        case LCDUPDATE_CURRENT      : didScreenUpdateOccur = lcd_printCurrent();              break;
-        case LCDUPDATE_TEMP_BATTERY : didScreenUpdateOccur = lcd_printTempBattery();          break;
-        case LCDUPDATE_GRID_STATUS  : didScreenUpdateOccur = lcd_printGridChargerStatus();    break;
-        default                     : didScreenUpdateOccur = SCREEN_UPDATED;                  break; //if illegal input, exit immediately
+        case LCDVALUE_SECONDS        : didScreenUpdateOccur = lcd_printTime_seconds();         break;
+        case LCDVALUE_VPACK_ACTUAL   : didScreenUpdateOccur = lcd_printStackVoltage_actual();  break;
+        case LCDVALUE_VPACK_SPOOFED  : didScreenUpdateOccur = lcd_printStackVoltage_spoofed(); break;
+        case LCDVALUE_LTC6804_ERRORS : didScreenUpdateOccur = lcd_printLTC6804Errors();        break;
+        case LCDVALUE_CELL_HI        : didScreenUpdateOccur = lcd_printCellVoltage_hi();       break;
+        case LCDVALUE_CELL_LO        : didScreenUpdateOccur = lcd_printCellVoltage_lo();       break;
+        case LCDVALUE_CELL_DELTA     : didScreenUpdateOccur = lcd_printCellVoltage_delta();    break;
+        case LCDVALUE_POWER          : didScreenUpdateOccur = lcd_printPower();                break;
+        case LCDVALUE_CELL_MAXEVER   : didScreenUpdateOccur = lcd_printMaxEverVoltage();       break;
+        case LCDVALUE_CELL_MINEVER   : didScreenUpdateOccur = lcd_printMinEverVoltage();       break;
+        case LCDVALUE_SoC            : didScreenUpdateOccur = lcd_printSoC();                  break;
+        case LCDVALUE_CURRENT        : didScreenUpdateOccur = lcd_printCurrent();              break;
+        case LCDVALUE_TEMP_BATTERY   : didScreenUpdateOccur = lcd_printTempBattery();          break;
+        case LCDVALUE_FAN_STATUS     : didScreenUpdateOccur = lcd_printFanStatus();            break;
+        case LCDVALUE_GRID_STATUS    : didScreenUpdateOccur = lcd_printGridChargerStatus();    break;
+        case LCDVALUE_HEATER_STATUS  : didScreenUpdateOccur = lcd_printHeaterStatus();         break;
+        case LCDVALUE_FLASH_BACKLIGHT: didScreenUpdateOccur = lcd_flashBacklight();            break;
+        default /* illegal state */  : didScreenUpdateOccur = SCREEN_UPDATED;                  break;
     }
 
     return didScreenUpdateOccur;
@@ -502,67 +574,65 @@ bool lcd_updateValue(uint8_t stateToUpdate)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void updateNextValue(void)
+void updateNextVariable(void)
 {
-    static uint8_t lcdElementToUpdate = LCDUPDATE_NO_UPDATE; //init round-robin
+    static uint8_t lcdVariableToUpdate = LCDVALUE_NO_UPDATE; //init round-robin
 
     uint8_t updateAttempts = 0;
         do
         {
-            if ((++lcdElementToUpdate) > LCDUPDATE_MAX_VALUE) { lcdElementToUpdate = 1; } //reset to first element
+            if ((++lcdVariableToUpdate) > LCDVALUE_MAX_VALUE) { lcdVariableToUpdate = 1; } //reset to first element
             updateAttempts++;
-        } while ((lcd_updateValue(lcdElementToUpdate) == SCREEN_DIDNT_UPDATE) && (updateAttempts < MAX_LCDUPDATE_ATTEMPTS));
+        } while ((lcd_updateValue(lcdVariableToUpdate) == SCREEN_DIDNT_UPDATE) && (updateAttempts < MAX_LCDVALUE_ATTEMPTS));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doLater: Implement proposed format
-//      //                                          1111111111
-//      //                                01234567890123456789
-//      //4x20 screen text display format:********************
-//      lcd2.setCursor(0,0);  lcd2.print("00Hx.xxx(y.yyy) Css%");
-//      lcd2.setCursor(0,1);  lcd2.print("00La.aaa(b.bbb) TggC");
-//      lcd2.setCursor(0,2);  lcd2.print("Vprrr(fff) dz.zzz   ");
-//      lcd2.setCursor(0,3);  lcd2.print("tuuuuu A-ccc kW-kk.k");
-
 #ifdef RUN_BRINGUP_TESTER_MOTHERBOARD
-    //this function is too slow to call during keyON
-    //replaced by updateNextStatic(), (but bringup tester still uses it)
-    //JTS2doLater: make new function for bringup tester to display random text
-    void lcd_printStaticText(void)
+    void lcdTransmit_testText(void)
     {
         lcd2.setCursor(0,0);
         //                                            1111111111
         //                                  01234567890123456789
         //4x20 screen text display format:  ********************
-        lcd2.setCursor(0,0);  lcd2.print(F("Hx.xxx(y.yyy) dz.zzz")); //row0: x.xxx=(1,0)   y.yyy=(7,0) z.zzz=(15,0)
-        lcd2.setCursor(0,1);  lcd2.print(F("La.aaa(b.bbb) A-ccc ")); //row1: a.aaa=(1,1)   b.bbb=(7,1) ccc=(15,1)
-        lcd2.setCursor(0,2);  lcd2.print(F("Vprrr(fff) ThhC Eeeg")); //row2: rrr=(2,2)     fff=(6,2)   hh=(12,2) ee=(17,2) p=(19,2)
-        lcd2.setCursor(0,3);  lcd2.print(F("tuuuuu SoCss kW-kk.k")); //row3: uuuuu=(1,3)   ss=(10,3)   kk.k=(15,3)
-
-                                                                          // x.xxx:cellHI  y.yyy:Vmax  z.zzz:deltaV
-                                                                          // a.aaa:cellLO  b.bbb:Vmin  ccc:current
-                                                                          // rrr:Vpack     fff:Vspoof  hh:T_batt ee:errors g:gridFlag
-                                                                          // uuuuu:t_keyOn ss:SoC(%)   kk.k:power
+        lcd2.setCursor(0,0);  lcd2.print(F("00000000001111111111"));
+        lcd2.setCursor(0,1);  lcd2.print(F("01234567890123456789"));
+        lcd2.setCursor(0,2);  lcd2.print(F("ABCDEFGHIJKLMNOPQRST"));
+        lcd2.setCursor(0,3);  lcd2.print(F("UVWXYZ HELLO WORLD!!"));
     }
 #endif
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//this function replaces lcd_printStaticText(), which was too slow to call during keyON
+//LCD character formatting:
+        //      Column#:
+        //      00000000001111111111
+        //      01234567890123456789
+        //      ********************
+        //Row0 "Hx.xxx(y.yyy) dz.zzz" | x.xxx=(1,0)   y.yyy=(7,0) z.zzz=(15,0)
+        //Row1 "La.aaa(b.bbb) A-ccc " | a.aaa=(1,1)   b.bbb=(7,1)   ccc=(15,1)
+        //Row2 "Vrrr(Swww) ThhC efgh" |   rrr=(1,2)     www=(6,2)    hh=(12,2) e=(16,2) f=(17,2) g=(18,2) h=(19,2)
+        //Row3 "tuuuuu SoCss kW-kk.k" | uuuuu=(1,3)     ss=(10,3)  kk.k=(15,3)
+        //      ********************
+        //
+        //lowercase letters are variables (except 't' for time):
+        //                              x.xxx:cellHI  y.yyy:Vmax  z.zzz:deltaV
+        //                              a.aaa:cellLO  b.bbb:Vmin  ccc:current
+        //                              rrr:Vpack     www:Vspoof  hh:T_batt e:isoSPI_errors f:fan g:charger h:heater
+        //                              uuuuu:t_keyOn ss:SoC(%)   kk.k:power
+        //
+//this function writes the above static data, one element per call:
 bool updateNextStatic(void)
 {
-    static uint8_t lcdElementToUpdate = LCDSTATIC_NO_UPDATE;
+    static uint8_t lcdStaticElementToUpdate = LCDSTATIC_SET_DEFAULTS;
 
-    lcd_resetVariablesToDefault();
-
-    switch (lcdElementToUpdate)
+    switch (lcdStaticElementToUpdate)
     {
-        case LCDSTATIC_NO_UPDATE: /*reduce CPU time when they key first turns on */  break;
+        case LCDSTATIC_SET_DEFAULTS:  lcd_resetVariablesToDefault();                  break;
         case LCDSTATIC_SECONDS:       lcd2.setCursor( 0,3); lcd2.print(F("tuuuuu") ); break;
-        case LCDSTATIC_VPACK_ACTUAL:  lcd2.setCursor( 0,2); lcd2.print(F("Vprrr")  ); break;
-        case LCDSTATIC_VPACK_SPOOFED: lcd2.setCursor( 5,2); lcd2.print(F("(fff)")  ); break;
-        case LCDSTATIC_NUMERRORS:     lcd2.setCursor(15,2); lcd2.print(F(" Eee")   ); break;
+        case LCDSTATIC_VPACK_ACTUAL:  lcd2.setCursor( 0,2); lcd2.print(F("Vrrr")   ); break;
+        case LCDSTATIC_VPACK_SPOOFED: lcd2.setCursor( 4,2); lcd2.print(F("(Swww)") ); break;
+        case LCDSTATIC_CHAR_FLAGS:    lcd2.setCursor(15,2); lcd2.print(F(" efgh")  ); break;
         case LCDSTATIC_CELL_HI:       lcd2.setCursor( 0,0); lcd2.print(F("Hx.xxx") ); break;
         case LCDSTATIC_CELL_LO:       lcd2.setCursor( 0,1); lcd2.print(F("La.aaa") ); break;
         case LCDSTATIC_CELL_DELTA:    lcd2.setCursor(13,0); lcd2.print(F(" dz.zzz")); break;
@@ -572,13 +642,16 @@ bool updateNextStatic(void)
         case LCDSTATIC_SoC:           lcd2.setCursor( 6,3); lcd2.print(F(" SoCss ")); break;
         case LCDSTATIC_CURRENT:       lcd2.setCursor(13,1); lcd2.print(F(" A-ccc ")); break;
         case LCDSTATIC_TEMP_BATTERY:  lcd2.setCursor(10,2); lcd2.print(F(" ThhC")  ); break;
-        case LCDSTATIC_GRID_STATUS:   lcd2.setCursor(19,2); lcd2.print(F("g")      ); break;
-
+        default:                                                                      break;
     }
 
     bool doneDisplayingStaticValues = NO;
-    if (lcdElementToUpdate++ == LCDSTATIC_MAX_VALUE) { doneDisplayingStaticValues = YES; lcdElementToUpdate = LCDSTATIC_NO_UPDATE; }
-    else                                             { doneDisplayingStaticValues =  NO;                                           }
+    
+    if (++lcdStaticElementToUpdate > LCDSTATIC_MAX_VALUE)
+    {
+        doneDisplayingStaticValues = YES;
+        lcdStaticElementToUpdate = LCDSTATIC_SET_DEFAULTS;
+    }
 
     return doneDisplayingStaticValues;
 }
@@ -587,18 +660,10 @@ bool updateNextStatic(void)
 
 //primary interface
 //update one screen element (if any have changed)
-void lcdTransmit_printNextElement_keyOn(void)
+void lcdTransmit_printNextElement(void)
 {
-    static uint32_t millis_previous = 0;
-
-    //Only update screen at a human-readable rate
-    if ((uint32_t)(millis() - millis_previous) > SCREEN_UPDATE_RATE_MILLIS)
-    {
-        millis_previous = millis();
-
-        if (areAllStaticValuesDisplayed == YES) { updateNextValue();  }
-        else { areAllStaticValuesDisplayed = updateNextStatic(); } //static values are only sent once, each time after the display turns on
-    }
+    if (areAllStaticValuesDisplayed == YES) { updateNextVariable(); }
+    else { areAllStaticValuesDisplayed = updateNextStatic(); } //static values only sent once each time the display turns on
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

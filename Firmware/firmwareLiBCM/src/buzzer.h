@@ -24,8 +24,6 @@
     #define BUZZER_LO_MASK   0b01010101 //OR this mask with buzzerTone_allRequestors to see if any subsystem is requesting  low tone buzzer
     #define BUZZER_FORCE_OFF 0b00000000
 
-    #define BUZZER_CHANGE_MIN_DURATION_ms (100) //period required before buzzer tone can change
-
     void buzzer_handler(void);
 
     uint8_t buzzer_getTone_now(void);

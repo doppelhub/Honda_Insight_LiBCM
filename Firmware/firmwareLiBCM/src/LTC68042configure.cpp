@@ -124,17 +124,23 @@ bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
 
         if (helper_doesActualPackSizeMatchUserConfig == false)
         {
+            //fatal error
+            //alert user and then turn off
+
             Serial.print(F("\nError: measured cell count disagrees with user specified cell count in config.h"));
 
-            lcd_begin();
+            lcdTransmit_begin();
             delay(50); //delay doesn't matter because this is a fatal error
-            lcd_turnDisplayOnNow();
+            lcdTransmit_displayOn();
             delay(50); //delay doesn't matter because this is a fatal error
-            lcd_displayWarning(LCD_WARN_CELL_COUNT);
+            lcdTransmit_Warning(LCD_WARN_CELL_COUNT);
 
-            delay(5000); //allow time for user to read screen //delay doesn't matter because this is a fatal error
+            gpio_turnBuzzer_on_highFreq(); //call GPIO directly
+            
+            wdt_disable(); //turn off watchdog to prevent reset
 
-            buzzer_requestTone(BUZZER_REQUESTOR_USER, BUZZER_HIGH); //buzzer stays on forever
+            delay(10000); //give the user enough time to read error message
+            gpio_turnLiBCM_off(); //game over... thanks for playing
         }
     }
 

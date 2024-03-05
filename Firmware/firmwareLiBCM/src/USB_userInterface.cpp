@@ -69,8 +69,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     }
     else if (testToRun == '4')
     {
-        Serial.print(F("Turn Buzzer Off"));
-        buzzer_requestTone(BUZZER_REQUESTOR_USER, BUZZER_OFF);
+        printText_UNUSED();
     }
     else if (testToRun == '5')
     {
@@ -102,7 +101,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     else if (testToRun == 'E') { eeprom_resetAll(); }
     else if (testToRun == 'C')
     {
-        LTC68042cell_sampleGatherAndProcessAllCellVoltages();
+        LTC68042cell_acquireAllCellVoltages();
         for (uint8_t ii = 0; ii < TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages(ii, FOUR_DECIMAL_PLACES); }
     }
     else if (testToRun == 'H')
