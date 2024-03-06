@@ -48,6 +48,7 @@
     void eeprom_batteryHistory_reset(void);
 
     void eeprom_resetAll(void);
+    void eeprom_resetAll_userConfirm(void);
 
     void eeprom_batteryHistory_incrementValue(uint8_t indexTemperature, uint8_t indexSoC);
 

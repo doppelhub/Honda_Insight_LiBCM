@@ -315,6 +315,21 @@ void eeprom_resetAll(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void eeprom_resetAll_userConfirm(void)
+{
+    static uint32_t lastTimeThisFunctionCalled = 0;
+
+    if      (key_getSampledState() == KEYSTATE_ON) { Serial.print(F("\nKey must be off")); }
+    else if (millis() - lastTimeThisFunctionCalled > 10000)
+    {
+        Serial.print(F("\nRepeat command to erase all EEPROM data"));
+        lastTimeThisFunctionCalled = millis();
+    }
+    else { eeprom_resetAll(); }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void eeprom_begin(void)
 {
     eeprom_verifyDataValid();

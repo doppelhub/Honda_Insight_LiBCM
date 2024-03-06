@@ -51,8 +51,8 @@
 
     #define BACKLIGHT_FLASHING_PERIOD_ms 200
 
-    #define CYCLEFRAME_A_PERIOD_ms  3000
-    #define CYCLEFRAME_B_PERIOD_ms  7000
+    #define CYCLEFRAME_A_PERIOD_ms   3000
+    #define CYCLEFRAME_B_PERIOD_ms  17000
 
     #define CYCLEFRAME_INIT         0
     #define CYCLEFRAME_A            1

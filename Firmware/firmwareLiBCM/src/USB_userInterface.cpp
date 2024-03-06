@@ -98,7 +98,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     else if (testToRun == 'T') { temperature_measureAndPrintAll(); }
     else if (testToRun == 'R') { LTC6804gpio_areAllVoltageReferencesPassing(); }
     else if (testToRun == 'W') { batteryHistory_printAll(); }
-    else if (testToRun == 'E') { eeprom_resetAll(); }
+    else if (testToRun == 'E') { eeprom_resetAll_userConfirm(); }
     else if (testToRun == 'C')
     {
         LTC68042cell_acquireAllCellVoltages();
