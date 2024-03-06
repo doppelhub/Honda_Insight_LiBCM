@@ -24,6 +24,7 @@ uint8_t  SoC_onScreen                 =   0;
 uint16_t hiCellVoltage_onScreen       =   0;
 uint16_t loCellVoltage_onScreen       =   0;
 int8_t   battTemp_onScreen            =  99;
+uint8_t  cellBalanceFlag_onScreen     = 'b';
 uint8_t  isoSPI_errorFlag_onScreen    = 'e';
 uint8_t  fanSpeed_onScreen            = 'f';
 uint8_t  gridChargerState_onScreen    = 'g';
@@ -146,7 +147,7 @@ bool lcd_printStackVoltage_spoofed(void)
 
     if (packVoltageSpoofed_onScreen != packVoltageSpoofed)
     {
-        lcd2.setCursor(6,2); //spoofed pack voltage position
+        lcd2.setCursor(5,2); //spoofed pack voltage position
         if(packVoltageSpoofed <  10) { lcd2.print('0'); }
         if(packVoltageSpoofed < 100) { lcd2.print('0'); }
         lcd2.print(packVoltageSpoofed);
@@ -169,11 +170,32 @@ bool lcd_printTempBattery(void)
     if (battTemp_onScreen != battTemp)
     {
         battTemp_onScreen = battTemp;
-        lcd2.setCursor(12,2);
+        lcd2.setCursor(11,2);
         if ((battTemp >= 0) && (battTemp < 10)) { lcd2.print(' '); } //leading space on " 0" to " 9" degC
         if ( battTemp < -9 )                    { lcd2.print(-9); } //-10 degC and lower are displayed as "-9"
         else                                    { lcd2.print(battTemp); }
 
+        didscreenUpdateOccur = SCREEN_UPDATED;
+    }
+
+    return didscreenUpdateOccur;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool lcd_cellBalanceStatus(void)
+{
+    bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
+
+    uint8_t cellBalanceFlag = (cellBalance_areCellsBalanced() == YES) ? '_' : 'B';
+
+    if (cellBalanceFlag_onScreen != cellBalanceFlag)
+    {
+        lcd2.setCursor(15,2);
+        if (cellBalanceFlag == 'B') { lcd2.print('B'); }
+        else                        { lcd2.print('_'); }
+
+        cellBalanceFlag_onScreen = cellBalanceFlag;
         didscreenUpdateOccur = SCREEN_UPDATED;
     }
 
@@ -460,7 +482,8 @@ void lcd_resetVariablesToDefault(void)
     minEverCellVoltage_onScreen =   0;
     hiCellVoltage_onScreen      =   0;
     loCellVoltage_onScreen      =   0;
-    battTemp_onScreen               =  99;
+    battTemp_onScreen           =  99;
+    cellBalanceFlag_onScreen    = 'b';
     isoSPI_errorFlag_onScreen   = 'e';
     fanSpeed_onScreen           = 'f';
     gridChargerState_onScreen   = 'g';
@@ -565,6 +588,7 @@ bool lcd_updateValue(uint8_t stateToUpdate)
         case LCDVALUE_FAN_STATUS     : didScreenUpdateOccur = lcd_printFanStatus();            break;
         case LCDVALUE_GRID_STATUS    : didScreenUpdateOccur = lcd_printGridChargerStatus();    break;
         case LCDVALUE_HEATER_STATUS  : didScreenUpdateOccur = lcd_printHeaterStatus();         break;
+        case LCDVALUE_BALANCE_STATUS : didScreenUpdateOccur = lcd_cellBalanceStatus();         break;
         case LCDVALUE_FLASH_BACKLIGHT: didScreenUpdateOccur = lcd_flashBacklight();            break;
         default /* illegal state */  : didScreenUpdateOccur = SCREEN_UPDATED;                  break;
     }
@@ -605,21 +629,20 @@ void updateNextVariable(void)
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //LCD character formatting:
-        //      Column#:
+        //      LCD Column#:
         //      00000000001111111111
-        //      01234567890123456789
-        //      ********************
-        //Row0 "Hx.xxx(y.yyy) dz.zzz" | x.xxx=(1,0)   y.yyy=(7,0) z.zzz=(15,0)
-        //Row1 "La.aaa(b.bbb) A-ccc " | a.aaa=(1,1)   b.bbb=(7,1)   ccc=(15,1)
-        //Row2 "Vrrr(Swww) ThhC efgh" |   rrr=(1,2)     www=(6,2)    hh=(12,2) e=(16,2) f=(17,2) g=(18,2) h=(19,2)
-        //Row3 "tuuuuu SoCss kW-kk.k" | uuuuu=(1,3)     ss=(10,3)  kk.k=(15,3)
-        //      ********************
+        //      01234567890123456789    variable definitions:
+        //      |****|****|****|****    cellMaxNow  cellMaxKey  cellDeltaV
+        //Row0 "Hx.xxx(y.yyy) Dd.ddd" | x.xxx=(1,0) y.yyy=(7,0) d.ddd=(15,0)
         //
-        //lowercase letters are variables (except 't' for time):
-        //                              x.xxx:cellHI  y.yyy:Vmax  z.zzz:deltaV
-        //                              a.aaa:cellLO  b.bbb:Vmin  ccc:current
-        //                              rrr:Vpack     www:Vspoof  hh:T_batt e:isoSPI_errors f:fan g:charger h:heater
-        //                              uuuuu:t_keyOn ss:SoC(%)   kk.k:power
+        //      |****|****|****|****    cellMinNow  cellMinKey  packAmps
+        //Row1 "La.aaa(j.jjj) A-cc.c" | a.aaa=(1,1) j.jjj=(7,1) -cc.c=(15,1)
+        //
+        //      |****|****|****|****    VpackActual VpackSpoof  battTemp  balancing errorLTC fan      charger  heater
+        //Row2 "Vrrr(mmm) TkkC befgh" | rrr=(1,2)   mmm=(5,2)   kk=(11,2) b=(15,2)  e=(16,2) f=(17,2) g=(18,2) h=(19,2)
+        //
+        //      |****|****|****|****    uptimeKeyOn packSoC     power_kW     
+        //Row3 "tuuuuu SoCss kW-pp.p" | uuuuu=(1,3) ss=(10,3)   -pp.p=(15,3)
         //
 //this function writes the above static data, one element per call:
 bool updateNextStatic(void)
@@ -631,17 +654,17 @@ bool updateNextStatic(void)
         case LCDSTATIC_SET_DEFAULTS:  lcd_resetVariablesToDefault();                  break;
         case LCDSTATIC_SECONDS:       lcd2.setCursor( 0,3); lcd2.print(F("tuuuuu") ); break;
         case LCDSTATIC_VPACK_ACTUAL:  lcd2.setCursor( 0,2); lcd2.print(F("Vrrr")   ); break;
-        case LCDSTATIC_VPACK_SPOOFED: lcd2.setCursor( 4,2); lcd2.print(F("(Swww)") ); break;
-        case LCDSTATIC_CHAR_FLAGS:    lcd2.setCursor(15,2); lcd2.print(F(" efgh")  ); break;
+        case LCDSTATIC_VPACK_SPOOFED: lcd2.setCursor( 4,2); lcd2.print(F("(mmm)")  ); break;
+        case LCDSTATIC_CHAR_FLAGS:    lcd2.setCursor(15,2); lcd2.print(F("befgh")  ); break;
         case LCDSTATIC_CELL_HI:       lcd2.setCursor( 0,0); lcd2.print(F("Hx.xxx") ); break;
         case LCDSTATIC_CELL_LO:       lcd2.setCursor( 0,1); lcd2.print(F("La.aaa") ); break;
-        case LCDSTATIC_CELL_DELTA:    lcd2.setCursor(13,0); lcd2.print(F(" dz.zzz")); break;
-        case LCDSTATIC_POWER:         lcd2.setCursor(13,3); lcd2.print(F("kW-kk.k")); break;
+        case LCDSTATIC_CELL_DELTA:    lcd2.setCursor(13,0); lcd2.print(F(" Dd.ddd")); break;
+        case LCDSTATIC_POWER:         lcd2.setCursor(13,3); lcd2.print(F("kW-pp.p")); break;
         case LCDSTATIC_CELL_MAXEVER:  lcd2.setCursor( 6,0); lcd2.print(F("(y.yyy)")); break;
-        case LCDSTATIC_CELL_MINEVER:  lcd2.setCursor( 6,1); lcd2.print(F("(b.bbb)")); break;
+        case LCDSTATIC_CELL_MINEVER:  lcd2.setCursor( 6,1); lcd2.print(F("(j.jjj)")); break;
         case LCDSTATIC_SoC:           lcd2.setCursor( 6,3); lcd2.print(F(" SoCss ")); break;
-        case LCDSTATIC_CURRENT:       lcd2.setCursor(13,1); lcd2.print(F(" A-ccc ")); break;
-        case LCDSTATIC_TEMP_BATTERY:  lcd2.setCursor(10,2); lcd2.print(F(" ThhC")  ); break;
+        case LCDSTATIC_CURRENT:       lcd2.setCursor(13,1); lcd2.print(F(" A-cc.c")); break;
+        case LCDSTATIC_TEMP_BATTERY:  lcd2.setCursor( 9,2); lcd2.print(F(" TkkC ") ); break;
         default:                                                                      break;
     }
 

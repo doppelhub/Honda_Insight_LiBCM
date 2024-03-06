@@ -25,28 +25,29 @@
     #define LCDVALUE_FAN_STATUS      14
     #define LCDVALUE_GRID_STATUS     15
     #define LCDVALUE_HEATER_STATUS   16
-    #define LCDVALUE_FLASH_BACKLIGHT 17
+    #define LCDVALUE_BALANCE_STATUS  17
+    #define LCDVALUE_FLASH_BACKLIGHT 18
     //
-    #define LCDVALUE_MAX_VALUE       17 //must be equal to the highest defined number (above)
+    #define LCDVALUE_MAX_VALUE       18 //must be equal to the highest defined number (above)
     #define MAX_LCDVALUE_ATTEMPTS LCDVALUE_MAX_VALUE
 
     //the following static text never changes, and is only sent once each time the display turns on
-    #define LCDSTATIC_SET_DEFAULTS   18
-    #define LCDSTATIC_SECONDS        19
-    #define LCDSTATIC_VPACK_ACTUAL   20
-    #define LCDSTATIC_VPACK_SPOOFED  21
-    #define LCDSTATIC_CHAR_FLAGS     22
-    #define LCDSTATIC_CELL_HI        23
-    #define LCDSTATIC_CELL_LO        24
-    #define LCDSTATIC_CELL_DELTA     25
-    #define LCDSTATIC_POWER          26
-    #define LCDSTATIC_CELL_MAXEVER   27
-    #define LCDSTATIC_CELL_MINEVER   28
-    #define LCDSTATIC_SoC            29
-    #define LCDSTATIC_CURRENT        30
-    #define LCDSTATIC_TEMP_BATTERY   31
+    #define LCDSTATIC_SET_DEFAULTS   19
+    #define LCDSTATIC_SECONDS        20
+    #define LCDSTATIC_VPACK_ACTUAL   21
+    #define LCDSTATIC_VPACK_SPOOFED  22
+    #define LCDSTATIC_CHAR_FLAGS     23
+    #define LCDSTATIC_CELL_HI        24
+    #define LCDSTATIC_CELL_LO        25
+    #define LCDSTATIC_CELL_DELTA     26
+    #define LCDSTATIC_POWER          27
+    #define LCDSTATIC_CELL_MAXEVER   28
+    #define LCDSTATIC_CELL_MINEVER   29
+    #define LCDSTATIC_SoC            30
+    #define LCDSTATIC_CURRENT        31
+    #define LCDSTATIC_TEMP_BATTERY   32
     //
-    #define LCDSTATIC_MAX_VALUE      31 //must be equal to the highest static number (above)
+    #define LCDSTATIC_MAX_VALUE      32 //must be equal to the highest static number (above)
 
     #define BACKLIGHT_FLASHING_PERIOD_ms 200
 
