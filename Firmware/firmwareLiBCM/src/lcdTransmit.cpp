@@ -16,6 +16,8 @@ lcd_I2C_jts lcd2(0x27);
 //JTS2doLater: Add indicator to 4x20 when fan is off/low/high
 
 //These variables are reset during key or grid charger state change
+uint8_t  cycleFrameNumber = CYCLEFRAME_INIT;
+uint16_t timeValue_onScreen        = 0xFFFF;
 uint8_t  packVoltageActual_onScreen   =   0;
 uint8_t  packVoltageSpoofed_onScreen  =   0;
 uint16_t maxEverCellVoltage_onScreen  =   0;
@@ -31,7 +33,7 @@ uint8_t  gridChargerState_onScreen    = 'g';
 uint8_t  heaterState_onScreen         = 'h';
 bool     isBacklightFlashingRequested =  NO;
 
-bool areAllStaticValuesDisplayed = NO;
+bool     areAllStaticValuesDisplayed  =  NO;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -40,7 +42,36 @@ void lcdTransmit_end(void)   { Wire.end();       }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//flash backlight if one of the functions below requests it
+//some screen elements cycle through various values over time
+//this function determines which cycle frame to display
+//stores 'CYCLEFRAME_A', 'CYCLEFRAME_B', etc in cycleFrameNumber
+void whichCycleFrameToDisplay(void)
+{
+    static uint32_t lastTimeFrameChanged_ms = 0;
+
+    uint32_t timeKeyOn_ms = time_sinceLatestKeyOn_ms();
+
+    if (timeKeyOn_ms < 500)
+    {
+        cycleFrameNumber = CYCLEFRAME_A;
+        lastTimeFrameChanged_ms = 0;  
+    }
+
+    uint16_t frameDisplayPeriod_ms = 0;
+    
+    if      (cycleFrameNumber == CYCLEFRAME_A)  { frameDisplayPeriod_ms = CYCLEFRAME_A_PERIOD_ms; }
+    else if (cycleFrameNumber == CYCLEFRAME_B)  { frameDisplayPeriod_ms = CYCLEFRAME_B_PERIOD_ms; }
+
+    if(timeKeyOn_ms - lastTimeFrameChanged_ms >= frameDisplayPeriod_ms)
+    {
+        lastTimeFrameChanged_ms = timeKeyOn_ms;
+        if(++cycleFrameNumber > CYCLEFRAME_MAX_VALUE) { cycleFrameNumber = CYCLEFRAME_A; }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+//flash backlight if requested
 bool lcd_flashBacklight(void)
 {
     bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
@@ -68,29 +99,62 @@ bool lcd_flashBacklight(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//time since last keyON
-bool lcd_printTime_seconds(void)
+//alternates between:
+    //time since last keyON, and; //"tuuuuu" in seconds
+    //time until firmware expires //"FWuuuu" in minutes
+bool lcd_printTime_unitless(void)
 {
     bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
-    static uint16_t seconds_onScreen = 0;
-    uint32_t keyOnTime_ms = (uint32_t)(millis() - key_latestTurnOnTime_ms_get());
-    uint16_t keyOnTime_seconds = (uint16_t)(keyOnTime_ms * 0.001); //rolls over after keyON for 18 hours
+    static uint8_t cycleFrameNumber_previous = CYCLEFRAME_INIT;
 
-    if (seconds_onScreen != keyOnTime_seconds)
+    if (time_sinceLatestKeyOn_ms() < 500) { cycleFrameNumber_previous = CYCLEFRAME_INIT; }
+
+    if (cycleFrameNumber_previous != cycleFrameNumber)
     {
-        seconds_onScreen = keyOnTime_seconds;
-
-        lcd2.setCursor(1,3);
-
-        if      (keyOnTime_seconds < 10   ) { lcd2.print(F("    ")); } //one   digit  //   0:   9
-        else if (keyOnTime_seconds < 100  ) { lcd2.print(F("   ") ); } //two   digits //  10:  99
-        else if (keyOnTime_seconds < 1000 ) { lcd2.print(F("  ")  ); } //three digits // 100: 999
-        else if (keyOnTime_seconds < 10000) { lcd2.print(F(" ")   ); } //four  digits //1000:9999
-                                                                //five  digits doesn't require leading spaces //10000:65535
-        lcd2.print(String(keyOnTime_seconds));
-
+        lcd2.setCursor(0,3);
+        if      (cycleFrameNumber == CYCLEFRAME_A) { lcd2.print(F("FW")); }
+        else if (cycleFrameNumber == CYCLEFRAME_B) { lcd2.print(F("t" )); }
+        
+        cycleFrameNumber_previous = cycleFrameNumber;
         didscreenUpdateOccur = SCREEN_UPDATED;
+    }
+    else if (cycleFrameNumber == CYCLEFRAME_A)
+    {
+        uint16_t timeMinutes = 9876; //JTS2doNow: Add function to read actual expiration time in minutes
+
+        if (timeValue_onScreen != timeMinutes)
+        {
+            lcd2.setCursor(2,3);
+
+            if      (timeMinutes < 10   ) { lcd2.print(F("   ")); } //one   digit  (  0:   9)
+            else if (timeMinutes < 100  ) { lcd2.print(F("  ") ); } //two   digits ( 10:  99)
+            else if (timeMinutes < 1000 ) { lcd2.print(F(" ")  ); } //three digits (100: 999)
+
+            lcd2.print(String(timeMinutes));
+
+            timeValue_onScreen = timeMinutes;
+            didscreenUpdateOccur = SCREEN_UPDATED;
+        }
+    }
+    else if (cycleFrameNumber == CYCLEFRAME_B)
+    {
+        uint16_t timeSeconds = time_sinceLatestKeyOn_seconds();
+
+        if (timeValue_onScreen != timeSeconds)
+        {
+            lcd2.setCursor(1,3);
+
+            if      (timeSeconds < 10   ) { lcd2.print(F("    ")); } //one   digit  //   0:   9
+            else if (timeSeconds < 100  ) { lcd2.print(F("   ") ); } //two   digits //  10:  99
+            else if (timeSeconds < 1000 ) { lcd2.print(F("  ")  ); } //three digits // 100: 999
+            else if (timeSeconds < 10000) { lcd2.print(F(" ")   ); } //four  digits //1000:9999
+
+            lcd2.print(String(timeSeconds));
+
+            timeValue_onScreen = timeSeconds;
+            didscreenUpdateOccur = SCREEN_UPDATED;
+        }
     }
 
     return didscreenUpdateOccur;
@@ -475,19 +539,22 @@ bool lcd_printHeaterStatus(void)
 
 void lcd_resetVariablesToDefault(void)
 {
-    packVoltageActual_onScreen  =   0;
-    packVoltageSpoofed_onScreen =   0;
-    SoC_onScreen                =   0;
-    maxEverCellVoltage_onScreen =   0;
-    minEverCellVoltage_onScreen =   0;
-    hiCellVoltage_onScreen      =   0;
-    loCellVoltage_onScreen      =   0;
-    battTemp_onScreen           =  99;
-    cellBalanceFlag_onScreen    = 'b';
-    isoSPI_errorFlag_onScreen   = 'e';
-    fanSpeed_onScreen           = 'f';
-    gridChargerState_onScreen   = 'g';
-    heaterState_onScreen        = 'h';
+    cycleFrameNumber = CYCLEFRAME_INIT;
+    timeValue_onScreen        = 0xFFFF;
+    packVoltageActual_onScreen   =   0;
+    packVoltageSpoofed_onScreen  =   0;
+    SoC_onScreen                 =   0;
+    maxEverCellVoltage_onScreen  =   0;
+    minEverCellVoltage_onScreen  =   0;
+    hiCellVoltage_onScreen       =   0;
+    loCellVoltage_onScreen       =   0;
+    battTemp_onScreen            =  99;
+    cellBalanceFlag_onScreen     = 'b';
+    isoSPI_errorFlag_onScreen    = 'e';
+    fanSpeed_onScreen            = 'f';
+    gridChargerState_onScreen    = 'g';
+    heaterState_onScreen         = 'h';
+    isBacklightFlashingRequested =  NO;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -572,7 +639,8 @@ bool lcd_updateValue(uint8_t stateToUpdate)
     bool didScreenUpdateOccur = SCREEN_DIDNT_UPDATE;
     switch (stateToUpdate)
     {
-        case LCDVALUE_SECONDS        : didScreenUpdateOccur = lcd_printTime_seconds();         break;
+        case LCDVALUE_CALC_CYCLEFRAME:                        whichCycleFrameToDisplay();      break;             
+        case LCDVALUE_SECONDS        : didScreenUpdateOccur = lcd_printTime_unitless();        break;
         case LCDVALUE_VPACK_ACTUAL   : didScreenUpdateOccur = lcd_printStackVoltage_actual();  break;
         case LCDVALUE_VPACK_SPOOFED  : didScreenUpdateOccur = lcd_printStackVoltage_spoofed(); break;
         case LCDVALUE_LTC6804_ERRORS : didScreenUpdateOccur = lcd_printLTC6804Errors();        break;
@@ -590,7 +658,7 @@ bool lcd_updateValue(uint8_t stateToUpdate)
         case LCDVALUE_HEATER_STATUS  : didScreenUpdateOccur = lcd_printHeaterStatus();         break;
         case LCDVALUE_BALANCE_STATUS : didScreenUpdateOccur = lcd_cellBalanceStatus();         break;
         case LCDVALUE_FLASH_BACKLIGHT: didScreenUpdateOccur = lcd_flashBacklight();            break;
-        default /* illegal state */  : didScreenUpdateOccur = SCREEN_UPDATED;                  break;
+        default                      : didScreenUpdateOccur = SCREEN_UPDATED;                  break;
     }
 
     return didScreenUpdateOccur;
@@ -603,11 +671,13 @@ void updateNextVariable(void)
     static uint8_t lcdVariableToUpdate = LCDVALUE_NO_UPDATE; //init round-robin
 
     uint8_t updateAttempts = 0;
-        do
-        {
-            if ((++lcdVariableToUpdate) > LCDVALUE_MAX_VALUE) { lcdVariableToUpdate = 1; } //reset to first element
-            updateAttempts++;
-        } while ((lcd_updateValue(lcdVariableToUpdate) == SCREEN_DIDNT_UPDATE) && (updateAttempts < MAX_LCDVALUE_ATTEMPTS));
+    
+    do
+    {
+        if ((++lcdVariableToUpdate) > LCDVALUE_MAX_VALUE) { lcdVariableToUpdate = 1; } //reset to first element
+        updateAttempts++;
+    } while ((lcd_updateValue(lcdVariableToUpdate) == SCREEN_DIDNT_UPDATE) && (updateAttempts < LCD_UPDATE_ATTEMPTS_PER_LOOP));
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -632,17 +702,19 @@ void updateNextVariable(void)
         //      LCD Column#:
         //      00000000001111111111
         //      01234567890123456789    variable definitions:
-        //      |****|****|****|****    cellMaxNow  cellMaxKey  cellDeltaV
-        //Row0 "Hx.xxx(y.yyy) Dd.ddd" | x.xxx=(1,0) y.yyy=(7,0) d.ddd=(15,0)
+        //      |****|****|****|****    cellMaxNow   cellMaxKey   cellDeltaV
+        //Row0 "Hx.xxx(y.yyy) Dd.ddd" | x.xxx=(1,0)  y.yyy=(7,0)  d.ddd=(15,0)
         //
-        //      |****|****|****|****    cellMinNow  cellMinKey  packAmps
-        //Row1 "La.aaa(j.jjj) A-cc.c" | a.aaa=(1,1) j.jjj=(7,1) -cc.c=(15,1)
+        //      |****|****|****|****    cellMinNow   cellMinKey   packAmps
+        //Row1 "La.aaa(j.jjj) A-cc.c" | a.aaa=(1,1)  j.jjj=(7,1)  -cc.c=(15,1)
         //
-        //      |****|****|****|****    VpackActual VpackSpoof  battTemp  balancing errorLTC fan      charger  heater
-        //Row2 "Vrrr(mmm) TkkC befgh" | rrr=(1,2)   mmm=(5,2)   kk=(11,2) b=(15,2)  e=(16,2) f=(17,2) g=(18,2) h=(19,2)
+        //      |****|****|****|****    VpackActual  VpackSpoof   battTemp   balancing  errorLTC  fan       charger   heater
+        //Row2 "Vrrr(mmm) TkkC befgh" | rrr=(1,2)    mmm=(5,2)    kk=(11,2)  b=(15,2)   e=(16,2)  f=(17,2)  g=(18,2)  h=(19,2)
         //
-        //      |****|****|****|****    uptimeKeyOn packSoC     power_kW     
-        //Row3 "tuuuuu SoCss kW-pp.p" | uuuuu=(1,3) ss=(10,3)   -pp.p=(15,3)
+        //      |****|****|****|****    uptimeKeyOn*  packSoC      power_kW     
+        //Row3 "tuuuuu SoCss kW-pp.p" | tuuuuu=(0,3)  ss=(10,3)    -pp.p=(15,3)
+        //                              t_firmware*
+        //                              FWuuuu=(0,3)  //*This segment cycles between these two parameters
         //
 //this function writes the above static data, one element per call:
 bool updateNextStatic(void)

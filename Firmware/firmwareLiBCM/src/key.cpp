@@ -10,16 +10,6 @@
 
 uint8_t keyState_sampled  = KEYSTATE_UNINITIALIZED; //updated by key_didStateChange() to prevent mid-loop state changes
 uint8_t keyState_previous = KEYSTATE_UNINITIALIZED;
-uint32_t key_lastTimeTurnedOn_ms = 0;
-uint32_t key_lastTimeTurnedOff_ms = 0;
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-void     key_latestTurnOnTime_ms_set(uint32_t keyOnTime) { key_lastTimeTurnedOn_ms = keyOnTime; }
-uint32_t key_latestTurnOnTime_ms_get(void)               { return key_lastTimeTurnedOn_ms;      }
-
-void key_latestTurnOffTime_ms_set(uint32_t keyOffTime) { key_lastTimeTurnedOff_ms = keyOffTime; }
-uint32_t key_latestTurnOffTime_ms_get(void)            { return key_lastTimeTurnedOff_ms;       }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -38,7 +28,7 @@ void key_handleKeyEvent_off(void)
     LiDisplay_keyOff();
     eeprom_checkForExpiredFirmware(); //JTS2doNow: Run every few days when car is off
 
-    key_latestTurnOffTime_ms_set(millis()); //MUST RUN LAST!
+    time_latestKeyOff_ms_set(millis()); //MUST RUN LAST!
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -55,7 +45,7 @@ void key_handleKeyEvent_on(void)
     LED(1,HIGH);
     LiDisplay_keyOn();
 
-    key_latestTurnOnTime_ms_set(millis()); //MUST RUN LAST!
+    time_latestKeyOn_ms_set(millis()); //MUST RUN LAST!
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

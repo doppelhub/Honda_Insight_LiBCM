@@ -9,47 +9,55 @@
 
     //define screen elements //one screen element is updated at a time, using round robbin state machine 
     #define LCDVALUE_NO_UPDATE        0
-    #define LCDVALUE_SECONDS          1
-    #define LCDVALUE_VPACK_ACTUAL     2
-    #define LCDVALUE_VPACK_SPOOFED    3
-    #define LCDVALUE_LTC6804_ERRORS   4
-    #define LCDVALUE_CELL_HI          5
-    #define LCDVALUE_CELL_LO          6
-    #define LCDVALUE_CELL_DELTA       7
-    #define LCDVALUE_POWER            8
-    #define LCDVALUE_CELL_MAXEVER     9
-    #define LCDVALUE_CELL_MINEVER    10
-    #define LCDVALUE_SoC             11
-    #define LCDVALUE_CURRENT         12
-    #define LCDVALUE_TEMP_BATTERY    13
-    #define LCDVALUE_FAN_STATUS      14
-    #define LCDVALUE_GRID_STATUS     15
-    #define LCDVALUE_HEATER_STATUS   16
-    #define LCDVALUE_BALANCE_STATUS  17
-    #define LCDVALUE_FLASH_BACKLIGHT 18
-    //
-    #define LCDVALUE_MAX_VALUE       18 //must be equal to the highest defined number (above)
-    #define MAX_LCDVALUE_ATTEMPTS LCDVALUE_MAX_VALUE
+    #define LCDVALUE_CALC_CYCLEFRAME  1
+    #define LCDVALUE_SECONDS          2
+    #define LCDVALUE_VPACK_ACTUAL     3
+    #define LCDVALUE_VPACK_SPOOFED    4
+    #define LCDVALUE_LTC6804_ERRORS   5
+    #define LCDVALUE_CELL_HI          6
+    #define LCDVALUE_CELL_LO          7
+    #define LCDVALUE_CELL_DELTA       8
+    #define LCDVALUE_POWER            9
+    #define LCDVALUE_CELL_MAXEVER    10
+    #define LCDVALUE_CELL_MINEVER    11
+    #define LCDVALUE_SoC             12
+    #define LCDVALUE_CURRENT         13
+    #define LCDVALUE_TEMP_BATTERY    14
+    #define LCDVALUE_FAN_STATUS      15
+    #define LCDVALUE_GRID_STATUS     16
+    #define LCDVALUE_HEATER_STATUS   17
+    #define LCDVALUE_BALANCE_STATUS  18
+    #define LCDVALUE_FLASH_BACKLIGHT 19
+    #define LCDVALUE_MAX_VALUE       19 //must equal the highest defined number (above)
+
+    #define LCD_UPDATE_ATTEMPTS_PER_LOOP 10
 
     //the following static text never changes, and is only sent once each time the display turns on
-    #define LCDSTATIC_SET_DEFAULTS   19
-    #define LCDSTATIC_SECONDS        20
-    #define LCDSTATIC_VPACK_ACTUAL   21
-    #define LCDSTATIC_VPACK_SPOOFED  22
-    #define LCDSTATIC_CHAR_FLAGS     23
-    #define LCDSTATIC_CELL_HI        24
-    #define LCDSTATIC_CELL_LO        25
-    #define LCDSTATIC_CELL_DELTA     26
-    #define LCDSTATIC_POWER          27
-    #define LCDSTATIC_CELL_MAXEVER   28
-    #define LCDSTATIC_CELL_MINEVER   29
-    #define LCDSTATIC_SoC            30
-    #define LCDSTATIC_CURRENT        31
-    #define LCDSTATIC_TEMP_BATTERY   32
-    //
-    #define LCDSTATIC_MAX_VALUE      32 //must be equal to the highest static number (above)
+    #define LCDSTATIC_SET_DEFAULTS   20
+    #define LCDSTATIC_SECONDS        21
+    #define LCDSTATIC_VPACK_ACTUAL   22
+    #define LCDSTATIC_VPACK_SPOOFED  23
+    #define LCDSTATIC_CHAR_FLAGS     24
+    #define LCDSTATIC_CELL_HI        25
+    #define LCDSTATIC_CELL_LO        26
+    #define LCDSTATIC_CELL_DELTA     27
+    #define LCDSTATIC_POWER          28
+    #define LCDSTATIC_CELL_MAXEVER   29
+    #define LCDSTATIC_CELL_MINEVER   30
+    #define LCDSTATIC_SoC            31
+    #define LCDSTATIC_CURRENT        32
+    #define LCDSTATIC_TEMP_BATTERY   33
+    #define LCDSTATIC_MAX_VALUE      33 //must equal the highest static number (above)
 
     #define BACKLIGHT_FLASHING_PERIOD_ms 200
+
+    #define CYCLEFRAME_A_PERIOD_ms  3000
+    #define CYCLEFRAME_B_PERIOD_ms  7000
+
+    #define CYCLEFRAME_INIT         0
+    #define CYCLEFRAME_A            1
+    #define CYCLEFRAME_B            2
+    #define CYCLEFRAME_MAX_VALUE    2 //must equal the highest defined number (above)
 
     void lcdTransmit_begin(void);
     void lcdTransmit_end(void);
