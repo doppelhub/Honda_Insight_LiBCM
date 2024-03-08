@@ -116,16 +116,14 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
 //prevents over-discharge during extended keyOFF
 void SoC_turnOffLiBCM_ifPackEmpty(void)
 {
-    static uint8_t numConsecutiveLoopsCellVoltageTooLow = 0; 
-        
     if (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER)
     {
         Serial.print(F("\nBattery is empty"));
         gpio_turnLiBCM_off(); //game over, thanks for playing
     }
-    else if((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //SoC is greater than 0, but low enough that LiBCM should turn off
-            (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true) && //give user time to plug in charger
-            (gpio_isGridChargerChargingNow() == NO)                  ) //grid charger isn't charging
+    else if ((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //battery is low
+             (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true) && //give user time to plug in charger
+             (gpio_isGridChargerChargingNow() == NO)                  ) //grid charger isn't charging
     {   
         Serial.print(F("\nBattery is low"));
         gpio_turnLiBCM_off(); //game over, thanks for playing

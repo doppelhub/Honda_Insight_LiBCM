@@ -5,12 +5,30 @@
 
 #include "libcm.h"
 
-uint8_t loopPeriod_ms = 10; //JTS2doLater: see how long period can be, then make this a constant
+uint8_t loopPeriod_ms = TIME_DEFAULT_LOOP_PERIOD_ms; //JTS2doLater: see how long period can be, then change to constant
+
+uint32_t timestamp_latestKeyOn_ms = 0;
+uint32_t timestamp_latestKeyOff_ms = 0;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void time_loopPeriod_ms_set(uint8_t period_ms) { loopPeriod_ms = period_ms; }
-uint8_t time_loopPeriod_ms_get(void) { return loopPeriod_ms; }
+void     time_latestKeyOn_ms_set(uint32_t keyOnTime) { timestamp_latestKeyOn_ms = keyOnTime; }
+uint32_t time_latestKeyOn_ms_get(void)               { return timestamp_latestKeyOn_ms;      }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+uint32_t time_sinceLatestKeyOn_ms(void)      { return millis() - timestamp_latestKeyOn_ms; }
+uint16_t time_sinceLatestKeyOn_seconds(void) { return time_sinceLatestKeyOn_ms() * 0.001;  }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void     time_latestKeyOff_ms_set(uint32_t keyOffTime) { timestamp_latestKeyOff_ms = keyOffTime; }
+uint32_t time_latestKeyOff_ms_get(void)                { return timestamp_latestKeyOff_ms;       }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void    time_loopPeriod_ms_set(uint8_t period_ms) { loopPeriod_ms = period_ms; }
+uint8_t time_loopPeriod_ms_get(void)              { return loopPeriod_ms;      }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -45,7 +63,7 @@ bool time_hasKeyBeenOffLongEnough_toTurnOffLiBCM(void)
 {
     bool keyOffForLongEnough = false;
 
-    if ((millis() - key_latestTurnOffTime_ms_get()) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000))
+    if ((millis() - time_latestKeyOff_ms_get()) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000))
     {
         keyOffForLongEnough = true;
     }

@@ -14,14 +14,14 @@ uint8_t requestDisplayOn(uint8_t state)
 
     if (state == LCDSTATE_TURNON_NOW)
     {
-        lcd_begin();
+        lcdTransmit_begin();
         timestamp_helper_ms = millis();
         return LCDSTATE_TURNING_ON;
     }
     else if (state == LCDSTATE_TURNING_ON)
     {
-        if ((millis() - timestamp_helper_ms) < LCD_TURNON_DELAY_ms) {                         return LCDSTATE_TURNING_ON; } //repeat this state until delay finishes
-        else                                                        { lcd_turnDisplayOnNow(); return LCDSTATE_ON;         }
+        if ((millis() - timestamp_helper_ms) < LCD_TURNON_DELAY_ms) {                          return LCDSTATE_TURNING_ON; } //repeat this state until delay finishes
+        else                                                        { lcdTransmit_displayOn(); return LCDSTATE_ON;         }
     }
     else { return LCDSTATE_TURNON_NOW; }
 }
@@ -34,7 +34,7 @@ uint8_t requestDisplayOff(uint8_t state)
 
     if (state == LCDSTATE_PREOFF_SPLASHSCREEN)
     {
-        lcd_splashscreen_keyOff();
+        lcdTransmit_splashscreenKeyOff();
 
         timestamp_helper_ms = millis();
         return LCDSTATE_PREOFF_DELAY_READTEXT;
@@ -47,7 +47,7 @@ uint8_t requestDisplayOff(uint8_t state)
         else
         {
             //timer expired
-            lcd_end(); //close previous session to recover from (possible) data transmission corruption during previous session
+            lcdTransmit_end(); //close previous session to recover from (possible) data transmission corruption during previous session
             timestamp_helper_ms = millis(); //variable reused for next timer
 
             return LCDSTATE_PREOFF_WAIT_FOR_SESSION_TO_END;
@@ -60,11 +60,11 @@ uint8_t requestDisplayOff(uint8_t state)
         else
         {
             //timer expired
-            lcd_begin(); //reconnect to screen so we can turn the backlight off
+            lcdTransmit_begin(); //reconnect to screen so we can turn the backlight off
             
             //might need another delay state here
 
-            lcd_turnDisplayOffNow();
+            lcdTransmit_displayOff();
 
             //does the backlight and display stay off if we Wire.end() here?
 
@@ -94,13 +94,13 @@ void lcdState_handler(void)
         //if we get here, 4x20 LCD is on and ready to display data
         else if (key_getSampledState() == KEYSTATE_ON)
         {
-            if      (gpio_isGridChargerPluggedInNow() == YES)           { lcd_displayWarning(LCD_WARN_KEYON_GRID); } 
-            else if (gpio_isCoverInstalled() == false)                  { lcd_displayWarning(LCD_WARN_COVER_GONE); }
-            else if (eeprom_expirationStatus_get() == FIRMWARE_EXPIRED) { lcd_displayWarning(LCD_WARN_FW_EXPIRED); }
-            else /* no warnings... update next screen element */        { lcdTransmit_printNextElement_keyOn();    }
+            if      (gpio_isGridChargerPluggedInNow() == YES)           { lcdTransmit_Warning(LCD_WARN_KEYON_GRID); } 
+            else if (gpio_isCoverInstalled() == false)                  { lcdTransmit_Warning(LCD_WARN_COVER_GONE); }
+            else if (eeprom_expirationStatus_get() == FIRMWARE_EXPIRED) { lcdTransmit_Warning(LCD_WARN_FW_EXPIRED); }
+            else /* no warnings... update next screen element */        { lcdTransmit_printNextElement();           }
         }
 
-        else if (gpio_isGridChargerPluggedInNow() == YES) { lcdTransmit_printNextElement_keyOn(); } //JTS2doLater: Make separate grid charging UI
+        else if (gpio_isGridChargerPluggedInNow() == YES) { lcdTransmit_printNextElement(); }
 
         //should never get here...
     #endif

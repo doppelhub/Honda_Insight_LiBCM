@@ -129,7 +129,7 @@ void EEPROM_expirationStatus_set(uint8_t newFirmwareStatus) { EEPROM.update(EEPR
 //add value stored in EEPROM (from last keyOFF event) to previous keyOFF time
 uint16_t EEPROM_calculateTotalHoursSinceLastFirmwareUpdate(void)
 {
-    uint32_t timeSincePreviousKeyOff_ms = millis() - key_latestTurnOffTime_ms_get();
+    uint32_t timeSincePreviousKeyOff_ms = millis() - time_latestKeyOff_ms_get();
     uint16_t timeSincePreviousKeyOff_hours = (uint16_t)(timeSincePreviousKeyOff_ms / MILLISECONDS_PER_HOUR);
   
     uint16_t totalHours = eeprom_uptimeStoredInEEPROM_hours_get() + timeSincePreviousKeyOff_hours;
@@ -311,6 +311,21 @@ void eeprom_resetAll(void)
 
     Serial.print(F("\nDone. Rebooting."));
     while (1) { ; } //wait for watchdog reboot
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void eeprom_resetAll_userConfirm(void)
+{
+    static uint32_t lastTimeThisFunctionCalled = 0;
+
+    if      (key_getSampledState() == KEYSTATE_ON) { Serial.print(F("\nKey must be off")); }
+    else if (millis() - lastTimeThisFunctionCalled > 10000)
+    {
+        Serial.print(F("\nRepeat command to erase all EEPROM data"));
+        lastTimeThisFunctionCalled = millis();
+    }
+    else { eeprom_resetAll(); }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

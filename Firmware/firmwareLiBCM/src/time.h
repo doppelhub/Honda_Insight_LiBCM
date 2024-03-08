@@ -13,8 +13,17 @@
 
     uint16_t time_hertz_to_milliseconds(uint8_t hertz);
 
-    void time_loopPeriod_ms_set(uint8_t period_ms);
+    void    time_loopPeriod_ms_set(uint8_t period_ms);
     uint8_t time_loopPeriod_ms_get(void);
+
+    void     time_latestKeyOn_ms_set(uint32_t keyOnTime);
+    uint32_t time_latestKeyOn_ms_get(void);
+
+    void     time_latestKeyOff_ms_set(uint32_t keyOffTime);
+    uint32_t time_latestKeyOff_ms_get(void);
+
+    uint32_t time_sinceLatestKeyOn_ms(void);
+    uint16_t time_sinceLatestKeyOn_seconds(void);
 
     #define START_TIMER true
     #define STOP_TIMER false
@@ -24,5 +33,7 @@
     #define KEY_OFF_UPDATE_PERIOD_TEN_MINUTES_ms (10 * 60000)
 
     #define MILLISECONDS_PER_HOUR 3600000
+
+    #define TIME_DEFAULT_LOOP_PERIOD_ms 10
 
 #endif
