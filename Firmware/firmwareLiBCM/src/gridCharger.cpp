@@ -145,8 +145,6 @@ void chargerControlSignals_handler(void)
         if (isChargingAllowed_previous != isChargingAllowed_now) { processChargerDisableReason(isChargingAllowed_now); }
 
         fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF); //JTS2doNow: see note ("cool a hot pack")
-		// NM Note to JTS (18 Feb 2024) -- This else statement is hit every frame while the GC is unplugged and key is off
-		// fan_requestSpeed keeps getting sent over and over
 
         //JTS2doNow: Since the charger should be off now, sound an alarm if battery current isn't ~0 amps.
     }

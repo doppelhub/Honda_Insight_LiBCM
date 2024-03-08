@@ -41,9 +41,6 @@ uint8_t numBitshifts_thisRequestor(uint8_t requestor)
 
 void fan_requestSpeed(uint8_t requestor, char newFanSpeed)
 {
-	// NM Note to JTS (18 Feb 2024): This commented code shows how frequently fan_requestSpeed gets hit.
-	/*Serial.print(F("\nfan_requestSpeed - requestor: "));
-	Serial.print(String(requestor));*/
     uint8_t fanSpeedOtherSubsystems = fanSpeed_allRequestors & ~(requestor); //mask out this requestor's previous request
     uint8_t fanSpeedThisRequestor = newFanSpeed<<numBitshifts_thisRequestor(requestor); //left shift to requestor's position in memory
     fanSpeed_allRequestors = (fanSpeedThisRequestor | fanSpeedOtherSubsystems); //combine the above
@@ -186,8 +183,6 @@ void updateFanRequest_battery(void)
         //periodically move cabin air into intake plenum
         if (doesPackWantFans() == YES) { request = periodicallyRunFans(); }
     }
-	// NM Note to JTS (18 Feb 2024) -- This block is hit every frame while the GC is unplugged and key is off
-	// fan_requestSpeed keeps getting sent over and over
     fan_requestSpeed(FAN_REQUESTOR_BATTERY, request);
 }
 
