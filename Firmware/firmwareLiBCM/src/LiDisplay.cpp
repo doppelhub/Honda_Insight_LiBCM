@@ -169,6 +169,14 @@ void LiDisplay_calculateCorrectPage()
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void LiDisplay_resetGridChargerPageVariables()
+{
+	maxElementId = 6;
+	gc_sixty_s_fomoco_e_block_enabled = false;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void LiDisplay_handleKeyOrGCStateChange()
 {
 	// TODO_NATALYA (2024 Jan) -- hmi_power_millis and gc_connected_millis timers to ensure screen is changed can probably be dealt with in here
@@ -217,7 +225,7 @@ void LiDisplay_handleKeyOrGCStateChange()
 				switch(new_power_state) {
 					case 0: LiDisplay_keyOff(); LiDisplay_gridChargerUnplugged(); total_splash_page_delay_ms = (250 + LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS); break; // Driver unplugged GC at exact instant contactor relay opened (might happen -- edge case)
 					case 1: LiDisplay_gridChargerUnplugged(); break; // Driver unplugged GC
-					case 2: LiDisplay_keyOff(); break; // Driver keyed OFF, contactor finally opened
+					case 2: LiDisplay_keyOff(); LiDisplay_resetGridChargerPageVariables(); break; // Driver keyed OFF, contactor finally opened
 					case 3: break;	// Should never end up here
 				}
 				break;
@@ -531,7 +539,7 @@ void LiDisplay_exitSettingsPage(void) {
         case LIDISPLAY_DRIVING_PAGE_ID: LiDisplaySoCBars_onScreen = 100; break; // Resets SoC Bar Display for Driving Page
         case LIDISPLAY_SPLASH_PAGE_ID: break;   // Nothing here yet.
         case LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID: LiDisplaySoCBars_onScreen = 100; maxElementId = 6; gc_sixty_s_fomoco_e_block_enabled = false; break;
-        case LIDISPLAY_GRIDCHARGE_PAGE_ID: maxElementId = 6; gc_sixty_s_fomoco_e_block_enabled = false; break;
+        case LIDISPLAY_GRIDCHARGE_PAGE_ID: LiDisplay_resetGridChargerPageVariables(); break;
         default : break;
     }
 }
@@ -616,26 +624,21 @@ void LiDisplay_processCommand(String cmd_str) {
     For simplicity, they are always full (1 solid colour) and we colour-code them to show balance relative to the other cells.
     */
 
-
-    // TODO_NATALYA 2023 OCT 17 -- We should probably organize this with page first, then object type second
     if (String(cmd_obj_type) == "b")
 	{
         // Button Pressed
         if ((cmd_page_id == (uint8_t)LIDISPLAY_DRIVING_PAGE_ID) || (cmd_page_id == (uint8_t)LIDISPLAY_GRIDCHARGE_PAGE_ID))
 		{
             if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_SCREEN) LiDisplaySettingsPageRequested = true;    // Screen Button from either Driving or GC Page
-        }
-		else if (cmd_page_id == (uint8_t)LIDISPLAY_DRIVING_PAGE_ID)
-		{
-            if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_FAN)
+            else if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_FAN)
 			{
 				// Fan Button from driving page pressed
-				LiDisplay_updateDebugTextBox(cmd_str);
+				// LiDisplay_updateDebugTextBox(cmd_str);
 				switch (fan_getSpeed_now()) {
-					case FAN_HIGH: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF); break;
-					case FAN_MED: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_HIGH); break;
-					case FAN_LOW: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_MED); break;
-					default: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_LOW); break;
+					case FAN_HIGH: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF); LiDisplay_updateDebugTextBox("Requested Fan Off"); break;
+					//case FAN_MED: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_HIGH); LiDisplay_updateDebugTextBox("Requested Fan High"); break;
+					case FAN_LOW: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_HIGH); LiDisplay_updateDebugTextBox("Requested Fan High"); break;
+					default: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_LOW); LiDisplay_updateDebugTextBox("Requested Fan Low"); break;
 				}
 			}
         }
