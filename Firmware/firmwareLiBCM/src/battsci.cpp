@@ -189,6 +189,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
     #ifndef DISABLE_REGEN
         if ((BATTSCI_isPackFull() == YES)                                                                || //pack is full
             ((temperature_battery_getLatest() < TEMP_FREEZING_DEGC + 2) && (BATTSCI_isPackEmpty() == NO)) ) //pack too cold to charge; DCDC still powered
+            //JTS2doNow: Allow minimal regen when pack below freezing (e.g. using LiControl to limit max regen)
     #endif
         {
             flags |= BATTSCI_DISABLE_REGEN_FLAG; //when this flag is set, MCM draws zero power from IMA motor

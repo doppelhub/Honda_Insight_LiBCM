@@ -118,22 +118,18 @@ void SoC_turnOffLiBCM_ifPackEmpty(void)
 {
     static uint8_t numConsecutiveLoopsCellVoltageTooLow = 0; 
         
-    if ((LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER)                                                        || //turn off immediately if pack empty
-        ((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true)) ) //give user time to plug in charger
-    {   
-        if (numConsecutiveLoopsCellVoltageTooLow <= 200) //JTS2doLater: replace magic number with something logical //verify the cell is actually low
-        { 
-            //verify voltage remains low for several LTC6804 measurement cycles 
-            numConsecutiveLoopsCellVoltageTooLow++; 
-        }
-        else
-        {
-            //cell remained below minimum voltage for several LTC6804 mesurement cycles
-            Serial.print(F("\nLow cell voltage"));
-            gpio_turnLiBCM_off(); //game over, thanks for playing
-        }
+    if (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER)
+    {
+        Serial.print(F("\nBattery is empty"));
+        gpio_turnLiBCM_off(); //game over, thanks for playing
     }
-    else { numConsecutiveLoopsCellVoltageTooLow = 0; } //pack is charged enough for LiBCM to stay on
+    else if((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //SoC is greater than 0, but low enough that LiBCM should turn off
+            (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true) && //give user time to plug in charger
+            (gpio_isGridChargerChargingNow() == NO)                  ) //grid charger isn't charging
+    {   
+        Serial.print(F("\nBattery is low"));
+        gpio_turnLiBCM_off(); //game over, thanks for playing
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -142,9 +138,9 @@ bool SoC_isThermalManagementAllowed(void)
 {
     bool enoughEnergy = NO;
 
-    if ((key_getSampledState() == KEYSTATE_ON)                                          ||
-        (gpio_isGridChargerPluggedInNow() == YES)                                       ||
-        (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC) )
+    if ((key_getSampledState() == KEYSTATE_ON)                                                ||
+        ((gpio_isGridChargerPluggedInNow() == YES) && (SoC_getBatteryStateNow_percent() > 3)) ||
+        (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC)       )
     { enoughEnergy = YES; }
 
     return enoughEnergy;
