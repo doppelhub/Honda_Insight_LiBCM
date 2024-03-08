@@ -86,8 +86,7 @@ uint8_t calculate_Vspoof_maxPossible(void)
     uint8_t actualPackVoltage = LTC68042result_packVoltage_get();
     uint8_t maxAllowedVspoof = 0;
 
-    if      (actualPackVoltage < 197) { maxAllowedVspoof = actualPackVoltage - 15; }
-    else if (actualPackVoltage < 206) { maxAllowedVspoof = actualPackVoltage - 16; }
+    if      (actualPackVoltage < 206) { maxAllowedVspoof = actualPackVoltage - 16; }
     else if (actualPackVoltage < 216) { maxAllowedVspoof = actualPackVoltage - 17; }
     else if (actualPackVoltage < 226) { maxAllowedVspoof = actualPackVoltage - 18; }
     else if (actualPackVoltage < 236) { maxAllowedVspoof = actualPackVoltage - 19; }
