@@ -148,7 +148,7 @@ void chargerControlSignals_handler(void)
 
         //JTS2doNow: Since the charger should be off now, sound an alarm if battery current isn't ~0 amps.
     }
-
+    
     if (gpio_isGridChargerPluggedInNow() == YES) { adc_updateBatteryCurrent(); } //safety: continuously update battery current when grid charger plugged in
 
     isChargingAllowed_previous = isChargingAllowed_now;

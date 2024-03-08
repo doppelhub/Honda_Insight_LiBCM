@@ -183,6 +183,7 @@ void updateFanRequest_battery(void)
         //periodically move cabin air into intake plenum
         if (doesPackWantFans() == YES) { request = periodicallyRunFans(); }
     }
+
     fan_requestSpeed(FAN_REQUESTOR_BATTERY, request);
 }
 

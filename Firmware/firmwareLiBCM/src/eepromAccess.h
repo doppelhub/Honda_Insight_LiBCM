@@ -24,7 +24,7 @@
     #define FIRMWARE_UNEXPIRED 0b01010101
 
     void eeprom_checkForExpiredFirmware(void);
-
+    
     uint16_t eeprom_uptimeStoredInEEPROM_hours_get(void);
 
     uint8_t eeprom_expirationStatus_get(void);
