@@ -224,9 +224,9 @@ void spoofVoltage_calculateValue(void)
 
     //---------------------------------------------------------------------------
 
-    #elif defined   VOLTAGE_SPOOFING_LINEAR
+    #elif defined  VOLTAGE_SPOOFING_LINEAR
 	
-	           spoofedPackVoltage = actualPackVoltage * 0.4 + 72; 
+	           spoofedPackVoltage = maxPossibleVspoof * 0.4 + 78; 
 	
 		   // adjusts spoof voltage across entire range so that current is 50A continuous, 83A peak
 		   // 48S yields from +19% power
