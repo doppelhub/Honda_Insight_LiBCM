@@ -207,7 +207,7 @@ void LiDisplay_handleKeyOrGCStateChange()
 				break;
 			case 1: // Key is ON or possibly off but contactor relay hasn't opened yet
 				switch(new_power_state) {
-					case 0: LiDisplay_keyOff(); total_splash_page_delay_ms = 250; break; // Contactor relay finally opened
+					case 0: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF); LiDisplay_keyOff(); total_splash_page_delay_ms = 250; break; // Contactor relay finally opened
 					case 1: break;	// Should never end up here
 					case 2: LiDisplay_keyOff(); LiDisplay_gridChargerPluggedIn(); break; // Driver plugged in GC on same frame as contactor relay opened (unlikely to happen)
 					case 3: LiDisplay_gridChargerPluggedIn(); break; // Driver plugged in GC, should get LiDisplay warning page and LiBCM will beep
@@ -215,7 +215,7 @@ void LiDisplay_handleKeyOrGCStateChange()
 				break;
 			case 2: // Grid Charger is plugged in
 				switch(new_power_state) {
-					case 0: LiDisplay_gridChargerUnplugged(); total_splash_page_delay_ms = (250 + LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS); break;
+					case 0: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF); LiDisplay_gridChargerUnplugged(); total_splash_page_delay_ms = (250 + LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS); break;
 					case 1: LiDisplay_gridChargerUnplugged(); LiDisplay_keyOn(); break; // Driver unplugged GC on same frame as Key ON (unlikely to happen)
 					case 2: break;	// Should never end up here
 					case 3: LiDisplay_keyOn(); break; // GC is already plugged in, Driver turned Key ON, LiDisplay needs to display warning, LiBCM will beep
@@ -223,7 +223,7 @@ void LiDisplay_handleKeyOrGCStateChange()
 				break;
 			case 3: // Key On and GC plugged in -- LiBCM should be beeping at driver, driver likely to take action
 				switch(new_power_state) {
-					case 0: LiDisplay_keyOff(); LiDisplay_gridChargerUnplugged(); total_splash_page_delay_ms = (250 + LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS); break; // Driver unplugged GC at exact instant contactor relay opened (might happen -- edge case)
+					case 0: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF); LiDisplay_keyOff(); LiDisplay_gridChargerUnplugged(); total_splash_page_delay_ms = (250 + LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS); break; // Driver unplugged GC at exact instant contactor relay opened (might happen -- edge case)
 					case 1: LiDisplay_gridChargerUnplugged(); break; // Driver unplugged GC
 					case 2: LiDisplay_keyOff(); LiDisplay_resetGridChargerPageVariables(); break; // Driver keyed OFF, contactor finally opened
 					case 3: break;	// Should never end up here
