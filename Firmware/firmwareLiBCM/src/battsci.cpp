@@ -64,7 +64,7 @@ void BATTSCI_begin(void)
 
 void BATTSCI_enable(void) {
     digitalWrite(PIN_BATTSCI_DE,HIGH);
-previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[62]; // neutral setting at key-on so that battsci flags are correctly triggered on way up/down SOC curve.
+previousOutputSoC_deciPercent = 620; // neutral setting at key-on so that battsci flags are correctly triggered on way up/down SOC curve.
     
     //JTS: Don't want to overload serial buffer on cold boot (will cause check engine light)
     //Serial.print(F("\nLiBCM SoC: "));
