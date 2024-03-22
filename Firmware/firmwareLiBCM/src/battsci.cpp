@@ -257,15 +257,15 @@ uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
         #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING  
 	//note background regen is not shown on OEM charge/assist gauge, regen under braking is unaffected
 	//only recommended for 47A FoMoCo users (who grid charge)
-	//moved to before previousOutputSoC_deciPercent so that all BATTSCI SoC setpoints are triggered, otherwise baground charge may not re-enable etc.
-          if ((SoC_mappedToMCM_deciPercent < 800) && (SoC_mappedToMCM_deciPercent > 240)) { SoC_mappedToMCM_deciPercent = 720; } //Background charge disabled at 15%SOC
-	  else if (SoC_mappedToMCM_deciPercent = 232)                                     { SoC_mappedToMCM_deciPercent = 600; } //14%SOC Background charge enable
-	  else if (SoC_mappedToMCM_deciPercent = 224)                                     { SoC_mappedToMCM_deciPercent = 400; } //13%SOC Regen during coasting
-	  else if (SoC_mappedToMCM_deciPercent = 216)                                     { SoC_mappedToMCM_deciPercent = 250; } //12%SOC Regen under part-throttle
-	  else if (SoC_mappedToMCM_deciPercent = 208)                                     { SoC_mappedToMCM_deciPercent = 200; } //11%SOC Regen at idle, assist is disabled
+
+         if       (SoC_mappedToMCM_deciPercent > 800) { SoC_mappedToMCM_deciPercent = 800; } //Regen disabled above 80%SOC
+	  else if (SoC_mappedToMCM_deciPercent > 240) { SoC_mappedToMCM_deciPercent = 720; } //Regen enabled, Background charge disabled
+	  else if (SoC_mappedToMCM_deciPercent > 232) { SoC_mappedToMCM_deciPercent = 600; } //15%SOC Background charge enable
+	  else if (SoC_mappedToMCM_deciPercent > 224) { SoC_mappedToMCM_deciPercent = 400; } //13%SOC Regen during coasting
+	  else if (SoC_mappedToMCM_deciPercent > 216) { SoC_mappedToMCM_deciPercent = 250; } //13%SOC Regen under part-throttle
+	  else if (SoC_mappedToMCM_deciPercent > 208) { SoC_mappedToMCM_deciPercent = 200; } //12%SOC Regen at idle, assist is disabled
         #endif
 	
-
 	if      (SoC_mappedToMCM_deciPercent > previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent + 1; }
     	else if (SoC_mappedToMCM_deciPercent < previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent - 1; }
 	// this may be updating too fast for BATTSCI to register? 
