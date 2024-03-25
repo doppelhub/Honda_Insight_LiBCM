@@ -20,25 +20,30 @@ uint8_t framePeriod_ms = 33;
 
 //JTS2doLater: Add different SoC profile for "charges every day" crew
 //JTS2doLater: store in 'PROGMEM' to keep out of RAM (but note array elements must be indexed differently)
+
 //LUT remaps actual lithium battery SoC (unit: percent) to mimic OEM NiMH behavior (unit: deciPercent)
+//roughly: expands battery range from 20-80%SOC (NiMH) to 10-85%SOC (Lithium)
+//note: large deviations from 1:1 may disable brake regen
+//note: for background regen setpoints see REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING below
+
 //input: actual lithium SoC (unit: percent integer)
 //output: OEM NiMH SoC equivalent (unit: decipercent integer)
 //Example: if the actual lithium SoC is 85%, then "remap_actualToSpoofedSoC[85]" will return 799d (79.9%), which is the value to send on BATTSCI
 const uint16_t remap_actualToSpoofedSoC[101] = {
       0, 22, 44, 67, 89,111,133,156,178,190, //LiCBM SoC = 00% to 09%
-    200,209,217,225,232,240,248,256,264,272, //LiCBM SoC = 10% to 19%
-    279,287,295,303,311,319,326,334,342,350, //LiCBM SoC = 20% to 29% //MCM enables heavy regen below 350 (35.0%)
-    355,363,375,387,399,411,423,435,447,459, //LiCBM SoC = 30% to 39% //MCM enables light regen below 700 (70.0%)
-    471,483,495,507,519,532,544,556,568,580, //LiCBM SoC = 40% to 49%
-    592,604,616,628,640,652,664,676,688,700, //LiCBM SoC = 50% to 59% //MCM disables background regen agove 582 (58.2%)
-    701,705,709,713,717,721,725,728,732,736, //LiCBM SoC = 60% to 69% //TODO_NATALYA (not urgent as of 2022JAN21) drive and eval regen behaviour to see if LiBCM 60 to 69 needs to be remapped to a smaller MCM range of 69 to 72, or if this range needs to begin at LiBCM 60 = MCM 68% instead of 70%
-    740,744,748,752,756,760,764,768,772,775, //LiCBM SoC = 70% to 79%
-    779,783,787,791,795,799,800,814,829,843, //LiCBM SoC = 80% to 89% //MCM disables regen above 800 (80.0%)
-    857,871,886,900,914,929,943,957,971,986, //LiCBM SoC = 90% to 99%
+    200,208,216,224,232,240,248,256,264,272, //LiCBM SoC = 10% to 19%
+    280,288,296,304,312,320,328,336,344,352, //LiCBM SoC = 20% to 29% 
+    360,368,376,384,392,400,408,416,424,432, //LiCBM SoC = 30% to 39% 
+    440,448,456,464,472,480,488,496,504,512, //LiCBM SoC = 40% to 49%
+    520,528,536,544,552,560,568,576,584,592, //LiCBM SoC = 50% to 59% 
+    600,608,616,624,632,640,648,656,664,672, //LiCBM SoC = 60% to 69% 
+    680,688,696,704,712,720,728,736,744,752, //LiCBM SoC = 70% to 79%
+    760,768,776,784,792,800,813,826,839,852, //LiCBM SoC = 80% to 89%
+    865,878,891,904,917,930,943,956,969,982, //LiCBM SoC = 90% to 99%
     1000,                                    //LiCBM SoC = 100%
 };  //Data empirically gathered from OEM NiMH IMA system //see ../Firmware/Prototype Building Blocks/Remap SoC.ods for calculations
 
-uint16_t previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()];
+uint16_t previousOutputSoC_deciPercent; // leave empty till later
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -52,13 +57,14 @@ void BATTSCI_begin(void)
   digitalWrite(PIN_BATTSCI_REn,HIGH);
 
   Serial2.begin(9600,SERIAL_8E1);
+  previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; // set value when LIBCM powered up
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void BATTSCI_enable(void) {
     digitalWrite(PIN_BATTSCI_DE,HIGH);
-    previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; // If user grid charged over night SoC may have changed a lot.
+previousOutputSoC_deciPercent = 620; // neutral setting at key-on so that battsci flags are correctly triggered on way up/down SOC curve.
     
     //JTS: Don't want to overload serial buffer on cold boot (will cause check engine light)
     //Serial.print(F("\nLiBCM SoC: "));
@@ -248,17 +254,22 @@ uint8_t BATTSCI_calculateChargeRequestByte(void)
 //Adjust final SoC value as needed to improve driving characteristics
 uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
 {
-    if      (SoC_mappedToMCM_deciPercent > previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent + 1; }
-    else if (SoC_mappedToMCM_deciPercent < previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent - 1; }
+        #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING  
+	//note background regen is not shown on OEM charge/assist gauge, regen under braking is unaffected
+	//only recommended for 47A FoMoCo users (who grid charge)
+
+         if       (SoC_mappedToMCM_deciPercent > 800) { SoC_mappedToMCM_deciPercent = 800; } //Regen disabled above 80%SOC
+	  else if (SoC_mappedToMCM_deciPercent > 240) { SoC_mappedToMCM_deciPercent = 720; } //Regen enabled, Background charge disabled
+	  else if (SoC_mappedToMCM_deciPercent > 232) { SoC_mappedToMCM_deciPercent = 600; } //15%SOC Background charge enable
+	  else if (SoC_mappedToMCM_deciPercent > 224) { SoC_mappedToMCM_deciPercent = 400; } //13%SOC Regen during coasting
+	  else if (SoC_mappedToMCM_deciPercent > 216) { SoC_mappedToMCM_deciPercent = 250; } //13%SOC Regen under part-throttle
+	  else if (SoC_mappedToMCM_deciPercent > 208) { SoC_mappedToMCM_deciPercent = 200; } //12%SOC Regen at idle, assist is disabled
+        #endif
+	
+	if      (SoC_mappedToMCM_deciPercent > previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent + 1; }
+    	else if (SoC_mappedToMCM_deciPercent < previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent - 1; }
 
     previousOutputSoC_deciPercent = SoC_mappedToMCM_deciPercent;
-
-    #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING
-        if ((SoC_mappedToMCM_deciPercent < 720) && (SoC_mappedToMCM_deciPercent > 250)) { SoC_mappedToMCM_deciPercent = 720; }
-        //JTS2doLater: Increase spoofed pack voltage when this mode is activated
-        //             Otherwise, MCM ignores LiBCM request when pack is discharged
-        //             Need to verify MCM honors BATTSCI "disable assist" flag (so pack isn't over-discharged)
-    #endif
 
     return SoC_mappedToMCM_deciPercent;
 }
