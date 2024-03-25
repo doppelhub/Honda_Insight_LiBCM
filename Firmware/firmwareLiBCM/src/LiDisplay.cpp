@@ -43,6 +43,7 @@ bool LiDisplaySplashPending = false;
 bool LiDisplayPowerOffPending = false;
 bool LiDisplayOnGridChargerConnected = false;
 bool LiDisplaySettingsPageRequested = false;
+//bool LiDisplayGridChargerPageRequested = false;
 static bool LiDisplayNeedToVerifyPowerState = false;
 static uint16_t total_splash_page_delay_ms = 250; // Has to be at least 150 ms because of Nextion delays.
 
@@ -152,6 +153,7 @@ void LiDisplay_calculateCorrectPage()
         if ( gpio_isGridChargerPluggedInNow())    { LiDisplaySetPageNum = LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID; }
         else if  (LiDisplaySplashPending)         { LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID;             }
         else if  (LiDisplaySettingsPageRequested) { LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID;           }
+		//else if  (LiDisplayGridChargerPageRequested) { LiDisplaySetPageNum = LIDISPLAY_GRIDCHARGE_PAGE_ID;           }
         else                                      { LiDisplaySetPageNum = LIDISPLAY_DRIVING_PAGE_ID;            }
     }
 	else
@@ -200,7 +202,7 @@ void LiDisplay_handleKeyOrGCStateChange()
 			case 0:	// Key is OFF and Grid Charger is unplugged
 				switch(new_power_state) {
 					case 0: break;	// Should never end up here
-					case 1: Serial.print(F("\nLiDisplay_handleKeyOrGCStateChange - calling LiDisplay_keyOn()")); LiDisplay_keyOn(); break; // Key now ON
+					case 1: /*Serial.print(F("\nLiDisplay_handleKeyOrGCStateChange - calling LiDisplay_keyOn()"));*/ LiDisplay_keyOn(); break; // Key now ON
 					case 2: LiDisplay_gridChargerPluggedIn(); break; // GC now plugged in
 					case 3: LiDisplay_keyOn(); LiDisplay_gridChargerPluggedIn(); break; // Driver Key ON and plugged in GC in same frame (unlikely to happen)
 				}
@@ -231,9 +233,9 @@ void LiDisplay_handleKeyOrGCStateChange()
 				break;
 		}
 		new_power_state_millis = millis();
-		Serial.print(F("\nLiDisplay_handleKeyOrGCStateChange - power state changed - new_power_state_millis has been updated"));
+		//Serial.print(F("\nLiDisplay_handleKeyOrGCStateChange - power state changed - new_power_state_millis has been updated"));
 		LiDisplayNeedToVerifyPowerState = true;
-		Serial.print(F("\nLiDisplayNeedToVerifyPowerState = true"));
+		//Serial.print(F("\nLiDisplayNeedToVerifyPowerState = true"));
 		LiDisplay_updateDebugTextBox("Power state eval pending...");
 	}
 	LiDisplay_powerState = new_power_state;
@@ -644,7 +646,11 @@ void LiDisplay_processCommand(String cmd_str) {
         }
 		else if (cmd_page_id == (uint8_t)LIDISPLAY_SETTINGS_PAGE_ID)
 		{
-            if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_SCREEN) LiDisplay_exitSettingsPage(); // Screen Button from Settings Page
+            if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_SCREEN)
+			{
+				LiDisplay_exitSettingsPage(); // Screen Button from Settings Page
+				//if (key_getSampledState() == KEYSTATE_ON) LiDisplayGridChargerPageRequested = true;
+			}
         }
     }
 	else if (String(cmd_obj_type) == "j")
@@ -664,30 +670,24 @@ void LiDisplay_processCommand(String cmd_str) {
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_enforceCorrectPowerState() {
-	//Serial.print(F("\nLiDisplay_enforceCorrectPowerState()  LiDisplay_powerState = "));
-	//Serial.print(LiDisplay_powerState);
 	switch (LiDisplay_powerState)
 	{
 		default:
 			// For reasons unknown, case 1 doesn't work, so we have to use default
-			//Serial.print(F("  default case - Key on GC unplugged  "));
 			if (!gpio_HMIStateNow()) gpio_turnHMI_on();
 			else if (gpio_HMIStateNow())
 			{
 				LiDisplayNeedToVerifyPowerState = false;
 				LiDisplay_updateDebugTextBox(" "); // clear on-screen debug text
-				Serial.print(F("\nLiDisplayNeedToVerifyPowerState = false"));
 			}
 			break;
 		case 0:
-			//Serial.print(F("  case 0 Key off GC unplugged  "));
 			if (gpio_HMIStateNow()) {
 				if (((millis() - new_power_state_millis) > total_splash_page_delay_ms) && (LiDisplaySplashPending))
 				{
 					LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID;
 					LiDisplay_updatePage(); // TODO_NATALYA: this line may not be necessary, evaulate if it can be deleted
 					LiDisplaySplashPending = false;
-					Serial.print(F("\nLiDisplay_enforceCorrectPowerState -- Set to Splash Page"));
 				}
 				if ((millis() - new_power_state_millis) > (total_splash_page_delay_ms + LIDISPLAY_SPLASH_PAGE_MS))
 				{
@@ -695,12 +695,11 @@ void LiDisplay_enforceCorrectPowerState() {
 					LiDisplayPowerOffPending = false;
 					LiDisplayNeedToVerifyPowerState = false;
 					LiDisplay_updateDebugTextBox(" "); // clear on-screen debug text
-					Serial.print(F("\nLiDisplayNeedToVerifyPowerState = false"));
 				}
 			}
 			break;
-		case 2: /* Serial.print(F("  case 2 Key off GC plugged in  ")); */ if (!gpio_HMIStateNow()) gpio_turnHMI_on(); LiDisplayNeedToVerifyPowerState = false; break;
-		case 3: /* Serial.print(F("  case 3 Key on GC plugged in  ")); */ if (!gpio_HMIStateNow()) gpio_turnHMI_on(); LiDisplayNeedToVerifyPowerState = false; break;
+		case 2: if (!gpio_HMIStateNow()) gpio_turnHMI_on(); LiDisplayNeedToVerifyPowerState = false; break;
+		case 3: if (!gpio_HMIStateNow()) gpio_turnHMI_on(); LiDisplayNeedToVerifyPowerState = false; break;
 	}
 }
 
