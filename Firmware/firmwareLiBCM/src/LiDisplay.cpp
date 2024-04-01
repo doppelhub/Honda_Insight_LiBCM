@@ -175,6 +175,7 @@ void LiDisplay_resetGridChargerPageVariables()
 {
 	maxElementId = 6;
 	gc_sixty_s_fomoco_e_block_enabled = false;
+	LiDisplayPackVoltageActual_onScreen = 100;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -631,7 +632,11 @@ void LiDisplay_processCommand(String cmd_str) {
         // Button Pressed
         if ((cmd_page_id == (uint8_t)LIDISPLAY_DRIVING_PAGE_ID) || (cmd_page_id == (uint8_t)LIDISPLAY_GRIDCHARGE_PAGE_ID))
 		{
-            if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_SCREEN) LiDisplaySettingsPageRequested = true;    // Screen Button from either Driving or GC Page
+            if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_SCREEN)
+			{	// Screen Button from either Driving or GC Page
+				LiDisplaySettingsPageRequested = true;
+				LiDisplay_resetGridChargerPageVariables();
+			}
             else if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_FAN)
 			{
 				// Fan Button from driving page pressed
@@ -777,7 +782,7 @@ void LiDisplay_handler(void)
                             case 2: LiDisplay_updateStringVal(0, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
                             case 3: LiDisplay_updateStringVal(0, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
                             case 4: LiDisplay_updateStringVal(0, "t13", 0, key_time); break;
-                            case 5: LiDisplay_updateStringVal(0, "t14", 0, (String((LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get()))+"")); break;
+                            case 5: LiDisplay_updateStringVal(0, "t14", 0, (String(((LTC68042result_hiCellVoltage_get() * 0.1) - (LTC68042result_loCellVoltage_get() * 0.1)),1)+"")); break;
                             // The other elements update less frequently.  We will update 1 of them.
                             // Priority is from least-likely to change to most-likely to change.
                             case 6:
@@ -849,8 +854,11 @@ void LiDisplay_handler(void)
                         {
                             // 4 elements update very frequently so we won't track their previous value
                             case 0: // This one doesn't update frequently, but its priority is high because we want to notify the user the instant it does update.
-                                if (gpio_isGridChargerChargingNow()) { LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0,     "CHARGING"); }
-                                else                                 { LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "NOT CHARGING"); }
+
+                                if (gpio_isGridChargerChargingNow() && cellBalance_areCellsBalanced()) { LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0,     "CHARGING"); }
+                                else if (gpio_isGridChargerChargingNow() && (!cellBalance_areCellsBalanced())) { LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "CHRG + BLNC"); }
+								else if ((!gpio_isGridChargerChargingNow()) && (!cellBalance_areCellsBalanced())) { LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "BALANCING"); }
+								else { LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE"); }
 
                             break;
                             case 1: LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t3", 0, String(LiDisplayAverageCellVoltage * 0.0001,3)); break;
