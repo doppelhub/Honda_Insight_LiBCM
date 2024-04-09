@@ -106,6 +106,9 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
     Serial.print(String(batterySoC_percent));
     Serial.print('%');
 
+    if (LTC68042result_hiCellVoltage_get() > CELL_VMAX_REGEN)       { Serial.print(F("\nDANGER: Cell(s) Overcharged!!")); }
+    if (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER) { Serial.print(F("\nDANGER: Cell(s) Discharged!!" )); }
+
     SoC_setBatteryStateNow_percent(batterySoC_percent); //update SoC
 }
 

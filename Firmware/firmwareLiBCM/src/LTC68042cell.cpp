@@ -307,7 +307,7 @@ bool LTC68042cell_nextVoltages(void)
 
 //Only call when keyOFF //takes too long to execute when keyON (causes check engine light)
 //Results are stored in "LTC68042_results.c"
-//JTS2doNow: rewrite to remove double call hack
+//JTS2doNext: rewrite to remove double call hack
 void LTC68042cell_acquireAllCellVoltages(void)
 {
     while (LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //clear old data (if any)
@@ -316,7 +316,7 @@ void LTC68042cell_acquireAllCellVoltages(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Write Test
+//JTS2doLater: Write Test
 void LTC68042cell_openShortTest(void)
 {
     // 1a: Turn off all sense resistors

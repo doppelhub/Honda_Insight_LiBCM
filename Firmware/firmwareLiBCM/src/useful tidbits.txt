@@ -34,6 +34,12 @@
 //https://github.com/Pharap/FixedPointsArduino/blob/master/src/FixedPoints/UFixed.h
 
 ///////////////////////////////////////////////////////////////////
+//JTS2do task flags:
+//JTS2doNow
+//JTS2doNext
+//JTS2doLater
+
+///////////////////////////////////////////////////////////////////
 //See how many lines of code exist:
 //Search as regex:
 //^.*\S+.*$

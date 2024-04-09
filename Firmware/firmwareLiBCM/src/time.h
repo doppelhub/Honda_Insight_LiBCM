@@ -3,11 +3,15 @@
 #ifndef time_h
     #define time_h
 
-    bool time_toUpdate_keyOffValues(void);
+    void time_handler(void);
+
+    bool time_isItTimeToPerformKeyOffTasks(void);
 
     bool time_hasKeyBeenOffLongEnough_toTurnOffLiBCM(void);
 
     void time_waitForLoopPeriod(void);
+
+    uint8_t time_getLoopCount_8b(void); //frequent tasks can schedule using this instead of 32b millis()
 
     void time_stopwatch(bool timerAction);
 
@@ -24,6 +28,8 @@
 
     uint32_t time_sinceLatestKeyOn_ms(void);
     uint16_t time_sinceLatestKeyOn_seconds(void);
+
+    bool time_didLiBCM_justBoot(void);
 
     #define START_TIMER true
     #define STOP_TIMER false

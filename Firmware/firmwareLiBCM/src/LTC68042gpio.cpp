@@ -102,7 +102,7 @@ uint8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read
             }
         }
     } else {
-        //JTS2doNow: Merge this into above code... entirely redundant
+        //JTS2doLater: Merge this into above code... entirely redundant
         //Read single GPIO voltage register for all ICs in pack
         for (int current_ic = 0 ; current_ic < total_ic; current_ic++) // executes for every LTC6804 in the pack
         {
@@ -118,7 +118,7 @@ uint8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read
             }
             //Verify PEC matches calculated value for each read register command
             received_pec = (returnedData[data_counter]<<8) + returnedData[data_counter+1];
-            data_pec = LTC68042configure_calcPEC15(6, &returnedData[current_ic*8]); //JTS2doNow: Fix this incorrect implementation
+            data_pec = LTC68042configure_calcPEC15(6, &returnedData[current_ic*8]); //JTS2doLater: Fix this incorrect implementation
             if (received_pec != data_pec) { pec_error += 1; }
         }
     }
@@ -130,7 +130,7 @@ uint8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read
 
 bool LTC6804gpio_areAllVoltageReferencesPassing(void)
 {
-    //JTS2doNow: Add to keyOFF routine
+    //JTS2doNext: Add to keyOFF routine
     //verify LTC6804 VREF is in bounds
     LTC6804_adax();
     delay(5);

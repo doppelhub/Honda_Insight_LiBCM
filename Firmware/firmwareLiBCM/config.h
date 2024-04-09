@@ -7,8 +7,8 @@
     #define config_h
     #include "src/libcm.h"
 
-    #define FW_VERSION "0.9.3f"
-    #define BUILD_DATE "2024MAR05"
+    #define FW_VERSION "0.9.3g"
+    #define BUILD_DATE "2024APR03"
 
     //////////////////////////////////////////////////////////////////
 
@@ -97,7 +97,7 @@
     #define CELL_VMIN_KEYOFF                    CELL_VREST_10_PERCENT_SoC //when car is off, LiBCM turns off below this voltage
     #define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled when battery is less than this percent charged
     #define CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE 32    //'32' = 3.2 mV //CANNOT exceed 255 counts (25.5 mV)
-    #define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 22    //'22' = 2.2 mV //LTC6804 total measurement error is 2.2 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
+    #define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 22    //'22' = 2.2 mV //LTC6804 measurement uncertainty is 2.2 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
     #define CELL_BALANCE_MAX_TEMP_C             40
     //#define ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN //uncomment to disable keyOFF cell balancing (unless the grid charger is plugged in)
 
@@ -157,7 +157,7 @@
         If user doesn't uncomment anything, then the previously uploaded value remains in EEPROM
     */
 
-    //JTS2doNow: Implement this feature
+    //JTS2doLater: Implement this feature
     //if using 1500 watt charger with 120 volt extension cord, choose input current limit
         //#define CHARGER_INPUT_CURRENT__15A_MAX //select this option if using 12 AWG extension cord up to 100 feet, or 14 AWG up to 50 feet**, else if;
         //#define CHARGER_INPUT_CURRENT__13A_MAX //select this option if using 14 AWG extension cord up to 100 feet, or 16 AWG up to 50 feet**, else if;

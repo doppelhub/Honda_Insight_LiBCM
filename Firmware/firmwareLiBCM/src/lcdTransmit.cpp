@@ -13,7 +13,7 @@
 
 lcd_I2C_jts lcd2(0x27);
 
-//JTS2doLater: Add indicator to 4x20 when fan is off/low/high
+//JTS2doNow: Add screen update delay (e.g. using time_loopCounter)
 
 //These variables are reset during key or grid charger state change
 uint8_t  cycleFrameNumber = CYCLEFRAME_INIT;
@@ -251,7 +251,7 @@ bool lcd_cellBalanceStatus(void)
 {
     bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
-    uint8_t cellBalanceFlag = (cellBalance_areCellsBalanced() == YES) ? '_' : 'B';
+    uint8_t cellBalanceFlag = (cellBalance_areCellsBalancing() == YES) ? 'B' : '_';
 
     if (cellBalanceFlag_onScreen != cellBalanceFlag)
     {

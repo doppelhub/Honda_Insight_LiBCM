@@ -22,7 +22,7 @@ const uint16_t EEPROM_ADDRESS_FIRMWARE_STATUS     = 0x00E; //EEPROM range is 0x0
 const uint16_t EEPROM_ADDRESS_BATTSCI_REGEN       = 0x00F; //EEPROM range is 0x00F:0x00F ( 1B)
 const uint16_t EEPROM_ADDRESS_BATTSCI_ASSIST      = 0x010; //EEPROM range is 0x010:0x010 ( 1B)
 const uint16_t EEPROM_ADDRESS_KEYON_DELAY         = 0x011; //EEPROM range is 0x011:0x011 ( 1B)
-const uint16_t EEPROM_ADDRESS_LOOPPERIOD_MET      = 0x012; //EEPROM range is 0x012:0x012 ( 1B)
+const uint16_t EEPROM_ADDRESS_unused              = 0x012; //EEPROM range is 0x012:0x012 ( 1B)
 const uint16_t EEPROM_ADDRESS_COMPILE_TIME        = 0x013; //EEPROM range is 0x013:0x01B ( 9B)
 //this EEPROM space still available
 const uint16_t EEPROM_ADDRESS_BATT_HISTORY = EEPROM_LAST_USABLE_ADDRESS - NUM_BYTES_BATTERY_HISTORY; //stored last
@@ -103,6 +103,7 @@ uint16_t eeprom_uptimeStoredInEEPROM_hours_get(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Change FW expiration method
 //Limit calls to this function (EEPROM has limited write lifetime)
 void uptimeStoredInEEPROM_hours_set(uint16_t hourCount)
 {
@@ -111,6 +112,7 @@ void uptimeStoredInEEPROM_hours_set(uint16_t hourCount)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNext: only read eeprom status once per keyOn event (so it won't expire while car is running`)
 //Takes 4 clock cycles.  EEPROM read limit: infinite
 uint8_t eeprom_expirationStatus_get(void)
 { 
@@ -125,7 +127,7 @@ void EEPROM_expirationStatus_set(uint8_t newFirmwareStatus) { EEPROM.update(EEPR
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: rewrite this function so it can store more than 2^32-1 millis()
+//JTS2doNext: rewrite this function so it can store more than 2^32-1 millis()
 //add value stored in EEPROM (from last keyOFF event) to previous keyOFF time
 uint16_t EEPROM_calculateTotalHoursSinceLastFirmwareUpdate(void)
 {
@@ -188,22 +190,17 @@ void    eeprom_delayKeyON_ms_set(uint8_t delay_ms) { EEPROM.update(EEPROM_ADDRES
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t eeprom_hasLibcmFailedTiming_get(void) { return EEPROM.read(EEPROM_ADDRESS_LOOPPERIOD_MET); }
-void    eeprom_hasLibcmFailedTiming_set(uint8_t timing) { EEPROM.update(EEPROM_ADDRESS_LOOPPERIOD_MET, timing); }
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
 void eeprom_verifyDataValid(void)
 {
     //verify all runtime-configurable data stored in EEPROM is valid.  If not, load default value(s)
-    if ( !( (eeprom_hasLibcmDisabledRegen_get() == EEPROM_LICBM_DISABLED_REGEN) || (eeprom_hasLibcmDisabledRegen_get() == EEPROM_REGEN_NEVER_LIMITED) ) )
+    if ( !( (eeprom_hasLibcmDisabledRegen_get() == EEPROM_LIBCM_DISABLED_REGEN) || (eeprom_hasLibcmDisabledRegen_get() == EEPROM_REGEN_NEVER_LIMITED) ) )
     {
         //invalid data in EEPROM
         Serial.print(F("\nRestoring EEPROM value: EEPROM_LIBCM_DISABLED_REGEN"));
         eeprom_hasLibcmDisabledRegen_set(EEPROM_REGEN_NEVER_LIMITED);
     }
 
-    if ( !( (eeprom_hasLibcmDisabledAssist_get() == EEPROM_LICBM_DISABLED_ASSIST) || (eeprom_hasLibcmDisabledAssist_get() == EEPROM_ASSIST_NEVER_LIMITED) ) )
+    if ( !( (eeprom_hasLibcmDisabledAssist_get() == EEPROM_LIBCM_DISABLED_ASSIST) || (eeprom_hasLibcmDisabledAssist_get() == EEPROM_ASSIST_NEVER_LIMITED) ) )
     {
         //invalid data in EEPROM
         Serial.print(F("\nRestoring EEPROM value: EEPROM_LIBCM_DISABLED_ASSIST"));
@@ -215,13 +212,6 @@ void eeprom_verifyDataValid(void)
         Serial.print(F("\nRestoring EEPROM value: EEPROM_ADDRESS_KEYON_DELAY"));
         eeprom_delayKeyON_ms_set(0);
     }
-
-    if ( !( (eeprom_hasLibcmFailedTiming_get() == EEPROM_LIBCM_LOOPPERIOD_MET) || (eeprom_hasLibcmFailedTiming_get() == EEPROM_LIBCM_LOOPPERIOD_EXCEEDED) ) )
-    {
-        //invalid data in EEPROM
-        Serial.print(F("\nRestoring EEPROM value: EEPROM_LIBCM_LOOPPERIOD_MET"));
-        eeprom_hasLibcmDisabledRegen_set(EEPROM_LIBCM_LOOPPERIOD_MET);
-    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -230,7 +220,6 @@ void eeprom_resetDebugValues(void)
 {
     eeprom_hasLibcmDisabledRegen_set(EEPROM_REGEN_NEVER_LIMITED);
     eeprom_hasLibcmDisabledAssist_set(EEPROM_ASSIST_NEVER_LIMITED);
-    eeprom_hasLibcmFailedTiming_set(EEPROM_LIBCM_LOOPPERIOD_MET);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
