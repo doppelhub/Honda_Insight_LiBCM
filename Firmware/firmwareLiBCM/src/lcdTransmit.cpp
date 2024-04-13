@@ -13,8 +13,6 @@
 
 lcd_I2C_jts lcd2(0x27);
 
-//JTS2doNow: Add screen update delay (e.g. using time_loopCounter)
-
 //These variables are reset during key or grid charger state change
 uint8_t  cycleFrameNumber = CYCLEFRAME_INIT;
 uint16_t timeValue_onScreen        = 0xFFFF;
@@ -101,7 +99,7 @@ bool lcd_flashBacklight(void)
 
 //alternates between:
     //time since last keyON, and; //"tuuuuu" in seconds
-    //time until firmware expires //"FWuuuu" in minutes
+    //time until firmware expires //"FWXuuu" in hours
 bool lcd_printTime_unitless(void)
 {
     bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
@@ -113,7 +111,7 @@ bool lcd_printTime_unitless(void)
     if (cycleFrameNumber_previous != cycleFrameNumber)
     {
         lcd2.setCursor(0,3);
-        if      (cycleFrameNumber == CYCLEFRAME_A) { lcd2.print(F("FW")); }
+        if      (cycleFrameNumber == CYCLEFRAME_A) { lcd2.print(F("FWX")); }
         else if (cycleFrameNumber == CYCLEFRAME_B) { lcd2.print(F("t" )); }
         
         cycleFrameNumber_previous = cycleFrameNumber;
@@ -121,24 +119,25 @@ bool lcd_printTime_unitless(void)
     }
     else if (cycleFrameNumber == CYCLEFRAME_A)
     {
-        uint16_t timeMinutes = 9876; //JTS2doNow: Add function to read actual expiration time in minutes
+        //"FWXuuu" //firmware expiration time in hours
+        uint16_t firmwareExpirationTime_hours = REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get();
 
-        if (timeValue_onScreen != timeMinutes)
+        if (timeValue_onScreen != firmwareExpirationTime_hours)
         {
-            lcd2.setCursor(2,3);
+            lcd2.setCursor(3,3);
 
-            if      (timeMinutes < 10   ) { lcd2.print(F("   ")); } //one   digit  (  0:   9)
-            else if (timeMinutes < 100  ) { lcd2.print(F("  ") ); } //two   digits ( 10:  99)
-            else if (timeMinutes < 1000 ) { lcd2.print(F(" ")  ); } //three digits (100: 999)
+            if      (firmwareExpirationTime_hours < 10  ) { lcd2.print(F("  ")); } //one digit  (  0:   9)
+            else if (firmwareExpirationTime_hours < 100 ) { lcd2.print(F(" ") ); } //two digits ( 10:  99)
 
-            lcd2.print(String(timeMinutes));
+            lcd2.print(String(firmwareExpirationTime_hours));
 
-            timeValue_onScreen = timeMinutes;
+            timeValue_onScreen = firmwareExpirationTime_hours;
             didscreenUpdateOccur = SCREEN_UPDATED;
         }
     }
     else if (cycleFrameNumber == CYCLEFRAME_B)
     {
+        //"tuuuuu" //keyOn uptime in seconds
         uint16_t timeSeconds = time_sinceLatestKeyOn_seconds();
 
         if (timeValue_onScreen != timeSeconds)
@@ -666,18 +665,41 @@ bool lcd_updateValue(uint8_t stateToUpdate)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//individually limit each element's lcd update rate
+uint8_t isMinimumDisplayPeriodMet(uint8_t whichElement)
+{
+    static uint8_t loopCountAtLastUpdate_8b[LCDVALUE_MAX_VALUE] = {127};
+
+    uint8_t absLoopCountDelta = time_getLoopCount_8b() - loopCountAtLastUpdate_8b[whichElement];
+
+    if (absLoopCountDelta > LCD_VALUE_MINIMUM_DISPLAY_TIME_LOOPS)
+    {
+        loopCountAtLastUpdate_8b[whichElement] = time_getLoopCount_8b();
+        return YES;
+    }
+
+    return NO;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void updateNextVariable(void)
 {
     static uint8_t lcdVariableToUpdate = LCDVALUE_NO_UPDATE; //init round-robin
 
+    bool didScreenUpdateOccur = SCREEN_DIDNT_UPDATE;
     uint8_t updateAttempts = 0;
-    
+
     do
     {
-        if ((++lcdVariableToUpdate) > LCDVALUE_MAX_VALUE) { lcdVariableToUpdate = 1; } //reset to first element
-        updateAttempts++;
-    } while ((lcd_updateValue(lcdVariableToUpdate) == SCREEN_DIDNT_UPDATE) && (updateAttempts < LCD_UPDATE_ATTEMPTS_PER_LOOP));
+        if (isMinimumDisplayPeriodMet(lcdVariableToUpdate) == YES) 
+        {
+            didScreenUpdateOccur = lcd_updateValue(lcdVariableToUpdate);
+        }
 
+        if (++lcdVariableToUpdate > LCDVALUE_MAX_VALUE) { lcdVariableToUpdate = 1; }
+    } while ((didScreenUpdateOccur == SCREEN_DIDNT_UPDATE)    &&
+             (++updateAttempts < LCD_UPDATE_ATTEMPTS_PER_LOOP) );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

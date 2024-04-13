@@ -121,14 +121,13 @@ void cellBalance_handler(void)
     static uint8_t isBalancingAllowed_previous = NO__UNINITIALIZED;
            uint8_t isBalancingAllowed_now      = isBalancingAllowed();
 
-    //JTS2doNow: are discharge resistors immediately disabled when key turns on?
-    if (time_isItTimeToPerformKeyOffTasks() == YES)
+    if (isBalancingAllowed_now == YES__BALANCING_ALLOWED)
     {
-        if      (isBalancingAllowed_now      == YES__BALANCING_ALLOWED) { configureDischargeResistors(); }
-        else if (isBalancingAllowed_previous == YES__BALANCING_ALLOWED) { disableDischargeResistors();   }
-        
-        isBalancingAllowed_previous = isBalancingAllowed_now;
+        if (time_isItTimeToPerformKeyOffTasks() == YES) { configureDischargeResistors(); }
     }
+    else if (isBalancingAllowed_previous == YES__BALANCING_ALLOWED) { disableDischargeResistors(); }
+    
+    isBalancingAllowed_previous = isBalancingAllowed_now;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
