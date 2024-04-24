@@ -32,7 +32,7 @@
     #define LCDVALUE_MAX_VALUE       19 //must equal the highest defined number (above)
 
     #define LCD_UPDATE_ATTEMPTS_PER_LOOP 10
-    #define LCD_VALUE_MINIMUM_DISPLAY_TIME_LOOPS 50
+    #define LCD_VALUE_MINIMUM_DISPLAY_TIME_LOOPS 30
 
     //the following static text never changes, and is only sent once each time the display turns on
     #define LCDSTATIC_SET_DEFAULTS   20

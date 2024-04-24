@@ -99,7 +99,7 @@ bool lcd_flashBacklight(void)
 
 //alternates between:
     //time since last keyON, and; //"tuuuuu" in seconds
-    //time until firmware expires //"FWXuuu" in hours
+    //time until firmware expires //"EXPuuu" in hours
 bool lcd_printTime_unitless(void)
 {
     bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
@@ -111,7 +111,7 @@ bool lcd_printTime_unitless(void)
     if (cycleFrameNumber_previous != cycleFrameNumber)
     {
         lcd2.setCursor(0,3);
-        if      (cycleFrameNumber == CYCLEFRAME_A) { lcd2.print(F("FWX")); }
+        if      (cycleFrameNumber == CYCLEFRAME_A) { lcd2.print(F("EXP")); }
         else if (cycleFrameNumber == CYCLEFRAME_B) { lcd2.print(F("t" )); }
         
         cycleFrameNumber_previous = cycleFrameNumber;
@@ -119,7 +119,7 @@ bool lcd_printTime_unitless(void)
     }
     else if (cycleFrameNumber == CYCLEFRAME_A)
     {
-        //"FWXuuu" //firmware expiration time in hours
+        //"EXPuuu" //firmware expiration time in hours
         uint16_t firmwareExpirationTime_hours = REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get();
 
         if (timeValue_onScreen != firmwareExpirationTime_hours)
