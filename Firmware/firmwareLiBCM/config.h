@@ -111,6 +111,7 @@
     //other temp settings
     #define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 50 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
 
+    //JTS2doNext: add LIBCM_KEYOFF_SLEEP_DELAY_HOURS
     #define KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES 10 //When SoC is between 0 & 10%, LiBCM will remain on for this many minutes after keyOFF.
         //to turn LiBCM back on: turn ignition 'ON', or turn IMA switch off and on, or plug in USB cable
 
@@ -130,6 +131,8 @@
 
     //#define RUN_BRINGUP_TESTER_MOTHERBOARD //requires external test PCB (that you don't have)
     //#define RUN_BRINGUP_TESTER_GRIDCHARGER //requires external test equipment
+    //JTS2doNow: Add case that constantly displays "firmware not installed, see linsight.org/install/firmware"
+    //JTS2doNow: Add a one-time "firmware updated" LCD message, each time the firmware updates
 
     #define CHECK_FOR_SAFETY_COVER //comment if testing LiBCM without the cover
 
