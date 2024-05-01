@@ -7,7 +7,8 @@
     #define SCREEN_DIDNT_UPDATE false
     #define SCREEN_UPDATED      true
 
-    //define screen elements //one screen element is updated at a time, using round robbin state machine 
+    //define screen elements
+    //up to one screen element is updated each loop, using round robbin state machine 
     #define LCDVALUE_NO_UPDATE        0
     #define LCDVALUE_CALC_CYCLEFRAME  1
     #define LCDVALUE_SECONDS          2
@@ -31,6 +32,7 @@
     #define LCDVALUE_MAX_VALUE       19 //must equal the highest defined number (above)
 
     #define LCD_UPDATE_ATTEMPTS_PER_LOOP 10
+    #define LCD_VALUE_MINIMUM_DISPLAY_TIME_LOOPS 30
 
     //the following static text never changes, and is only sent once each time the display turns on
     #define LCDSTATIC_SET_DEFAULTS   20

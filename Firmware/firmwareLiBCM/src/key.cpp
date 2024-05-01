@@ -25,7 +25,8 @@ void key_handleKeyEvent_off(void)
     gpio_turnPowerSensors_off();
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
-    eeprom_checkForExpiredFirmware(); //JTS2doNow: Run every few days when car is off
+    //JTS2doLater: Add built-in test suite, including VREF, VCELL, Balancing, temp verify (batt and OEM), etc.
+    eeprom_checkForExpiredFirmware();
 
     time_latestKeyOff_ms_set(millis()); //MUST RUN LAST!
 }

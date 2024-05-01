@@ -10,6 +10,15 @@ uint8_t loopPeriod_ms = TIME_DEFAULT_LOOP_PERIOD_ms; //JTS2doLater: see how long
 uint32_t timestamp_latestKeyOn_ms = 0;
 uint32_t timestamp_latestKeyOff_ms = 0;
 
+bool LiBCM_justBooted = YES;
+bool isItTimeToPerformKeyOffTasks = NO;
+
+uint8_t loopCounter_8b = 0;
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool time_didLiBCM_justBoot(void) { return LiBCM_justBooted; }
+
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void     time_latestKeyOn_ms_set(uint32_t keyOnTime) { timestamp_latestKeyOn_ms = keyOnTime; }
@@ -32,29 +41,33 @@ uint8_t time_loopPeriod_ms_get(void)              { return loopPeriod_ms;      }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool time_toUpdate_keyOffValues(void)
-{
-    uint32_t keyOffUpdatePeriod_ms = 0;
-    static uint32_t timestamp_lastUpdate_ms = 0;
-    bool isItTimeToUpdate = false;
+bool time_isItTimeToPerformKeyOffTasks(void) { return isItTimeToPerformKeyOffTasks; }
 
-    //determine period between LTC cell voltage reads (saves power)
-    if ( ((cellBalance_areCellsBalanced() == false) && (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC)) ||
-         ((cellBalance_areCellsBalanced() == false) && (gpio_isGridChargerPluggedInNow() == YES)                ) ||
-         (gpio_isGridChargerChargingNow() == YES                                                                )  )
+/////////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t time_getLoopCount_8b(void) { return loopCounter_8b; }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void updateKeyOffTaskFlag(void)
+{
+    static uint32_t timestamp_lastUpdate_ms = 0;
+    uint32_t keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_TEN_MINUTES_ms;
+
+    if ( ((cellBalance_areCellsBalancing() == YES) && (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC)) ||
+         ((cellBalance_areCellsBalancing() == YES) && (gpio_isGridChargerPluggedInNow() == YES)                ) ||
+         ((gpio_isGridChargerChargingNow() == YES)                                                             )  )
     { 
         keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_ONE_SECOND_ms; //if over 1800 ms, LTC ICs will turn off (bad)
     } 
-    else { keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_TEN_MINUTES_ms; }
   
     //Has enough time passed yet?
     if ((millis() - timestamp_lastUpdate_ms) > keyOffUpdatePeriod_ms)
     { 
-        isItTimeToUpdate = true;
+        isItTimeToPerformKeyOffTasks = YES;
         timestamp_lastUpdate_ms = millis();
     }
-
-    return isItTimeToUpdate;
+    else { isItTimeToPerformKeyOffTasks = NO; }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -77,20 +90,27 @@ bool time_hasKeyBeenOffLongEnough_toTurnOffLiBCM(void)
 //loop execution time (0.9.0c): 2.8 ms with no display
 void time_waitForLoopPeriod(void)
 {
-    static uint32_t timestamp_previousLoopStart_ms = millis();
+    static uint32_t timestamp_loopStart_previous_ms = 0;
+
+    uint32_t timeNow_ms = millis();
+
     bool timingMet = false;
 
-    LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left
-    while ((millis() - timestamp_previousLoopStart_ms) < time_loopPeriod_ms_get()) { timingMet = true; } //wait here to start next loop
-    LED(4,LOW);
-    
-    if ((key_getSampledState() == KEYSTATE_ON) && (timingMet == false))
-    {
-      Serial.print('*');
-      eeprom_hasLibcmFailedTiming_set(EEPROM_LIBCM_LOOPPERIOD_EXCEEDED);
-    }
+    LiBCM_justBooted = NO;
+    loopCounter_8b++;
 
-    timestamp_previousLoopStart_ms = millis(); //placed at end to prevent delay at keyON event
+    LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left
+    while ((uint32_t)(timeNow_ms - timestamp_loopStart_previous_ms) < time_loopPeriod_ms_get())
+    {
+        //wait here to start next loop
+        timeNow_ms = millis();
+        timingMet = true;
+    }
+    LED(4,LOW);
+
+    timestamp_loopStart_previous_ms = timeNow_ms;
+        
+    if ((key_getSampledState() == KEYSTATE_ON) && (timingMet == false)) { Serial.print('*'); }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -122,6 +142,13 @@ uint16_t time_hertz_to_milliseconds(uint8_t hertz)
     if (hertz != 0) { milliseconds = 1000 / hertz; } //division
 
     return milliseconds;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void time_handler(void)
+{
+    updateKeyOffTaskFlag();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

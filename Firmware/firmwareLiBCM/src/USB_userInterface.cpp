@@ -22,13 +22,10 @@ void printDebug(void)
     Serial.print(F("\nDebug data persists in EEPROM until cleared ('$DEBUG=CLR' to clear)"));
 
     Serial.print(F("\n -Has LiBCM limited assist since last cleared?: "));
-    (eeprom_hasLibcmDisabledAssist_get() == EEPROM_LICBM_DISABLED_ASSIST) ? Serial.print(F("YES")) : Serial.print(F("NO"));
+    (eeprom_hasLibcmDisabledAssist_get() == EEPROM_LIBCM_DISABLED_ASSIST) ? Serial.print(F("YES")) : Serial.print(F("NO"));
 
     Serial.print(F("\n -Has LiBCM limited regen since last cleared?: "));
-    (eeprom_hasLibcmDisabledRegen_get() == EEPROM_LICBM_DISABLED_REGEN) ? Serial.print(F("YES")) : Serial.print(F("NO"));
-
-    Serial.print(F("\n -loopPeriod exceeded since last cleared?: "));
-    (eeprom_hasLibcmFailedTiming_get() == EEPROM_LIBCM_LOOPPERIOD_EXCEEDED) ? Serial.print(F("YES")) : Serial.print(F("NO"));
+    (eeprom_hasLibcmDisabledRegen_get() == EEPROM_LIBCM_DISABLED_REGEN) ? Serial.print(F("YES")) : Serial.print(F("NO"));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -37,7 +34,7 @@ void printText_UNUSED(void) { Serial.print(F("Unused")); }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add fan test ($TESTF) that briefly runs fans at low speed
+//JTS2doNext: Add fan test ($TESTF) that briefly runs fans at low speed
 void USB_userInterface_runTestCode(uint8_t testToRun)
 {
     Serial.print(F("\nRunning Test: "));

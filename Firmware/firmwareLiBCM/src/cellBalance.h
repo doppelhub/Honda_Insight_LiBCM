@@ -7,7 +7,9 @@
     #define BALANCING_DISABLED 0
     #define BALANCING_ALLOWED  1
 
-    bool cellBalance_areCellsBalanced(void);
+	#define YES__BALANCING_ALLOWED YES__CHARGING_ALLOWED //balancing code reusing grid charging constants
+
+    bool cellBalance_areCellsBalancing(void);
 
     void cellBalance_handler(void);
 
