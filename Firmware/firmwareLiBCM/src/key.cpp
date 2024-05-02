@@ -25,7 +25,6 @@ void key_handleKeyEvent_off(void)
     gpio_turnPowerSensors_off();
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
-    LiDisplay_keyOff();
     //JTS2doLater: Add built-in test suite, including VREF, VCELL, Balancing, temp verify (batt and OEM), etc.
     eeprom_checkForExpiredFirmware();
 
@@ -44,7 +43,6 @@ void key_handleKeyEvent_on(void)
     LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
     LTC68042configure_handleKeyStateChange();
     LED(1,HIGH);
-    LiDisplay_keyOn();
 
     time_latestKeyOn_ms_set(millis()); //MUST RUN LAST!
 }

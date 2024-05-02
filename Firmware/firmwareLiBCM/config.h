@@ -7,7 +7,7 @@
     #define config_h
     #include "src/libcm.h"
 
-    #define FW_VERSION "0.9.3h"
+    #define FW_VERSION "0.9.3hN"
     #define BUILD_DATE "2024APR11"
 
     //////////////////////////////////////////////////////////////////
@@ -147,7 +147,9 @@
         //#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
     //#define LIDISPLAY_DEBUG_ENABLED //uncomment to enable updates to text box ID # T12 on LiDisplay driving page -- this shows raw comm data from LiDisplay to LiBCM
-    #define LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS 64 //64 = 6.4mVwindow between cell colours on the grid charging page.  Don't go below CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
+    #define LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS 64 //64 = 6.4mV window between cell colours on the grid charging page.  Don't go below CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
+	#define LIDISPLAY_SPLASH_PAGE_MS 2000 //How long the splash page shows on LiDisplay.  Default 2000 (2 seconds)
+	#define LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS 3000 // Keep displaying the grid charging page this long before showing splash page when GC unplugged
 
     /*
     JTS2doLater:
@@ -166,5 +168,5 @@
         //#define CHARGER_INPUT_CURRENT__13A_MAX //select this option if using 14 AWG extension cord up to 100 feet, or 16 AWG up to 50 feet**, else if;
         //#define CHARGER_INPUT_CURRENT__10A_MAX //select this option if using 16 AWG extension cord up to 100 feet, or 18 AWG up to 50 feet**.
             //**please verify maximum continuous current rating for your specific extension cord
- 
+
 #endif

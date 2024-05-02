@@ -4,8 +4,6 @@
 #ifndef lidisplay_h
     #define lidisplay_h
 
-    #define LIDISPLAY_SPLASH_PAGE_MS 2000
-
     void LiDisplay_begin(void);
 
     void LiDisplay_handler(void);

@@ -23,7 +23,7 @@
     void eeprom_checkForExpiredFirmware(void);
     
     uint16_t eeprom_uptimeStoredInEEPROM_hours_get(void);
-    
+
     uint8_t eeprom_expirationStatus_get(void);
 
     uint8_t eeprom_hasLibcmDisabledAssist_get(void);
