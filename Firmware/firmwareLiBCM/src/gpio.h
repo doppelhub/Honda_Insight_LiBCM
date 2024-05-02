@@ -63,6 +63,7 @@
 
     void gpio_turnPackHeater_on(void);
     void gpio_turnPackHeater_off(void);
+    bool gpio_isHeaterOnNow(void);
     
     uint8_t gpio_getHardwareRevision(void);
 

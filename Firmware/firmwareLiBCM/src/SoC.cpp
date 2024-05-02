@@ -106,6 +106,9 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
     Serial.print(String(batterySoC_percent));
     Serial.print('%');
 
+    if (LTC68042result_hiCellVoltage_get() > CELL_VMAX_REGEN)       { Serial.print(F("\nDANGER: Cell(s) Overcharged!!")); }
+    if (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER) { Serial.print(F("\nDANGER: Cell(s) Discharged!!" )); }
+
     SoC_setBatteryStateNow_percent(batterySoC_percent); //update SoC
 }
 
@@ -116,16 +119,14 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
 //prevents over-discharge during extended keyOFF
 void SoC_turnOffLiBCM_ifPackEmpty(void)
 {
-    static uint8_t numConsecutiveLoopsCellVoltageTooLow = 0; 
-        
     if (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER)
     {
         Serial.print(F("\nBattery is empty"));
         gpio_turnLiBCM_off(); //game over, thanks for playing
     }
-    else if((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //SoC is greater than 0, but low enough that LiBCM should turn off
-            (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true) && //give user time to plug in charger
-            (gpio_isGridChargerChargingNow() == NO)                  ) //grid charger isn't charging
+    else if ((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //battery is low
+             (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true) && //give user time to plug in charger
+             (gpio_isGridChargerChargingNow() == NO)                  ) //grid charger isn't charging
     {   
         Serial.print(F("\nBattery is low"));
         gpio_turnLiBCM_off(); //game over, thanks for playing

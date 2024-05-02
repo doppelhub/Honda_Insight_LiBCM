@@ -247,7 +247,7 @@ void processAllCellVoltages(void)
 bool LTC68042cell_nextVoltages(void)
 {
     static uint8_t presentState = LTC_STATE_FIRSTRUN;
-    static bool actionPerformedThisCall = GATHERED_LTC6804_DATA;
+    bool cellVoltageDataStatus = GATHERING_CELL_DATA;
 
     if (LTC68042configure_wakeup() == LTC6804_CORE_JUST_WOKE_UP) { presentState = LTC_STATE_FIRSTRUN; }
 
@@ -276,15 +276,13 @@ bool LTC68042cell_nextVoltages(void)
                 presentState = LTC_STATE_PROCESS; //all cell voltages gathered.  Process data on next run.
             }
         }
-
-        actionPerformedThisCall = GATHERED_LTC6804_DATA;
     }
 
     else if (presentState == LTC_STATE_PROCESS)
     {   
         //all cell voltages read... 
         processAllCellVoltages(); //do math and store in LTC68042_result.c
-        actionPerformedThisCall = PROCESSED_LTC6804_DATA;
+        cellVoltageDataStatus = CELL_DATA_PROCESSED;
         presentState = LTC_STATE_GATHER; //gather data on next run
     }
 
@@ -293,40 +291,39 @@ bool LTC68042cell_nextVoltages(void)
         //LTC6804 ICs were previously off
         LTC68042configure_programVolatileDefaults(); 
         startCellConversion();
-        actionPerformedThisCall = GATHERED_LTC6804_DATA;
         presentState = LTC_STATE_GATHER;
     }
     
     else
     {
         Serial.print(F("\nillegal LTC68042cell state"));
-        actionPerformedThisCall = GATHERED_LTC6804_DATA;
         while (1) {;} //hang here until watchdog resets.
     }
 
-    return actionPerformedThisCall;
+    return cellVoltageDataStatus;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //Only call when keyOFF //takes too long to execute when keyON (causes check engine light)
 //Results are stored in "LTC68042_results.c"
-void LTC68042cell_sampleGatherAndProcessAllCellVoltages(void)
+//JTS2doNext: rewrite to remove double call hack
+void LTC68042cell_acquireAllCellVoltages(void)
 {
-    while (LTC68042cell_nextVoltages() != PROCESSED_LTC6804_DATA) { ; } //clear old data (if any) //increases measurement accuracy
-    while (LTC68042cell_nextVoltages() != PROCESSED_LTC6804_DATA) { ; } //gather new data
+    while (LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //clear old data (if any)
+    while (LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //gather new data
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Write Test
+//JTS2doLater: Write Test
 void LTC68042cell_openShortTest(void)
 {
     // 1a: Turn off all sense resistors
     void LTC68042configure_setBalanceResistors(uint8_t icAddress, uint16_t cellBitmap, uint8_t softwareTimeout);
 
     // 1b: Measure all cell voltages
-    LTC68042cell_sampleGatherAndProcessAllCellVoltages();
+    LTC68042cell_acquireAllCellVoltages();
     
     // 1c: Verify all cells between 2.0:2.1 volts
 

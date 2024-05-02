@@ -140,7 +140,7 @@ void lcd_I2C_jts::initializationRoutine()
     // It also may be optional, useful only when:
     //"the power supply conditions for correctly operating the internal reset circuit are not met"
     sendQuartet( (LCD_FUNCTIONSET | LCD_FUNCTIONSET_DL_BIT), ADD_DELAY);
-    delayMicroseconds(4200); //JTS2doNow: split this function into multiple calls, so it doesn't add so much delay
+    delayMicroseconds(4200); //JTS2doLater: split this function into multiple calls, so it doesn't add so much delay
     sendQuartet( (LCD_FUNCTIONSET | LCD_FUNCTIONSET_DL_BIT), ADD_DELAY); 
     delayMicroseconds(110);
     sendQuartet( (LCD_FUNCTIONSET | LCD_FUNCTIONSET_DL_BIT), ADD_DELAY); 
