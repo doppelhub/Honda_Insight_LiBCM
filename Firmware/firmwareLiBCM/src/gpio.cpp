@@ -222,6 +222,10 @@ bool gpio_isCoverInstalled(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+bool gpio_isUserSwitchOn(void) { return digitalRead(PIN_USER_SW); }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 bool gpio1_getState(void) { return digitalRead(PIN_GPIO1); }
 bool gpio2_getState(void) { return digitalRead(PIN_GPIO2); }
 bool gpio3_getState(void) { return digitalRead(PIN_GPIO3); }

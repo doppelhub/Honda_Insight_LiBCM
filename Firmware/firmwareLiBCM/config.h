@@ -24,20 +24,20 @@
     //there are no default options because this firmware works with all LiBCM variants... you need to specify which hardware you have installed
 
     //choose your battery type:
-        //#define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
+        #define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
         //#define BATTERY_TYPE_47AhFoMoCo
 
     //choose how many cells are in series:
-        //#define STACK_IS_48S //All 5AhG3 Kits & FoMoCo Kits with QTY4 modules
+        #define STACK_IS_48S //All 5AhG3 Kits & FoMoCo Kits with QTY4 modules
         //#define STACK_IS_60S //FoMoCo Kits with QTY5 modules
 
     //choose which grid charger is installed
-        //#define GRIDCHARGER_IS_NOT_1500W //All 5AhG3 Kits & 'standard' 47Ah FoMoCo Kits
+        #define GRIDCHARGER_IS_NOT_1500W //All 5AhG3 Kits & 'standard' 47Ah FoMoCo Kits
         //#define GRIDCHARGER_IS_1500W //'faster' 47Ah FoMoCo Kits only
 
     //choose ONE of the following
     //must match actual "current hack" hardware configuration:
-        //#define SET_CURRENT_HACK_40 //actually +45.8% //most LiBCM users installed this hardware option
+        #define SET_CURRENT_HACK_40 //actually +45.8% //most LiBCM users installed this hardware option
         //#define SET_CURRENT_HACK_20 //actually +25.0%
         //#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
 
@@ -129,7 +129,7 @@
 
     //don't modify these parameters unless you know what you're doing.  They are primary for mudder's internal testing
 
-    //#define RUN_BRINGUP_TESTER_MOTHERBOARD //requires external test PCB (that you don't have)
+    #define RUN_BRINGUP_TESTER_MOTHERBOARD //requires external test PCB (that you don't have)
     //#define RUN_BRINGUP_TESTER_GRIDCHARGER //requires external test equipment
     //JTS2doNow: Add case that constantly displays "firmware not installed, see linsight.org/install/firmware"
     //JTS2doNow: Add a one-time "firmware updated" LCD message, each time the firmware updates

@@ -204,8 +204,8 @@ bool testLTC6804isoSPI(void)
     delay(50);
 
     Serial.print(F("\nLTC6804 - VREF test: "));
-    if (LTC6804gpio_areAllVoltageReferencesPassing() == true) { Serial.print(F("pass")); } 
-    else                                                      { Serial.print(F("FAIL!! !! !! !!")); didTestFail = true; }
+    if (LTC6804gpio_areAllVoltageReferencesPassing() == true) { Serial.print(F("\nresult: passed")); } 
+    else                                                      { Serial.print(F("\nresult: FAIL!! !! !! !!")); didTestFail = true; }
 
     for (int ii=0; ii<100; ii++) { LTC68042cell_nextVoltages(); delay(5); } //generate isoSPI traffic to check for errors
 
@@ -280,70 +280,6 @@ bool testDischargeFETs(void)
     //JTS2do: Automate test results.
     //right now you must paste the results into the following spreadsheet and verify everything is working properly:
     //~/Honda_Insight_LiBCM/Test Fixtures/LTC6804 Discharge Tester Analysis.ods
-}
-
-//////////////////////////////////////////////////////////////////
-
-bool testLED_LCD(void)
-{
-    bool didTestFail = false;
-
-    //test LEDs/display
-    Serial.print(F("\nTesting LED1/2/3/4"));
-    serialUSB_waitForEmptyBuffer();
-    LED(1,HIGH);
-    LED(2,HIGH);
-    LED(3,HIGH);
-    LED(4,HIGH);
-
-    Serial.print(F("\nTesting LiDisplay FET (Red LED)"));
-    serialUSB_waitForEmptyBuffer();
-    gpio_turnHMI_on();
-
-    //Turn 4x20 screen on
-    Serial.print(F("\nWriting Data to 4x20 LCD"));
-    serialUSB_waitForEmptyBuffer();
-    lcdTransmit_begin();
-    lcdTransmit_testText();
-    lcdTransmit_displayOn();
-
-    //test if 4x20 screen dims when 5V buck turned off (USB powers at lower voltage)
-    for (int ii=0; ii<6; ii++)
-    {
-        digitalWrite(PIN_TURNOFFLiBCM,HIGH); //4x20 screen should dim
-        delay(200);
-        digitalWrite(PIN_TURNOFFLiBCM,LOW); //4x20 screen full brightness
-        delay(200);
-    }
-
-    //Turn LEDs off
-    LED(1,LOW);
-    LED(2,LOW);
-    LED(3,LOW);
-    LED(4,LOW);
-    gpio_turnHMI_off();
-
-    return didTestFail;
-}
-
-//////////////////////////////////////////////////////////////////
-
-bool testMCMeDividerHVDC(void)
-{
-    bool didTestFail = false;
-
-    Serial.print(F("\n\nTesting MCMe (LED should blink)"));
-    serialUSB_waitForEmptyBuffer();
-
-    for (int ii=0; ii<6; ii++)
-    {
-        analogWrite(PIN_MCME_PWM, 0); //LED should be full brightness
-        delay(200);
-        analogWrite(PIN_MCME_PWM, 255); //LED should be dim
-        delay(200);
-    }
-
-    return didTestFail;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -727,12 +663,91 @@ bool testKeyON_and_gridPWM(void)
 
 //////////////////////////////////////////////////////////////////
 
+bool testLED_LCD(void)
+{
+    bool didTestFail = false;
+
+    //Turn 4x20 screen on
+    Serial.print(F("\nWriting Data to 4x20 LCD"));
+    serialUSB_waitForEmptyBuffer();
+    lcdTransmit_begin();
+    lcdTransmit_testText();
+    lcdTransmit_displayOn();
+
+    //test LEDs/display
+    Serial.print(F("\nTesting LED1/2/3/4"));
+    serialUSB_waitForEmptyBuffer();
+    LED(1,HIGH);
+    LED(2,HIGH);
+    LED(3,HIGH);
+    LED(4,HIGH);
+
+    Serial.print(F("\nTesting LiDisplay FET (Red LED)"));
+    serialUSB_waitForEmptyBuffer();
+    gpio_turnHMI_on();
+
+    //test if 4x20 screen dims when 5V buck turned off (USB powers at lower voltage)
+    for (int ii=0; ii<6; ii++)
+    {
+        digitalWrite(PIN_TURNOFFLiBCM,HIGH); //4x20 screen should dim
+        delay(200);
+        digitalWrite(PIN_TURNOFFLiBCM,LOW); //4x20 screen full brightness
+        delay(200);
+    }
+
+    //Turn LEDs off
+    LED(1,LOW);
+    LED(2,LOW);
+    LED(3,LOW);
+    LED(4,LOW);
+    gpio_turnHMI_off();
+
+    return didTestFail;
+}
+
+//////////////////////////////////////////////////////////////////
+
+bool testMCMeDividerHVDC(void)
+{
+    bool didTestFail = false;
+
+    Serial.print(F("\n\nTesting MCMe (LED should blink)"));
+    serialUSB_waitForEmptyBuffer();
+
+    for (int ii=0; ii<6; ii++)
+    {
+        analogWrite(PIN_MCME_PWM, 0); //LED should be full brightness
+        delay(200);
+        analogWrite(PIN_MCME_PWM, 255); //LED should be dim
+        delay(200);
+    }
+
+    return didTestFail;
+}
+
+//////////////////////////////////////////////////////////////////
+
 void bringupTester_motherboard(void)
 {
     #ifdef RUN_BRINGUP_TESTER_MOTHERBOARD
+
+        if (gpio_isUserSwitchOn() == NO)
+        {
+            //user just installed LiBCM, but hasn't installed firmware yet
+            Serial.print(F("\nPlease install LiBCM firmware\nSee linsight.org/install/firmware"));
+
+            lcdTransmit_begin();
+            lcdTransmit_displayOn();
+            lcdTransmit_Warning(LCD_WARN_FW_EXPIRED);
+        }
+
         while (1) //this function never returns
         {
-            if (gpio_isCoverInstalled() == true) //wait for user to push button
+            if (gpio_isUserSwitchOn() == NO)
+            {
+                if (millis() > MILLISECONDS_PER_HOUR) { gpio_turnLiBCM_off(); } //prevent battery discharge
+            }
+            else if (gpio_isCoverInstalled() == true) //test starts when user presses button
             {
                 bool didTestFail = false;
 
@@ -742,8 +757,6 @@ void bringupTester_motherboard(void)
                 if(didTestFail == false) { didTestFail = testLTC6804isoSPI();          }
                 if(didTestFail == false) { didTestFail = testLTC6804cellVoltages();    }
                 if(didTestFail == false) { didTestFail = testDischargeFETs();          }
-                if(didTestFail == false) { didTestFail = testLED_LCD();                }
-                if(didTestFail == false) { didTestFail = testMCMeDividerHVDC();        }
                 if(didTestFail == false) { didTestFail = testLiDisplayLoopback();      }
                 if(didTestFail == false) { didTestFail = testBATTSCI_METSCI();         }
                 if(didTestFail == false) { didTestFail = testTempSensors_unpowered();  }
@@ -752,6 +765,8 @@ void bringupTester_motherboard(void)
                 if(didTestFail == false) { didTestFail = testVPIN();                   }
                 if(didTestFail == false) { didTestFail = testGridSense_and_IGBT();     }
                 if(didTestFail == false) { didTestFail = testKeyON_and_gridPWM();      }
+                if(didTestFail == false) { didTestFail = testLED_LCD();                }
+                if(didTestFail == false) { didTestFail = testMCMeDividerHVDC();        }
 
                 gpio_turnBuzzer_on_highFreq();
                 if (didTestFail == false) { Serial.print(F("\n\nUnit PASSED!\n\n"));           delay(100); }
