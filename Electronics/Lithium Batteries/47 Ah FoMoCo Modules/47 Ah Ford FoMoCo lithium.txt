@@ -3,9 +3,10 @@ Module No: MP0217NS002A
 FoMoCo
 Samsung
 Used in:
-Ford Escape PHEV
+Ford Escape PHEV (verified)
 Jeep Wrangler 4xe
-
+Audi Q5 PHEV (12S modules ONLY)(verified)
+Ford Kona (verified)
 
 Recalled module: LX68-10B759-R
 NHTSA Part 573 Filing: 21V-869

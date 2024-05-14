@@ -7,8 +7,8 @@
     #define config_h
     #include "src/libcm.h"
 
-    #define FW_VERSION "0.9.3b"
-    #define BUILD_DATE "2023DEC16"
+    #define FW_VERSION "0.9.4"
+    #define BUILD_DATE "2024MAY01"
 
     //////////////////////////////////////////////////////////////////
 
@@ -97,7 +97,7 @@
     #define CELL_VMIN_KEYOFF                    CELL_VREST_10_PERCENT_SoC //when car is off, LiBCM turns off below this voltage
     #define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled when battery is less than this percent charged
     #define CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE 32    //'32' = 3.2 mV //CANNOT exceed 255 counts (25.5 mV)
-    #define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 22    //'22' = 2.2 mV //LTC6804 total measurement error is 2.2 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
+    #define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 22    //'22' = 2.2 mV //LTC6804 measurement uncertainty is 2.2 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
     #define CELL_BALANCE_MAX_TEMP_C             40
     //#define ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN //uncomment to disable keyOFF cell balancing (unless the grid charger is plugged in)
 
@@ -111,9 +111,8 @@
     //other temp settings
     #define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 50 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
 
-    #define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION //uncomment if using stock Honda 5AhG3 lithium modules
-
-    #define KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES 10 //Even with low SoC, LiBCM will remain on for this many minutes after keyOFF.
+    //JTS2doNext: add LIBCM_KEYOFF_SLEEP_DELAY_HOURS
+    #define KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES 10 //When SoC is between 0 & 10%, LiBCM will remain on for this many minutes after keyOFF.
         //to turn LiBCM back on: turn ignition 'ON', or turn IMA switch off and on, or plug in USB cable
 
     //Choose which sign (±) the LCD displays when the battery is discharging
@@ -132,6 +131,8 @@
 
     //#define RUN_BRINGUP_TESTER_MOTHERBOARD //requires external test PCB (that you don't have)
     //#define RUN_BRINGUP_TESTER_GRIDCHARGER //requires external test equipment
+    //JTS2doNow: Add case that constantly displays "firmware not installed, see linsight.org/install/firmware"
+    //JTS2doNow: Add a one-time "firmware updated" LCD message, each time the firmware updates
 
     #define CHECK_FOR_SAFETY_COVER //comment if testing LiBCM without the cover
 
@@ -146,7 +147,9 @@
         //#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
     //#define LIDISPLAY_DEBUG_ENABLED //uncomment to enable updates to text box ID # T12 on LiDisplay driving page -- this shows raw comm data from LiDisplay to LiBCM
-    #define LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS 64 //64 = 6.4mVwindow between cell colours on the grid charging page.  Don't go below CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
+    #define LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS 64 //64 = 6.4mV window between cell colours on the grid charging page.  Don't go below CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
+	#define LIDISPLAY_SPLASH_PAGE_MS 2000 //How long the splash page shows on LiDisplay.  Default 2000 (2 seconds)
+	#define LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS 3000 // Keep displaying the grid charging page this long before showing splash page when GC unplugged
 
     /*
     JTS2doLater:
@@ -159,11 +162,11 @@
         If user doesn't uncomment anything, then the previously uploaded value remains in EEPROM
     */
 
-    //JTS2doNow: Implement this feature
+    //JTS2doLater: Implement this feature
     //if using 1500 watt charger with 120 volt extension cord, choose input current limit
         //#define CHARGER_INPUT_CURRENT__15A_MAX //select this option if using 12 AWG extension cord up to 100 feet, or 14 AWG up to 50 feet**, else if;
         //#define CHARGER_INPUT_CURRENT__13A_MAX //select this option if using 14 AWG extension cord up to 100 feet, or 16 AWG up to 50 feet**, else if;
         //#define CHARGER_INPUT_CURRENT__10A_MAX //select this option if using 16 AWG extension cord up to 100 feet, or 18 AWG up to 50 feet**.
             //**please verify maximum continuous current rating for your specific extension cord
- 
+
 #endif

@@ -117,7 +117,7 @@ uint8_t BATTSCI_calculateChecksum( uint8_t frameSum )
 uint8_t BATTSCI_calculateTemperatureByte(void)
 {
     #define BATTSCI_TEMP_OFFSET 30 //MCM subtracts this value from received byte to determine temperature in degrees celcius
-    #define BATTSCI_TEMP_21DEGC (21 + BATTSCI_TEMP_OFFSET) //Lowest temp LiBCM will ever send to MCM
+    #define BATTSCI_TEMP_21DEGC (25 + BATTSCI_TEMP_OFFSET) //Lowest temp LiBCM will ever send to MCM
 
     uint8_t tempBATTSCI = temperature_battery_getLatest() + BATTSCI_TEMP_OFFSET;
     if (tempBATTSCI < BATTSCI_TEMP_21DEGC) { tempBATTSCI = BATTSCI_TEMP_21DEGC; } //spoof temps below 21 degC to 21 degC //allows IMA start and max assist
@@ -172,7 +172,7 @@ bool BATTSCI_isPackEmpty(void)
 
 //JTS2doLater: Disable assist and regen if pack too hot
 //JTS2doLater: Add hysteresis and/or different SoC setpoints
-//JTS2doNow: If SoC drops below 1%, spoof very different HVDC voltages, which will force MCM to open contactor (to prevent further discharge)
+//JTS2doLater: If SoC drops below 1%, spoof very different HVDC voltages, which will force MCM to open contactor (to prevent further discharge)
 //sternly demand no regen and/or assist from MCM
 uint8_t BATTSCI_calculateRegenAssistFlags(void)
 {
@@ -183,16 +183,17 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
     #endif
         {
             flags |= BATTSCI_DISABLE_ASSIST_FLAG;
-            eeprom_hasLibcmDisabledAssist_set(EEPROM_LICBM_DISABLED_ASSIST);
+            eeprom_hasLibcmDisabledAssist_set(EEPROM_LIBCM_DISABLED_ASSIST);
         }
 
     #ifndef DISABLE_REGEN
         if ((BATTSCI_isPackFull() == YES)                                                                || //pack is full
             ((temperature_battery_getLatest() < TEMP_FREEZING_DEGC + 2) && (BATTSCI_isPackEmpty() == NO)) ) //pack too cold to charge; DCDC still powered
+            //JTS2doLater: Allow minimal regen when pack below freezing (e.g. using LiControl to limit max regen)
     #endif
         {
             flags |= BATTSCI_DISABLE_REGEN_FLAG; //when this flag is set, MCM draws zero power from IMA motor
-            eeprom_hasLibcmDisabledRegen_set(EEPROM_LICBM_DISABLED_REGEN);
+            eeprom_hasLibcmDisabledRegen_set(EEPROM_LIBCM_DISABLED_REGEN);
         } 
 
     return flags;
@@ -233,7 +234,7 @@ uint8_t BATTSCI_calculateChargeRequestByte(void)
     {
         //key previously turned to 'START', now in 'ON' position
 
-        //JTS2doNow: what happens if severely unbalanced pack causes us to send both flags?
+        //JTS2doLater: what happens if severely unbalanced pack causes us to send both flags?
         if (BATTSCI_isPackEmpty() == YES) { chargeRequestByte |= BATTSCI_REQUEST_REGEN_FLAG;     }
         if (BATTSCI_isPackFull()  == YES) { chargeRequestByte |= BATTSCI_REQUEST_NO_REGEN_FLAG ; }
     }
@@ -306,10 +307,10 @@ uint16_t BATTSCI_convertSoC_deciPercent_toBytes(uint16_t SoC_deciPercent) //deci
 
 uint16_t BATTSCI_calculateSpoofedSoC(void)
 {
-    //JTS2doNow: How can we limit regen power when pack is severely empty and frozen?
+    //JTS2doLater: How can we limit regen power when pack is severely empty and frozen?
     uint16_t SoC_toMCM_deciPercent = 0;
     if      (BATTSCI_isPackFull()  == YES) { SoC_toMCM_deciPercent = 820; } //disable regen  //JTS2doLater: See if this is actually required (also sent as flag)
-    else if (BATTSCI_isPackEmpty() == YES) { SoC_toMCM_deciPercent = 200; } //disable assist //JTS2doNow: Does MCM open contactor when low SoC value sent?
+    else if (BATTSCI_isPackEmpty() == YES) { SoC_toMCM_deciPercent = 200; } //disable assist //JTS2doLater: Does MCM open contactor when low SoC value sent?
     else                                   { SoC_toMCM_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; } //get MCM-remapped SoC value
 
     SoC_toMCM_deciPercent = BATTSCI_SoC_Hysteresis(SoC_toMCM_deciPercent);
@@ -366,8 +367,8 @@ void BATTSCI_sendFrames(void)
             uint8_t frameSum_AA = 0; //this will overflow, which is ok for CRC
             frameSum_AA += BATTSCI_writeByte( 0xAA );                                           //B0 Never changes
             frameSum_AA += BATTSCI_writeByte( 0x10 );                                           //B1 Always 0x10, unless METSCI signal not received
-            frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B2 Never changes unless P codes
-            frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B3 Never changes unless P codes
+            frameSum_AA += BATTSCI_writeByte( 0x00 ); //JTS2doLater: Add critical Pcodes          //B2 Never changes unless P codes
+            frameSum_AA += BATTSCI_writeByte( 0x00 ); //JTS2doLater: Pcode if key and charger on  //B3 Never changes unless P codes
             frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B4 Never changes unless P codes
             frameSum_AA += BATTSCI_writeByte( BATTSCI_calculateRegenAssistFlags()  );           //B5 Disable assist/regen flags
             frameSum_AA += BATTSCI_writeByte( BATTSCI_calculateChargeRequestByte() );           //B6 Request regen/noRegen if battery low/high
