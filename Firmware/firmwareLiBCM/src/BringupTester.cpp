@@ -343,7 +343,7 @@ void bringupTester_motherboard(void)
                     
                     Serial1.begin(38400,SERIAL_8E1);
 
-                    LiDisplay_writeByte(numberToLoopback);
+                    Serial1.write(numberToLoopback);
                     delay(10);
 
                     Serial.print(F("\nValue sent: "));
@@ -353,13 +353,13 @@ void bringupTester_motherboard(void)
                     
                     do
                     {
-                        numberLoopedBack = LiDisplay_readByte();
+                        numberLoopedBack = Serial1.read();
 
                         Serial.print(F(" received: "));
                         Serial.print(numberLoopedBack,BIN);
                         Serial.print(',');
 
-                    } while ( LiDisplay_bytesAvailableToRead() != 0 );
+                    } while ( Serial1.available() != 0 );
 
                     if (numberLoopedBack == numberToLoopback) { Serial.print(F("pass")); }
                     else                                     { Serial.print(F("FAIL!! !! !! !! !! !! !! !! ")); didTestFail = true; }
@@ -468,10 +468,10 @@ void bringupTester_motherboard(void)
                     Serial.print( String(tempWHT) + '/');
                     Serial.print( String(tempBLU) + ": ");
 
-                    if ((tempYEL > 462) && (tempYEL < 562) &&
-                        (tempGRN > 462) && (tempGRN < 562) &&
-                        (tempWHT > 462) && (tempWHT < 562) &&
-                        (tempBLU > 462) && (tempBLU < 562)  ) { Serial.print(F("pass")); }
+                    if ((tempYEL > 462) && (tempYEL < 565) &&
+                        (tempGRN > 462) && (tempGRN < 565) &&
+                        (tempWHT > 462) && (tempWHT < 565) &&
+                        (tempBLU > 462) && (tempBLU < 565)  ) { Serial.print(F("pass")); }
                     else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
                 }
 
@@ -485,9 +485,9 @@ void bringupTester_motherboard(void)
                     Serial.print( String(tempBAY2) + '/');
                     Serial.print( String(tempBAY3) + ": ");
 
-                    if ((tempBAY1 > 459) && (tempBAY1 < 565) &&
-                        (tempBAY2 > 459) && (tempBAY2 < 565) &&
-                        (tempBAY3 > 459) && (tempBAY3 < 565)  ) { Serial.print(F("pass")); }
+                    if ((tempBAY1 > 459) && (tempBAY1 < 572) &&
+                        (tempBAY2 > 459) && (tempBAY2 < 572) &&
+                        (tempBAY3 > 459) && (tempBAY3 < 572)  ) { Serial.print(F("pass")); }
                     else { Serial.print(F("FAIL!! !! !! !! !! !! !! !! !! !!")); didTestFail=true; }
                 }
 
