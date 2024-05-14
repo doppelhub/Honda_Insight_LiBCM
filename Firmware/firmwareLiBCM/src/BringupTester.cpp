@@ -738,7 +738,7 @@ void bringupTester_motherboard(void)
 
             lcdTransmit_begin();
             lcdTransmit_displayOn();
-            lcdTransmit_Warning(LCD_WARN_FW_EXPIRED);
+            for (uint8_t ii = 0; ii < 4; ii++) { lcdTransmit_Warning(LCD_WARN_FW_EXPIRED); }
         }
 
         while (1) //this function never returns

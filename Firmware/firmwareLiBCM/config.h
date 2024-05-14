@@ -131,8 +131,6 @@
 
     //#define RUN_BRINGUP_TESTER_MOTHERBOARD //requires external test PCB (that you don't have)
     //#define RUN_BRINGUP_TESTER_GRIDCHARGER //requires external test equipment
-    //JTS2doNow: Add case that constantly displays "firmware not installed, see linsight.org/install/firmware"
-    //JTS2doNow: Add a one-time "firmware updated" LCD message, each time the firmware updates
 
     #define CHECK_FOR_SAFETY_COVER //comment if testing LiBCM without the cover
 
