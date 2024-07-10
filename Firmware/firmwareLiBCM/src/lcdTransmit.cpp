@@ -575,6 +575,12 @@ void lcdTransmit_displayOff(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/*JTS2doLater: Add the following alert if LiBCM loses control
+LiBCM DETECTED A
+DANGEROUS CONDITION.
+TURN OFF IMA SWITCH
+IMMEDIATELY!!!!!!
+*/
 void lcdTransmit_Warning(uint8_t warningToDisplay)
 {
     static uint8_t whichRowToPrint = 0;

@@ -8,6 +8,7 @@
 //eeprom write halts CPU for QTY2 cycles and takes ~3.3 ms to complete
 
 //JTS2doLater: does Arduino implement 2560 brownout detector?
+//JTS2doLater: Store program checksum in EEPROM; verify equal on keyOff
 
 //store the date and time customer compiled the source code in program memory
 const uint8_t COMPILE_DATE_PROGRAM[BYTES_IN_DATE] = __DATE__; //Format: 'Mmm DD YYYY' //Ex: 'Jan 23 2022' //'Mar  5 2022'

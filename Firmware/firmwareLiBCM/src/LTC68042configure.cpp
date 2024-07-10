@@ -153,7 +153,11 @@ void LTC68042configure_initialize(void)
 {
     spi_enable(SPI_CLOCK_DIV64); //JTS2doLater: increase clock speed //DIV16 & DIV32 work on bench
 
-    LTC68042configure_doesActualPackSizeMatchUserConfig();
+    #if   defined RUN_BRINGUP_TESTER_MOTHERBOARD //don't verify cell count
+    #elif defined RUN_BRINGUP_TESTER_GRIDCHARGER //don't verify cell count
+    #else
+        LTC68042configure_doesActualPackSizeMatchUserConfig(); //verify cell count matches
+    #endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

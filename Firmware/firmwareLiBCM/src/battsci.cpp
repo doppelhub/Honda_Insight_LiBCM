@@ -18,6 +18,7 @@ int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2
 
 uint8_t framePeriod_ms = 33;
 
+//JTS2doLater: post#3093 (http://insightcentral.net/threads/libcm-open-beta-support-thread.128957) explains how make the OEM SoC gauge update
 //JTS2doLater: Add different SoC profile for "charges every day" crew
 //JTS2doLater: store in 'PROGMEM' to keep out of RAM (but note array elements must be indexed differently)
 //LUT remaps actual lithium battery SoC (unit: percent) to mimic OEM NiMH behavior (unit: deciPercent)
@@ -190,6 +191,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
         if ((BATTSCI_isPackFull() == YES)                                                                || //pack is full
             ((temperature_battery_getLatest() < TEMP_FREEZING_DEGC + 2) && (BATTSCI_isPackEmpty() == NO)) ) //pack too cold to charge; DCDC still powered
             //JTS2doLater: Allow minimal regen when pack below freezing (e.g. using LiControl to limit max regen)
+            //JTS2doNow: Disable assist and regen if pack too hot
     #endif
         {
             flags |= BATTSCI_DISABLE_REGEN_FLAG; //when this flag is set, MCM draws zero power from IMA motor
