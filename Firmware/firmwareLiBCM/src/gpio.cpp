@@ -63,7 +63,8 @@ void gpio_begin(void)
     //JTS2doLater: Turn all this stuff off when the key is off
     TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D11(fan) & D12()
     TCCR3B = (TCCR3B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D2() & D3() & D5(VPIN_OUT)
-    TCCR4B = (TCCR4B & B11111000) | B00000010; // Set F_PWM to  3921.16 Hz //pins D7(MCMe) & D8(gridPWM) & D9()
+    TCCR4B = (TCCR4B & B11111000) | B00000010; // Set F_PWM to  3921.16 Hz //pins D7(MCMe) & D8(gridPWM) & D9() //JTS2doLater: use higher frequency when keyOn
+    //TCCR4B = (TCCR4B & B11111000) | B00000100; // Set F_PWM to  122.55 Hz //pins D7(MCMe) & D8(gridPWM) & D9() //JTS2doLater: use lower frequency when charging
     //TCCR5B is set in Buzzer functions
 }
 

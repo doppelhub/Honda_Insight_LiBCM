@@ -37,6 +37,12 @@
 
     #define KEY_OFF_UPDATE_PERIOD_ONE_SECOND_ms  ( 1 *  1000)
     #define KEY_OFF_UPDATE_PERIOD_TEN_MINUTES_ms (10 * 60000)
+    //JTS2doLater: When the key is on - but the IMA switch is off (or fuse blown) - reduce LTC6804 update period to minimize LTC6804 power consumption
+    //Tests to determine whether the IMA switch is on or off:
+        //1) compare the VPIN input signal (HVDC voltage inside the PDU) with the pack voltage (as determined by the LTC6804 ICs).
+        //1) After keyOn, if the delta varies wildly over a given time period, LiBCM can conclude that the IMA switch is off.
+        //2) LiBCM can reset a timer each time the battery current sensor magnitude exceeds 0 amps (which can only happen if the IMA switch is on).
+        //2) If the timer overflows (e.g. after an hour with 0 amps through the pack), LiBCM can likely conclude that the IMA switch is off.
 
     #define MILLISECONDS_PER_HOUR 3600000
 

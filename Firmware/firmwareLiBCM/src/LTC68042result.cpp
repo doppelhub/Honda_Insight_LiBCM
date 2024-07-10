@@ -6,9 +6,9 @@
 #include "libcm.h"
 
 uint8_t isoSPI_errorCount = 0;
-uint8_t LTC68042result_errorCount_get       (void                 ) { return isoSPI_errorCount;          }
-void    LTC68042result_errorCount_set       (uint8_t newErrorCount) { isoSPI_errorCount = newErrorCount; }
-void    LTC68042result_errorCount_increment (void                 ) { isoSPI_errorCount++;               }
+uint8_t LTC68042result_errorCount_get       (void                 ) { return isoSPI_errorCount;               }
+void    LTC68042result_errorCount_set       (uint8_t newErrorCount) { isoSPI_errorCount = newErrorCount;      }
+void    LTC68042result_errorCount_increment (void                 ) { isoSPI_errorCount++; Serial.print('@'); }
 
 uint8_t packVoltage_actual = 170;
 void    LTC68042result_packVoltage_set (uint8_t voltage) { packVoltage_actual = voltage; }
