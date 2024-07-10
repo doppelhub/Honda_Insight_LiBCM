@@ -137,7 +137,7 @@ void processAllCellVoltages(void)
     uint16_t loCellVoltage = 65535;
     uint16_t hiCellVoltage = 0;
 
-    #ifdef LTC68042_ENABLE_C19_VOLTAGE_CORRECTION
+    #ifdef BATTERY_TYPE_5AhG3
         //On LiBCM, QTY3 LTC6804 ICs measure QTY2 18S EHW5 modules:
         // -LTC6804 'A' measures the first QTY12 cells in the 1st 18S module (stack cells 01:12).  No problems here.
         // -LTC6804 'C' measures the  last QTY12 cells in the 2nd 18S module (stack cells 25:36).  No problems here.
@@ -157,8 +157,6 @@ void processAllCellVoltages(void)
         //The ideal solution would be to use the LTC6813 - which measures QTY18 cells - on both 18S EHW5 modules.
         //However, that IC is backordered for years, hence the above hardware decision and this workaround.
         //It's not ideal, but it's what we've got.  STFP!
-        //
-        //If you're not using 18S Honda EHW5 modules, then disable "#define LTC68042_ENABLE_C19_VOLTAGE_CORRECTION" in config.h.
 
         //cell 19 is the seventh cell on the second IC  
         #define CELL19_CHIP_NUMBER 1 //array is zero-indexed // '1' is the 2nd IC
@@ -191,7 +189,7 @@ void processAllCellVoltages(void)
             if (cellVoltageUnderTest > hiCellVoltage) { hiCellVoltage = cellVoltageUnderTest; }
 
             //check for new maxEver/minEver cells (if any)
-            //If LTC68042_ENABLE_C19_VOLTAGE_CORRECTION is defined, cell 19 voltage cannot become maxEver or minEver right now, but we'll check again down below
+            //If BATTERY_TYPE_5AhG3 is defined, cell 19 voltage cannot become maxEver or minEver right now, but we'll check again down below
             if (cellVoltageUnderTest > LTC68042result_maxEverCellVoltage_get()) {LTC68042result_maxEverCellVoltage_set(cellVoltageUnderTest); }
             if (cellVoltageUnderTest < LTC68042result_minEverCellVoltage_get()) {LTC68042result_minEverCellVoltage_set(cellVoltageUnderTest); }
 
@@ -204,7 +202,7 @@ void processAllCellVoltages(void)
     LTC68042result_loCellVoltage_set(loCellVoltage);
     LTC68042result_hiCellVoltage_set(hiCellVoltage);
 
-    #ifdef LTC68042_ENABLE_C19_VOLTAGE_CORRECTION
+    #ifdef BATTERY_TYPE_5AhG3
         //Now we need to determine which cell 19 voltage is correct (the actual measured value, or the current-adjusted one)
         //We do this by determining which voltage has the smallest magnitude from the max/min cell voltages (determined above).
         
@@ -231,7 +229,6 @@ void processAllCellVoltages(void)
         //finally, we need to check if cell 19 is either the highest or lowest voltage
         if (cell19Voltage_final > hiCellVoltage) { LTC68042result_hiCellVoltage_set(cell19Voltage_final); }
         if (cell19Voltage_final < loCellVoltage) { LTC68042result_loCellVoltage_set(cell19Voltage_final); }
-
     #endif
 }
 
@@ -250,7 +247,7 @@ void processAllCellVoltages(void)
 bool LTC68042cell_nextVoltages(void)
 {
     static uint8_t presentState = LTC_STATE_FIRSTRUN;
-    static bool actionPerformedThisCall = GATHERED_LTC6804_DATA;
+    bool cellVoltageDataStatus = GATHERING_CELL_DATA;
 
     if (LTC68042configure_wakeup() == LTC6804_CORE_JUST_WOKE_UP) { presentState = LTC_STATE_FIRSTRUN; }
 
@@ -279,15 +276,13 @@ bool LTC68042cell_nextVoltages(void)
                 presentState = LTC_STATE_PROCESS; //all cell voltages gathered.  Process data on next run.
             }
         }
-
-        actionPerformedThisCall = GATHERED_LTC6804_DATA;
     }
 
     else if (presentState == LTC_STATE_PROCESS)
     {   
         //all cell voltages read... 
         processAllCellVoltages(); //do math and store in LTC68042_result.c
-        actionPerformedThisCall = PROCESSED_LTC6804_DATA;
+        cellVoltageDataStatus = CELL_DATA_PROCESSED;
         presentState = LTC_STATE_GATHER; //gather data on next run
     }
 
@@ -296,40 +291,39 @@ bool LTC68042cell_nextVoltages(void)
         //LTC6804 ICs were previously off
         LTC68042configure_programVolatileDefaults(); 
         startCellConversion();
-        actionPerformedThisCall = GATHERED_LTC6804_DATA;
         presentState = LTC_STATE_GATHER;
     }
     
     else
     {
         Serial.print(F("\nillegal LTC68042cell state"));
-        actionPerformedThisCall = GATHERED_LTC6804_DATA;
         while (1) {;} //hang here until watchdog resets.
     }
 
-    return actionPerformedThisCall;
+    return cellVoltageDataStatus;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //Only call when keyOFF //takes too long to execute when keyON (causes check engine light)
 //Results are stored in "LTC68042_results.c"
-void LTC68042cell_sampleGatherAndProcessAllCellVoltages(void)
+//JTS2doNext: rewrite to remove double call hack
+void LTC68042cell_acquireAllCellVoltages(void)
 {
-    while (LTC68042cell_nextVoltages() != PROCESSED_LTC6804_DATA) { ; } //clear old data (if any) //increases measurement accuracy
-    while (LTC68042cell_nextVoltages() != PROCESSED_LTC6804_DATA) { ; } //gather new data
+    while (LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //clear old data (if any)
+    while (LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //gather new data
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Write Test
+//JTS2doLater: Write Test
 void LTC68042cell_openShortTest(void)
 {
     // 1a: Turn off all sense resistors
     void LTC68042configure_setBalanceResistors(uint8_t icAddress, uint16_t cellBitmap, uint8_t softwareTimeout);
 
     // 1b: Measure all cell voltages
-    LTC68042cell_sampleGatherAndProcessAllCellVoltages();
+    LTC68042cell_acquireAllCellVoltages();
     
     // 1c: Verify all cells between 2.0:2.1 volts
 

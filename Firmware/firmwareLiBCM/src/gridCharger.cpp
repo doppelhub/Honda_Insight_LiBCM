@@ -63,8 +63,8 @@ uint8_t isChargingAllowed(void)
     if (temperature_intake_getLatest()      == TEMPERATURE_SENSOR_FAULT_LO              ) { return NO__TEMP_UNPLUGGED_INTAKE;   }
     if (temperature_exhaust_getLatest()      > DISABLE_GRIDCHARGING_ABOVE_EXHAUST_TEMP_C) { return NO__TEMP_EXHAUST_IS_HOT;     }
     //time checks
-    if ((millis()                          ) < DISABLE_GRIDCHARGING_LIBCM_BOOT_DELAY_ms ) { return NO__LIBCMJUSTBOOTED;         }
-    if ((millis() - latestPlugin_ms        ) < DISABLE_GRIDCHARGING_PLUGIN_DELAY_ms     ) { return NO__JUSTPLUGGEDIN;           }
+    if ((millis()                          ) < DISABLE_GRIDCHARGING_LIBCM_BOOT_DELAY_ms ) { return NO__LIBCM_JUST_BOOTED;         }
+    if ((millis() - latestPlugin_ms        ) < DISABLE_GRIDCHARGING_PLUGIN_DELAY_ms     ) { return NO__JUST_PLUGGED_IN;           }
     if ((millis() - latestChargerDisable_ms) < minGridOffPeriod_ms                      ) { return NO__RECENTLY_TURNED_OFF;     }
 
     return YES__CHARGING_ALLOWED; //nothing else returned, so we can charge
@@ -98,8 +98,8 @@ void processChargerDisableReason(uint8_t canWeCharge)
         case NO__TEMP_UNPLUGGED_INTAKE:   { Serial.print(F("T_intake Unplugged"));                                                  break; }
         case NO__TEMP_EXHAUST_IS_HOT:     { Serial.print(F("Exhaust Too Hot")   );                                                  break; }
         //time issue
-        case NO__JUSTPLUGGEDIN:           { Serial.print(F("Plugin Delay")      ); offPeriod_helper = GRID_MIN_OFF_PERIOD__NONE_ms; break; }
-        case NO__LIBCMJUSTBOOTED:         { Serial.print(F("LiBCM Powerup")     ); offPeriod_helper = GRID_MIN_OFF_PERIOD__NONE_ms; break; }
+        case NO__JUST_PLUGGED_IN:         { Serial.print(F("Plugin Delay")      ); offPeriod_helper = GRID_MIN_OFF_PERIOD__NONE_ms; break; }
+        case NO__LIBCM_JUST_BOOTED:       { Serial.print(F("LiBCM Powerup")     ); offPeriod_helper = GRID_MIN_OFF_PERIOD__NONE_ms; break; }
         case NO__RECENTLY_TURNED_OFF:     { Serial.print(F("Turnoff Delay")     ); offPeriod_helper = minGridOffPeriod_ms;          break; }
         //unknown reason
         default:                          { Serial.print(F("Unknown Reason")    );                                                  break; }
@@ -117,16 +117,16 @@ void chargerControlSignals_handler(void)
            uint8_t isChargingAllowed_now      = isChargingAllowed();
 
     if (isChargingAllowed_now == YES__CHARGING_ALLOWED)
-    {        
+    {
         if (isChargingAllowed_previous != YES__CHARGING_ALLOWED)
         {
             Serial.print(F("\nCharging"));
             adc_calibrateBatteryCurrentSensorOffset();
         }
 
-        runFansIfNeeded(); //JTS2doNow: run fans as needed even when charging not allowed (e.g. to cool a hot pack)
+        runFansIfNeeded(); //JTS2doLater: run fans as needed even when charging not allowed (e.g. to cool a hot pack)
         gpio_turnGridCharger_on();
-        gpio_setGridCharger_powerLevel('H'); //JTS2doNow: Reduce power as temp increases
+        gpio_setGridCharger_powerLevel('H'); //JTS2doLater: Limit charge current if temp is too high or low
         buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, BUZZER_OFF);
     }
     else
@@ -141,14 +141,14 @@ void chargerControlSignals_handler(void)
             latestChargerDisable_ms = millis();
             //gpio_turnPowerSensors_off();
         }
-        
+
         if (isChargingAllowed_previous != isChargingAllowed_now) { processChargerDisableReason(isChargingAllowed_now); }
 
-        fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF); //JTS2doNow: see note ("cool a hot pack")
+        fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF); //JTS2doLater: see note ("cool a hot pack")
 
-        //JTS2doNow: Since the charger should be off now, sound an alarm if battery current isn't ~0 amps.
+        //JTS2doLater: Since the charger should be off now, sound an alarm if battery current isn't ~0 amps.
     }
-    
+
     if (gpio_isGridChargerPluggedInNow() == YES) { adc_updateBatteryCurrent(); } //safety: continuously update battery current when grid charger plugged in
 
     isChargingAllowed_previous = isChargingAllowed_now;
@@ -161,9 +161,8 @@ void handleEvent_plugin(void)
     Serial.print(F("Plugged In"));
     gpio_setGridCharger_powerLevel('0');
     gpio_turnPowerSensors_on(); //so we can measure current //to save power, it would be nice to move this into YES__CHARGING_ALLOWED (solve powerup hysteresis)
-                                //JTS2doNow: Does turning these sensors on with the key off cause LiBCM's BATTSCI RS485 driver to output voltage into MCM?
+                                //JTS2doLater: Does turning these sensors on with the key off cause LiBCM's BATTSCI RS485 driver to output voltage into MCM?
     latestPlugin_ms = millis();
-    LiDisplay_gridChargerPluggedIn(); //JTS2doNow: Move inside LiDisplay.c... LiDisplay handler should check key state
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -176,7 +175,6 @@ void handleEvent_unplug(void)
     gpio_turnPowerSensors_off();
     fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);
     buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, BUZZER_OFF);
-    LiDisplay_gridChargerUnplugged();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

@@ -198,8 +198,8 @@ void testDischargeFETs(void)
             
         delay(500); //wait for filter network to settle
 
-        LTC68042cell_sampleGatherAndProcessAllCellVoltages();
-        LTC68042cell_sampleGatherAndProcessAllCellVoltages();
+        LTC68042cell_acquireAllCellVoltages();
+        LTC68042cell_acquireAllCellVoltages();
 
         for (uint8_t ii=0; ii<TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages( ii, 3); }
         //right now you must manually copy the results into a spreadsheet to verify everything is working properly
@@ -299,9 +299,9 @@ void bringupTester_motherboard(void)
                 //Turn 4x20 screen on
                 Serial.print(F("\nWriting Data to 4x20 LCD"));
                 serialUSB_waitForEmptyBuffer();
-                lcd_begin();
-                lcd_printStaticText();
-                lcd_turnDisplayOnNow();
+                lcdTransmit_begin();
+                lcdTransmit_testText();
+                lcdTransmit_displayOn();
 
                 //test if 4x20 screen dims when 5V buck turned off (USB powers at lower voltage)
                 for (int ii=0; ii<6; ii++)

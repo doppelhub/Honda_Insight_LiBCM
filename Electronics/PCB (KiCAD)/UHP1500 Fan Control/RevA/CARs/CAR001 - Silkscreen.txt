@@ -1,0 +1,2 @@
+-U1 missing pin1 silkscreen
+-J4 silkscreen blown away by pads (e.g. "AN" instead of "FAN")

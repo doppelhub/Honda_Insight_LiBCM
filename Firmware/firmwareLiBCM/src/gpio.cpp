@@ -265,6 +265,20 @@ void gpio_turnPackHeater_off(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+bool gpio_isHeaterOnNow(void)
+{
+    uint8_t pinState = PIN_STATE_ERROR;
+
+    if      (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM) { pinState = gpio_getPinState(PIN_GPIO3); }
+    else if (heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)   { pinState = gpio_getPinState(PIN_GPIO1); }
+    else                                                               { return NO;                              }
+
+    if (pinState == PIN_OUTPUT_HIGH) { return YES; }
+    else                             { return  NO; }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 uint8_t gpio_getPinMode(uint8_t pin)
 {
     volatile uint8_t *reg;

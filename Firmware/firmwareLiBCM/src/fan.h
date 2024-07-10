@@ -3,7 +3,7 @@
 
     //Mask to store each subsystem's fan speed request
     //Each subsystem stores 2 bits (OFF/LOW/MED/HIGH)
-    //JTS2doNow: merge 'REQUESTOR' & 'BITSHIFTS' (identical to buzzer.h)
+    //JTS2doLater: merge 'REQUESTOR' & 'BITSHIFTS' (identical to buzzer.h)
     #define FAN_REQUESTOR_BATTERY     0b00000011 //the grid charger subsystem stores its fan request status in the two lowest bits
     #define FAN_REQUESTOR_USER        0b00001100
     #define FAN_REQUESTOR_GRIDCHARGER 0b00110000

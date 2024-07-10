@@ -92,7 +92,7 @@ void debugUSB_printCellBalanceStatus(void)
     else //(anyCellsBalancing == NO)
     {
         //JTS2doLater: Change text if pack is unbalanced, but something else is preventing balancing
-        Serial.print(F("\nPack Balanced"));
+        Serial.print(F("\nNot Balancing"));
     }
 }
 

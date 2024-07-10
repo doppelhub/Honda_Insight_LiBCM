@@ -22,13 +22,10 @@ void printDebug(void)
     Serial.print(F("\nDebug data persists in EEPROM until cleared ('$DEBUG=CLR' to clear)"));
 
     Serial.print(F("\n -Has LiBCM limited assist since last cleared?: "));
-    (eeprom_hasLibcmDisabledAssist_get() == EEPROM_LICBM_DISABLED_ASSIST) ? Serial.print(F("YES")) : Serial.print(F("NO"));
+    (eeprom_hasLibcmDisabledAssist_get() == EEPROM_LIBCM_DISABLED_ASSIST) ? Serial.print(F("YES")) : Serial.print(F("NO"));
 
     Serial.print(F("\n -Has LiBCM limited regen since last cleared?: "));
-    (eeprom_hasLibcmDisabledRegen_get() == EEPROM_LICBM_DISABLED_REGEN) ? Serial.print(F("YES")) : Serial.print(F("NO"));
-
-    Serial.print(F("\n -loopPeriod exceeded since last cleared?: "));
-    (eeprom_hasLibcmFailedTiming_get() == EEPROM_LIBCM_LOOPPERIOD_EXCEEDED) ? Serial.print(F("YES")) : Serial.print(F("NO"));
+    (eeprom_hasLibcmDisabledRegen_get() == EEPROM_LIBCM_DISABLED_REGEN) ? Serial.print(F("YES")) : Serial.print(F("NO"));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -37,6 +34,7 @@ void printText_UNUSED(void) { Serial.print(F("Unused")); }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNext: Add fan test ($TESTF) that briefly runs fans at low speed
 void USB_userInterface_runTestCode(uint8_t testToRun)
 {
     Serial.print(F("\nRunning Test: "));
@@ -68,8 +66,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     }
     else if (testToRun == '4')
     {
-        Serial.print(F("Turn Buzzer Off"));
-        buzzer_requestTone(BUZZER_REQUESTOR_USER, BUZZER_OFF);
+        printText_UNUSED();
     }
     else if (testToRun == '5')
     {
@@ -98,10 +95,10 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     else if (testToRun == 'T') { temperature_measureAndPrintAll(); }
     else if (testToRun == 'R') { LTC6804gpio_areAllVoltageReferencesPassing(); }
     else if (testToRun == 'W') { batteryHistory_printAll(); }
-    else if (testToRun == 'E') { eeprom_resetAll(); }
+    else if (testToRun == 'E') { eeprom_resetAll_userConfirm(); }
     else if (testToRun == 'C')
     {
-        LTC68042cell_sampleGatherAndProcessAllCellVoltages();
+        LTC68042cell_acquireAllCellVoltages();
         for (uint8_t ii = 0; ii < TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages(ii, FOUR_DECIMAL_PLACES); }
     }
     else if (testToRun == 'H')
