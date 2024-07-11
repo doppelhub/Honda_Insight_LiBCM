@@ -123,6 +123,7 @@ void keyOn_coldBootTasks(void)
         while(millis() - timeSinceLTC6804conversionStarted_us < LTC6804_MAX_CONVERSION_TIME_ms) { ; } //wait for conversion to finish
         while(LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //read all cell voltages back
         vPackSpoof_setVoltage();
+        SoC_setBatteryStateNow_percent(SoC_estimateFromRestingCellVoltage_percent());
     }
 }
 
