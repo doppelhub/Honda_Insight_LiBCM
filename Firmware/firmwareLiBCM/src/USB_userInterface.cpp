@@ -124,6 +124,7 @@ void printHelp(void)
 {
     Serial.print(F("\n\nLiBCM commands:"
         "\n -'$BOOT': restart LiBCM"
+        "\n -'$OFF': turn LiBCM off (for testing purposes)"
         "\n -'$TESTR': run LTC6804 VREF test"
         "\n -'$TESTW': battery temp & SoC history"
         "\n -'$TESTH': blink heater LED"
@@ -205,6 +206,28 @@ void USB_userInterface_executeUserInput(void)
             Serial.print(F("\nRebooting LiBCM"));
             delay(50); //give serial buffer time to send
             rebootLiBCM();
+        }
+
+        //$OFF
+        else if ((line[1] == 'O') && (line[2] == 'F') && (line[3] == 'F'))
+        {
+            Serial.print(F("\nUnplug USB cable before the counter gets to zero:"));
+            Serial.print(F("\nLiBCM turning off in "));
+            for (uint8_t ii=5; ii!=0 ;ii--)
+            {
+                Serial.print('\n');
+                Serial.print(ii);
+                for (uint8_t jj=10; jj!=0; jj--)
+                {
+                    Serial.print('.');
+                    delay(100);
+                    wdt_reset(); //Feed watchdog
+                }
+            }
+
+            Serial.print(F("\nYou didn't unplug the cable fast enough. LiBCM will reboot instead."));
+            delay(50); //wait for transmit buffer to empty
+            gpio_turnLiBCM_off();
         }
 
         //$TEST
