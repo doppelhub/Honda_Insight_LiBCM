@@ -4,23 +4,25 @@
 
 #include "src/libcm.h"
 
-void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup or bootloader delay
+void setup() 
 {
+    //~2 milliseconds after poweron reset
+    //~16 milliseconds after IMA switch on
     gpio_begin();
     wdt_disable();
+    LTC68042configure_initialize();
+    keyOn_coldBootTasks(); //returns immediately if keyOff
+    
     Serial.begin(115200); //USB
     METSCI_begin();
     BATTSCI_begin();
     heater_begin();
     LiDisplay_begin();
     LiControl_begin();
-    LTC68042configure_initialize();
     eeprom_begin();
 
     bringupTester_gridcharger(); 
     bringupTester_motherboard();
-
-    if (gpio_keyStateNow() == GPIO_KEY_ON){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while driving
 
     Serial.print(F("\n\nLiBCM v" FW_VERSION ", " BUILD_DATE "\n'$HELP' for info\n"));
     debugUSB_printHardwareRevision();

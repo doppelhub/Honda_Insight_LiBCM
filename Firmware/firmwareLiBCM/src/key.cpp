@@ -21,12 +21,13 @@ void key_handleKeyEvent_off(void)
     METSCI_disable();
     LTC68042cell_acquireAllCellVoltages();
     SoC_updateUsingLatestOpenCircuitVoltage(); //JTS2doLater: Add ten minute delay before VoC->SoC LUT
-    adc_calibrateBatteryCurrentSensorOffset();
+    adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_ENABLED);
     gpio_turnPowerSensors_off();
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
     //JTS2doLater: Add built-in test suite, including VREF, VCELL, Balancing, temp verify (batt and OEM), etc.
     eeprom_checkForExpiredFirmware();
+    LTC68042configure_doesActualPackSizeMatchUserConfig();
 
     time_latestKeyOff_ms_set(millis()); //MUST RUN LAST!
 }
@@ -96,6 +97,33 @@ uint8_t key_getSampledState(void)
 {
     if (keyState_previous == KEYSTATE_OFF_JUSTOCCURRED) { return KEYSTATE_ON;      } //prevent signal noise from accidentally turning LiBCM off
     else                                                { return keyState_sampled; }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void keyOn_coldBootTasks(void)
+{
+    if (gpio_keyStateNow() == GPIO_KEY_ON)
+    {
+        //LiBCM just booted and the key is on
+        //perform these tasks ASAP
+        gpio_turnTemperatureSensors_on(); //heavy LPF... must wait 40 ms before sampling
+
+        LTC68042configure_pulseChipSelectLow(SPECIFIED_MAX_WAKEUP_TIME_LTCCORE_MICROSECONDS); //wake up LTC6804
+        LTC68042cell_nextVoltages(); //first call starts LTC6804 conversion
+        uint32_t timeSinceLTC6804conversionStarted_us = millis();
+        
+        gpio_turnPowerSensors_on(); //current sensor 'settles' in less than 1 us       
+        delay(1);
+        adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_DISABLED);
+
+        vPackSpoof_handleKeyON();
+        LED(3,ON); //turn LED3 on if keyOn when LiBCM (re)boots
+
+        while(millis() - timeSinceLTC6804conversionStarted_us < LTC6804_MAX_CONVERSION_TIME_ms) { ; } //wait for conversion to finish
+        while(LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //read all cell voltages back
+        vPackSpoof_setVoltage();
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

@@ -241,8 +241,8 @@ void vPackSpoof_setVoltage(void)
 {
     spoofVoltage_calculateValue(); //result saved in 'spoofedPackVoltage'
 
-    spoofVoltage_VPINout();
     spoofVoltageMCMe();
+    spoofVoltage_VPINout();
     BATTSCI_setPackVoltage(spoofedPackVoltage);
 }
 

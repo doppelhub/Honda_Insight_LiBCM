@@ -4,8 +4,11 @@
 #ifndef debugUSB_h
     #define debugUSB_h
 
-    #define TWO_DECIMAL_PLACES 2
+    #define TWO_DECIMAL_PLACES  2
     #define FOUR_DECIMAL_PLACES 4
+
+    #define DEBUG_TEXT_ENABLED  1
+    #define DEBUG_TEXT_DISABLED 0
 
     void debugUSB_printLatestData(void);
     void debugUSB_printLatest_data_gridCharger(void);

@@ -121,7 +121,7 @@ void chargerControlSignals_handler(void)
         if (isChargingAllowed_previous != YES__CHARGING_ALLOWED)
         {
             Serial.print(F("\nCharging"));
-            adc_calibrateBatteryCurrentSensorOffset();
+            adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_ENABLED);
         }
 
         runFansIfNeeded(); //JTS2doLater: run fans as needed even when charging not allowed (e.g. to cool a hot pack)

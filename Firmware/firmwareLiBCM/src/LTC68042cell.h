@@ -11,6 +11,8 @@
     #define GATHERING_CELL_DATA 0
     #define CELL_DATA_PROCESSED 1
 
+	#define LTC6804_MAX_CONVERSION_TIME_ms 5 //4.43 ms in '2kHz' sampling mode
+
     bool LTC68042cell_nextVoltages(void);
     void LTC68042cell_acquireAllCellVoltages(void);
 

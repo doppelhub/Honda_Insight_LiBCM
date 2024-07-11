@@ -53,16 +53,11 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     }
     else if (testToRun == '2')
     {
-        gpio_turnPowerSensors_on();
-        Serial.print(F("Calibrating Current Sensor"));
-        adc_calibrateBatteryCurrentSensorOffset();
+        printText_UNUSED();
     }
     else if (testToRun == '3')
     {
-        Serial.print(F("updateBatteryCurrent"));
-        adc_updateBatteryCurrent();
-        Serial.print(F("\ndeciAmps: "));
-        Serial.print(adc_getLatestBatteryCurrent_deciAmps());
+        printText_UNUSED();
     }
     else if (testToRun == '4')
     {
@@ -86,9 +81,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     }
     else if (testToRun == '9')
     {
-        Serial.print(F("\nadcResult_CurrentSensor(10b): "));
-        Serial.print(analogRead(PIN_BATTCURRENT));
-        adc_calibrateBatteryCurrentSensorOffset();
+        printText_UNUSED();
     }
 
     //Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting

@@ -7,8 +7,8 @@
     #define config_h
     #include "src/libcm.h"
 
-    #define FW_VERSION "0.9.4b"
-    #define BUILD_DATE "2024JUL09"
+    #define FW_VERSION "0.9.4c"
+    #define BUILD_DATE "2024JUL10"
 
     //////////////////////////////////////////////////////////////////
 
@@ -46,6 +46,8 @@
         #define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
         //#define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
 
+    //you don't need to change any settings below this line (but you can if you know what you're doing):
+    //__________________________________________________________________________________________________
 
     //////////////////////////////////////////////////////////////////
 

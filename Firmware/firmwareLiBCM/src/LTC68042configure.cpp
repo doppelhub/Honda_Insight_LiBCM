@@ -103,46 +103,50 @@ bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
 {
     bool helper_doesActualPackSizeMatchUserConfig = true;
 
-    if (gpio_keyStateNow() == GPIO_KEY_OFF) //we don't have time to run this test if the key is on when LiBCM first boots
-    {
-        LTC6804_adax(); //send any broadcast command
-        delay(6); //wait for all LTC6804 ICs to process this command
-
-        //read data back from either QTY4 ICs (if user selects PACK_IS_48S in config.h), or QTY5 ICs (if user selects PACK_IS_60S in config.h)
-        //we don't care about the actual data; only that the PEC error count doesn't increment 
-        uint8_t errorCount_allUserSpecifiedLTC6804s = LTC6804_rdaux(0,TOTAL_IC,FIRST_IC_ADDR); 
-
-        if (errorCount_allUserSpecifiedLTC6804s != 0) { helper_doesActualPackSizeMatchUserConfig = false; } //at least one IC had data transmissions errors
-
-        if (TOTAL_IC == 4)
+    #if   defined RUN_BRINGUP_TESTER_MOTHERBOARD //don't verify cell count
+    #elif defined RUN_BRINGUP_TESTER_GRIDCHARGER //don't verify cell count
+    #else
+        if (gpio_keyStateNow() == GPIO_KEY_OFF) //we don't have time to run this test if the key is on when LiBCM first boots
         {
-            uint8_t errorCount_onlyFifthLTC6804 = LTC6804_rdaux(0,1,FIRST_IC_ADDR+4); 
+            LTC6804_adax(); //send any broadcast command
+            delay(6); //wait for all LTC6804 ICs to process this command
 
-            //the fifth LTC6804 (cells 49:60) should be unpowered (i.e. it should return errors)
-            if (errorCount_onlyFifthLTC6804 == 0) { helper_doesActualPackSizeMatchUserConfig = false; }
+            //read data back from either QTY4 ICs (if user selects PACK_IS_48S in config.h), or QTY5 ICs (if user selects PACK_IS_60S in config.h)
+            //we don't care about the actual data; only that the PEC error count doesn't increment 
+            uint8_t errorCount_allUserSpecifiedLTC6804s = LTC6804_rdaux(0,TOTAL_IC,FIRST_IC_ADDR); 
+
+            if (errorCount_allUserSpecifiedLTC6804s != 0) { helper_doesActualPackSizeMatchUserConfig = false; } //at least one IC had data transmissions errors
+
+            if (TOTAL_IC == 4)
+            {
+                uint8_t errorCount_onlyFifthLTC6804 = LTC6804_rdaux(0,1,FIRST_IC_ADDR+4); 
+
+                //the fifth LTC6804 (cells 49:60) should be unpowered (i.e. it should return errors)
+                if (errorCount_onlyFifthLTC6804 == 0) { helper_doesActualPackSizeMatchUserConfig = false; }
+            }
+
+            if (helper_doesActualPackSizeMatchUserConfig == false)
+            {
+                //fatal error
+                //alert user and then turn off
+
+                Serial.print(F("\nError: measured cell count disagrees with user specified cell count in config.h"));
+
+                lcdTransmit_begin();
+                delay(50); //delay doesn't matter because this is a fatal error
+                lcdTransmit_displayOn();
+                delay(50); //delay doesn't matter because this is a fatal error
+                lcdTransmit_Warning(LCD_WARN_CELL_COUNT);
+
+                gpio_turnBuzzer_on_highFreq(); //call GPIO directly
+                
+                wdt_disable(); //turn off watchdog to prevent reset
+
+                delay(10000); //give the user enough time to read error message
+                gpio_turnLiBCM_off(); //game over... thanks for playing
+            }
         }
-
-        if (helper_doesActualPackSizeMatchUserConfig == false)
-        {
-            //fatal error
-            //alert user and then turn off
-
-            Serial.print(F("\nError: measured cell count disagrees with user specified cell count in config.h"));
-
-            lcdTransmit_begin();
-            delay(50); //delay doesn't matter because this is a fatal error
-            lcdTransmit_displayOn();
-            delay(50); //delay doesn't matter because this is a fatal error
-            lcdTransmit_Warning(LCD_WARN_CELL_COUNT);
-
-            gpio_turnBuzzer_on_highFreq(); //call GPIO directly
-            
-            wdt_disable(); //turn off watchdog to prevent reset
-
-            delay(10000); //give the user enough time to read error message
-            gpio_turnLiBCM_off(); //game over... thanks for playing
-        }
-    }
+    #endif
 
     return helper_doesActualPackSizeMatchUserConfig;
 }
@@ -152,12 +156,16 @@ bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
 void LTC68042configure_initialize(void)
 {
     spi_enable(SPI_CLOCK_DIV64); //JTS2doLater: increase clock speed //DIV16 & DIV32 work on bench
+}
 
-    #if   defined RUN_BRINGUP_TESTER_MOTHERBOARD //don't verify cell count
-    #elif defined RUN_BRINGUP_TESTER_GRIDCHARGER //don't verify cell count
-    #else
-        LTC68042configure_doesActualPackSizeMatchUserConfig(); //verify cell count matches
-    #endif
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void LTC68042configure_pulseChipSelectLow(uint16_t lowPulsePeriod_us)
+{
+    digitalWrite(PIN_SPI_CS,LOW); //low edge wakes up LTC
+    delayMicroseconds(lowPulsePeriod_us); //wait specified time for LTC to wake  
+    digitalWrite(PIN_SPI_CS,HIGH);
+    lastTimeDataSent_millis = millis();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -172,10 +180,7 @@ bool LTC68042configure_wakeupCore(void)
     if ((uint32_t)(millis() - lastTimeDataSent_millis) > T_SLEEP_WATCHDOG_MILLIS)
     { 
         //LTC6804 core (probably) asleep
-        digitalWrite(PIN_SPI_CS,LOW); //wake up core
-        delayMicroseconds(300); // Guarantees the LTC6804 is in standby (tWake = 300 us max)  
-        digitalWrite(PIN_SPI_CS,HIGH);
-        lastTimeDataSent_millis = millis();
+        LTC68042configure_pulseChipSelectLow(SPECIFIED_MAX_WAKEUP_TIME_LTCCORE_MICROSECONDS);
         wasCoreAlreadyAwake = LTC6804_CORE_JUST_WOKE_UP;
     }
 
@@ -192,10 +197,7 @@ void LTC68042configure_wakeupIsoSPI(void)
     if ((uint32_t)(millis() - lastTimeDataSent_millis) > T_IDLE_isoSPI_MILLIS)
     { 
         //LTC6804 isoSPI might be asleep (tIDLE elapsed)
-        digitalWrite(PIN_SPI_CS,LOW);
-        delayMicroseconds(10); //Guarantees isoSPI is in ready mode (tWAKE = 10 us max)
-        digitalWrite(PIN_SPI_CS,HIGH);
-        lastTimeDataSent_millis = millis();
+         LTC68042configure_pulseChipSelectLow(SPECIFIED_MAX_WAKEUP_TIME_isoSPI_MICROSECONDS);
     }
 }
 
