@@ -107,7 +107,9 @@ void keyOn_coldBootTasks(void)
 {
     //JTS2doLater: Remove debug code
     //display IGBT HVDC voltage at cold boot (ideally 0 volts because precontactor hasn't fired yet)
-    Serial.print(F("\nVPIN(cold):"));
+    Serial.print(F("\nUptime:"));
+    Serial.print(millis());
+    Serial.print(F(", VPIN(cold):"));
     Serial.print(adc_packVoltage_VpinIn());
 
     //initialize hardware
@@ -133,7 +135,9 @@ void keyOn_coldBootTasks(void)
     
     //JTS2doLater: Remove debug code
     //display IGBT HVDC voltage when this code completes (ideally 0 volts because precontactor hasn't fired yet)
-    Serial.print(F("\nVPIN(warm):"));
+    Serial.print(F("\nUptime:"));
+    Serial.print(millis());
+    Serial.print(F(", VPIN(warm):"));
     Serial.print(adc_packVoltage_VpinIn());
 }
 
