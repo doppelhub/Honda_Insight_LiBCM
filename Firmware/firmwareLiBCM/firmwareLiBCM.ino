@@ -6,16 +6,18 @@
 
 void setup() 
 {
-    //~2 milliseconds after poweron reset
-    //~16 milliseconds after IMA switch on
+    //getting here takes ~02 milliseconds after poweron reset
+    //getting here takes ~16 milliseconds after IMA switch on
     gpio_begin();
     wdt_disable();
     LTC68042configure_initialize();
-    keyOn_coldBootTasks(); //returns immediately if keyOff
-    
     Serial.begin(115200); //USB
     METSCI_begin();
     BATTSCI_begin();
+
+    if (gpio_keyStateNow() == GPIO_KEY_ON) { keyOn_coldBootTasks();          }
+    else                                   { debugUSB_printWelcomeMessage(); }
+    
     heater_begin();
     LiDisplay_begin();
     LiControl_begin();
@@ -23,10 +25,6 @@ void setup()
 
     bringupTester_gridcharger(); 
     bringupTester_motherboard();
-
-    Serial.print(F("\n\nLiBCM v" FW_VERSION ", " BUILD_DATE "\n'$HELP' for info\n"));
-    debugUSB_printHardwareRevision();
-    debugUSB_printConfigParameters();
 
     wdt_enable(WDTO_2S); //set watchdog reset vector to 2 seconds
 }

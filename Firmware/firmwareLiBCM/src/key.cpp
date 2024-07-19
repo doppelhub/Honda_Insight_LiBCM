@@ -50,10 +50,12 @@ void key_handleKeyEvent_on(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doLater: make 'KEYSTATE_OFF_JUSTOCCURRED' persist for one second (before reporting 'keyOff')
 bool key_didStateChange(void)
 {
     bool didKeyStateChange = NO;
 
+    //JTS2doLater: move to handler
     if (gpio_keyStateNow() == GPIO_KEY_ON) { keyState_sampled = KEYSTATE_ON; }
     else                                   { keyState_sampled = KEYSTATE_OFF; }
 
@@ -103,28 +105,36 @@ uint8_t key_getSampledState(void)
 
 void keyOn_coldBootTasks(void)
 {
-    if (gpio_keyStateNow() == GPIO_KEY_ON)
-    {
-        //LiBCM just booted and the key is on
-        //perform these tasks ASAP
-        gpio_turnTemperatureSensors_on(); //heavy LPF... must wait 40 ms before sampling
+    //JTS2doLater: Remove debug code
+    //display IGBT HVDC voltage at cold boot (ideally 0 volts because precontactor hasn't fired yet)
+    Serial.print(F("\nVPIN(cold):"));
+    Serial.print(adc_packVoltage_VpinIn());
 
-        LTC68042configure_pulseChipSelectLow(SPECIFIED_MAX_WAKEUP_TIME_LTCCORE_MICROSECONDS); //wake up LTC6804
-        LTC68042cell_nextVoltages(); //first call starts LTC6804 conversion
-        uint32_t timeSinceLTC6804conversionStarted_us = millis();
-        
-        gpio_turnPowerSensors_on(); //current sensor 'settles' in less than 1 us       
-        delay(1);
-        adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_DISABLED);
+    //initialize hardware
+    gpio_turnPowerSensors_on();
+    LTC68042configure_pulseChipSelectLow(SPECIFIED_MAX_WAKEUP_TIME_LTCCORE_MICROSECONDS); //wake up LTC6804
+    LTC68042configure_programVolatileDefaults();
+    LTC68042cell_nextVoltages(); //first call starts LTC6804 conversion
+    uint32_t timeSinceLTC6804conversionStarted_us = millis();
 
-        vPackSpoof_handleKeyON();
-        LED(3,ON); //turn LED3 on if keyOn when LiBCM (re)boots
+    //other startup initialization tasks
+    vPackSpoof_handleKeyON();
+    keyState_previous = KEYSTATE_ON; //prevent key_handleKeyEvent_on() from repeating many of these tasks
+    METSCI_enable();
+    adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_DISABLED); //current sensor settles almost immediately
+    LED(3,ON); //turn LED3 on if keyOn when LiBCM (re)boots
 
-        while(millis() - timeSinceLTC6804conversionStarted_us < LTC6804_MAX_CONVERSION_TIME_ms) { ; } //wait for conversion to finish
-        while(LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //read all cell voltages back
-        vPackSpoof_setVoltage();
-        SoC_setBatteryStateNow_percent(SoC_estimateFromRestingCellVoltage_percent());
-    }
+    //process cell voltages
+    while(millis() - timeSinceLTC6804conversionStarted_us < LTC6804_MAX_CONVERSION_TIME_ms) { ; } //wait for conversion to finish
+    while(LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //read all cell voltages back
+    vPackSpoof_setVoltage();
+    SoC_setBatteryStateNow_percent(SoC_estimateFromRestingCellVoltage_percent());
+    BATTSCI_enable(); //must occur after we have valid Vcell data
+    
+    //JTS2doLater: Remove debug code
+    //display IGBT HVDC voltage when this code completes (ideally 0 volts because precontactor hasn't fired yet)
+    Serial.print(F("\nVPIN(warm):"));
+    Serial.print(adc_packVoltage_VpinIn());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

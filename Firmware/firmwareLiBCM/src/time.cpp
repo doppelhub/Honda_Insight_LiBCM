@@ -148,7 +148,7 @@ uint16_t time_hertz_to_milliseconds(uint8_t hertz)
 
 void time_handler(void)
 {
-    updateKeyOffTaskFlag();
+    if (key_getSampledState() == KEYSTATE_OFF) { updateKeyOffTaskFlag(); }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

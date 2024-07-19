@@ -295,3 +295,12 @@ void debugUSB_printConfigParameters(void)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
+
+void debugUSB_printWelcomeMessage(void)
+{
+    Serial.print(F("\n\nLiBCM v" FW_VERSION ", " BUILD_DATE "\n'$HELP' for info\n"));
+    debugUSB_printHardwareRevision();
+    debugUSB_printConfigParameters();    
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////

@@ -21,15 +21,13 @@
 
     void debugUSB_printCellBalanceStatus(void);
 
-    void debugUSB_printHardwareRevision(void);
-
     void debugUSB_dataTypeToStream_set(uint8_t dataType);
     uint8_t debugUSB_dataTypeToStream_get(void);
 
     void debugUSB_dataUpdatePeriod_ms_set(uint16_t newPeriod);
     uint16_t debugUSB_dataUpdatePeriod_ms_get(void);
 
-    void debugUSB_printConfigParameters(void);
+    void debugUSB_printWelcomeMessage(void);
 
     #define DEBUGUSB_STREAM_POWER      0x11
     #define DEBUGUSB_STREAM_BATTMETSCI 0x22
