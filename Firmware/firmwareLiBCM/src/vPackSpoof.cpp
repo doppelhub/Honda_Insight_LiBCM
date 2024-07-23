@@ -20,14 +20,18 @@ uint8_t vPackSpoof_getSpoofedPackVoltage(void) { return spoofedPackVoltage; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void vPackSpoof_handleKeyON(void) { ; }
+void vPackSpoof_handleKeyON(void)
+{
+    analogWrite(PIN_VPIN_OUT_PWM, 0);
+    analogWrite(PIN_MCME_PWM    , 0);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void vPackSpoof_handleKeyOFF(void)
 {
-    pinMode(PIN_VPIN_OUT_PWM,INPUT); //set VPIN high impedance (to save power)
-    pinMode(PIN_MCME_PWM,    INPUT); //Set MCMe high impedance (to save power)
+    pinMode(PIN_VPIN_OUT_PWM, INPUT); //set VPIN high impedance (to save power)
+    pinMode(PIN_MCME_PWM,     INPUT); //Set MCMe high impedance (to save power)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

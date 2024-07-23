@@ -1,0 +1,1 @@
+16U2 toggle PD7 ~2.5 seconds after powerup.  This causes pulse on MEGA2560's reset pin, which briefly disables Mega's output pins... but for some reason doesn't actually reset program execution.

@@ -43,6 +43,7 @@ void key_handleKeyEvent_on(void)
     gpio_turnPowerSensors_on();
     LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
     LTC68042configure_handleKeyStateChange();
+    vPackSpoof_handleKeyON();
     LED(1,HIGH);
 
     time_latestKeyOn_ms_set(millis()); //MUST RUN LAST!
@@ -105,17 +106,9 @@ uint8_t key_getSampledState(void)
 
 void keyOn_coldBootTasks(void)
 {
-    //JTS2doLater: Remove debug code
-    //display IGBT HVDC voltage at cold boot (ideally 0 volts because precontactor hasn't fired yet)
-    Serial.print(F("\nUptime:"));
-    Serial.print(millis());
-    Serial.print(F(", VPIN(cold):"));
-    Serial.print(adc_packVoltage_VpinIn());
-
     //initialize hardware
     gpio_turnPowerSensors_on();
-    LTC68042configure_pulseChipSelectLow(SPECIFIED_MAX_WAKEUP_TIME_LTCCORE_MICROSECONDS); //wake up LTC6804
-    LTC68042configure_programVolatileDefaults();
+    LTC68042configure_pulseChipSelectLow(SPECIFIED_MAX_WAKEUP_TIME_LTCCORE_MICROSECONDS); //wake LTC6804
     LTC68042cell_nextVoltages(); //first call starts LTC6804 conversion
     uint32_t timeSinceLTC6804conversionStarted_us = millis();
 
@@ -123,8 +116,7 @@ void keyOn_coldBootTasks(void)
     vPackSpoof_handleKeyON();
     keyState_previous = KEYSTATE_ON; //prevent key_handleKeyEvent_on() from repeating many of these tasks
     METSCI_enable();
-    adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_DISABLED); //current sensor settles almost immediately
-    LED(3,ON); //turn LED3 on if keyOn when LiBCM (re)boots
+    LED(3,ON);
 
     //process cell voltages
     while(millis() - timeSinceLTC6804conversionStarted_us < LTC6804_MAX_CONVERSION_TIME_ms) { ; } //wait for conversion to finish
@@ -132,13 +124,7 @@ void keyOn_coldBootTasks(void)
     vPackSpoof_setVoltage();
     SoC_setBatteryStateNow_percent(SoC_estimateFromRestingCellVoltage_percent());
     BATTSCI_enable(); //must occur after we have valid Vcell data
-    
-    //JTS2doLater: Remove debug code
-    //display IGBT HVDC voltage when this code completes (ideally 0 volts because precontactor hasn't fired yet)
-    Serial.print(F("\nUptime:"));
-    Serial.print(millis());
-    Serial.print(F(", VPIN(warm):"));
-    Serial.print(adc_packVoltage_VpinIn());
+    adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_DISABLED); //current sensor settles almost immediately
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
