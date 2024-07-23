@@ -256,6 +256,8 @@ void LTC68042configure_spiWriteRead(uint8_t tx_Data[],//array of data to be writ
     for (uint8_t i = 0; i < tx_len; i++) { spi_write(tx_Data[i]); }
     for (uint8_t i = 0; i < rx_len; i++) { rx_data[i] = (uint8_t)spi_read(0xFF); }
     digitalWrite(PIN_SPI_CS,HIGH);
+
+    lastTimeDataSent_millis = millis();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
