@@ -1,1 +1,3 @@
 16U2 toggle PD7 ~2.5 seconds after powerup.  This causes pulse on MEGA2560's reset pin, which briefly disables Mega's output pins... but for some reason doesn't actually reset program execution.
+
+This only occurs when USB cable is connected during powerup.  Given that a USB cable typically powers the 5V rail, this won't actually ever occur; in my testing that lead to this CAR, my USB cable's 5V wire was cut.
