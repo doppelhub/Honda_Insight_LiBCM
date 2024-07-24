@@ -10,12 +10,11 @@ void setup()
     //getting here takes ~16 milliseconds after IMA switch on
     gpio_begin();
     wdt_disable();
-    LiControl_begin(); //SPI data issues until initialized
+    LiControl_begin(); //SPI errors until initialized
     LTC68042configure_initialize();
     Serial.begin(115200); //USB
     METSCI_begin();
     BATTSCI_begin();
-    
     heater_begin();
     eeprom_begin();
     LiDisplay_begin();
