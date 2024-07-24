@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //measures OEM temperature sensors
@@ -206,7 +206,7 @@ void temperature_handler(void)
 
     uint8_t keyState_Now = key_getSampledState(); //prevent mid-loop key state change
 
-    keyState_Now = turnSensorsOff_whenKeyStateChanges(keyState_Now);
+    keyState_Now = turnSensorsOff_whenKeyStateChanges(keyState_Now); //JTS2doNow: function returns value meant for tempSensorState //writing to wrong variable?
     
     static uint32_t latestTempMeasurement_ms = 0;
     static uint32_t latestSensorTurnon_ms = 0;

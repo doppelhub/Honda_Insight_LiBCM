@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //config.h - compile time configuration parameters
@@ -7,8 +7,8 @@
     #define config_h
     #include "src/libcm.h"
 
-    #define FW_VERSION "0.9.4b"
-    #define BUILD_DATE "2024JUL09"
+    #define FW_VERSION "0.9.4d"
+    #define BUILD_DATE "2024JUL23"
 
     //////////////////////////////////////////////////////////////////
 
@@ -46,6 +46,8 @@
         #define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
         //#define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
 
+    //you don't need to change any settings below this line (but you can if you know what you're doing):
+    //__________________________________________________________________________________________________
 
     //////////////////////////////////////////////////////////////////
 

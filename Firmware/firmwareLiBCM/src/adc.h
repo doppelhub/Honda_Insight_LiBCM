@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 #ifndef adc_h
@@ -16,7 +16,7 @@
 
     uint16_t adc_getTemperature(uint8_t tempToMeasure);
 
-    void adc_calibrateBatteryCurrentSensorOffset(void);
+    void adc_calibrateBatteryCurrentSensorOffset(uint8_t isDebugTextSent);
 
     #define ADC_NOMINAL_0A_COUNTS 332 //calculated ADC 10b result when no current flows through sensor
     #define ADC_MILLIAMPS_PER_COUNT 215 //Derivation here: ~/Electronics/PCB (KiCAD)/RevC/V&V/OEM Current Sensor.ods

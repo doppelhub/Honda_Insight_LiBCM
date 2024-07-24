@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //stores various system millisecond timers
@@ -148,7 +148,7 @@ uint16_t time_hertz_to_milliseconds(uint8_t hertz)
 
 void time_handler(void)
 {
-    updateKeyOffTaskFlag();
+    if (key_getSampledState() == KEYSTATE_OFF) { updateKeyOffTaskFlag(); }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

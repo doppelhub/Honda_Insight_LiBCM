@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //BATTSCI Serial Functions
@@ -39,6 +39,7 @@ const uint16_t remap_actualToSpoofedSoC[101] = {
     1000,                                    //LiCBM SoC = 100%
 };  //Data empirically gathered from OEM NiMH IMA system //see ../Firmware/Prototype Building Blocks/Remap SoC.ods for calculations
 
+//JTS2doNow: Changing to "uint16_t previousOutputSoC_deciPercent;" allows OEM SoC gauge to work 
 uint16_t previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()];
 
 

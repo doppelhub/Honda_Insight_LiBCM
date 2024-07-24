@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //all digitalRead(), digitalWrite(), analogRead(), analogWrite() functions live here
@@ -39,16 +39,11 @@ void gpio_begin(void)
     digitalWrite(PIN_TURNOFFLiBCM,LOW);
 
     pinMode(PIN_HMI_EN,OUTPUT);
-
-    //Controls BCM current sensor, constant 5V load, and BATTSCI/METSCI biasing
     pinMode(PIN_SENSOR_EN,OUTPUT);
-    gpio_turnPowerSensors_on(); //if the key is off when LiBCM first powers up, the keyOff handler will turn the sensors back off
-
     pinMode(PIN_LED1,OUTPUT);
     pinMode(PIN_LED2,OUTPUT);
     pinMode(PIN_LED3,OUTPUT);
     pinMode(PIN_LED4,OUTPUT);
-
     analogWrite(PIN_MCME_PWM,0);
     pinMode(PIN_FAN_PWM,OUTPUT);
     pinMode(PIN_FANOEM_LOW,OUTPUT);

@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //LiDisplay (HMI) Serial Functions
@@ -90,7 +90,6 @@ const uint16_t editableParamMinMax[2][2] = {
 void LiDisplay_begin(void)
 {
     #ifdef LIDISPLAY_CONNECTED
-        Serial.print(F("\nLiDisplay BEGIN"));
 
         #ifdef BATTERY_TYPE_47AhFoMoCo
             #undef LIDISPLAY_GRIDCHARGE_PAGE_ID

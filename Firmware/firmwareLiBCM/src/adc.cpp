@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //handles all ADC calls
@@ -98,22 +98,27 @@ void adc_updateBatteryCurrent(void)
 //JTS2doNext: call this function immediately at keyOn
 //MCM closes  pre-contactor ~190 ms after keyOn
 //MCM closes main contactor ~330 ms after keyOn
-void adc_calibrateBatteryCurrentSensorOffset(void)
+void adc_calibrateBatteryCurrentSensorOffset(uint8_t isDebugTextSent)
 {
     uint16_t adcResult = analogRead(PIN_BATTCURRENT);
-
     int8_t delta = ADC_NOMINAL_0A_COUNTS - adcResult;
-
-    Serial.print(F("\nADC 0A offset: "));
-    Serial.print(delta);
+    bool didTestPass = false;
 
     //verify returned value is in the right ballpark
     if ((delta > -10) && (delta < +10)) 
     {
         calibratedCurrentSensorOffset = delta;
-        Serial.print(F(" (pass)"));
+        didTestPass = true;
     } 
-    else { Serial.print(F(" (fail)")); }
+    
+    if (isDebugTextSent == DEBUG_TEXT_ENABLED)
+    {
+        Serial.print(F("\nADC 0A offset: "));
+        Serial.print(delta);
+
+        if (didTestPass == true) { Serial.print(F(" (pass)")); }
+        else                     { Serial.print(F(" (fail)")); }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
