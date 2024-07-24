@@ -1,5 +1,3 @@
-//JTS2doLater: eeprom.h isn't wrapped into MVP yet
-
 #ifndef time_h
     #define time_h
 
