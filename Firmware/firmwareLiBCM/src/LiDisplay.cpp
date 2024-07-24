@@ -90,7 +90,6 @@ const uint16_t editableParamMinMax[2][2] = {
 void LiDisplay_begin(void)
 {
     #ifdef LIDISPLAY_CONNECTED
-        Serial.print(F("\nLiDisplay BEGIN"));
 
         #ifdef BATTERY_TYPE_47AhFoMoCo
             #undef LIDISPLAY_GRIDCHARGE_PAGE_ID

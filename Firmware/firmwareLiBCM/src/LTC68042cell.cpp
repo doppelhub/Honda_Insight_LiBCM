@@ -289,7 +289,7 @@ bool LTC68042cell_nextVoltages(void)
     else if (presentState == LTC_STATE_FIRSTRUN)
     {
         //LTC6804 ICs were previously off
-        LTC68042configure_programVolatileDefaults(); 
+        LTC68042configure_programVolatileDefaults();
         startCellConversion();
         presentState = LTC_STATE_GATHER;
     }

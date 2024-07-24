@@ -14,14 +14,13 @@ void setup()
     Serial.begin(115200); //USB
     METSCI_begin();
     BATTSCI_begin();
+    LiControl_begin();
+    heater_begin();
+    eeprom_begin();
+    LiDisplay_begin();
 
     if (gpio_keyStateNow() == GPIO_KEY_ON) { keyOn_coldBootTasks();          }
     else                                   { debugUSB_printWelcomeMessage(); }
-    
-    heater_begin();
-    LiDisplay_begin();
-    LiControl_begin();
-    eeprom_begin();
 
     bringupTester_gridcharger(); 
     bringupTester_motherboard();
