@@ -17,6 +17,8 @@
 
     #define VSPOOF_TO_MAXIMIZE_POWER 125 //Maximum assist occurs when MCM thinks pack is at 120 volts
     
+    #define VSPOOF_60S_DISABLE_VOLTAGE 170 //Disable voltage spoofing if maxPossibleVspoof drops below a specificed voltage. 
+    
     #define ADDITIONAL_VPIN_OFFSET_VOLTS 0 //this many volts are added to VPIN output //use with OBDIIC&C to make BATTSCI voltage equal to VPIN voltage
     #define ADDITIONAL_MCMe_OFFSET_VOLTS 0 //this many volts are added to MCMe output //use with OBDIIC&C to make BATTSCI voltage equal to MCMe voltage
 

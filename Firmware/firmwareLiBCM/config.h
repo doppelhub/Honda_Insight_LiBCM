@@ -65,6 +65,7 @@
     //60S MUST use 'VOLTAGE_SPOOFING_DISABLE':
         #define VOLTAGE_SPOOFING_DISABLE              //spoof maximum possible pack voltage at all times //closest to OEM behavior
         //#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE //increase assist power by variably   spoofing pack voltage during assist
+        //#define VOLTAGE_SPOOFING_VARIABLE_60S_BULL_DOG //Bull Dog's experimental variable voltage spoofing for 60S 47AH Conversions. May cause P1440
         //#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //increase assist power by statically spoofing pack voltage during heavy assist
         //#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //increase assist and regen power by variably spoofing pack voltage //DEPRECATED (regen too strong)
         //#define VOLTAGE_SPOOFING_LINEAR               //increase assist and regen power by requesting peak current level as per OEM (compatible with 100A fuse)
