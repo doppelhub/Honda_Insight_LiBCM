@@ -131,7 +131,7 @@ uint8_t calculate_vspoofMCM_max(void)
 void spoofVoltage_calculateValue(void)
 {
     uint8_t maxPossibleVspoof = calculate_Vspoof_maxPossible();
-    
+
     #if defined VOLTAGE_SPOOFING_DISABLE
         //For those that don't want variable voltage spoofing, spoof maximum possible pack voltage
         
@@ -250,7 +250,7 @@ void spoofVoltage_calculateValue(void)
         #endif
 
         uint8_t vspoofMCM_max = calculate_vspoofMCM_max();
-        
+
         if     ((maxPossibleVspoof < VSPOOF_60S_DISABLE_VOLTAGE)                           || //pack voltage too low
                 (vspoofMCM_max > maxPossibleVspoof)) { spoofedPackVoltage = maxPossibleVspoof; }//If the voltage we want to spoof is greater than maxPossibleVspoof, use maxPossibleVspoof instead.
             //The above two lines could be simplified. vspoofMCM_max = 184 or maxPossibleVspoof whichever is lower.
