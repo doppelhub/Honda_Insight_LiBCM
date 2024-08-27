@@ -258,7 +258,12 @@ void spoofVoltage_calculateValue(void)
         else if (adc_getLatestBatteryCurrent_amps() < BEGIN_SPOOFING_VOLTAGE_ABOVE_AMPS)    { spoofedPackVoltage = vspoofMCM_max; } //regen, idle, or light assist
         
 		//Assist Spoofing
-        else if (adc_getLatestBatteryCurrent_amps() > MAXIMIZE_POWER_ABOVE_CURRENT_AMPS)    { spoofedPackVoltage = LTC68042result_packVoltage_get() * 0.68; } //heavy assist
+        else if (adc_getLatestBatteryCurrent_amps() > MAXIMIZE_POWER_ABOVE_CURRENT_AMPS)    { spoofedPackVoltage = LTC68042result_packVoltage_get() * 0.68; 
+        
+        if (spoofedPackVoltage < 165) {spoofedPackVoltage = 165;}
+
+        } //heavy assist
+        
         else
         {
             //medium assist
@@ -281,7 +286,10 @@ void spoofVoltage_calculateValue(void)
             uint16_t packVoltageReduction_V  = ((adc_getLatestBatteryCurrent_amps() - BEGIN_SPOOFING_VOLTAGE_ABOVE_AMPS) * voltageAdjustment_mV_per_A) * 0.001;
 
             //Calculate spoofed pack voltage
-            spoofedPackVoltage = vspoofMCM_max - packVoltageReduction_V;
+            uint8_t spoofedPackVoltage = vspoofMCM_max - packVoltageReduction_V;
+
+            if (spoofedPackVoltage < 165) {spoofedPackVoltage = 165;}
+
         }
    
     //---------------------------------------------------------------------------
