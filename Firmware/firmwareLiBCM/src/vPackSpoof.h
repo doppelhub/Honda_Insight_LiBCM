@@ -17,8 +17,9 @@
 
     #define VSPOOF_TO_MAXIMIZE_POWER 125 //Maximum assist occurs when MCM thinks pack is at 120 volts
     
-    #define DISABLE_60S_VSPOOF_VOLTAGE 177 //Disable voltage spoofing if maxPossibleVspoof drops below a specificed voltage.
-        //When maxPossibleVspoof = 177, pack voltage is 192, or 3.2 volts/cell. 
+    #define VSPOOF60S_MINIMUM_VOLTAGE 145 //The minimum voltage to spoof using Bull Dog's 60S VSPOOF profile. If you get a P1440 at lower SoCs, adjust this up to 150.
+    #define DISABLE_60S_VSPOOF_VOLTAGE 172 //Disable voltage spoofing if maxPossibleVspoof drops below a specificed voltage. 172 = pack voltage of 186, or 3.1 volts/cell.
+        
     
     #define ADDITIONAL_VPIN_OFFSET_VOLTS 0 //this many volts are added to VPIN output //use with OBDIIC&C to make BATTSCI voltage equal to VPIN voltage
     #define ADDITIONAL_MCMe_OFFSET_VOLTS 0 //this many volts are added to MCMe output //use with OBDIIC&C to make BATTSCI voltage equal to MCMe voltage

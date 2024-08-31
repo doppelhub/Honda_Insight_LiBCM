@@ -259,8 +259,12 @@ void spoofVoltage_calculateValue(void)
         else if (adc_getLatestBatteryCurrent_amps() < BEGIN_SPOOFING_VOLTAGE_ABOVE_AMPS)    { spoofedPackVoltage = vspoofMCM_max; } //regen, idle, or light assist
         
 		//Assist Spoofing
-        else if (adc_getLatestBatteryCurrent_amps() > MAXIMIZE_POWER_ABOVE_CURRENT_AMPS)    { initialSpoofedPackVoltage = LTC68042result_packVoltage_get() * 0.68;
-			if (initialSpoofedPackVoltage < 145) {spoofedPackVoltage = 145;}  //Limit the minimum spoofed voltage. This may prevent P1440s.
+        else if (adc_getLatestBatteryCurrent_amps() > MAXIMIZE_POWER_ABOVE_CURRENT_AMPS)    
+        { 
+            initialSpoofedPackVoltage = LTC68042result_packVoltage_get() * 0.68;
+
+            //Limit the minimum spoofed voltage. This helps prevent P1440s from happening for Balto.
+			if (initialSpoofedPackVoltage < VSPOOF60S_MINIMUM_VOLTAGE) {spoofedPackVoltage = VSPOOF60S_MINIMUM_VOLTAGE;}  
 			else {spoofedPackVoltage = initialSpoofedPackVoltage;}
 		
 		} //heavy assist
@@ -289,7 +293,8 @@ void spoofVoltage_calculateValue(void)
             //Calculate spoofed pack voltage
             uint8_t initialSpoofedPackVoltage = vspoofMCM_max - packVoltageReduction_V;
 			
-			if (initialSpoofedPackVoltage < 145) {spoofedPackVoltage = 145;}  //Limit the minimum spoofed voltage. This may prevent P1440s.
+            //Limit the minimum spoofed voltage.
+			if (initialSpoofedPackVoltage < VSPOOF60S_MINIMUM_VOLTAGE) {spoofedPackVoltage = VSPOOF60S_MINIMUM_VOLTAGE;}  
 			else {spoofedPackVoltage = initialSpoofedPackVoltage;}
 
         }
