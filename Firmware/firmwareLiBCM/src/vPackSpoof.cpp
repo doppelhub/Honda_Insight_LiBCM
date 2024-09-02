@@ -264,7 +264,7 @@ void spoofVoltage_calculateValue(void)
             initialSpoofedPackVoltage = LTC68042result_packVoltage_get() * 0.68;
 
             //Limit the minimum spoofed voltage. This helps prevent P1440s from happening for Balto.
-			if (initialSpoofedPackVoltage < VSPOOF60S_MINIMUM_VOLTAGE) {spoofedPackVoltage = VSPOOF60S_MINIMUM_VOLTAGE;}  
+			if (initialSpoofedPackVoltage < MIN_SPOOFED_VOLTAGE_60S) {spoofedPackVoltage = MIN_SPOOFED_VOLTAGE_60S;}  
 			else {spoofedPackVoltage = initialSpoofedPackVoltage;}
 		
 		} //heavy assist
@@ -294,7 +294,7 @@ void spoofVoltage_calculateValue(void)
             uint8_t initialSpoofedPackVoltage = vspoofMCM_max - packVoltageReduction_V;
 			
             //Limit the minimum spoofed voltage.
-			if (initialSpoofedPackVoltage < VSPOOF60S_MINIMUM_VOLTAGE) {spoofedPackVoltage = VSPOOF60S_MINIMUM_VOLTAGE;}  
+			if (initialSpoofedPackVoltage < MIN_SPOOFED_VOLTAGE_60S) {spoofedPackVoltage = MIN_SPOOFED_VOLTAGE_60S;}  
 			else {spoofedPackVoltage = initialSpoofedPackVoltage;}
 
         }
