@@ -892,8 +892,6 @@ void LiDisplay_handler(void)
     #ifdef LIDISPLAY_CONNECTED
 
         static uint32_t millis_previous = 0;
-        //static uint32_t splash_millis = 0;	candidate for deletion
-        //static uint32_t hmi_read_millis = 0;	candidate for deletion
 
 		LiDisplay_userInputHandler();	// Check if user has pressed a button on the LiDisplay screen.
         LiDisplay_calculateCorrectPage();
@@ -902,6 +900,7 @@ void LiDisplay_handler(void)
 
         if (LiDisplayOnGridChargerConnected)
 		{
+			// Driver just plugged in the grid charger.  We need to wait for the Nextion to fully power on before we tell it to go to the Grid Charging page.
             if ((millis() - hmi_power_millis) < LIDISPLAY_MINIMUM_TIME_TO_UPDATE_AFTER_POWER_ON_MILLIS) { return; } // ensure at least 400ms have passed since screen turned on.
 			else
 			{
