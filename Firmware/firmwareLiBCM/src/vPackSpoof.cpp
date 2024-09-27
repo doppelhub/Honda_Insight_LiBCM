@@ -116,7 +116,7 @@ uint8_t calculate_vspoofMCM_max(void)
 {
     //Keep the MCM Happy by Spoofing no higher than 184 Volts for 60s.
     //When maxAllowedVspoof is less than 184 volts, use maxAllowedVspoof instead.
-    //i.e. 
+    
     uint8_t maxAllowedVspoof = calculate_Vspoof_maxPossible();
     uint8_t vspoofMCM_max = 0;
 
@@ -254,20 +254,19 @@ void spoofVoltage_calculateValue(void)
 
         if     ((maxPossibleVspoof < DISABLE_60S_VSPOOF_VOLTAGE)                           || //pack voltage too low
                 (vspoofMCM_max > maxPossibleVspoof)) { spoofedPackVoltage = maxPossibleVspoof; }//If the voltage we want to spoof is greater than maxPossibleVspoof, use maxPossibleVspoof instead.
-            //The above two lines could be simplified. vspoofMCM_max = 184 or maxPossibleVspoof whichever is lower.
 
         else if (adc_getLatestBatteryCurrent_amps() < BEGIN_SPOOFING_VOLTAGE_ABOVE_AMPS)    { spoofedPackVoltage = vspoofMCM_max; } //regen, idle, or light assist
         
 		//Assist Spoofing
         else if (adc_getLatestBatteryCurrent_amps() > MAXIMIZE_POWER_ABOVE_CURRENT_AMPS)    
         { 
-            initialSpoofedPackVoltage = LTC68042result_packVoltage_get() * 0.68;
+            initialSpoofedPackVoltage = LTC68042result_packVoltage_get() * 0.68;  //heavy assist
 
             //Limit the minimum spoofed voltage. This helps prevent P1440s from happening for Balto.
 			if (initialSpoofedPackVoltage < MIN_SPOOFED_VOLTAGE_60S) {spoofedPackVoltage = MIN_SPOOFED_VOLTAGE_60S;}  
 			else {spoofedPackVoltage = initialSpoofedPackVoltage;}
 		
-		} //heavy assist
+		} 
         
         else
         {

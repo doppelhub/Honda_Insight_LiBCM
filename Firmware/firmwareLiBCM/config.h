@@ -8,7 +8,7 @@
     #include "src/libcm.h"
 
     #define FW_VERSION "0.9.4d BD VSPOOF"
-    #define BUILD_DATE "2024SEP15"
+    #define BUILD_DATE "2024SEP26"
 
     //////////////////////////////////////////////////////////////////
 
@@ -62,24 +62,27 @@
     //modify these parameters if you want more power during heavy assist and/or regen.
 
     //48S ONLY: choose ONE of the following
-    //60S MUST use 'VOLTAGE_SPOOFING_DISABLE':
+    //60S MUST use 'VOLTAGE_SPOOFING_DISABLE' or 'VOLTAGE_SPOOFING_VARIABLE_60S_BULL_DOG':
+
         #define VOLTAGE_SPOOFING_DISABLE              //spoof maximum possible pack voltage at all times //closest to OEM behavior
         //#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE //increase assist power by variably   spoofing pack voltage during assist
         //#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //increase assist power by statically spoofing pack voltage during heavy assist
         //#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //increase assist and regen power by variably spoofing pack voltage //DEPRECATED (regen too strong)
         //#define VOLTAGE_SPOOFING_LINEAR               //increase assist and regen power by requesting peak current level as per OEM (compatible with 100A fuse)
-        //#define VOLTAGE_SPOOFING_VARIABLE_60S_BULL_DOG //Bull Dog's experimental variable voltage spoofing for 60S 47AH Conversions. May cause P1440. 
+        //#define VOLTAGE_SPOOFING_VARIABLE_60S_BULL_DOG //Bull Dog's variable voltage spoofing for 60S configs. Only apply full assist above 2100 RPM or P1440 will likely occur.
+
 
     //48S ignores this parameter (choose any value)
-    //60S ONLY: to increase assist power, choose the lowest spoofed voltage that doesn't cause p-codes during heavy assist (e.g. P1440)
-	//VOLTAGE_SPOOFING_VARIABLE_60S_BULL_DOG: Set this value to 150. Change to 155 or 160 if P1440s occurs during heavy assist above 2100 RPM. 
+    //60S:  VOLTAGE_SPOOFING_DISABLE: to increase assist power, choose the lowest spoofed voltage that doesn't cause p-codes during heavy assist (e.g. P1440)
+    //      VOLTAGE_SPOOFING_VARIABLE_60S_BULL_DOG: Set this value to 150. Change to 155 or 160 if P1440s occurs during heavy assist above 2100 RPM. 
+
         //#define MIN_SPOOFED_VOLTAGE_60S 180 //voltage spoofing related p-codes won't occur in any car
         //#define MIN_SPOOFED_VOLTAGE_60S 175
         #define MIN_SPOOFED_VOLTAGE_60S 170 //recommended starting value for VOLTAGE_SPOOFING_DISABLE setting.  //choose higher voltage if p-codes occur during heavy assist
         //#define MIN_SPOOFED_VOLTAGE_60S 165
         //#define MIN_SPOOFED_VOLTAGE_60S 160
         //#define MIN_SPOOFED_VOLTAGE_60S 155
-        //#define MIN_SPOOFED_VOLTAGE_60S 150 //VOLTAGE_SPOOFING_DISABLE: p-codes will occur in most cars during heavy assist
+        //#define MIN_SPOOFED_VOLTAGE_60S 150 //recommended starting value for VOLTAGE_SPOOFING_VARIABLE_60S_BULL_DOG. //VOLTAGE_SPOOFING_DISABLE: p-codes will occur in most cars during heavy assist
 
     //////////////////////////////////////////////////////////////////
 
