@@ -107,6 +107,8 @@ void LiDisplay_begin(void)
         LiDisplaySplashPending = false;
         LiDisplayPowerOffPending = false;
 		new_power_state_millis = 0;
+    #else
+        power_usart1_disable(); //disable USART1 clock to save power
     #endif
 }
 

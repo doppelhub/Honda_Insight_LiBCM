@@ -13,10 +13,11 @@
 
 #include "libcm.h"
 
+//JTS2doLater: add 'static' to all file-scoped variables
 uint8_t spoofedVoltageToSend_Counts = 0; //formatted as MCM expects to see it (Vpack / 2) //2 volts per count
 int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2048 - deciAmps * 2) //50 mA per count
 
-uint8_t framePeriod_ms = 33;
+uint8_t framePeriod_ms = 33; //JTS2doLater: Add 'g_' to all file-scoped globals
 
 //JTS2doLater: post#3093 (http://insightcentral.net/threads/libcm-open-beta-support-thread.128957) explains how make the OEM SoC gauge update
 //JTS2doLater: Add different SoC profile for "charges every day" crew
@@ -56,7 +57,9 @@ void BATTSCI_begin(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_enable(void) {
+void BATTSCI_enable(void)
+{
+    power_usart2_enable(); //enable USART2 clock
     digitalWrite(PIN_BATTSCI_DE,HIGH);
     previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; // If user grid charged over night SoC may have changed a lot.
     
@@ -68,7 +71,11 @@ void BATTSCI_enable(void) {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_disable(void) { digitalWrite(PIN_BATTSCI_DE,LOW); }
+void BATTSCI_disable(void)
+{
+    power_usart2_disable(); //disable USART2 clock to save power
+    digitalWrite(PIN_BATTSCI_DE,LOW);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 

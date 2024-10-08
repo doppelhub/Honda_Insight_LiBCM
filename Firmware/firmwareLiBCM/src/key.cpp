@@ -16,7 +16,8 @@ uint8_t keyState_previous = KEYSTATE_UNINITIALIZED;
 void key_handleKeyEvent_off(void)
 {
     Serial.print(F("OFF"));
-    LED(1,LOW);
+    LED(1,OFF);
+    LED(3,OFF);
     BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
     METSCI_disable();
     LTC68042cell_acquireAllCellVoltages();
@@ -51,7 +52,6 @@ void key_handleKeyEvent_on(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doLater: make 'KEYSTATE_OFF_JUSTOCCURRED' persist for one second (before reporting 'keyOff')
 bool key_didStateChange(void)
 {
     bool didKeyStateChange = NO;

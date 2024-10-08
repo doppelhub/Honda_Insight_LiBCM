@@ -42,6 +42,7 @@
     #define GRID_MIN_OFF_PERIOD__SHORT_ms  2000 //prevents rapid grid charger cycling
     #define GRID_MIN_OFF_PERIOD__LONG_ms  30000
 
+    uint8_t gridCharger_isAllowedNow(void);
     void gridCharger_handler(void);
 
 #endif

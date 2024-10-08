@@ -181,7 +181,7 @@ void debugUSB_printData_cellVoltages(void)
     }
 
     if (++icToPrint < TOTAL_IC) { transmitStatus = TRANSMITTING_LARGE_MESSAGE; }
-    else                       { transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE; icToPrint = 0; Serial.print(F("\ncell voltages:")); }
+    else                        { transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE; icToPrint = 0; Serial.print(F("\ncell voltages:")); }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -300,7 +300,7 @@ void debugUSB_printWelcomeMessage(void)
 {
     Serial.print(F("\n\nLiBCM v" FW_VERSION ", " BUILD_DATE "\n'$HELP' for info\n"));
     debugUSB_printHardwareRevision();
-    debugUSB_printConfigParameters();    
+    debugUSB_printConfigParameters();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

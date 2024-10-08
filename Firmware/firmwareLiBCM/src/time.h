@@ -27,6 +27,15 @@
     uint32_t time_sinceLatestKeyOn_ms(void);
     uint16_t time_sinceLatestKeyOn_seconds(void);
 
+    void          time_latestUserInputUSB_set(void);
+    uint32_t time_sinceLatestUserInputUSB_get_ms(void);
+
+    void          time_latestGridChargerUnplug_set(void);
+    uint32_t time_sinceLatestGridChargerUnplug_get_ms(void);
+
+    void time_addSleepPeriodToMillis(void);
+    void time_setAbsoluteMillis(uint32_t newMillis);
+
     bool time_didLiBCM_justBoot(void);
 
     #define START_TIMER true
