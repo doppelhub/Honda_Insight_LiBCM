@@ -103,7 +103,7 @@ bool time_hasKeyBeenOffLongEnough_toTurnOffLiBCM(void)
 {
     bool keyOffForLongEnough = false;
 
-    if ((millis() - time_latestKeyOff_ms_get()) > (POWEROFF_DELAY_AFTER_KEYOFF_PACK_EMPTY_MINUTES * 60000))
+    if ((millis() - time_latestKeyOff_ms_get()) > (POWEROFF_DELAY_AFTER_KEYOFF_PACK_EMPTY_MINUTES * (uint32_t)60000))
     {
         keyOffForLongEnough = true;
     }

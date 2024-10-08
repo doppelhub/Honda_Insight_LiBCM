@@ -167,8 +167,8 @@ void printHelp(void)
         "\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
         "\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)"
         "\n"
-        "\nLiBCM sends the following debug characters each time:"
-        "\n -'@': isoSPI error occurs"
+        "\nDebug characters:"
+        "\n -'@': isoSPI error occurred"
         "\n -'*': loop period exceeded"
         "\n"
         /*
