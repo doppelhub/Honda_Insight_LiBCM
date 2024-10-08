@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //all digitalRead(), digitalWrite(), analogRead(), analogWrite() functions live here
@@ -39,16 +39,11 @@ void gpio_begin(void)
     digitalWrite(PIN_TURNOFFLiBCM,LOW);
 
     pinMode(PIN_HMI_EN,OUTPUT);
-
-    //Controls BCM current sensor, constant 5V load, and BATTSCI/METSCI biasing
     pinMode(PIN_SENSOR_EN,OUTPUT);
-    gpio_turnPowerSensors_on(); //if the key is off when LiBCM first powers up, the keyOff handler will turn the sensors back off
-
     pinMode(PIN_LED1,OUTPUT);
     pinMode(PIN_LED2,OUTPUT);
     pinMode(PIN_LED3,OUTPUT);
     pinMode(PIN_LED4,OUTPUT);
-
     analogWrite(PIN_MCME_PWM,0);
     pinMode(PIN_FAN_PWM,OUTPUT);
     pinMode(PIN_FANOEM_LOW,OUTPUT);
@@ -63,7 +58,8 @@ void gpio_begin(void)
     //JTS2doLater: Turn all this stuff off when the key is off
     TCCR1B = (TCCR1B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D11(fan) & D12()
     TCCR3B = (TCCR3B & B11111000) | B00000001; // Set F_PWM to 31372.55 Hz //pins D2() & D3() & D5(VPIN_OUT)
-    TCCR4B = (TCCR4B & B11111000) | B00000010; // Set F_PWM to  3921.16 Hz //pins D7(MCMe) & D8(gridPWM) & D9()
+    TCCR4B = (TCCR4B & B11111000) | B00000010; // Set F_PWM to  3921.16 Hz //pins D7(MCMe) & D8(gridPWM) & D9() //JTS2doLater: use higher frequency when keyOn
+    //TCCR4B = (TCCR4B & B11111000) | B00000100; // Set F_PWM to  122.55 Hz //pins D7(MCMe) & D8(gridPWM) & D9() //JTS2doLater: use lower frequency when charging
     //TCCR5B is set in Buzzer functions
 }
 
@@ -219,6 +215,10 @@ bool gpio_isCoverInstalled(void)
         return true;
     #endif
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool gpio_isUserSwitchOn(void) { return digitalRead(PIN_USER_SW); }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 

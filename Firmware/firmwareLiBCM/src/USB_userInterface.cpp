@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //Handles user interactions with LiBCM (data query/response)
@@ -53,16 +53,11 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     }
     else if (testToRun == '2')
     {
-        gpio_turnPowerSensors_on();
-        Serial.print(F("Calibrating Current Sensor"));
-        adc_calibrateBatteryCurrentSensorOffset();
+        printText_UNUSED();
     }
     else if (testToRun == '3')
     {
-        Serial.print(F("updateBatteryCurrent"));
-        adc_updateBatteryCurrent();
-        Serial.print(F("\ndeciAmps: "));
-        Serial.print(adc_getLatestBatteryCurrent_deciAmps());
+        printText_UNUSED();
     }
     else if (testToRun == '4')
     {
@@ -86,9 +81,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     }
     else if (testToRun == '9')
     {
-        Serial.print(F("\nadcResult_CurrentSensor(10b): "));
-        Serial.print(analogRead(PIN_BATTCURRENT));
-        adc_calibrateBatteryCurrentSensorOffset();
+        printText_UNUSED();
     }
 
     //Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
@@ -131,6 +124,7 @@ void printHelp(void)
 {
     Serial.print(F("\n\nLiBCM commands:"
         "\n -'$BOOT': restart LiBCM"
+        "\n -'$OFF': turn LiBCM off (for testing purposes)"
         "\n -'$TESTR': run LTC6804 VREF test"
         "\n -'$TESTW': battery temp & SoC history"
         "\n -'$TESTH': blink heater LED"
@@ -145,6 +139,10 @@ void printHelp(void)
         "\n -'$RATE=___': USB updates per second (1 to 255 Hz)"
         "\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
         "\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)"
+        "\n"
+        "\nLiBCM sends the following debug characters each time:"
+        "\n -'@': isoSPI errors occur"
+        "\n -'*': loop period exceeded"
         "\n"
         /*
         "\nFuture LiBCM commands (not presently supported"
@@ -208,6 +206,28 @@ void USB_userInterface_executeUserInput(void)
             Serial.print(F("\nRebooting LiBCM"));
             delay(50); //give serial buffer time to send
             rebootLiBCM();
+        }
+
+        //$OFF
+        else if ((line[1] == 'O') && (line[2] == 'F') && (line[3] == 'F'))
+        {
+            Serial.print(F("\nUnplug USB cable before the counter gets to zero:"));
+            Serial.print(F("\nLiBCM turning off in "));
+            for (uint8_t ii=5; ii!=0 ;ii--)
+            {
+                Serial.print('\n');
+                Serial.print(ii);
+                for (uint8_t jj=10; jj!=0; jj--)
+                {
+                    Serial.print('.');
+                    delay(100);
+                    wdt_reset(); //Feed watchdog
+                }
+            }
+
+            Serial.print(F("\nYou didn't unplug the cable fast enough. LiBCM will reboot instead."));
+            delay(50); //wait for transmit buffer to empty
+            gpio_turnLiBCM_off();
         }
 
         //$TEST

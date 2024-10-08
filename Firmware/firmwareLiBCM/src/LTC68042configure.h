@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 #ifndef LTC68042configure_h
@@ -25,6 +25,8 @@
     #define FIRST_IC_ADDR  2 //lowest address.  All additional IC addresses must be sequential
     #define CELLS_PER_IC  12 //Each LTC6804 measures QTY12 cells
 
+    #define SPECIFIED_MAX_WAKEUP_TIME_LTCCORE_MICROSECONDS 300 //guarantees LTC6804 is in 'standby' mode (tWake = 300 us max)
+    #define SPECIFIED_MAX_WAKEUP_TIME_isoSPI_MICROSECONDS   10 //guarantees isoSPI is in 'ready' mode (tWAKE = 10 us max)
 
      // |CHG | Dec  |Channels to convert   |
      // |----|------|----------------------|
@@ -190,5 +192,9 @@
     void LTC68042configure_programVolatileDefaults(void);
     
     void LTC68042configure_setBalanceResistors(uint8_t icAddress, uint16_t cellBitmap, uint8_t softwareTimeout);
+
+    bool LTC68042configure_doesActualPackSizeMatchUserConfig(void);
+
+    void LTC68042configure_pulseChipSelectLow(uint16_t lowPulsePeriod_us);
 
 #endif

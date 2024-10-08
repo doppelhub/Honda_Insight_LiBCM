@@ -47,6 +47,7 @@
     void gpio_playSound_firmwareUpdated(void);
 
     bool gpio_isCoverInstalled(void);
+    bool gpio_isUserSwitchOn(void);
 
     void gpio_turnHMI_on(void);
     void gpio_turnHMI_off(void);

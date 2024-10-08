@@ -10,4 +10,6 @@
 
     uint8_t key_getSampledState(void);
 
+    void keyOn_coldBootTasks(void);
+
 #endif

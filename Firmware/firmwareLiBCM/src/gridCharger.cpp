@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 #include "libcm.h"
 
@@ -121,7 +121,7 @@ void chargerControlSignals_handler(void)
         if (isChargingAllowed_previous != YES__CHARGING_ALLOWED)
         {
             Serial.print(F("\nCharging"));
-            adc_calibrateBatteryCurrentSensorOffset();
+            adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_ENABLED);
         }
 
         runFansIfNeeded(); //JTS2doLater: run fans as needed even when charging not allowed (e.g. to cool a hot pack)

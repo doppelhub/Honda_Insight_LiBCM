@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //cell balancing Functions
@@ -39,6 +39,7 @@ bool cellBalance_areCellsBalancing(void) { return cellsAreBalancing; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doLater: Always allow discharge balancing when a cell is overcharged (for safety)
 //JTS2doLater: Write keyOff test that measures each cell voltage twice: once with discharge resistor off, and again with resistor on.
 //             Then verify voltage drop, which means the discharge resistor is turning off and on.  If there isn't enough resolution,
 //             another method would be to wait a few hours for pack voltages to settle, then log all cell voltages an hour apart.

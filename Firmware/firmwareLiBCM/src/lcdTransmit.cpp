@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //handles all communication with 4x20 lcd display
@@ -575,6 +575,12 @@ void lcdTransmit_displayOff(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/*JTS2doLater: Add the following alert if LiBCM loses control
+LiBCM DETECTED A
+DANGEROUS CONDITION.
+TURN OFF IMA SWITCH
+IMMEDIATELY!!!!!!
+*/
 void lcdTransmit_Warning(uint8_t warningToDisplay)
 {
     static uint8_t whichRowToPrint = 0;

@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 /*The MCM measures pack voltage in three different spots:
@@ -20,14 +20,18 @@ uint8_t vPackSpoof_getSpoofedPackVoltage(void) { return spoofedPackVoltage; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void vPackSpoof_handleKeyON(void) { ; }
+void vPackSpoof_handleKeyON(void)
+{
+    analogWrite(PIN_VPIN_OUT_PWM, 0);
+    analogWrite(PIN_MCME_PWM    , 0);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void vPackSpoof_handleKeyOFF(void)
 {
-    pinMode(PIN_VPIN_OUT_PWM,INPUT); //set VPIN high impedance (to save power)
-    pinMode(PIN_MCME_PWM,    INPUT); //Set MCMe high impedance (to save power)
+    pinMode(PIN_VPIN_OUT_PWM, INPUT); //set VPIN high impedance (to save power)
+    pinMode(PIN_MCME_PWM,     INPUT); //Set MCMe high impedance (to save power)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -253,8 +257,8 @@ void vPackSpoof_setVoltage(void)
 {
     spoofVoltage_calculateValue(); //result saved in 'spoofedPackVoltage'
 
-    spoofVoltage_VPINout();
     spoofVoltageMCMe();
+    spoofVoltage_VPINout();
     BATTSCI_setPackVoltage(spoofedPackVoltage);
 }
 
