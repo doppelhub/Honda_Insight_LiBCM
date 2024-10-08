@@ -121,7 +121,7 @@ void powerSave_gotoSleep(void)
         clock_prescale_set(clock_div_1); //16 MHz
         wakeupInterrupts_disable();
     }
-    interrupts();    
+    interrupts();
 
     USB_begin();
 
@@ -136,12 +136,28 @@ void powerSave_gotoSleep(void)
 
 void powerSave_sleepIfAllowed(void)
 {
-    if ((cellBalance_areCellsBalancing()  == NO) /* LiBCM must stay on for safety */                    &&
-        (gpio_isGridChargerPluggedInNow() == NO) /* LiBCM must stay on for safety */                    &&
-        (time_sinceLatestUserInputUSB_get_ms() > PERIOD_TO_DISABLE_POWERSAVE_AFTER_USB_DATA_RECEIVED_ms) )
+    if ((cellBalance_areCellsBalancing()  == NO) /* LiBCM must stay on for safety */                &&
+        (gpio_isGridChargerPluggedInNow() == NO) /* LiBCM must stay on for safety */                &&
+        (time_sinceLatestUserInputUSB_get_ms() > PERIOD_TO_DISABLE_SLEEP_AFTER_USB_DATA_RECEIVED_ms) )
     {
         powerSave_gotoSleep();
     }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void powerSave_turnOffIfAllowed(void)
+{
+    #ifdef POWEROFF_DELAY_AFTER_KEYOFF_DAYS
+        uint32_t timeSinceLatestKeyOff_ms = millis() - time_latestKeyOff_ms_get();
+
+        if ((gpio_isGridChargerPluggedInNow() == NO)                                                            &&
+            (time_sinceLatestGridChargerUnplug_get_ms() > PERIOD_TO_DISABLE_TURNOFF_AFTER_CHARGER_UNPLUGGED_ms) &&
+            (timeSinceLatestKeyOff_ms > (POWEROFF_DELAY_AFTER_KEYOFF_DAYS * MILLISECONDS_PER_DAY))               )
+        {
+            gpio_turnLiBCM_off();
+        }
+    #endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

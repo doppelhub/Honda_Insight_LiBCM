@@ -7,8 +7,8 @@
     #define config_h
     #include "src/libcm.h"
 
-    #define FW_VERSION "0.9.4e"
-    #define BUILD_DATE "2024AUG19"
+    #define FW_VERSION "0.9.5"
+    #define BUILD_DATE "2024OCT07"
 
     //////////////////////////////////////////////////////////////////
 
@@ -114,7 +114,7 @@
     //power saving
     #define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC_PERCENT 50 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
     #define POWEROFF_DELAY_AFTER_KEYOFF_PACK_EMPTY_MINUTES      10 //When SoC is below 10%, LiBCM will remain on for this many minutes after keyOFF.
-    #define POWEROFF_DELAY_AFTER_KEYOFF_DAYS                     5 //LiBCM turns off this many days after keyOff, unless grid charger powered
+    #define POWEROFF_DELAY_AFTER_KEYOFF_DAYS                     5 //LiBCM turns off this many days after keyOff, unless grid charger powered //comment line to disable
     //to turn LiBCM back on: turn ignition 'ON', or turn IMA switch off and on, or plug in USB cable
 
     //Choose which sign (±) the LCD displays when the battery is discharging

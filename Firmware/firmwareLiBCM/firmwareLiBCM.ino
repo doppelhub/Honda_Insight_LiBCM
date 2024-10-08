@@ -64,7 +64,11 @@ void loop()
             SoC_turnOffLiBCM_ifPackEmpty();
             debugUSB_printLatest_data_gridCharger();
         }
-        else { powerSave_sleepIfAllowed(); }
+        else
+        {
+            powerSave_turnOffIfAllowed();
+            powerSave_sleepIfAllowed();
+        }
     }
 
     USB_userInterface_handler();
