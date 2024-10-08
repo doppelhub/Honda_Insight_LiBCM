@@ -67,6 +67,7 @@
         //#define VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE //increase assist power by variably   spoofing pack voltage during assist
         //#define VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY   //increase assist power by statically spoofing pack voltage during heavy assist
         //#define VOLTAGE_SPOOFING_ASSIST_AND_REGEN     //increase assist and regen power by variably spoofing pack voltage //DEPRECATED (regen too strong)
+        //#define VOLTAGE_SPOOFING_LINEAR               //increase assist and regen power by requesting peak current level as per OEM (compatible with 100A fuse)
 
     //48S ignores this parameter (choose any value)
     //60S ONLY: to increase assist power, choose the lowest spoofed voltage that doesn't cause p-codes during heavy assist (e.g. P1440)

@@ -228,6 +228,18 @@ void spoofVoltage_calculateValue(void)
 
     //---------------------------------------------------------------------------
 
+    #elif defined  VOLTAGE_SPOOFING_LINEAR
+	
+	           spoofedPackVoltage = maxPossibleVspoof * 0.4 + 78; 
+	
+		   // adjusts spoof voltage across entire range so that current is 50A continuous, 83A peak
+		   // 48S yields from +19% power
+		   // 60S yields from +28% power
+		   // max spoofing is within 67% of Vpack
+		   // this is compatible with standard 100A OEM fuse.
+
+    //---------------------------------------------------------------------------
+	
     #else
         #error (VOLTAGE_SPOOFING value not selected in config.h)
     #endif

@@ -52,6 +52,7 @@ void key_handleKeyEvent_on(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doLater: make 'KEYSTATE_OFF_JUSTOCCURRED' persist for one second (before reporting 'keyOff')
 bool key_didStateChange(void)
 {
     bool didKeyStateChange = NO;
