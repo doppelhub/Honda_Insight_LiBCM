@@ -774,7 +774,7 @@ void bringupTester_motherboard(void)
                 gpio_turnBuzzer_off();
             }
 
-            blinkLED2(); //Heartbeat
+            LED_heartbeat();
         }
     #endif
 }

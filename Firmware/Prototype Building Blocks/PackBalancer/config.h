@@ -7,8 +7,8 @@
 	#define config_h
 	#include "libcm.h"  //For Arduino IDE compatibility
 
-	#define FW_VERSION "0.1.0"
-    #define BUILD_DATE "2022SEP21"
+	#define FW_VERSION "0.1.1"
+    #define BUILD_DATE "2024SEP29"
 
 	#define LCD_4X20_CONNECTED  //Comment to disable all 4x20 LCD commands
 

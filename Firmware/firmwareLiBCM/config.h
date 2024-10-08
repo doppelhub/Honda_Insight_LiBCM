@@ -7,8 +7,8 @@
     #define config_h
     #include "src/libcm.h"
 
-    #define FW_VERSION "0.9.4d"
-    #define BUILD_DATE "2024JUL23"
+    #define FW_VERSION "0.9.5"
+    #define BUILD_DATE "2024OCT07"
 
     //////////////////////////////////////////////////////////////////
 
@@ -111,12 +111,12 @@
     #define HEAT_BATTERY_BELOW_TEMP_C_KEYON        16 //cabin air heating, or heater PCB (if installed)
     #define HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING 16
     #define HEAT_BATTERY_BELOW_TEMP_C_KEYOFF       10
-    //other temp settings
-    #define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC 50 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
 
-    //JTS2doNext: add LIBCM_KEYOFF_SLEEP_DELAY_HOURS
-    #define KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES 10 //When SoC is between 0 & 10%, LiBCM will remain on for this many minutes after keyOFF.
-        //to turn LiBCM back on: turn ignition 'ON', or turn IMA switch off and on, or plug in USB cable
+    //power saving
+    #define KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC_PERCENT 50 //when keyOFF (unless grid charger plugged in) //set to 100 to disable when keyOFF
+    #define POWEROFF_DELAY_AFTER_KEYOFF_PACK_EMPTY_MINUTES      10 //When SoC is below 10%, LiBCM will remain on for this many minutes after keyOFF.
+    #define POWEROFF_DELAY_AFTER_KEYOFF_DAYS                     5 //LiBCM turns off this many days after keyOff, unless grid charger powered //comment line to disable
+    //to turn LiBCM back on: turn ignition 'ON', or turn IMA switch off and on, or plug in USB cable
 
     //Choose which sign (±) the LCD displays when the battery is discharging
     #define DISPLAY_POSITIVE_SIGN_DURING_ASSIST //current is positive when battery is discharging
@@ -149,12 +149,12 @@
 
     //#define LIDISPLAY_DEBUG_ENABLED //uncomment to enable updates to text box ID # T12 on LiDisplay driving page -- this shows raw comm data from LiDisplay to LiBCM
     #define LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS 64 //64 = 6.4mV window between cell colours on the grid charging page.  Don't go below CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
-	#define LIDISPLAY_SPLASH_PAGE_MS 2000 //How long the splash page shows on LiDisplay.  Default 2000 (2 seconds)
-	#define LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS 3000 // Keep displaying the grid charging page this long before showing splash page when GC unplugged
+	#define LIDISPLAY_SPLASH_PAGE_MS 3000 // How long the splash page shows on LiDisplay.  Default 3000 (3 seconds)
+	#define LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS 4000 // Keep displaying the grid charging page this long before showing splash page when GC unplugged
 
     /*
     JTS2doLater:
-        #define SERIAL_H_LINE_CONNECTED NO //H-Line wire connected to OEM BCM connector pin B01
+        #define SERIAL_H_LINE_CONNECTED NO //H-Line wire manually connected to OEM BCM connector pin B01 (this connection is not OEM)
         #define KEYOFF_TURNOFF_LIBCM_AFTER_HOURS 48 //LiBCM turns off this many hours after keyOFF.
 
         Change these #define statements so that all they do is reconfigure EEPROM values.
