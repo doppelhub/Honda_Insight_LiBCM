@@ -11,6 +11,12 @@
 #define LIDISPLAY_GRIDCHARGE_PAGE_ID 3
 #define LIDISPLAY_SETTINGS_PAGE_ID 4
 
+// These are the numbers of updatable elements on the respective screens
+#define LIDISPLAY_DRIVING_PAGE_INTITIAL_MAX_ELEMENT_ID 6
+#define LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID 1
+#define LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID 6
+
+
 #define LIDISPLAY_BUTTON_ID_SCREEN 0
 #define LIDISPLAY_BUTTON_ID_FAN 1
 
@@ -19,7 +25,7 @@
 // We need to wait for it to power up before we tell it to go to the grid charger page.
 #define LIDISPLAY_MINIMUM_TIME_TO_UPDATE_AFTER_POWER_ON_MILLIS 400 // Note Sept 2023 -- Smaller values like 100ms were not enough
 
-#define LIDISPLAY_UPDATE_RATE_MILLIS 40     // One element is updated each time
+#define LIDISPLAY_UPDATE_RATE_MILLIS 20     // One element is updated each time
 #define LIDISPLAY_COMMAND_COOLDOWN_FRAMES 100	// 2024AUG19 -- We may be able to use a smaller value like 50
 
 #ifdef STACK_IS_48S
@@ -183,6 +189,18 @@ void LiDisplay_resetGridChargerPageVariables()
 	maxElementId = 6;
 	gc_sixty_s_fomoco_e_block_enabled = false;
 	LiDisplayPackVoltageActual_onScreen = 100;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void LiDisplay_resetSplashPageVariables()
+{
+	// 18 Oct 2024
+	// Splash page is only shown for a few seconds
+	// powerSave_sleepIfAllowed() changes millis() and slows the loop
+	// When we go to the splash page we want to make the correct updates (firmware hours and version) as fast as possible
+	LiDisplayElementToUpdate = 0;
+	maxElementId = 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -547,7 +565,7 @@ void LiDisplay_exitSettingsPage(void) {
 
     switch (LiDisplayCurrentPageNum) {
         case LIDISPLAY_DRIVING_PAGE_ID: LiDisplaySoCBars_onScreen = 100; break; // Resets SoC Bar Display for Driving Page
-        case LIDISPLAY_SPLASH_PAGE_ID: break;   // Nothing here yet.
+        case LIDISPLAY_SPLASH_PAGE_ID: LiDisplay_resetSplashPageVariables(); break;
         case LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID: LiDisplaySoCBars_onScreen = 100; maxElementId = 6; gc_sixty_s_fomoco_e_block_enabled = false; break;
         case LIDISPLAY_GRIDCHARGE_PAGE_ID: LiDisplay_resetGridChargerPageVariables(); break;
         default : break;
@@ -698,7 +716,8 @@ void LiDisplay_enforceCorrectPowerState() {
 				if (((millis() - new_power_state_millis) > total_splash_page_delay_ms) && (LiDisplaySplashPending))
 				{
 					LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID;
-					LiDisplay_updatePage(); // TODO_NATALYA: this line may not be necessary, evaulate if it can be deleted
+					LiDisplay_resetSplashPageVariables();
+					LiDisplay_updatePage(); // If this isn't here the splash page may not appear after key-off.
 					LiDisplaySplashPending = false;
 				}
 				if ((millis() - new_power_state_millis) > (total_splash_page_delay_ms + LIDISPLAY_SPLASH_PAGE_MS))
@@ -758,7 +777,7 @@ void LiDisplay_updateElement() {
 	switch (LiDisplayCurrentPageNum)
 	{
 		case LIDISPLAY_DRIVING_PAGE_ID:
-			maxElementId = 6;
+			maxElementId = LIDISPLAY_DRIVING_PAGE_INTITIAL_MAX_ELEMENT_ID;
 			switch (LiDisplayElementToUpdate)
 			{
 				// 6 elements update very frequently so we won't track their previous value
@@ -805,16 +824,19 @@ void LiDisplay_updateElement() {
 						LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId));
 					}
 				break;
+				default: maxElementId = LIDISPLAY_DRIVING_PAGE_INTITIAL_MAX_ELEMENT_ID; break;
 			}
 		break;
 
 		case LIDISPLAY_SPLASH_PAGE_ID:
+			maxElementId = LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID;
 			// Splash page is the easiest.  It only has two elements that can be updated.
 			if (LiDisplayElementToUpdate >= 2) { LiDisplayElementToUpdate = 0; }
 			switch (LiDisplayElementToUpdate)
 			{
 				case 0: LiDisplay_updateStringVal(1, "t1", 0, String(FW_VERSION)); break;
 				case 1: LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get())); break;
+				default: maxElementId = LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID; break;
 			}
 		break;
 
@@ -876,7 +898,8 @@ void LiDisplay_updateElement() {
 					else LiDisplay_updateNextCellValue();     break;
 
 				case 5: LiDisplay_updateNextCellValue();    break;
-				case 6: maxElementId = 5; LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t10", 0, (String(gc_begin_soc_str))); break;	// This should run only once per charge cycle.  It's going to display what the SoC was when the grid charger was plugged in.
+				case 6: maxElementId = (LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID - 1); LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t10", 0, (String(gc_begin_soc_str))); break;	// This should run only once per charge cycle.  It's going to display what the SoC was when the grid charger was plugged in.
+				default: maxElementId = LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID;	break;
 			}
 		break;
 		default : break;
@@ -891,14 +914,17 @@ void LiDisplay_updateElement() {
 
 void LiDisplay_handler(void)
 {
-    #ifdef LIDISPLAY_CONNECTED
-
+	#ifdef LIDISPLAY_CONNECTED
         static uint32_t millis_previous = 0;
 
-		LiDisplay_userInputHandler();	// Check if user has pressed a button on the LiDisplay screen.
-        LiDisplay_calculateCorrectPage();
-        LiDisplay_handleKeyOrGCStateChange();
+		LiDisplay_handleKeyOrGCStateChange();
 		if (LiDisplayNeedToVerifyPowerState) LiDisplay_enforceCorrectPowerState();
+
+		if (!gpio_HMIStateNow()) { return; } //LiDisplay is off, so we don't need to do anything else.
+
+		LiDisplay_userInputHandler();	// Check if user has pressed a button on the LiDisplay screen.
+		LiDisplay_calculateCorrectPage();
+
 
         if (LiDisplayOnGridChargerConnected)
 		{
@@ -912,12 +938,11 @@ void LiDisplay_handler(void)
             }
         }
 
-        if (millis() - millis_previous > LIDISPLAY_UPDATE_RATE_MILLIS)
+        if ((millis() - millis_previous) > LIDISPLAY_UPDATE_RATE_MILLIS)
         {
             millis_previous = millis();
 
             if (LiDisplay_checkForPendingPageUpdate()) { return; } // If the page had to be changed then we are not updating any elements on it this frame.
-            if (!gpio_HMIStateNow()) { return; } //LiDisplay is off, so we don't need to update anything on the screen.
             if (key_getSampledState() == KEYSTATE_ON) { LiDisplay_calculateKeyTimeStr(false); }  // Increment key time here in case driver switches to settings page
 
 			LiDisplay_updateElement();	// Update 1 element on the screen.
@@ -1007,6 +1032,7 @@ void LiDisplay_gridChargerUnplugged(void)
 {
     #ifdef LIDISPLAY_CONNECTED
         Serial.print(F("\nLiDisplay_gridChargerUnplugged"));
+		LiDisplayElementToUpdate = 0;
         gc_connected_millis_most_recent_diff = 0;
         // Check if gpio HMI was already off
         if (gpio_HMIStateNow())
