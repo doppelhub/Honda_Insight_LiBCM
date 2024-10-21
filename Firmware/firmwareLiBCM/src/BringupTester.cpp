@@ -207,7 +207,7 @@ bool testLTC6804isoSPI(void)
     if (LTC6804gpio_areAllVoltageReferencesPassing() == true) { Serial.print(F("\nresult: passed")); } 
     else                                                      { Serial.print(F("\nresult: FAIL!! !! !! !!")); didTestFail = true; }
 
-    for (int ii=0; ii<100; ii++) { LTC68042cell_nextVoltages(); delay(5); } //generate isoSPI traffic to check for errors
+    for (int ii=0; ii<5; ii++) { LTC68042cell_acquireAllCellVoltages(); delay(10); } //generate isoSPI traffic to check for errors
 
     Serial.print(F("\nLTC6804 - isoSPI error count is "));
     Serial.print(String(LTC68042result_errorCount_get()));

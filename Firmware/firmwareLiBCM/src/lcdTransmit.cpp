@@ -617,7 +617,7 @@ void lcdTransmit_Warning(uint8_t warningToDisplay)
         lcd2.setCursor(0,0); lcd2.print(F("ALERT: Measured cell"));
         lcd2.setCursor(0,1); lcd2.print(F("       count doesn't"));
         lcd2.setCursor(0,2); lcd2.print(F("       match setting"));
-        lcd2.setCursor(0,3); lcd2.print(F("       in config.h )"));
+        lcd2.setCursor(0,3); lcd2.print(F("       in config.h  "));
     }   
 
     if (++whichRowToPrint > 3) { whichRowToPrint = 0; }
