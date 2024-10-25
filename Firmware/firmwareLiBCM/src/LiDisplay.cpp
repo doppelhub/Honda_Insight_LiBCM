@@ -107,6 +107,7 @@ void LiDisplay_begin(void)
         LiDisplaySplashPending = false;
         LiDisplayPowerOffPending = false;
 		new_power_state_millis = 0;
+    #elif defined RUN_BRINGUP_TESTER_MOTHERBOARD //do nothing
     #else
         power_usart1_disable(); //disable USART1 clock to save power
     #endif
