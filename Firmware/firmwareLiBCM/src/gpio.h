@@ -58,7 +58,7 @@
 
     void gpio_turnLiBCM_off(void);
 
-    bool gpio1_getState(void);
+    bool gpio1_getState(void); //JTS2doLater: replace with existing gpio_getPinState
     bool gpio2_getState(void);
     bool gpio3_getState(void);
 

@@ -15,6 +15,9 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 
 	wdt_enable(WDTO_2S); //set watchdog reset vector to 2 seconds
 
+	lcd_displayOn();
+	lcd_printStaticText();
+
 	Serial.print(F("\n\nWelcome to Pack Balancer v" FW_VERSION ", " BUILD_DATE "\nType '$HELP' for more info\n"));
 }
 
@@ -37,6 +40,8 @@ void loop()
 	wdt_reset(); //Feed watchdog
 
 	blinkLED2(); //Heartbeat
+
+	lcd_refresh();
 
 	time_waitForLoopPeriod(); //wait here until next iteration
 }

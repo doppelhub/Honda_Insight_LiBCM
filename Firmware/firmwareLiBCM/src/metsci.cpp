@@ -154,6 +154,7 @@ void METSCI_begin(void)
 
 void METSCI_enable(void)
 {
+    power_usart3_enable(); //enable USART3 clock
     digitalWrite(PIN_METSCI_REn,LOW);
 
     //MCM throws CEL if old data sent when key first turned on
@@ -165,7 +166,11 @@ void METSCI_enable(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void METSCI_disable() { digitalWrite(PIN_METSCI_REn,HIGH); } //prevent backdriving MCM (thru METSCI bus)
+void METSCI_disable()
+{
+    power_usart3_disable(); //disable USART3 clock to save power
+    digitalWrite(PIN_METSCI_REn,HIGH); //prevent backdriving MCM (thru METSCI bus)
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 

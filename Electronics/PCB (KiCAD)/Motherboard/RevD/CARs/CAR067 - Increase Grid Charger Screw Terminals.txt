@@ -1,0 +1,9 @@
+Increase grid charger screw terminals, so that larger ferrules fit, due to new grid charger's lower gauge wire.
+
+...
+
+A98163-ND might work with existing RevD footprint.  Will order and try out.
+
+...
+
+Yes, A98163-ND works with existing RevD footprint.  Switching to that part starting on D192, which accepts larger ferrule (required for new grid charger).

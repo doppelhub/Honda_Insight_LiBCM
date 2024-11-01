@@ -15,6 +15,8 @@
     //define standard libraries used by LiBCM
     #include <Arduino.h>
     #include <avr/wdt.h>
+    #include <avr/power.h>
+    #include <avr/sleep.h>
 
     //Define LiBCM system include files.  Note: Do not alter order.
     #include "../config.h"
@@ -49,5 +51,6 @@
     #include "heater.h"
     #include "LiControl.h"
     #include "batteryHistory.h"
+    #include "powerSave.h"
 
 #endif
