@@ -6,7 +6,9 @@ Used in:
 Ford Escape PHEV (verified)
 Jeep Wrangler 4xe
 Audi Q5 PHEV (12S modules ONLY)(verified)
-Ford Kona (verified)
+Ford Kuga (verified)
+Range Rover p300
+Land Rover Discovery Sport p300
 
 Recalled module: LX68-10B759-R
 NHTSA Part 573 Filing: 21V-869

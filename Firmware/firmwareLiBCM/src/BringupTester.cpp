@@ -207,7 +207,7 @@ bool testLTC6804isoSPI(void)
     if (LTC6804gpio_areAllVoltageReferencesPassing() == true) { Serial.print(F("\nresult: passed")); } 
     else                                                      { Serial.print(F("\nresult: FAIL!! !! !! !!")); didTestFail = true; }
 
-    for (int ii=0; ii<100; ii++) { LTC68042cell_nextVoltages(); delay(5); } //generate isoSPI traffic to check for errors
+    for (int ii=0; ii<5; ii++) { LTC68042cell_acquireAllCellVoltages(); delay(10); } //generate isoSPI traffic to check for errors
 
     Serial.print(F("\nLTC6804 - isoSPI error count is "));
     Serial.print(String(LTC68042result_errorCount_get()));
@@ -290,32 +290,33 @@ bool testLiDisplayLoopback(void)
 
     Serial.print(F("\nLiDisplay loopback test: "));
     serialUSB_waitForEmptyBuffer();
-    {
-        uint8_t numberToLoopback = 0b10101110;
         
-        Serial1.begin(38400,SERIAL_8E1);
+    Serial1.begin(57600,SERIAL_8N1);
 
-        Serial1.write(numberToLoopback);
+    while (Serial1.available() != 0) { Serial1.read(); } //empty buffer
+    
+    for (char charToLoopback = 'A'; charToLoopback <= 'Z'; charToLoopback++)
+    {
+        Serial1.write(charToLoopback);
         delay(10);
 
-        Serial.print(F("\nValue sent: "));
-        Serial.print(numberToLoopback,BIN);
-        
-        uint8_t numberLoopedBack = 0;
-        
-        do
+        uint8_t loopedBack = Serial1.read();
+
+        if (loopedBack != charToLoopback)
         {
-            numberLoopedBack = Serial1.read();
-
-            Serial.print(F(" received: "));
-            Serial.print(numberLoopedBack,BIN);
-            Serial.print(',');
-
-        } while ( Serial1.available() != 0 );
-
-        if (numberLoopedBack == numberToLoopback) { Serial.print(F("pass"));                                }
-        else                                      { Serial.print(F("FAIL!! !! !! !!")); didTestFail = true; }
+            Serial.print(F("\nMismatch, sent:"));
+            Serial.print(charToLoopback);
+            Serial.print(F(", received:"));
+            Serial.print(loopedBack);
+            didTestFail = true;
+        }
+        else {Serial.print(String(charToLoopback)); }
     }
+
+    Serial1.end();
+
+    if (didTestFail == false) { Serial.print(F(": pass"));            }
+    else                      { Serial.print(F(": FAIL!! !! !! !!")); }
 
     return didTestFail;
 }
@@ -335,39 +336,36 @@ bool testBATTSCI_METSCI(void)
 
     Serial.print(F("\nBATTSCI -> METSCI loopback test: "));
     serialUSB_waitForEmptyBuffer();
+
+    BATTSCI_enable();
+    METSCI_enable();
+
+    //empty buffer
+    while (METSCI_bytesAvailableToRead() != 0) { METSCI_readByte(); }
+
+    for (char charToLoopback = 'A'; charToLoopback <= 'Z'; charToLoopback++)
     {
-        BATTSCI_enable();
-        METSCI_enable();
+        BATTSCI_writeByte(charToLoopback);  //send data on BATTSCI (which is connected to METSCI)
+        delay(10);
 
-        //empty buffer
-        while (METSCI_bytesAvailableToRead() != 0) { METSCI_readByte(); }
+        uint8_t loopedBack = METSCI_readByte();
 
-        bool didLoopbackPass = true;
-
-        for (char charToLoopback = 'A'; charToLoopback <= 'Z'; charToLoopback++)
+        if (loopedBack != charToLoopback)
         {
-            BATTSCI_writeByte(charToLoopback);  //send data on BATTSCI (which is connected to METSCI)
-            delay(10);
-
-            uint8_t loopedBack = METSCI_readByte();
-
-            if (loopedBack != charToLoopback)
-            {
-                Serial.print(F("\nMismatch, sent:"));
-                Serial.print(charToLoopback);
-                Serial.print(F(", received:"));
-                Serial.print(loopedBack);
-                didLoopbackPass = false;
-            }
-            else {Serial.print(String(charToLoopback)); }
+            Serial.print(F("\nMismatch, sent:"));
+            Serial.print(charToLoopback);
+            Serial.print(F(", received:"));
+            Serial.print(loopedBack);
+            didTestFail = true;
         }
-
-        if (didLoopbackPass == true) { Serial.print(F(": pass"));                                }
-        else                         { Serial.print(F(": FAIL!! !! !! !!")); didTestFail = true; }
-
-        BATTSCI_disable();
-        METSCI_disable();
+        else {Serial.print(String(charToLoopback)); }
     }
+
+    if (didTestFail == false) { Serial.print(F(": pass"));            }
+    else                      { Serial.print(F(": FAIL!! !! !! !!")); }
+
+    BATTSCI_disable();
+    METSCI_disable();
 
     return didTestFail;
 }
@@ -674,53 +672,35 @@ bool testLED_LCD(void)
     lcdTransmit_testText();
     lcdTransmit_displayOn();
 
-    //test LEDs/display
-    Serial.print(F("\nTesting LED1/2/3/4"));
+    Serial.print(F("\n\nAre LEDs blinking? (1/2/3/4/LiDisplay/MCMe/Backlight)"));
     serialUSB_waitForEmptyBuffer();
-    LED(1,HIGH);
-    LED(2,HIGH);
-    LED(3,HIGH);
-    LED(4,HIGH);
 
-    Serial.print(F("\nTesting LiDisplay FET (Red LED)"));
-    serialUSB_waitForEmptyBuffer();
-    gpio_turnHMI_on();
+    while (Serial.read() != -1) { delay(10); } //empty read buffer
 
-    //test if 4x20 screen dims when 5V buck turned off (USB powers at lower voltage)
-    for (int ii=0; ii<6; ii++)
+    while (Serial.available() == 0)
     {
-        digitalWrite(PIN_TURNOFFLiBCM,HIGH); //4x20 screen should dim
-        delay(200);
+        LED(1,HIGH);
+        LED(2,HIGH);
+        LED(3,HIGH);
+        LED(4,HIGH);
         digitalWrite(PIN_TURNOFFLiBCM,LOW); //4x20 screen full brightness
-        delay(200);
+        gpio_turnHMI_on(); //turn on red LED attached to LiDisplay test connector
+        analogWrite(PIN_MCME_PWM, 0); //HVDC LED full brightness
+
+        delay(300);
+
+        LED(1,LOW);
+        LED(2,LOW);
+        LED(3,LOW);
+        LED(4,LOW);
+        digitalWrite(PIN_TURNOFFLiBCM,HIGH); //4x20 screen should dim
+        gpio_turnHMI_off(); //turn off red LED attached to LiDisplay test connector
+        analogWrite(PIN_MCME_PWM, 255); //LED should dim
+
+        delay(300);
     }
 
-    //Turn LEDs off
-    LED(1,LOW);
-    LED(2,LOW);
-    LED(3,LOW);
-    LED(4,LOW);
-    gpio_turnHMI_off();
-
-    return didTestFail;
-}
-
-//////////////////////////////////////////////////////////////////
-
-bool testMCMeDividerHVDC(void)
-{
-    bool didTestFail = false;
-
-    Serial.print(F("\n\nTesting MCMe (LED should blink)"));
-    serialUSB_waitForEmptyBuffer();
-
-    for (int ii=0; ii<6; ii++)
-    {
-        analogWrite(PIN_MCME_PWM, 0); //LED should be full brightness
-        delay(200);
-        analogWrite(PIN_MCME_PWM, 255); //LED should be dim
-        delay(200);
-    }
+    while (Serial.read() != -1) { delay(10); } //empty read buffer
 
     return didTestFail;
 }
@@ -766,7 +746,6 @@ void bringupTester_motherboard(void)
                 if(didTestFail == false) { didTestFail = testGridSense_and_IGBT();     }
                 if(didTestFail == false) { didTestFail = testKeyON_and_gridPWM();      }
                 if(didTestFail == false) { didTestFail = testLED_LCD();                }
-                if(didTestFail == false) { didTestFail = testMCMeDividerHVDC();        }
 
                 gpio_turnBuzzer_on_highFreq();
                 if (didTestFail == false) { Serial.print(F("\n\nUnit PASSED!\n\n"));           delay(100); }

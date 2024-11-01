@@ -1,3 +1,5 @@
+//Copyright 2021-2024(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
 
 #ifndef lcdState_h
     #define lcdState_h
