@@ -15,6 +15,41 @@ volatile uint8_t interruptSource = USB_INTERRUPT; //see ISR(PCINT1_vect) for mor
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//turn LiBCM off if any cell voltage is too low
+//LiBCM remains off until the next keyON occurs
+//prevents over-discharge during extended keyOFF
+void powerSave_turnOffLiBCM_ifPackEmpty(void)
+{
+    if (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER)
+    {
+        Serial.print(F("\nBattery is empty"));
+        gpio_turnLiBCM_off(); //game over, thanks for playing
+    }
+    else if ((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //battery is low
+             (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true) && //give user time to plug in charger
+             (gpio_isGridChargerChargingNow() == NO)                  ) //grid charger isn't charging
+    {   
+        Serial.print(F("\nBattery is low"));
+        gpio_turnLiBCM_off(); //game over, thanks for playing
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool powerSave_isThermalManagementAllowed(void)
+{
+    bool enoughEnergy = NO;
+
+    if ((key_getSampledState() == KEYSTATE_ON)                                                  ||
+        ((gpio_isGridChargerPluggedInNow() == YES) && (SoC_getBatteryStateNow_percent() > 3))   ||
+        (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC_PERCENT) )
+    { enoughEnergy = YES; }
+
+    return enoughEnergy;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void wakeupInterrupts_keyOn_enable(void)
 {
     PCIFR  |= (1 << PCIF0 ); //clear pending interrupt flag, if set

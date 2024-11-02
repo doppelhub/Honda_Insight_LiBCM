@@ -74,7 +74,7 @@ bool heater_isPackTooHot(void)
 
 void heater_handler(void)
 {
-    if ((SoC_isThermalManagementAllowed() == NO)       || //not enough energy to heat pack
+    if ((powerSave_isThermalManagementAllowed() == NO) || //not enough energy to heat pack
         (heater_isConnected() == HEATER_NOT_CONNECTED) || //heater not installed         
         (heater_isPackTooHot() == YES)                  ) //pack is too hot
     { gpio_turnPackHeater_off(); } //heater not allowed

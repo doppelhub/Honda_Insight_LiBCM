@@ -16,10 +16,6 @@
 
     void SoC_updateUsingLatestOpenCircuitVoltage(void);
 
-    void SoC_turnOffLiBCM_ifPackEmpty(void);
-
-    bool SoC_isThermalManagementAllowed(void);
-
     void SoC_handler(void);
 
     #ifdef BATTERY_TYPE_5AhG3
