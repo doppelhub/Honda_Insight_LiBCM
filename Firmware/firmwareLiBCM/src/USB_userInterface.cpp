@@ -166,6 +166,7 @@ void printHelp(void)
         "\n -'$RATE=___': USB updates per second (1 to 255 Hz)"
         "\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
         "\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)"
+        "\n -'$CHGPWR=___': Grid charger power setting (1 to 100%)"
         "\n"
         "\nDebug characters:"
         "\n -'@': isoSPI error occurred"
@@ -357,6 +358,41 @@ void USB_userInterface_executeUserInput(void)
             {
                 Serial.print(F("\nBATTSCI period is (ms): "));
                 Serial.print(BATTSCI_framePeriod_ms_get(),DEC);
+            }
+        }
+
+        //CHGPWR
+        else if ((line[1] == 'C') && (line[2] == 'H') && (line[3] == 'G') && (line[4] == 'P') && (line[5] == 'W') && (line[6] == 'R'))
+        {
+            if (line[7] == '=')
+                {
+                    // Check if the last character is '%'
+                    if (line[10] == '%') {
+                        Serial.println(F("\nInvalid power level. Please enter a value between 0 and 100."));
+                    } 
+                    else if (line[11] == '%') {
+                        Serial.println(F("\nInvalid power level. Please enter a value between 0 and 100."));
+                    } 
+                    else 
+                    {
+                        uint8_t serialPowerLevel = get_uint8_FromInput(line[8], line[9], line[10]);
+                        
+                        // Filter to ensure the value is within 0-100
+                        if (serialPowerLevel <= 100) {
+                            gridCharger_Power_set(serialPowerLevel);
+                            Serial.print(F("\nCharging speed set to: "));
+                            Serial.print(gridCharger_Power_get(), DEC);
+                            Serial.print("%");
+                        } else {
+                            Serial.println(F("\nInvalid power level. Please enter a value between 0 and 100."));
+                        }
+                    }
+                }
+            else if (line[7] == STRING_TERMINATION_CHARACTER)
+            {
+                Serial.print(F("\nCharging speed is: "));
+                Serial.print(gridCharger_Power_get(),DEC);
+                Serial.print("%");
             }
         }
 

@@ -32,8 +32,10 @@
         //#define STACK_IS_60S //FoMoCo Kits with QTY5 modules
 
     //choose which grid charger is installed
-        //#define GRIDCHARGER_IS_NOT_1500W //All 5AhG3 Kits & 'standard' 47Ah FoMoCo Kits
-        //#define GRIDCHARGER_IS_1500W //'faster' 47Ah FoMoCo Kits only
+        //#define GRIDCHARGER_5AhG3_ALL //All 5AhG3 Kits
+        //#define GRIDCHARGER_47Ah_LiBCM_2_1A //'standard' charger //~4% SoC/hour
+        //#define GRIDCHARGER_47Ah_LiBCM_6_5A //'upgraded' charger //~14% SoC/hour
+        //#define GRIDCHARGER_47Ah_VOLTGEN2_12A //3rd party Charger adapted by AfterEffect //~50% SoC/hour @ 240v
 
     //choose ONE of the following
     //must match actual "current hack" hardware configuration:
@@ -96,6 +98,7 @@
     #define CELL_VMAX_REGEN                     43000 //43000 = 4.3000 volts
     #define CELL_VMIN_ASSIST                    31900
     #define CELL_VMAX_GRIDCHARGER               39600 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
+    #define CELL_VTAPER_GRIDCHARGER             38980 //Begin tapering off charge power at ~78%
     #define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
     #define CELL_VMIN_KEYOFF                    CELL_VREST_10_PERCENT_SoC //when car is off, LiBCM turns off below this voltage
     #define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled when battery is less than this percent charged
@@ -152,6 +155,10 @@
 	#define LIDISPLAY_SPLASH_PAGE_MS 3000 // How long the splash page shows on LiDisplay.  Default 3000 (3 seconds)
 	#define LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS 4000 // Keep displaying the grid charging page this long before showing splash page when GC unplugged
 
+    //set default charging speed
+        //Set to any value between 1-100
+        #define DEFAULT_CHARGE_POWER 100
+    
     /*
     JTS2doLater:
         #define SERIAL_H_LINE_CONNECTED NO //H-Line wire manually connected to OEM BCM connector pin B01 (this connection is not OEM)

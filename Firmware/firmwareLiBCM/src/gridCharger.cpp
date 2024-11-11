@@ -7,6 +7,7 @@
 uint32_t latestPlugin_ms = 0;
 uint32_t latestChargerDisable_ms = 0;
 uint32_t minGridOffPeriod_ms = GRID_MIN_OFF_PERIOD__NONE_ms;
+uint8_t setPowerLevel = DEFAULT_CHARGE_POWER; // Variable to hold the current power level
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -111,10 +112,17 @@ void processChargerDisableReason(uint8_t canWeCharge)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void gridCharger_Power_set(uint8_t serialPowerLevel) { setPowerLevel = serialPowerLevel; }
+uint8_t gridCharger_Power_get(void) { return setPowerLevel; }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void chargerControlSignals_handler(void)
 {
     static uint8_t isChargingAllowed_previous = NO__UNINITIALIZED;
            uint8_t isChargingAllowed_now      = gridCharger_isAllowedNow();
+           uint8_t chargePowerLevel = 0;
+           uint16_t currentVoltage = LTC68042result_loCellVoltage_get();
 
     if (isChargingAllowed_now == YES__CHARGING_ALLOWED)
     {
@@ -124,9 +132,17 @@ void chargerControlSignals_handler(void)
             adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_ENABLED);
         }
 
+        if (currentVoltage >= CELL_VTAPER_GRIDCHARGER)
+        {
+            // Calculate taper factor: gradually decrease powerLevel down to 10% as it approaches CELL_VMAX_GRIDCHARGER
+            float taperFactor = map(currentVoltage, CELL_VTAPER_GRIDCHARGER, CELL_VMAX_GRIDCHARGER, 100, 10) / 100.0;
+            chargePowerLevel = constrain(static_cast<int>(chargePowerLevel * taperFactor), 10, chargePowerLevel); // Limit to at least 10%
+        }
+        else chargePowerLevel = setPowerLevel;
+
         runFansIfNeeded(); //JTS2doLater: run fans as needed even when charging not allowed (e.g. to cool a hot pack)
         gpio_turnGridCharger_on();
-        gpio_setGridCharger_powerLevel('H'); //JTS2doLater: Limit charge current if temp is too high or low
+        gpio_setGridCharger_powerLevel(chargePowerLevel); //JTS2doLater: Limit charge current if temp is too high or low
         buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, BUZZER_OFF);
     }
     else

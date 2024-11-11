@@ -54,3 +54,5 @@
     #include "powerSave.h"
 
 #endif
+
+extern uint8_t setPowerLevel;
