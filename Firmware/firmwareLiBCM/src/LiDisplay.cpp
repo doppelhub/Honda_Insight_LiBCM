@@ -46,7 +46,7 @@ static uint8_t  LiDisplayPackVoltageActual_onScreen = 100;
 static uint8_t  LiDisplaySoC_onScreen = 100;
 static uint8_t  LiDisplayFanSpeed_onScreen = 100;
 static uint8_t  LiDisplaySoCBars_onScreen = 100;
-static uint8_t  LiDisplayTemp_onScreen = 0;
+static uint8_t  LiDisplayTemp_onScreen = 100;
 static uint16_t LiDisplayAverageCellVoltage = 0;
 static uint8_t maxElementId = 8;
 static uint8_t LiDisplay_powerState = 0; // 0=Key off GC unplug    1=Key on GC unplug    2=Key off GC plugged    3=Key on GC plugged
@@ -190,6 +190,7 @@ void LiDisplay_resetGridChargerPageVariables()
 	maxElementId = 6;
 	gc_sixty_s_fomoco_e_block_enabled = false;
 	LiDisplayPackVoltageActual_onScreen = 100;
+	LiDisplayTemp_onScreen = 100;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -810,7 +811,7 @@ void LiDisplay_updateElement() {
 					else if (LiDisplayTemp_onScreen != temperature_battery_getLatest())
 					{
 						LiDisplay_updateStringVal(0, "t11", 0, (String(temperature_battery_getLatest()) + "C"));
-						LiDisplayPackVoltageActual_onScreen = temperature_battery_getLatest();
+						LiDisplayTemp_onScreen = temperature_battery_getLatest();
 					}
 					else // Nothing else needed to update so we will update the chrg asst bar display again instead.
 					{
@@ -883,6 +884,11 @@ void LiDisplay_updateElement() {
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t1", 0, (String(SoC_getBatteryStateNow_percent()) + "%"));
 						LiDisplaySoC_onScreen = SoC_getBatteryStateNow_percent();
+					}
+					else if (LiDisplayTemp_onScreen != temperature_battery_getLatest())
+					{
+						LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t19", 0, (String(temperature_battery_getLatest()) + "C"));
+						LiDisplayTemp_onScreen = temperature_battery_getLatest();
 					}
 					else if (LiDisplayPackVoltageActual_onScreen != LTC68042result_packVoltage_get())
 					{
