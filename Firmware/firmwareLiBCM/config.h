@@ -24,27 +24,27 @@
     //there are no default options because this firmware works with all LiBCM variants... you need to specify which hardware you have installed
 
     //choose your battery type:
-        //#define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
+        #define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
         //#define BATTERY_TYPE_47AhFoMoCo
 
     //choose how many cells are in series:
-        //#define STACK_IS_48S //All 5AhG3 Kits & FoMoCo Kits with QTY4 modules
+        #define STACK_IS_48S //All 5AhG3 Kits & FoMoCo Kits with QTY4 modules
         //#define STACK_IS_60S //FoMoCo Kits with QTY5 modules
 
     //choose which grid charger is installed
-        //#define GRIDCHARGER_IS_NOT_1500W //All 5AhG3 Kits & 'standard' 47Ah FoMoCo Kits
+        #define GRIDCHARGER_IS_NOT_1500W //All 5AhG3 Kits & 'standard' 47Ah FoMoCo Kits
         //#define GRIDCHARGER_IS_1500W //'faster' 47Ah FoMoCo Kits only
 
     //choose ONE of the following
     //must match actual "current hack" hardware configuration:
-        //#define SET_CURRENT_HACK_40 //actually +45.8% //most LiBCM users installed this hardware option
+        #define SET_CURRENT_HACK_40 //actually +45.8% //most LiBCM users installed this hardware option
         //#define SET_CURRENT_HACK_20 //actually +25.0%
         //#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
 
     //choose which display to use
     //using both displays simultaneously could cause timing issues (FYI: the Serial Monitor prints '*' each time the loop period is violated)
-        #define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
-        //#define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
+        //#define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
+        #define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
 
     //you don't need to change any settings below this line (but you can if you know what you're doing):
     //__________________________________________________________________________________________________
@@ -95,7 +95,7 @@
 
     #define CELL_VMAX_REGEN                     43000 //43000 = 4.3000 volts
     #define CELL_VMIN_ASSIST                    31900
-    #define CELL_VMAX_GRIDCHARGER               39600 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
+    #define CELL_VMAX_GRIDCHARGER               39800 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
     #define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
     #define CELL_VMIN_KEYOFF                    CELL_VREST_10_PERCENT_SoC //when car is off, LiBCM turns off below this voltage
     #define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled when battery is less than this percent charged
@@ -147,10 +147,11 @@
         #define LED_NORMAL //enable "LED()" functions (see debug.c)
         //#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
-    //#define LIDISPLAY_DEBUG_ENABLED //uncomment to enable updates to text box ID # T12 on LiDisplay driving page -- this shows raw comm data from LiDisplay to LiBCM
+    #define LIDISPLAY_DEBUG_ENABLED //uncomment to enable updates to text box ID # T12 on LiDisplay driving page -- this shows raw comm data from LiDisplay to LiBCM
     #define LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS 64 //64 = 6.4mV window between cell colours on the grid charging page.  Don't go below CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
-	#define LIDISPLAY_SPLASH_PAGE_MS 5000 // How long the splash page shows on LiDisplay.  Default 5000 (5 seconds)
-	#define LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS 5000 // Keep displaying the grid charging page this long before showing splash page when GC unplugged
+	#define LIDISPLAY_SPLASH_PAGE_MS 3000 // How long the splash page shows on LiDisplay.  Default 3000 (3 seconds)
+	#define LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS 4000 // Keep displaying the grid charging page this long before showing splash page when GC unplugged
+	#define PERIOD_TO_DISABLE_SLEEP_AFTER_KEYOFF_MS 7000 // Default is the sum of LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS and PERIOD_TO_DISABLE_SLEEP_AFTER_KEYOFF_MS
 
     /*
     JTS2doLater:
