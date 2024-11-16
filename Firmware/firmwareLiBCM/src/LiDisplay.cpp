@@ -195,9 +195,7 @@ void LiDisplay_resetGridChargerPageVariables()
 
 void LiDisplay_resetSplashPageVariables()
 {
-	// 18 Oct 2024
 	// Splash page is only shown for a few seconds
-	// powerSave_sleepIfAllowed() changes millis() and slows the loop
 	// When we go to the splash page we want to make the correct updates (firmware hours and version) as fast as possible
 	LiDisplayElementToUpdate = 0;
 	maxElementId = 1;
@@ -259,9 +257,7 @@ void LiDisplay_handleKeyOrGCStateChange()
 				break;
 		}
 		new_power_state_millis = millis();
-		//Serial.print(F("\nLiDisplay_handleKeyOrGCStateChange - power state changed - new_power_state_millis has been updated"));
 		LiDisplayNeedToVerifyPowerState = true;
-		//Serial.print(F("\nLiDisplayNeedToVerifyPowerState = true"));
 		LiDisplay_updateDebugTextBox("Power state eval pending...");
 	}
 	LiDisplay_powerState = new_power_state;
@@ -619,7 +615,6 @@ String LiDisplay_readCommand() {
         if ((uint8_t)buffer != 0xff) {  // Ignore Termination character
             if ((uint8_t)buffer != 26) ret += buffer;   // Ignore Empty Spaces
         }
-        //ret += char(Serial1.read());  // 2023-OCT-17: Serial1 sometimes saw loads of empty spaces in loop and was adding them to ret, so I added the above.
     };
 
     return ret;
@@ -665,10 +660,8 @@ void LiDisplay_processCommand(String cmd_str) {
             else if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_FAN)
 			{
 				// Fan Button from driving page pressed
-				// LiDisplay_updateDebugTextBox(cmd_str);
 				switch (fan_getSpeed_now()) {
 					case FAN_HIGH: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF); LiDisplay_updateDebugTextBox("Requested Fan Off"); break;
-					//case FAN_MED: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_HIGH); LiDisplay_updateDebugTextBox("Requested Fan High"); break;
 					case FAN_LOW: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_HIGH); LiDisplay_updateDebugTextBox("Requested Fan High"); break;
 					default: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_LOW); LiDisplay_updateDebugTextBox("Requested Fan Low"); break;
 				}
