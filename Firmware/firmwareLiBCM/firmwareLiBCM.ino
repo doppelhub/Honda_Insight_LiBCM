@@ -61,7 +61,7 @@ void loop()
         {
             LTC68042cell_acquireAllCellVoltages();
             SoC_updateUsingLatestOpenCircuitVoltage();
-            SoC_turnOffLiBCM_ifPackEmpty();
+            powerSave_turnOffLiBCM_ifPackEmpty();
             debugUSB_printLatest_data_gridCharger();
         }
         else

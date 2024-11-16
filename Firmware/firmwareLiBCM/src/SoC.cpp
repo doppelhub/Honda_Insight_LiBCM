@@ -114,41 +114,6 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//turn LiBCM off if any cell voltage is too low
-//LiBCM remains off until the next keyON occurs
-//prevents over-discharge during extended keyOFF
-void SoC_turnOffLiBCM_ifPackEmpty(void)
-{
-    if (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER)
-    {
-        Serial.print(F("\nBattery is empty"));
-        gpio_turnLiBCM_off(); //game over, thanks for playing
-    }
-    else if ((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //battery is low
-             (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true) && //give user time to plug in charger
-             (gpio_isGridChargerChargingNow() == NO)                  ) //grid charger isn't charging
-    {   
-        Serial.print(F("\nBattery is low"));
-        gpio_turnLiBCM_off(); //game over, thanks for playing
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-bool SoC_isThermalManagementAllowed(void)
-{
-    bool enoughEnergy = NO;
-
-    if ((key_getSampledState() == KEYSTATE_ON)                                                  ||
-        ((gpio_isGridChargerPluggedInNow() == YES) && (SoC_getBatteryStateNow_percent() > 3))   ||
-        (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC_PERCENT) )
-    { enoughEnergy = YES; }
-
-    return enoughEnergy;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
 //Calling this function when battery is sourcing/sinking current will cause estimation error
 //Wait at least ten minutes after keyOff for most accurate results
 #ifdef BATTERY_TYPE_5AhG3

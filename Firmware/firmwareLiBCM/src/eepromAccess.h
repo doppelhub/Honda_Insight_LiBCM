@@ -1,4 +1,5 @@
-//JTS2doLater: eeprom.h isn't wrapped into MVP yet
+//Copyright 2021-2024(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
 
 #ifndef eepromAccess_h
     #define eepromAccess_h
@@ -14,15 +15,16 @@
     #define BYTES_IN_DATE 12 //JTS2doLater: Is date 11 bytes or 12?
     #define BYTES_IN_TIME  9 //JTS2doLater: Is time  9 bytes or  8?
 
-    #define REQUIRED_FIRMWARE_UPDATE_PERIOD_DAYS 40
+    #define REQUIRED_FIRMWARE_UPDATE_PERIOD_DAYS 120
     #define REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS (REQUIRED_FIRMWARE_UPDATE_PERIOD_DAYS * 24)
 
     #define FIRMWARE_EXPIRED   0b10101010 //alternating bit pattern for EEPROM read/write integrity
     #define FIRMWARE_UNEXPIRED 0b01010101
 
-    void eeprom_checkForExpiredFirmware(void);
+    void eeprom_keyOffCheckForExpiredFirmware(void);
     
-    uint16_t eeprom_uptimeStoredInEEPROM_hours_get(void);
+    uint16_t eeprom_hoursSinceLastFirmwareUpdate_get(void);
+    void     eeprom_hoursSinceLastFirmwareUpdate_set(uint16_t);
 
     uint8_t eeprom_expirationStatus_get(void);
 
