@@ -26,19 +26,28 @@ uint8_t framePeriod_ms = 33; //JTS2doLater: Add 'g_' to all file-scoped globals
 //input: actual lithium SoC (unit: percent integer)
 //output: OEM NiMH SoC equivalent (unit: decipercent integer)
 //Example: if the actual lithium SoC is 85%, then "remap_actualToSpoofedSoC[85]" will return 799d (79.9%), which is the value to send on BATTSCI
+// Expands usable SOC from 20-80% (OEM NIMH) to 10-85% (Lithium)
+// and re-calibrates SOC gauge
+// LUT: SOC, delta, capacity, mcm, gauge 
+// 10, 00, 00, 200, 0
+// 30, 19, 25, 360, 5
+// 48, 38, 50, 400, 10
+// 66, 56, 75, 550, 15
+// 85, 75,100, 800, 20
+
 const uint16_t remap_actualToSpoofedSoC[101] = {
-      0, 22, 44, 67, 89,111,133,156,178,190, //LiCBM SoC = 00% to 09%
-    200,209,217,225,232,240,248,256,264,272, //LiCBM SoC = 10% to 19%
-    279,287,295,303,311,319,326,334,342,350, //LiCBM SoC = 20% to 29% //MCM enables heavy regen below 350 (35.0%)
-    355,363,375,387,399,411,423,435,447,459, //LiCBM SoC = 30% to 39% //MCM enables light regen below 700 (70.0%)
-    471,483,495,507,519,532,544,556,568,580, //LiCBM SoC = 40% to 49%
-    592,604,616,628,640,652,664,676,688,700, //LiCBM SoC = 50% to 59% //MCM disables background regen agove 582 (58.2%)
-    701,705,709,713,717,721,725,728,732,736, //LiCBM SoC = 60% to 69% //TODO_NATALYA (not urgent as of 2022JAN21) drive and eval regen behaviour to see if LiBCM 60 to 69 needs to be remapped to a smaller MCM range of 69 to 72, or if this range needs to begin at LiBCM 60 = MCM 68% instead of 70%
-    740,744,748,752,756,760,764,768,772,775, //LiCBM SoC = 70% to 79%
-    779,783,787,791,795,799,800,814,829,843, //LiCBM SoC = 80% to 89% //MCM disables regen above 800 (80.0%)
+      0, 20, 40, 60, 80,100,120,140,160,180, //LiCBM SoC = 00% to 09%
+    200,220,240,260,280,300,318,321,324,327, //LiCBM SoC = 10% to 19% MCM200 shows  0bars =   0% CAPACITY
+    330,333,336,339,342,345,348,351,354,357, //LiCBM SoC = 20% to 29% increased in this range since start-stop requres min MCM290
+    360,365,370,375,380,385,390,395,400,405, //LiCBM SoC = 30% to 39% MCM360 shows  5 bars = 25% CAPACITY
+    410,415,420,425,430,435,440,445,450,455, //LiCBM SoC = 40% to 49% MCM440 shows 10 bars = 50% CAPACITY
+    460,465,470,475,480,485,490,495,500,505, //LiCBM SoC = 50% to 59% 
+    510,515,520,525,530,535,540,550,560,570, //LiCBM SoC = 60% to 69% MCM550 shows 15 bars = 75% CAPACITY
+    580,590,600,610,620,630,640,650,660,670, //LiCBM SoC = 70% to 79% decreased below MCM650 which reduces regen overflow.
+    690,710,730,750,770,790,800,814,829,843, //LiCBM SoC = 80% to 89% MCM800 shows 20 bars = 100% CAPACITY
     857,871,886,900,914,929,943,957,971,986, //LiCBM SoC = 90% to 99%
     1000,                                    //LiCBM SoC = 100%
-};  //Data empirically gathered from OEM NiMH IMA system //see ../Firmware/Prototype Building Blocks/Remap SoC.ods for calculations
+};  
 
 uint16_t previousOutputSoC_deciPercent = 0; //JTS2doNow: Verify claim that OEM SoC gauge won't work unless SoC is initially zero
 
