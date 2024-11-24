@@ -16,7 +16,8 @@ uint8_t keyState_previous = KEYSTATE_UNINITIALIZED;
 void key_handleKeyEvent_off(void)
 {
     Serial.print(F("OFF"));
-    LED(1,LOW);
+    LED(1,OFF);
+    LED(3,OFF);
     BATTSCI_disable(); //Must disable BATTSCI when key is off to prevent backdriving MCM
     METSCI_disable();
     LTC68042cell_acquireAllCellVoltages();
@@ -26,7 +27,7 @@ void key_handleKeyEvent_off(void)
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
     //JTS2doLater: Add built-in test suite, including VREF, VCELL, Balancing, temp verify (batt and OEM), etc.
-    eeprom_checkForExpiredFirmware();
+    eeprom_keyOffCheckForExpiredFirmware();
     LTC68042configure_doesActualPackSizeMatchUserConfig();
 
     time_latestKeyOff_ms_set(millis()); //MUST RUN LAST!

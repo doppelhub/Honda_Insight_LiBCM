@@ -1,0 +1,2 @@
+Existing 33 uF capacitor URY2F330MRD is discontinued.
+Starting on D200, using 22 uF capacitor URY2G220MRD, which is also discontinued, but I have QTY140 in stock.  Once those are gone, find something else.

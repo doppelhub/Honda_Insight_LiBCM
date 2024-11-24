@@ -142,7 +142,8 @@ bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
                 
                 wdt_disable(); //turn off watchdog to prevent reset
 
-                delay(10000); //give the user enough time to read error message
+                delay(10000); //give the user enough time to read error message  //JTS2doNow: Allow LiBCM to keep working
+
                 gpio_turnLiBCM_off(); //game over... thanks for playing
             }
         }

@@ -7,8 +7,10 @@
 
 uint8_t loopPeriod_ms = TIME_DEFAULT_LOOP_PERIOD_ms; //JTS2doLater: see how long period can be, then change to constant
 
-uint32_t timestamp_latestKeyOn_ms = 0;
-uint32_t timestamp_latestKeyOff_ms = 0;
+uint32_t timestamp_latestKeyOn_ms             = 0;
+uint32_t timestamp_latestKeyOff_ms            = 0;
+uint32_t timestamp_latestUserInputUSB_ms      = 0;
+uint32_t timestamp_latestGridChargerUnplug_ms = 0;
 
 bool LiBCM_justBooted = YES;
 bool isItTimeToPerformKeyOffTasks = NO;
@@ -22,9 +24,7 @@ bool time_didLiBCM_justBoot(void) { return LiBCM_justBooted; }
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void     time_latestKeyOn_ms_set(uint32_t keyOnTime) { timestamp_latestKeyOn_ms = keyOnTime; }
-uint32_t time_latestKeyOn_ms_get(void)               { return timestamp_latestKeyOn_ms;      }
-
-/////////////////////////////////////////////////////////////////////////////////////////
+uint32_t time_latestKeyOn_ms_get(void)        { return timestamp_latestKeyOn_ms;             }
 
 uint32_t time_sinceLatestKeyOn_ms(void)      { return millis() - timestamp_latestKeyOn_ms; }
 uint16_t time_sinceLatestKeyOn_seconds(void) { return time_sinceLatestKeyOn_ms() * 0.001;  }
@@ -32,12 +32,22 @@ uint16_t time_sinceLatestKeyOn_seconds(void) { return time_sinceLatestKeyOn_ms()
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void     time_latestKeyOff_ms_set(uint32_t keyOffTime) { timestamp_latestKeyOff_ms = keyOffTime; }
-uint32_t time_latestKeyOff_ms_get(void)                { return timestamp_latestKeyOff_ms;       }
+uint32_t time_latestKeyOff_ms_get(void)         { return timestamp_latestKeyOff_ms;              }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void    time_loopPeriod_ms_set(uint8_t period_ms) { loopPeriod_ms = period_ms; }
-uint8_t time_loopPeriod_ms_get(void)              { return loopPeriod_ms;      }
+uint8_t time_loopPeriod_ms_get(void)       { return loopPeriod_ms; }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void          time_latestUserInputUSB_set(void) { timestamp_latestUserInputUSB_ms = millis(); }
+uint32_t time_sinceLatestUserInputUSB_get_ms(void) { return millis() - timestamp_latestUserInputUSB_ms; }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void          time_latestGridChargerUnplug_set(void) { timestamp_latestGridChargerUnplug_ms = millis(); }
+uint32_t time_sinceLatestGridChargerUnplug_get_ms(void) { return millis() - timestamp_latestGridChargerUnplug_ms; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -46,6 +56,23 @@ bool time_isItTimeToPerformKeyOffTasks(void) { return isItTimeToPerformKeyOffTas
 /////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t time_getLoopCount_8b(void) { return loopCounter_8b; }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+//make up lost time on millis counter, due to slower clock while asleep
+void time_addSleepPeriodToMillis(void)
+{
+    const uint16_t TIMER2_8b_OVERFLOW_COUNTS = 256;
+    const uint16_t MILLISECONDS_PER_SECOND = 1000;
+    const uint8_t SYSTEM_CLOCK_PRESCALER = 64;
+    const uint16_t TIMER2_CLOCK_PRESCALER = 1024;
+    const uint16_t TIMER2_INCREMENT_FREQUENCY_Hz = (F_CPU / SYSTEM_CLOCK_PRESCALER) / TIMER2_CLOCK_PRESCALER;
+    const uint8_t FUDGE_FACTOR_ms = 50; //based on observed measurements
+
+    const uint16_t SLEEP_PERIOD_ms = FUDGE_FACTOR_ms + ((uint32_t)TIMER2_8b_OVERFLOW_COUNTS * MILLISECONDS_PER_SECOND) / TIMER2_INCREMENT_FREQUENCY_Hz;
+
+    time_setAbsoluteMillis(millis() + SLEEP_PERIOD_ms);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -76,7 +103,7 @@ bool time_hasKeyBeenOffLongEnough_toTurnOffLiBCM(void)
 {
     bool keyOffForLongEnough = false;
 
-    if ((millis() - time_latestKeyOff_ms_get()) > (KEYOFF_DELAY_LIBCM_TURNOFF_MINUTES * 60000))
+    if ((millis() - time_latestKeyOff_ms_get()) > (POWEROFF_DELAY_AFTER_KEYOFF_PACK_EMPTY_MINUTES * (uint32_t)60000))
     {
         keyOffForLongEnough = true;
     }
@@ -99,14 +126,14 @@ void time_waitForLoopPeriod(void)
     LiBCM_justBooted = NO;
     loopCounter_8b++;
 
-    LED(4,HIGH); //LED4 brightness proportional to how much CPU time is left
+    LED(4,OFF); //LED4 brightness proportional to CPU time
     while ((uint32_t)(timeNow_ms - timestamp_loopStart_previous_ms) < time_loopPeriod_ms_get())
     {
         //wait here to start next loop
         timeNow_ms = millis();
         timingMet = true;
     }
-    LED(4,LOW);
+    LED(4,ON);
 
     timestamp_loopStart_previous_ms = timeNow_ms;
         
@@ -142,6 +169,18 @@ uint16_t time_hertz_to_milliseconds(uint8_t hertz)
     if (hertz != 0) { milliseconds = 1000 / hertz; } //division
 
     return milliseconds;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+
+void time_setAbsoluteMillis(uint32_t newMillis)
+{
+    extern volatile uint32_t timer0_millis;
+    
+    noInterrupts();
+    timer0_millis = newMillis;
+    interrupts();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

@@ -30,7 +30,7 @@ void gridCharger_handleUnplugEvent(void)
 {
   Serial.print(F("Unplugged"));
   gpio_turnGridCharger_off();
-  lcd_displayOFF();
+  //lcd_displayOFF();
   gpio_setGridCharger_powerLevel('H'); //reduces power consumption
   gpio_turnBuzzer_off(); //if issues persist, something else will turn buzzer back on
   gridChargerTurnOffCount_sincePluggedIn = 0;
@@ -41,7 +41,7 @@ void gridCharger_handleUnplugEvent(void)
 void gridCharger_handlePluginEvent(void)
 {
   Serial.print(F("Plugged In"));
-  lcd_displayOn();
+  //lcd_displayOn();
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -52,7 +52,7 @@ void gridCharger_chargePack(void)
   static uint8_t cellState = CELLSTATE_UNINITIALIZED;
   static uint8_t cellStatePrevious = CELLSTATE_UNINITIALIZED;
 
-  lcd_refresh();
+  //lcd_refresh();
 
   if( LTC68042result_hiCellVoltage_get() > CELL_VREST_85_PERCENT_SoC )
   {
