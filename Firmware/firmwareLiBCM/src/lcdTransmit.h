@@ -29,32 +29,34 @@
     #define LCDVALUE_HEATER_STATUS   17
     #define LCDVALUE_BALANCE_STATUS  18
     #define LCDVALUE_FLASH_BACKLIGHT 19
-    #define LCDVALUE_MAX_VALUE       19 //must equal the highest defined number (above)
+    #define LCDVALUE_WATT_HOURS      20
+    #define LCDVALUE_MAX_VALUE       20 //must equal the highest defined number (previous line)
 
-    #define LCD_UPDATE_ATTEMPTS_PER_LOOP 10
-    #define LCD_VALUE_MINIMUM_DISPLAY_TIME_LOOPS 30
+    #define LCD_UPDATE_ATTEMPTS_PER_LOOP 5
+    #define LCD_VALUE_MINIMUM_DISPLAY_TIME_LOOPS 20
 
     //the following static text never changes, and is only sent once each time the display turns on
-    #define LCDSTATIC_SET_DEFAULTS   20
-    #define LCDSTATIC_SECONDS        21
-    #define LCDSTATIC_VPACK_ACTUAL   22
-    #define LCDSTATIC_VPACK_SPOOFED  23
-    #define LCDSTATIC_CHAR_FLAGS     24
-    #define LCDSTATIC_CELL_HI        25
-    #define LCDSTATIC_CELL_LO        26
-    #define LCDSTATIC_CELL_DELTA     27
-    #define LCDSTATIC_POWER          28
-    #define LCDSTATIC_CELL_MAXEVER   29
-    #define LCDSTATIC_CELL_MINEVER   30
-    #define LCDSTATIC_SoC            31
-    #define LCDSTATIC_CURRENT        32
-    #define LCDSTATIC_TEMP_BATTERY   33
-    #define LCDSTATIC_MAX_VALUE      33 //must equal the highest static number (above)
+    #define LCDSTATIC_SET_DEFAULTS   21 //must be LCDVALUE_MAX_VALUE+1
+    #define LCDSTATIC_SECONDS        22
+    #define LCDSTATIC_VPACK_ACTUAL   23
+    #define LCDSTATIC_VPACK_SPOOFED  24
+    #define LCDSTATIC_CHAR_FLAGS     25
+    #define LCDSTATIC_CELL_HI        26
+    #define LCDSTATIC_CELL_LO        27
+    #define LCDSTATIC_CELL_DELTA     28
+    #define LCDSTATIC_POWER          29
+    #define LCDSTATIC_CELL_MAXEVER   30
+    #define LCDSTATIC_CELL_MINEVER   31
+    #define LCDSTATIC_SoC            32
+    #define LCDSTATIC_CURRENT        33
+    #define LCDSTATIC_TEMP_BATTERY   34
+    #define LCDSTATIC_WATT_HOURS     35
+    #define LCDSTATIC_MAX_VALUE      35 //must equal the highest static number (previous line)
 
-    #define BACKLIGHT_FLASHING_PERIOD_ms 200
+    #define BACKLIGHT_FLASHING_PERIOD_ms 250
 
-    #define CYCLEFRAME_A_PERIOD_ms   3000
-    #define CYCLEFRAME_B_PERIOD_ms  17000
+    #define CYCLEFRAME_A_PERIOD_ms  4000
+    #define CYCLEFRAME_B_PERIOD_ms  4000
 
     #define CYCLEFRAME_INIT         0
     #define CYCLEFRAME_A            1

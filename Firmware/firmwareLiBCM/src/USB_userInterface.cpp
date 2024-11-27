@@ -128,7 +128,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
         {
             Serial.print(F("\nHeater connected to: "));
             if (heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)   { Serial.print(F("Daughterboard")); }
-            if (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM) { Serial.print(F("LiBCM Header"));  }
+            if (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LIBCM) { Serial.print(F("LiBCM Header"));  }
             Serial.print(F("\nBlink Heater LED"));
             gpio_turnPackHeater_on();
             delay(100);

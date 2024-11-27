@@ -20,9 +20,9 @@
 
     void temperature_handler(void);
 
-    #define TEMPERATURE_SENSOR_FAULT_HI         123
-    #define TEMPERATURE_SENSOR_FAULT_LO        -123
-    #define TEMPERATURE_PACK_IN_THERMAL_RUNAWAY  70
+    #define TEMPERATURE_SENSOR_FAULT_HI         99
+    #define TEMPERATURE_SENSOR_FAULT_LO        -99
+    #define TEMPERATURE_PACK_IN_THERMAL_RUNAWAY 70
 
     #define TEMPSENSORSTATE_OFF      1
     #define TEMPSENSORSTATE_TURNON   2  
