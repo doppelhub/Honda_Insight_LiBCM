@@ -118,9 +118,9 @@ bool lcd_printTime_unitless(void)
 
         if (timeValue_onScreen != firmwareExpirationTime_hours)
         {
-            if (firmwareExpirationTime_hours < 10  ) { lcd2.print(' '); } //one   digit number (  0:   9)
-            if (firmwareExpirationTime_hours < 100 ) { lcd2.print(' '); } //two   digit number ( 10:  99)
-            if (firmwareExpirationTime_hours < 1000) { lcd2.print(' '); } //three digit number (100: 999)
+            if      (firmwareExpirationTime_hours < 10  ) { lcd2.print(F("   ")); } //("   0":"   9")
+            else if (firmwareExpirationTime_hours < 100 ) { lcd2.print(F("  ") ); } //("  10":"  99")
+            else if (firmwareExpirationTime_hours < 1000) { lcd2.print( (' ' ) ); } //(" 100":" 999")
 
             lcd2.print(String(firmwareExpirationTime_hours));
 
@@ -137,10 +137,10 @@ bool lcd_printTime_unitless(void)
 
         if (timeValue_onScreen != timeSeconds)
         {
-            if (timeSeconds < 10   ) { lcd2.print(' '); } //one   digit  //   0:   9
-            if (timeSeconds < 100  ) { lcd2.print(' '); } //two   digits //  10:  99
-            if (timeSeconds < 1000 ) { lcd2.print(' '); } //three digits // 100: 999
-            if (timeSeconds < 10000) { lcd2.print(' '); } //four  digits //1000:9999
+            if      (timeSeconds < 10   ) { lcd2.print(F("    ")); } //("    0":"    9")
+            else if (timeSeconds < 100  ) { lcd2.print(F("   ") ); } //("   10":"   99")
+            else if (timeSeconds < 1000 ) { lcd2.print(F("  ")  ); } //("  100":"  999")
+            else if (timeSeconds < 10000) { lcd2.print( (' ')   ); } //(" 1000":" 9999")
 
             lcd2.print(String(timeSeconds));
 
@@ -161,45 +161,31 @@ bool lcd_printWattHours(void)
 {
     bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
 
-    lcd2.setCursor(13,3);
+    lcd2.setCursor(12,3);
 
-    if (cycleFrameNumber == CYCLEFRAME_A)
+    uint16_t wattHoursAssist = 12345; //JTS2doNow: Add total watt hour math function
+    uint16_t wattHoursRegen  =     5; //JTS2doNow: Add total watt hour math function
+
+    uint16_t wattHours_new = 0;
+    if      (cycleFrameNumber == CYCLEFRAME_A) { wattHours_new = wattHoursAssist; }
+    else if (cycleFrameNumber == CYCLEFRAME_B) { wattHours_new = wattHoursRegen;  }
+        
+
+    if (wattHours_new != wattHours_onScreen)
     {
-        //"AxxxxWh" = Assist Wh since last keyON
+                                                                     //("RxxxxxWh:RxxxxxWh")
+        if      (wattHours_new < 10   ) { lcd2.print(F("    ")); } //("    r0":"    r9")
+        else if (wattHours_new < 100  ) { lcd2.print(F("   ") ); } //("   r10":"   r99")
+        else if (wattHours_new < 1000 ) { lcd2.print(F("  ")  ); } //("  r100":"  r999")
+        else if (wattHours_new < 10000) { lcd2.print( (' ')   ); } //(" r1000":" r9999")
 
-        uint16_t wattHoursAssist = 123; //JTS2doNow: Add total watt hour math
+        if      (cycleFrameNumber == CYCLEFRAME_A) { lcd2.print('a'); }
+        else if (cycleFrameNumber == CYCLEFRAME_B) { lcd2.print('r'); }
 
-        if (wattHoursAssist != wattHours_onScreen)
-        {
-            if (wattHoursAssist < 10  ) { lcd2.print(' '); } //one   digit number (  0:   9)
-            if (wattHoursAssist < 100 ) { lcd2.print(' '); } //two   digit number ( 10:  99)
-            if (wattHoursAssist < 1000) { lcd2.print(' '); } //three digit number (100: 999)
+        lcd2.print(String(wattHours_new));
 
-            lcd2.print('A');
-            lcd2.print(String(wattHoursAssist));
-
-            wattHours_onScreen = wattHoursAssist;
-            didscreenUpdateOccur = SCREEN_UPDATED;
-        }
-    }
-    else if (cycleFrameNumber == CYCLEFRAME_B)
-    {
-        //"RxxxxWh" = Regen Wh since last keyON
-
-        uint16_t wattHoursRegen = 321; //JTS2doNow: Add total watt hour math
-
-        if (wattHoursRegen != wattHours_onScreen)
-        {
-            if (wattHoursRegen < 10  ) { lcd2.print(' '); } //one   digit number (  0:   9)
-            if (wattHoursRegen < 100 ) { lcd2.print(' '); } //two   digit number ( 10:  99)
-            if (wattHoursRegen < 1000) { lcd2.print(' '); } //three digit number (100: 999)
-
-            lcd2.print('R');
-            lcd2.print(String(wattHoursRegen));
-
-            wattHours_onScreen = wattHoursRegen;
-            didscreenUpdateOccur = SCREEN_UPDATED;
-        }
+        wattHours_onScreen = wattHours_new;
+        didscreenUpdateOccur = SCREEN_UPDATED;
     }
 
     return didscreenUpdateOccur;
@@ -286,7 +272,7 @@ bool lcd_printTempBattery(void)
         
         lcd2.print(battTemp);
         
-        if ( battTemp >= -9 )                   { lcd2.print('C'); } //'C' not printed below -9C (e.g. "-10")
+        if ( battTemp >= -9 ) { lcd2.print('C'); } //'C' not printed below -9C (e.g. "-10")
 
         didscreenUpdateOccur = SCREEN_UPDATED;
     }
