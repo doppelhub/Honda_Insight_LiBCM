@@ -7,7 +7,7 @@
     #define config_h
     #include "src/libcm.h"
 
-    #define FW_VERSION "0.9.5d"
+    #define FW_VERSION "0.9.5dN"
     #define BUILD_DATE "2024NOV26"
 
     //////////////////////////////////////////////////////////////////
@@ -95,7 +95,7 @@
 
     #define CELL_VMAX_REGEN                     43000 //43000 = 4.3000 volts
     #define CELL_VMIN_ASSIST                    31900
-    #define CELL_VMAX_GRIDCHARGER               39600 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
+    #define CELL_VMAX_GRIDCHARGER               39800 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
     #define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
     #define CELL_VMIN_KEYOFF                    CELL_VREST_10_PERCENT_SoC //when car is off, LiBCM turns off below this voltage
     #define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled when battery is less than this percent charged
@@ -151,6 +151,7 @@
     #define LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS 64 //64 = 6.4mV window between cell colours on the grid charging page.  Don't go below CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
 	#define LIDISPLAY_SPLASH_PAGE_MS 3000 // How long the splash page shows on LiDisplay.  Default 3000 (3 seconds)
 	#define LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS 4000 // Keep displaying the grid charging page this long before showing splash page when GC unplugged
+	#define PERIOD_TO_DISABLE_SLEEP_AFTER_KEYOFF_MS 7000 // Default is the sum of LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS and PERIOD_TO_DISABLE_SLEEP_AFTER_KEYOFF_MS
 
     /*
     JTS2doLater:
