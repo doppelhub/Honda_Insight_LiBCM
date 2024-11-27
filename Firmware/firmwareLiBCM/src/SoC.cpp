@@ -11,35 +11,17 @@
 
 #include "libcm.h"
 
-//These variables should only be used until the next "////////////////////" comment (after that, use these functions instead)
-uint16_t stackFull_Calculated_mAh  = STACK_mAh_NOM; //JTS2doLater: LiBCM needs to adjust value after it figures out actual pack mAh
-uint16_t packCharge_Now_mAh = 3000; //immediately overwritten if keyOFF when LiBCM turns on
-uint8_t  packCharge_Now_percent = (packCharge_Now_mAh * 100) / stackFull_Calculated_mAh;
+uint16_t stackFull_Calculated_mAh   = STACK_mAh_NOM; //JTS2doLater: add cell wear adjustment over time
+uint16_t packCharge_Now_mAh         = 0;
+uint8_t  packCharge_Now_percent     = 0;
+uint16_t packCharge_Now_deciPercent = 0;
 
-//SoC calculation is faster when the unit is mAh
 uint16_t SoC_getBatteryStateNow_mAh(void) { return packCharge_Now_mAh; }
 void     SoC_setBatteryStateNow_mAh(uint16_t newPackCharge_mAh) { packCharge_Now_mAh = newPackCharge_mAh; }
 
-//SoC calculation is slower when the unit is % 
-uint8_t SoC_getBatteryStateNow_percent(void) { return packCharge_Now_percent; }
-void    SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = (uint16_t)(stackFull_Calculated_mAh * 0.01) * newSoC_percent; }
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-//calculate SoC percent from mAh value (LiBCM stores battery SoC in mAh, not %)
-void SoC_calculateBatteryStateNow_percent(void)
-{
-    static uint16_t packCharge_Previous_mAh = 0;
-
-    if (packCharge_Previous_mAh != packCharge_Now_mAh)
-    {
-        //only calculate if the pack mAh value just changed //division is expensive!
-        packCharge_Now_percent = (uint8_t)(((uint32_t)packCharge_Now_mAh * 100) / stackFull_Calculated_mAh);
-        //JTS2doLater:add debug parameter: STATUS_SOC_PERCENT
-    }
-
-    packCharge_Previous_mAh = packCharge_Now_mAh;
-}
+void     SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = (uint16_t)(stackFull_Calculated_mAh * 0.01) * newSoC_percent; }
+uint8_t  SoC_getBatteryStateNow_percent(void)     { return packCharge_Now_percent;     }
+uint16_t SoC_getBatteryStateNow_deciPercent(void) { return packCharge_Now_deciPercent; } 
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -81,13 +63,13 @@ void SoC_integrateCharge_adcCounts(int16_t adcCounts)
     while (intermediateChargeBuffer_uCoulomb > ONE_MILLIAMPHOUR_IN_MICROCOULOMBS )
     {   //assist
         intermediateChargeBuffer_uCoulomb -= ONE_MILLIAMPHOUR_IN_MICROCOULOMBS;  //remove 1 mAh from buffer
-        if (SoC_getBatteryStateNow_mAh() >    0) { SoC_setBatteryStateNow_mAh( SoC_getBatteryStateNow_mAh() - 1 ); } //pack discharged 1 mAh (assist)
+        if (packCharge_Now_mAh > 0) { packCharge_Now_mAh--; } //pack discharged 1 mAh (assist)
     }
 
     while (intermediateChargeBuffer_uCoulomb < -ONE_MILLIAMPHOUR_IN_MICROCOULOMBS)
     {   //regen
         intermediateChargeBuffer_uCoulomb += ONE_MILLIAMPHOUR_IN_MICROCOULOMBS; //add 1 mAh to buffer
-        if (SoC_getBatteryStateNow_mAh() < 65535) { SoC_setBatteryStateNow_mAh( SoC_getBatteryStateNow_mAh() + 1 ); } //pack charged 1 mAh (regen)
+        if (packCharge_Now_mAh < 65535) { packCharge_Now_mAh++; } //pack charged 1 mAh (regen)
     }
 }
 
@@ -345,7 +327,10 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
 
 void SoC_handler(void)
 {
-    SoC_calculateBatteryStateNow_percent();
+    if (packCharge_Now_mAh > stackFull_Calculated_mAh) { packCharge_Now_mAh = stackFull_Calculated_mAh; }
+
+    packCharge_Now_deciPercent = (uint16_t)( ((uint32_t)packCharge_Now_mAh * 1000) / stackFull_Calculated_mAh);    
+    packCharge_Now_percent = packCharge_Now_deciPercent / 10;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

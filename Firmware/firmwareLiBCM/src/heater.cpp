@@ -40,7 +40,7 @@ bool isHeaterConnectedtoPin(int16_t pinToTest)
 void heater_begin(void)
 {
     if (isHeaterConnectedtoPin(PIN_GPIO1) == true) { heaterLocation = HEATER_CONNECTED_DAUGHTERBOARD;   }
-    if (isHeaterConnectedtoPin(PIN_GPIO3) == true) { heaterLocation = HEATER_CONNECTED_DIRECT_TO_LICBM; }
+    if (isHeaterConnectedtoPin(PIN_GPIO3) == true) { heaterLocation = HEATER_CONNECTED_DIRECT_TO_LIBCM; }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

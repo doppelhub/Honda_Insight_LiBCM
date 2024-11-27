@@ -190,6 +190,10 @@ void powerSave_turnOffIfAllowed(void)
             (time_sinceLatestGridChargerUnplug_get_ms() > PERIOD_TO_DISABLE_TURNOFF_AFTER_CHARGER_UNPLUGGED_ms) &&
             (timeSinceLatestKeyOff_ms > (POWEROFF_DELAY_AFTER_KEYOFF_DAYS * MILLISECONDS_PER_DAY))               )
         {
+            uint32_t timeSinceLastKeyOff_ms = millis() - time_latestKeyOff_ms_get();
+            uint16_t delta_hours = timeSinceLastKeyOff_ms / MILLISECONDS_PER_HOUR;
+            eeprom_hoursSinceLastFirmwareUpdate_set(delta_hours + eeprom_hoursSinceLastFirmwareUpdate_get());
+
             gpio_turnLiBCM_off();
         }
     #endif
