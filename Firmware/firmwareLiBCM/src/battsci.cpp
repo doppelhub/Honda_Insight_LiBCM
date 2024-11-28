@@ -61,12 +61,7 @@ void BATTSCI_enable(void)
 {
     power_usart2_enable(); //enable USART2 clock
     digitalWrite(PIN_BATTSCI_DE,HIGH);
-    previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; // If user grid charged over night SoC may have changed a lot.
-    
-    //JTS: Don't want to overload serial buffer on cold boot (will cause check engine light)
-    //Serial.print(F("\nLiBCM SoC: "));
-    //Serial.print(String(SoC_getBatteryStateNow_percent()));
-    //Serial.print('%');
+    previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; //account for SoC change (e.g. grid charge)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -98,8 +93,8 @@ uint8_t BATTSCI_writeByte(uint8_t data)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_framePeriod_ms_set(uint8_t period) { framePeriod_ms = period; }
-uint8_t BATTSCI_framePeriod_ms_get(void) { return framePeriod_ms; }
+void    BATTSCI_framePeriod_ms_set(uint8_t period) { framePeriod_ms = period; }
+uint8_t BATTSCI_framePeriod_ms_get(void)    { return framePeriod_ms; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -124,10 +119,10 @@ uint8_t BATTSCI_calculateChecksum( uint8_t frameSum )
 uint8_t BATTSCI_calculateTemperatureByte(void)
 {
     #define BATTSCI_TEMP_OFFSET 30 //MCM subtracts this value from received byte to determine temperature in degrees celcius
-    #define BATTSCI_TEMP_21DEGC (25 + BATTSCI_TEMP_OFFSET) //Lowest temp LiBCM will ever send to MCM
+    #define BATTSCI_TEMP_25DEGC (25 + BATTSCI_TEMP_OFFSET) //Lowest temp LiBCM will ever send to MCM
 
     uint8_t tempBATTSCI = temperature_battery_getLatest() + BATTSCI_TEMP_OFFSET;
-    if (tempBATTSCI < BATTSCI_TEMP_21DEGC) { tempBATTSCI = BATTSCI_TEMP_21DEGC; } //spoof temps below 21 degC to 21 degC //allows IMA start and max assist
+    if (tempBATTSCI < BATTSCI_TEMP_25DEGC) { tempBATTSCI = BATTSCI_TEMP_25DEGC; } //spoof temps below 21 degC to 21 degC //allows IMA start and max assist
 
     //JTS2doLater: EHW5 power density drops off below freezing... need to spoof lower temperatures to limit assist at cold temperatures.
 
@@ -323,7 +318,8 @@ uint16_t BATTSCI_calculateSpoofedSoC(void)
 
     SoC_toMCM_deciPercent = BATTSCI_SoC_Hysteresis(SoC_toMCM_deciPercent);
 
-    return BATTSCI_convertSoC_deciPercent_toBytes(SoC_toMCM_deciPercent);
+    //return BATTSCI_convertSoC_deciPercent_toBytes(SoC_toMCM_deciPercent); //JTS2doNow: revert to this old version
+    return BATTSCI_convertSoC_deciPercent_toBytes(SoC_getBatteryStateNow_deciPercent()); //JTS2doNow: test this in car to see if SoC gauge works
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
