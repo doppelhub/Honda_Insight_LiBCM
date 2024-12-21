@@ -40,7 +40,7 @@ const uint16_t remap_actualToSpoofedSoC[101] = {
     1000,                                    //LiCBM SoC = 100%
 };  //Data empirically gathered from OEM NiMH IMA system //see ../Firmware/Prototype Building Blocks/Remap SoC.ods for calculations
 
-uint16_t previousOutputSoC_deciPercent = 0; //JTS2doNow: Verify claim that OEM SoC gauge won't work unless SoC is initially zero
+uint16_t previousOutputSoC_deciPercent = 0;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -219,6 +219,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
 // 0x32 = 50d = 0b0011 0010: pack empty
 // 0x52 = 82d = 0b0101 0010: pack full (usually... see "Day1-1" for case where pack is empty)
 
+//JTS2doNow: Allow regen at lower temperatures (see calculations in LiBCM Support Thread post#3637)
 //kindly request regen and/or no regen from MCM
 uint8_t BATTSCI_calculateChargeRequestByte(void)
 {
@@ -318,8 +319,7 @@ uint16_t BATTSCI_calculateSpoofedSoC(void)
 
     SoC_toMCM_deciPercent = BATTSCI_SoC_Hysteresis(SoC_toMCM_deciPercent);
 
-    //return BATTSCI_convertSoC_deciPercent_toBytes(SoC_toMCM_deciPercent); //JTS2doNow: revert to this old version
-    return BATTSCI_convertSoC_deciPercent_toBytes(SoC_getBatteryStateNow_deciPercent()); //JTS2doNow: test this in car to see if SoC gauge works
+    return BATTSCI_convertSoC_deciPercent_toBytes(SoC_toMCM_deciPercent);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
