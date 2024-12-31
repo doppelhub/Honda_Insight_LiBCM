@@ -1,0 +1,27 @@
+RevD schematic shows (incorrect) AP62301 buck configuration.
+All shipped RevD boards use AP63205 buck configuration; the AP62301 buck never shipped.
+The changes below are for the (correct) AP63205 configuration.
+
+All RevD PCBs I've shipped are assembled correctly.
+This issue only applies to the schematic.
+
+Schematic value assignment (existing)(correct)(location)(note):
+C143:(DNP)(22u)(Arduino Vin)(move schematic symbol next to D5).
+C18: (DNP)(22u)(AP63205 Vout)()
+C19: (DNP)(22u)(AP63205 Vout)()
+C17: (22u)(22u)(AP63205 Vout)(move schematic symbol next to AP53205)
+
+C184:(22u)(DNP)(AP62301 Vout)()
+C185:(22u)(DNP)(AP62301 Vout)()
+C186:(22u)(DNP)(AP62301 Vout)()
+C153:(22u)(DNP)(AP62301 Vout)(part populated on existing PCBs, but doesn't need to be)
+
+C8:  (DNP)(22u)(AP63205 Vin)()
+C32: (22u)(DNP)(AP63201 Vin)()
+C11: (DNP)(1u) (AP63205 Vin)()
+C179:(1u) (DNP)(AP62301 Vin)
+
+C26: (22u)(22u)(fan)(no change)
+C23: (22u)(22u)(HVDCDC Vout)(no change)
+C25: (22u)(22u)(HVDCDC Vout)(no change)
+C146:(22u)(22u)(HVDCDC Vout)(no change)

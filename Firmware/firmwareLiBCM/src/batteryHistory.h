@@ -9,7 +9,7 @@
     #define TEMP_BIN_WIDTH_DEGC          4 //must be 2^n //e.g. -26 to -23, -22 d to -19, etc
     #define TEMP_BIN_WIDTH_RIGHTSHIFTS   2 //must match above (DEGC = 2^RIGHTSHIFTS)
     #define LO_TEMP_BIN_TOP_DEGC      (-27)// lowest bin's high count (e.g. temps up to -27 degC)
-    #define HI_TEMP_BIN_TOP_DEGC        69 //highest bin's high count (e.g. temps from 65 to 69)
+    #define HI_TEMP_BIN_TOP_DEGC        69 //highest bin's high count (e.g. temps from 66 to 69)
     #define TOTAL_TEMP_BINS (((HI_TEMP_BIN_TOP_DEGC - LO_TEMP_BIN_TOP_DEGC) >> TEMP_BIN_WIDTH_RIGHTSHIFTS) + 2)
     //bin#         0,  1,  2,  3,  4, 5, 6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
     //degC:up to -27,-23,-19,-15,-11,-7,-3,1,5,9,13,17,21,25,29,33,37,41,45,49,53,57,61,65,69,70+
