@@ -18,4 +18,7 @@
 
     void USB_userInterface_handler(void);
 
+    void gridCharger_Power_set(uint8_t serialPowerLevel);
+    uint8_t gridCharger_Power_get(void);
+
 #endif

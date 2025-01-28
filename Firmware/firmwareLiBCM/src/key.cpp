@@ -13,6 +13,26 @@ uint8_t keyState_previous = KEYSTATE_UNINITIALIZED;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void setFrequency_GridPWM_100Hz(void)
+  {
+      TCCR4A = (1 << WGM41);
+      TCCR4B = (1 << WGM42) | (1 << WGM43);
+      TCCR4B |= (1 << CS41) | (1 << CS40);
+      ICR4 = 2499;
+      TCCR4A |= (1 << COM4C1);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void setFrequency_GridPWM_3921Hz(void) {
+    TCCR4A = 0b00100001;
+    TCCR4B = 0b00000010;
+    TCCR4C = 0b00000000;
+    ICR4 = 227;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void key_handleKeyEvent_off(void)
 {
     Serial.print(F("OFF"));
@@ -29,6 +49,7 @@ void key_handleKeyEvent_off(void)
     //JTS2doLater: Add built-in test suite, including VREF, VCELL, Balancing, temp verify (batt and OEM), etc.
     eeprom_keyOffCheckForExpiredFirmware();
     LTC68042configure_doesActualPackSizeMatchUserConfig();
+    setFrequency_GridPWM_100Hz();
 
     time_latestKeyOff_ms_set(millis()); //MUST RUN LAST!
 }
@@ -37,6 +58,7 @@ void key_handleKeyEvent_off(void)
 
 void key_handleKeyEvent_on(void)
 {
+    setFrequency_GridPWM_3921Hz();
     delay( eeprom_delayKeyON_ms_get() ); //this is a test tool to verify LiBCM is turning on fast enough to prevent P-code //JTS2doLater: Delete
     Serial.print(F("ON"));
     BATTSCI_enable();
