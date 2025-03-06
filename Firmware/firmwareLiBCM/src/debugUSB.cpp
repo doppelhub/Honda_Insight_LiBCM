@@ -193,11 +193,19 @@ void debugUSB_printData_temperatures(void)
     Serial.print(F(", T_in:"));
     Serial.print(String(temperature_intake_getLatest()));
     Serial.print(F(", T_out:"));
+  #ifndef BATTERY_TYPE_47AhFoMoCo
     Serial.print(String(temperature_exhaust_getLatest()));
+  #else
+    Serial.print(F("none"));
+  #endif
     Serial.print(F(", T_charger:"));
     Serial.print(String(temperature_gridCharger_getLatest()));
     Serial.print(F(", T_bay:"));
+  #ifndef BATTERY_TYPE_47AhFoMoCo
     Serial.print(String(temperature_ambient_getLatest()));
+  #else
+    Serial.print(F("none"));
+  #endif
     Serial.print('C');
 }
 

@@ -8,7 +8,7 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void energy_integrate_centiJoules(void);
+void energy_integrate_centiJoules(void)
 {
 	static uint32_t timestamp_lastCall_ms = 0;
 

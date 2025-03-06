@@ -10,17 +10,21 @@
 
 int8_t tempBattery = ROOM_TEMP_DEGC;
 int8_t tempIntake  = ROOM_TEMP_DEGC;
-int8_t tempExhaust = ROOM_TEMP_DEGC;
 int8_t tempCharger = ROOM_TEMP_DEGC;
+#ifndef BATTERY_TYPE_47AhFoMoCo // No explicit exhaust nor ambient temp sensors in FoMoCo case
+int8_t tempExhaust = ROOM_TEMP_DEGC;
 int8_t tempAmbient = ROOM_TEMP_DEGC;
+#endif
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 int8_t temperature_battery_getLatest(void)    { return tempBattery; }
-int8_t temperature_intake_getLatest(void)     { return tempIntake;  } //GRN OEM temp sensor
-int8_t temperature_exhaust_getLatest(void)    { return tempExhaust; } //YEL OEM temp sensor
+int8_t temperature_intake_getLatest(void)     { return tempIntake;  } //GRN (5AhG3 case) or WHT (FoMoCo case) OEM temp sensor
 int8_t temperature_gridCharger_getLatest(void){ return tempCharger; } //BLU OEM temp sensor
+#ifndef BATTERY_TYPE_47AhFoMoCo // No explicit exhaust nor ambient temp sensors in FoMoCo case
+int8_t temperature_exhaust_getLatest(void)    { return tempExhaust; } //YEL OEM temp sensor
 int8_t temperature_ambient_getLatest(void)    { return tempAmbient; } //WHT OEM temp sensor
+#endif
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -34,9 +38,7 @@ void temperature_measureOEM(void)
         tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
     #elif defined BATTERY_TYPE_47AhFoMoCo
         tempIntake  = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
-        tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_GRN); //JTS2doNext: Actually top rear battery module
         tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
-        tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_YEL); //JTS2doNext: Acutually top middle battery module
     #endif
 }
 
@@ -45,7 +47,6 @@ void temperature_measureOEM(void)
 //only call inside handler (to ensure sensors powered)
 //stores the most extreme battery temperature (from room temp) in tempBattery
 //LiBCM has QTY3 battery temperature sensors
-//JTS2doNext: Add FoMoCo hardware configuration
 void temperature_measureBattery(void)
 {
     int8_t batteryTemps[NUM_BATTERY_TEMP_SENSORS + 1] = {0}; //1-indexed ([1] = bay1 temp)
@@ -53,6 +54,11 @@ void temperature_measureBattery(void)
     batteryTemps[1] = temperature_measureOneSensor_degC(PIN_TEMP_BAY1);
     batteryTemps[2] = temperature_measureOneSensor_degC(PIN_TEMP_BAY2);
     batteryTemps[3] = temperature_measureOneSensor_degC(PIN_TEMP_BAY3);
+  #ifdef BATTERY_TYPE_47AhFoMoCo
+    batteryTemps[4] = temperature_measureOneSensor_degC(PIN_TEMP_GRN); //Top rear battery module
+    batteryTemps[5] = temperature_measureOneSensor_degC(PIN_TEMP_YEL); //Top middle battery module
+  #endif
+
 
     //stores hottest and coldest temp sensor value
     int8_t tempHi = TEMPERATURE_SENSOR_FAULT_LO; //highest measured temp is initially set to the  lowest possible temp
@@ -63,8 +69,29 @@ void temperature_measureBattery(void)
         if ((batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_HI) ||
             (batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_LO)  )
         {
+  #ifdef BATTERY_TYPE_5AhG3
             Serial.print(F("\nCheck Batt Temp Sensor! Bay: "));
             Serial.print(String(ii,DEC));
+  #elif defined BATTERY_TYPE_47AhFoMoCo
+          Serial.print(F("\nCheck Batt Temp Sensor!"));
+          switch (ii) {
+            case 1:
+              Serial.print(F(" Middle tray rail, driver side")); //BAY1
+              break;
+            case 2:
+              Serial.print(F(" Bottom tray, middle")); //BAY2
+              break;
+            case 3:
+              Serial.print(F(" Middle tray rail, passenger side")); //BAY3
+              break;
+            case 4:
+              Serial.print(F(" Top rear battery module"));
+              break;
+            case 5:
+              Serial.print(F(" Top middle battery module"));
+              break;
+          }
+  #endif
         }
         else
         {
@@ -85,7 +112,7 @@ void temperature_measureBattery(void)
     if (tempLo > ROOM_TEMP_DEGC) { tempLoDelta = tempLo - ROOM_TEMP_DEGC; }
     else                         { tempLoDelta = ROOM_TEMP_DEGC - tempLo; }
 
-    //figure out which magnitude is further from ROOM_TEMP_DEGC 
+    //figure out which magnitude is further from ROOM_TEMP_DEGC
     if (tempHiDelta > tempLoDelta) { tempBattery = tempHi; }
     else                           { tempBattery = tempLo; }
 }
@@ -99,10 +126,12 @@ void temperature_printAll_latest(void)
     Serial.print(temperature_gridCharger_getLatest());
     Serial.print(F("\nIn: "));
     Serial.print(temperature_intake_getLatest());
+  #ifndef BATTERY_TYPE_47AhFoMoCo
     Serial.print(F("\nAmb: "));
     Serial.print(temperature_ambient_getLatest());
     Serial.print(F("\nOut: "));
     Serial.print(temperature_exhaust_getLatest());
+  #endif
     Serial.print(F("\nBatt: "));
     Serial.print(temperature_battery_getLatest());
 }
@@ -113,22 +142,37 @@ void temperature_printAll_latest(void)
 void temperature_measureAndPrintAll(void)
 {
     if (gpio_getPinState(PIN_TEMP_EN) == PIN_OUTPUT_HIGH)
-    {       
+    {
         Serial.print(F("\nTemperatures(C):"));
-        Serial.print(F("\nBLU: "));
+        Serial.print(F("\nBLU (Charger): "));
         Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BLU));
-        Serial.print(F("\nGRN: "));
+      #ifdef BATTERY_TYPE_5AhG3
+        Serial.print(F("\nGRN (Intake): "));
         Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
-        Serial.print(F("\nWHT: "));
+        Serial.print(F("\nWHT (Ambient): "));
         Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
-        Serial.print(F("\nYEL: "));
+        Serial.print(F("\nYEL (Exhaust): "));
         Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
         Serial.print(F("\nBAY1: "));
         Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY1));
         Serial.print(F("\nBAY2: "));
         Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
         Serial.print(F("\nBAY3: "));
-        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3)); 
+        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));
+      #elif defined BATTERY_TYPE_47AhFoMoCo
+        Serial.print(F("\nGRN (Top rear battery module): "));
+        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
+        Serial.print(F("\nWHT (Intake): "));
+        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
+        Serial.print(F("\nYEL (Top middle battery module): "));
+        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
+        Serial.print(F("\nMiddle tray rail, driver side: ")); //BAY1
+        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY1));
+        Serial.print(F("\nBottom tray, middle: ")); //BAY2
+        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
+        Serial.print(F("\nMiddle tray rail, passenger side: ")); //BAY3
+        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));
+      #endif
     }
     else
     {
@@ -207,18 +251,18 @@ void temperature_handler(void)
     uint8_t keyState_Now = key_getSampledState(); //prevent mid-loop key state change
 
     keyState_Now = turnSensorsOff_whenKeyStateChanges(keyState_Now); //JTS2doNow: function returns value meant for tempSensorState //writing to wrong variable?
-    
+
     static uint32_t latestTempMeasurement_ms = 0;
     static uint32_t latestSensorTurnon_ms = 0;
 
     if (tempSensorState == TEMPSENSORSTATE_TURNON)
     {
-        gpio_turnTemperatureSensors_on(); 
+        gpio_turnTemperatureSensors_on();
         latestSensorTurnon_ms = millis();
         tempSensorState = TEMPSENSORSTATE_POWERUP;
     }
 
-    else if (tempSensorState == TEMPSENSORSTATE_POWERUP)       
+    else if (tempSensorState == TEMPSENSORSTATE_POWERUP)
     {
         uint32_t timeSinceSensorTurnedOn = (millis() - latestSensorTurnon_ms);
 
@@ -234,14 +278,14 @@ void temperature_handler(void)
 
         if ((keyState_Now == KEYSTATE_ON) || (gpio_isGridChargerPluggedInNow() == YES)) { tempSensorState = TEMPSENSORSTATE_STAYON;  }
         else                                                                            { tempSensorState = TEMPSENSORSTATE_TURNOFF; }
-    }   
+    }
 
     else if (tempSensorState == TEMPSENSORSTATE_TURNOFF)
     {
         //sensors only turn off when key is off and grid charger is unplugged
         Serial.print(F("\nTemp(C): ")); //print temp when key is off
         Serial.print(String(tempBattery));
-        gpio_turnTemperatureSensors_off(); 
+        gpio_turnTemperatureSensors_off();
         tempSensorState = TEMPSENSORSTATE_OFF;
     }
 
@@ -262,14 +306,14 @@ void temperature_handler(void)
 
 //JTS2doLater: Need to differentiate between TEMPERATURE_SENSOR_FAULT_LO and actually being below -30 degC
 int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
-{           
+{
     uint16_t countsADC = analogRead(thermistorPin); //measure ADC counts
 
     //This commented out section is quite math intensive:
     // -QTY3 floating point divisions
     // -QTY1 natural log (+5kB to load library)
     // -QTY3 multiplies
-    // -QTY3 add/subtract 
+    // -QTY3 add/subtract
         // #define TEMP_BALANCE_RESISTANCE_OHMS 10000
         // if (countsADC > 887) { countsADC = 887; } //prevent overflowing uint16_t in the next equation
 
@@ -282,7 +326,7 @@ int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
         // #define ADC_COUNTS_AT_VCC 1023
         // // resistanceThermistor_ohms = ( countsADC * TEMP_BALANCE_RESISTANCE_OHMS) / (counts_VCC - countsADC )
         // uint16_t resistanceThermistor_ohms = ( countsADC * TEMP_BALANCE_RESISTANCE_OHMS) / (ADC_COUNTS_AT_VCC - countsADC); //if countsADC exceeds 887 this will overflow
-        
+
         // //Steinhart-Hart Beta Equation:
         // #define THERMISTOR_BETA 3982 //from datasheet
         // #define THERMISTOR_RESISTANCE_23DEGC 10000 // half ADC range since both resistors are 10kOhm at room temperature
@@ -417,7 +461,7 @@ int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
     //correct for OEM temperature sensor's (unknown) k-coefficients
     //empirical data: ~/GitHub/Honda_Insight_LiBCM/Firmware/MVP/Calculations/OEM thermistor scaling.ods
     if ( ((tempMeasured_celsius > TEMPERATURE_SENSOR_FAULT_LO ) && (tempMeasured_celsius < TEMPERATURE_SENSOR_FAULT_HI )) &&
-         ((thermistorPin == PIN_TEMP_GRN) || (thermistorPin == PIN_TEMP_BLU) || (thermistorPin == PIN_TEMP_YEL) || (thermistorPin == PIN_TEMP_WHT)) ) 
+         ((thermistorPin == PIN_TEMP_GRN) || (thermistorPin == PIN_TEMP_BLU) || (thermistorPin == PIN_TEMP_YEL) || (thermistorPin == PIN_TEMP_WHT)) )
     {
         tempMeasured_celsius = ((tempMeasured_celsius * 5) >> 2) - 5; //actual: countsADC = countsADC * 1.225 - 4;
     }

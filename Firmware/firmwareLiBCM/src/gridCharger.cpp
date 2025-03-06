@@ -24,10 +24,14 @@ void runFansIfNeeded(void)
     else if (fan_getSpeed_now() == FAN_OFF ) { hysteresis_C = FAN_SPEED_HYSTERESIS_OFF_degC;  }
 
     if      ( (temperature_intake_getLatest()  < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C)) &&
+  #ifndef BATTERY_TYPE_47AhFoMoCo
               (temperature_ambient_getLatest() < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C)) &&
+  #endif
               (temperature_battery_getLatest() < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C))  ) { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);  }
     else if ( (temperature_intake_getLatest()  < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C)) &&
+  #ifndef BATTERY_TYPE_47AhFoMoCo
               (temperature_ambient_getLatest() < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C)) &&
+  #endif
               (temperature_battery_getLatest() < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C))  ) { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_LOW);  }
     else                                                                                                  { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_HIGH); }
 }
@@ -61,7 +65,9 @@ uint8_t gridCharger_isAllowedNow(void)
     if (temperature_battery_getLatest()      > DISABLE_GRIDCHARGING_ABOVE_BATTERY_TEMP_C) { return NO__BATTERY_IS_HOT;          }
     if (temperature_intake_getLatest()       > DISABLE_GRIDCHARGING_ABOVE_INTAKE_TEMP_C ) { return NO__AIRINTAKE_IS_HOT;        }
     if (temperature_intake_getLatest()      == TEMPERATURE_SENSOR_FAULT_LO              ) { return NO__TEMP_UNPLUGGED_INTAKE;   }
+  #ifndef BATTERY_TYPE_47AhFoMoCo
     if (temperature_exhaust_getLatest()      > DISABLE_GRIDCHARGING_ABOVE_EXHAUST_TEMP_C) { return NO__TEMP_EXHAUST_IS_HOT;     }
+  #endif
     //time checks
     if ((millis()                          ) < DISABLE_GRIDCHARGING_LIBCM_BOOT_DELAY_ms ) { return NO__LIBCM_JUST_BOOTED;         }
     if ((millis() - latestPlugin_ms        ) < DISABLE_GRIDCHARGING_PLUGIN_DELAY_ms     ) { return NO__JUST_PLUGGED_IN;           }
