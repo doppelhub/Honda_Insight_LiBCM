@@ -249,42 +249,41 @@ void processAllCellVoltages(void)
 bool LTC68042cell_nextVoltages(void)
 {
     static uint8_t presentState = LTC_STATE_FIRSTRUN;
-    static bool conversionInProcess = false;
+    static bool conversionInProcess = false; //used to speed up execution of conversion complete test
     bool cellVoltageDataStatus = GATHERING_CELL_DATA;
 
     if (LTC68042configure_wakeup() == LTC6804_CORE_JUST_WOKE_UP) { presentState = LTC_STATE_FIRSTRUN; }
 
     if (presentState == LTC_STATE_GATHER)
     { //retrieve next CVR from LTC, then validate and store in cellVoltages_counts[][] array
-
-        //round-robin state handlers
-        static uint8_t chipAddress = FIRST_IC_ADDR;
-        static char cellVoltageRegister = 'A'; //LTC68042 contains QTY4 CVRs (A/B/C/D)
-
-        //wait for current conversion to complete (should not usually be necessary)
-        if (conversionInProcess)
+        // but don't gather data or advance the state if the  current conversion is not complete (should not usually be necessary)
+        if ( ( ! conversionInProcess) || (LTC6804_MAX_CONVERSION_TIME_ms < (millis() - conversionStart_ms)) )
         {
-            while (LTC6804_MAX_CONVERSION_TIME_ms > (millis() - conversionStart_ms)) { ; }
+            //then no conversion is in process or it has completed
             conversionInProcess = false;
-        }
 
-        validateAndStoreNextCVR(chipAddress, cellVoltageRegister);
+            //round-robin state handlers
+            static uint8_t chipAddress = FIRST_IC_ADDR;
+            static char cellVoltageRegister = 'A'; //LTC68042 contains QTY4 CVRs (A/B/C/D)
 
-        //determine which LTC68042 IC & CVR to read next
-        cellVoltageRegister++;
-        if (cellVoltageRegister >= 'E')
-        {
-            //LTC6804 only has registers A,B,C,D
-            cellVoltageRegister = 'A'; //reset back to first CVR
+            validateAndStoreNextCVR(chipAddress, cellVoltageRegister);
 
-            if (++chipAddress >= (FIRST_IC_ADDR + TOTAL_IC))
+            //determine which LTC68042 IC & CVR to read next
+            cellVoltageRegister++;
+            if (cellVoltageRegister >= 'E')
             {
-                //just finished reading last IC's last CVR... all cell voltages stored in cellVoltages_counts[][]
-                startCellConversion(); //start the next cell conversion //takes a while to finish
-                conversionInProcess = true;
+                //LTC6804 only has registers A,B,C,D
+                cellVoltageRegister = 'A'; //reset back to first CVR
 
-                chipAddress = FIRST_IC_ADDR; //reset to first LTC IC
-                presentState = LTC_STATE_PROCESS; //all cell voltages gathered.  Process data on next run.
+                if (++chipAddress >= (FIRST_IC_ADDR + TOTAL_IC))
+                {
+                    //just finished reading last IC's last CVR... all cell voltages stored in cellVoltages_counts[][]
+                    startCellConversion(); //start the next cell conversion //takes a while to finish
+                    conversionInProcess = true;
+
+                    chipAddress = FIRST_IC_ADDR; //reset to first LTC IC
+                    presentState = LTC_STATE_PROCESS; //all cell voltages gathered.  Process data on next run.
+                }
             }
         }
     }
@@ -319,8 +318,10 @@ bool LTC68042cell_nextVoltages(void)
 
 //Only call when keyOFF //takes too long to execute when keyON (causes check engine light)
 //Results are stored in "LTC68042_results.c"
+//JTS2doNext: rewrite to remove double call hack
 void LTC68042cell_acquireAllCellVoltages(void)
 {
+    while (LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //clear old data (if any)
     while (LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //gather new data
 }
 

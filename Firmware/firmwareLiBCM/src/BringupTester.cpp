@@ -270,6 +270,7 @@ bool testDischargeFETs(void)
         delay(500); //wait for filter network to settle
 
         LTC68042cell_acquireAllCellVoltages();
+        LTC68042cell_acquireAllCellVoltages();
 
         for (uint8_t ii=0; ii<TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages( ii, 3); }
     }
