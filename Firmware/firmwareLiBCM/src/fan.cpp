@@ -191,13 +191,7 @@ void updateFanRequest_battery(void)
 
 void determineFastestFanSpeedRequest(void)
 {
-    const uint8_t fan_hi_bits = (fanSpeed_allRequestors & FAN_HI_MASK) >> 1; //shift to align with lo_bits
-    const uint8_t fan_lo_bits = (fanSpeed_allRequestors & FAN_LO_MASK);
-
-    if      (fan_hi_bits & fan_lo_bits) { fanSpeed_goal = FAN_HIGH; } //at least one subsystem is requesting high speed
-    else if (fan_hi_bits)               { fanSpeed_goal = FAN_MED;  } //at least one subsystem is requesting medium speed
-    else if (fan_lo_bits)               { fanSpeed_goal = FAN_LOW;  } //at least one subsystem is requesting low speed
-    else                                { fanSpeed_goal = FAN_OFF;  } //no subsystem is requesting fan
+    fanSpeed_goal = FAN_OFF;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
