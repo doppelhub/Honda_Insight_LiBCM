@@ -36,9 +36,14 @@ void runFansIfNeeded(void)
 
 uint16_t determineMaxAllowedCellVoltage(void)
 {
-    //prevents rapid grid charger enable/disable when cells full
-    if (gpio_isGridChargerChargingNow() == YES) { return CELL_VMAX_GRIDCHARGER;                    }
-    else                                        { return CELL_VMAX_GRIDCHARGER - VCELL_HYSTERESIS; }
+    uint16_t maxAllowedCellVoltage = 0;
+
+    if (LTC68042result_loCellVoltage_get() < 30000) { maxAllowedCellVoltage = 43000; } //allow min cell voltage to recover
+    else                                            { maxAllowedCellVoltage = 36000; } //lower SoC to prolong cell life
+
+    //prevent rapid grid charger enable/disable when cells full
+    if (gpio_isGridChargerChargingNow() == YES) { return maxAllowedCellVoltage;                    }
+    else                                        { return maxAllowedCellVoltage - VCELL_HYSTERESIS; }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -50,7 +55,6 @@ uint8_t gridCharger_isAllowedNow(void)
     if (gpio_isGridChargerPluggedInNow()    == NO                                       ) { return NO__CHARGER_UNPLUGGED;       }
     if (key_getSampledState()               == KEYSTATE_ON                              ) { return NO__KEY_IS_ON;               }
     //cell voltage checks
-    if (LTC68042result_hiCellVoltage_get()   > CELL_VREST_85_PERCENT_SoC                ) { return NO__ATLEASTONECELL_TOO_HIGH; }
     if (LTC68042result_loCellVoltage_get()   < CELL_VMIN_GRIDCHARGER                    ) { return NO__ATLEASTONECELL_TOO_LOW;  }
     if (LTC68042result_hiCellVoltage_get()   > CELL_VMAX_GRIDCHARGER                    ) { return NO__ATLEASTONECELL_FULL;     }
     if (LTC68042result_hiCellVoltage_get()   > determineMaxAllowedCellVoltage()         ) { return NO__CELL_VOLTAGE_HYSTERESIS; }

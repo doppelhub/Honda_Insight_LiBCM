@@ -46,7 +46,7 @@ void loop()
 
     if (key_getSampledState() == KEYSTATE_ON)
     {
-        if (eeprom_expirationStatus_get() != FIRMWARE_EXPIRED) { BATTSCI_sendFrames(); } //P1648 when firmware expired
+        //if (eeprom_expirationStatus_get() != FIRMWARE_EXPIRED) { BATTSCI_sendFrames(); } //P1648 when firmware expired
 
         LTC68042cell_nextVoltages(); //round-robin handler measures QTY3 cell voltages per call
         METSCI_processLatestFrame();

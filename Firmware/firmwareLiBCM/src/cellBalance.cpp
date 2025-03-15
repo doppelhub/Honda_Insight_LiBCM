@@ -53,8 +53,7 @@ void configureDischargeResistors(void)
 
     cellsAreBalancing = NO;
 
-    if (LTC68042result_hiCellVoltage_get() > CELL_VREST_85_PERCENT_SoC) { cellDischargeVoltageThreshold = CELL_VREST_85_PERCENT_SoC; }
-    else { cellDischargeVoltageThreshold = LTC68042result_loCellVoltage_get() + balanceHysteresis; }
+    cellDischargeVoltageThreshold = 35900;
 
     //determine which cells to balance
     for (uint8_t ic = 0; ic < TOTAL_IC; ic++)
@@ -96,18 +95,6 @@ void disableDischargeResistors(void)
 
 uint8_t isBalancingAllowed(void)
 {
-    //order is important
-    //external checks
-    if (key_getSampledState()               == KEYSTATE_ON            ) { return NO__KEY_IS_ON;               }
-#ifdef ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN
-    if (gpio_isGridChargerPluggedInNow()    == NO                     ) { return NO__CHARGER_UNPLUGGED;       }
-#else
-    if ((gpio_isGridChargerPluggedInNow()   == NO                  ) &&
-        (SoC_getBatteryStateNow_percent()    < CELL_BALANCE_MIN_SoC)  ) { return NO__SoC_TOO_LOW;             }
-#endif
-    //cell voltage checks
-    if (LTC68042result_hiCellVoltage_get()   > CELL_VMAX_REGEN        ) { return NO__ATLEASTONECELL_TOO_HIGH; }
-    if (LTC68042result_loCellVoltage_get()   < CELL_VMIN_GRIDCHARGER  ) { return NO__ATLEASTONECELL_TOO_LOW;  }
     //thermal checks
     if (temperature_battery_getLatest()      > CELL_BALANCE_MAX_TEMP_C) { return NO__BATTERY_IS_HOT;          }
     

@@ -79,14 +79,7 @@ void time_addSleepPeriodToMillis(void)
 void updateKeyOffTaskFlag(void)
 {
     static uint32_t timestamp_lastUpdate_ms = 0;
-    uint32_t keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_TEN_MINUTES_ms;
-
-    if ( ((cellBalance_areCellsBalancing() == YES) && (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC)) ||
-         ((cellBalance_areCellsBalancing() == YES) && (gpio_isGridChargerPluggedInNow() == YES)                ) ||
-         ((gpio_isGridChargerChargingNow() == YES)                                                             )  )
-    { 
-        keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_ONE_SECOND_ms; //if over 1800 ms, LTC ICs will turn off (bad)
-    } 
+    uint32_t keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_ONE_SECOND_ms;
   
     //Has enough time passed yet?
     if ((millis() - timestamp_lastUpdate_ms) > keyOffUpdatePeriod_ms)

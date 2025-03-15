@@ -4,7 +4,7 @@
 #ifndef gridCharger_h
     #define gridCharger_h
 
-    #define VCELL_HYSTERESIS 150 // '150' = 15 mV //prevents rapid grid charger on/off toggling when first cell is full
+    #define VCELL_HYSTERESIS 50 // '150' = 15 mV //prevents rapid grid charger on/off toggling when first cell is full
 
     #define YES__CHARGING_ALLOWED       0b01111111 //if charging allowed,  first three bits are '011'
     #define NO__UNINITIALIZED           0b10000000 //if charging disabled, first three bits are '100' //safety feature in case a single bit flips 

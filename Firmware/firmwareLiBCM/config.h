@@ -24,20 +24,20 @@
     //there are no default options because this firmware works with all LiBCM variants... you need to specify which hardware you have installed
 
     //choose your battery type:
-        //#define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
+        #define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
         //#define BATTERY_TYPE_47AhFoMoCo
 
     //choose how many cells are in series:
-        //#define STACK_IS_48S //All 5AhG3 Kits & FoMoCo Kits with QTY4 modules
+        #define STACK_IS_48S //All 5AhG3 Kits & FoMoCo Kits with QTY4 modules
         //#define STACK_IS_60S //FoMoCo Kits with QTY5 modules
 
     //choose which grid charger is installed
-        //#define GRIDCHARGER_IS_NOT_1500W //All 5AhG3 Kits & 'standard' 47Ah FoMoCo Kits
+        #define GRIDCHARGER_IS_NOT_1500W //All 5AhG3 Kits & 'standard' 47Ah FoMoCo Kits
         //#define GRIDCHARGER_IS_1500W //'faster' 47Ah FoMoCo Kits only
 
     //choose ONE of the following
     //must match actual "current hack" hardware configuration:
-        //#define SET_CURRENT_HACK_40 //actually +45.8% //most LiBCM users installed this hardware option
+        #define SET_CURRENT_HACK_40 //actually +45.8% //most LiBCM users installed this hardware option
         //#define SET_CURRENT_HACK_20 //actually +25.0%
         //#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
 
@@ -95,10 +95,10 @@
 
     #define CELL_VMAX_REGEN                     43000 //43000 = 4.3000 volts
     #define CELL_VMIN_ASSIST                    31900
-    #define CELL_VMAX_GRIDCHARGER               39600 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
-    #define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
+    #define CELL_VMAX_GRIDCHARGER               43000 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
+    #define CELL_VMIN_GRIDCHARGER               00100 //grid charger will not charge severely empty cells
     #define CELL_VMIN_KEYOFF                    CELL_VREST_10_PERCENT_SoC //when car is off, LiBCM turns off below this voltage
-    #define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled when battery is less than this percent charged
+    #define CELL_BALANCE_MIN_SoC                10    //when car is off, cell balancing is disabled when battery is less than this percent charged
     #define CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE 32    //'32' = 3.2 mV //CANNOT exceed 255 counts (25.5 mV)
     #define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 22    //'22' = 2.2 mV //LTC6804 measurement uncertainty is 2.2 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
     #define CELL_BALANCE_MAX_TEMP_C             40
