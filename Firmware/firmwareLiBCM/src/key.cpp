@@ -27,7 +27,7 @@ void key_handleKeyEvent_off(void)
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
     //JTS2doLater: Add built-in test suite, including VREF, VCELL, Balancing, temp verify (batt and OEM), etc.
-    eeprom_checkForExpiredFirmware();
+    eeprom_keyOffCheckForExpiredFirmware();
     LTC68042configure_doesActualPackSizeMatchUserConfig();
 
     time_latestKeyOff_ms_set(millis()); //MUST RUN LAST!

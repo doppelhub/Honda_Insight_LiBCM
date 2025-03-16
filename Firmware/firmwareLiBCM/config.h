@@ -7,8 +7,8 @@
     #define config_h
     #include "src/libcm.h"
 
-    #define FW_VERSION "0.9.5"
-    #define BUILD_DATE "2024OCT07"
+    #define FW_VERSION "0.9.5b"
+    #define BUILD_DATE "2024NOV01"
 
     //////////////////////////////////////////////////////////////////
 

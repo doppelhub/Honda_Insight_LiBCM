@@ -1,4 +1,4 @@
-//Copyright 2021-2024(c) John Sullivan
+//
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //LiDisplay (HMI) Serial Functions
@@ -107,6 +107,7 @@ void LiDisplay_begin(void)
         LiDisplaySplashPending = false;
         LiDisplayPowerOffPending = false;
 		new_power_state_millis = 0;
+    #elif defined RUN_BRINGUP_TESTER_MOTHERBOARD //do nothing
     #else
         power_usart1_disable(); //disable USART1 clock to save power
     #endif
@@ -557,7 +558,7 @@ void LiDisplay_exitSettingsPage(void) {
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_checkFirmwareExpiration() {
-	if ((REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get()) <= 0)
+	if ((REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_hoursSinceLastFirmwareUpdate_get()) <= 0)
 	{
 		#ifdef LIDISPLAY_DEBUG_ENABLED
 			#undef LIDISPLAY_DEBUG_ENABLED
@@ -814,7 +815,7 @@ void LiDisplay_updateElement() {
 			switch (LiDisplayElementToUpdate)
 			{
 				case 0: LiDisplay_updateStringVal(1, "t1", 0, String(FW_VERSION)); break;
-				case 1: LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get())); break;
+				case 1: LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_hoursSinceLastFirmwareUpdate_get())); break;
 			}
 		break;
 
