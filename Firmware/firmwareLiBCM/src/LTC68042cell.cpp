@@ -11,6 +11,9 @@
 //  Example: cellVoltages_counts[0][ 1] is IC_1 cell_02
 //  Example: cellVoltages_counts[3][11] is IC_4 cell_12
 uint16_t cellVoltages_counts[TOTAL_IC][CELLS_PER_IC];
+uint8_t  chipAddress = FIRST_IC_ADDR;
+char     cellVoltageRegister = 'A'; //LTC68042 contains QTY4 CVRs (A/B/C/D)
+bool     conversionInProcess = false; //used to speed up execution of conversion complete test
 uint32_t conversionExpectedDuration_us = (LTC6804_MAX_CONVERSION_TIME_ms * 1000);
 uint32_t conversionStart_us = 0;
 
@@ -39,8 +42,11 @@ void startCellConversion(void)
 
     LTC68042configure_spiWrite(4,cmd); //send 'adcv' command to all LTC6804s (broadcast command)
 
-    conversionExpectedDuration_us = (LTC6804_MAX_CONVERSION_TIME_ms * 1000);
     conversionStart_us = micros();
+    conversionExpectedDuration_us = (LTC6804_MAX_CONVERSION_TIME_ms * 1000);
+    chipAddress = FIRST_IC_ADDR; //reset to first LTC IC
+    cellVoltageRegister = 'A';
+    conversionInProcess = true;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -252,7 +258,6 @@ void processAllCellVoltages(void)
 uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
 {
     static uint8_t presentState = LTC_STATE_FIRSTRUN;
-    static bool conversionInProcess = false; //used to speed up execution of conversion complete test
     uint8_t cellVoltageDataStatus = GATHERING_CELL_DATA;
 
     if (LTC68042configure_wakeup() == LTC6804_CORE_JUST_WOKE_UP) { presentState = LTC_STATE_FIRSTRUN; }
@@ -263,7 +268,6 @@ uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
         {
             //then no conversion is in process or last one has completed
             startCellConversion();
-            conversionInProcess = true;
             presentState = LTC_STATE_GATHER;
         }
         else
@@ -281,10 +285,6 @@ uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
             //then no conversion is in process or last one has completed
             conversionInProcess = false;
 
-            //round-robin state handlers
-            static uint8_t chipAddress = FIRST_IC_ADDR;
-            static char cellVoltageRegister = 'A'; //LTC68042 contains QTY4 CVRs (A/B/C/D)
-
             validateAndStoreNextCVR(chipAddress, cellVoltageRegister);
 
             //determine which LTC68042 IC & CVR to read next
@@ -300,7 +300,6 @@ uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
                     if (LTC_TRIGGERMODE_CONTINUOUS == triggerMode)
                     {
                         startCellConversion(); //start the next cell conversion //takes a while to finish
-                        conversionInProcess = true;
                         presentState = LTC_STATE_PROCESS; //all cell voltages gathered.  Process data on next run.
                     }
                     else if (LTC_TRIGGERMODE_TRIGGERED == triggerMode)
@@ -312,8 +311,6 @@ uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
                         Serial.print(F("\nillegal LTC68042cell trigger mode"));
                         while (1) {;} //hang here until watchdog resets.
                     }
-
-                    chipAddress = FIRST_IC_ADDR; //reset to first LTC IC
                 }
             }
         }
@@ -327,7 +324,6 @@ uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
             //then triggerMode changed from TRIGGERED to CONTINUOUS, allow the change of mode,
             //  and start a conversion here to get a head start...
             startCellConversion();
-            conversionInProcess = true;
             presentState = LTC_STATE_PROCESS; //for next state determination
         }
         else if ((presentState & LTC_STATE_PROCESS) && (LTC_STATE_PROCESS_TRIGGERED == triggerMode))
@@ -350,7 +346,6 @@ uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
         //LTC6804 ICs were previously off
         LTC68042configure_programVolatileDefaults();
         startCellConversion();
-        conversionInProcess = true;
         presentState = LTC_STATE_GATHER;
     }
 
