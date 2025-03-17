@@ -4,7 +4,7 @@
 
 #include "src/libcm.h"
 
-void setup() 
+void setup()
 {
     //getting here takes ~02 milliseconds after poweron reset
     //getting here takes ~16 milliseconds after IMA switch on
@@ -23,7 +23,7 @@ void setup()
     if (gpio_keyStateNow() == GPIO_KEY_ON) { keyOn_coldBootTasks();          }
     else                                   { debugUSB_printWelcomeMessage(); }
 
-    bringupTester_gridcharger(); 
+    bringupTester_gridcharger();
     bringupTester_motherboard();
 
     wdt_enable(WDTO_2S); //set watchdog reset vector to 2 seconds
@@ -48,7 +48,7 @@ void loop()
     {
         if (eeprom_expirationStatus_get() != FIRMWARE_EXPIRED) { BATTSCI_sendFrames(); } //P1648 when firmware expired
 
-        LTC68042cell_nextVoltages(); //round-robin handler measures QTY3 cell voltages per call
+        LTC68042cell_nextVoltages(LTC_TRIGGERMODE_CONTINUOUS); //round-robin handler measures QTY3 cell voltages per call
         METSCI_processLatestFrame();
         adc_updateBatteryCurrent();
         vPackSpoof_setVoltage();
