@@ -110,7 +110,7 @@ void keyOn_coldBootTasks(void)
     //initialize hardware
     gpio_turnPowerSensors_on();
     LTC68042configure_pulseChipSelectLow(SPECIFIED_MAX_WAKEUP_TIME_LTCCORE_MICROSECONDS); //wake LTC6804
-    LTC68042cell_nextVoltages(LTC_TRIGGERMODE_CONTINUOUS); //first call starts LTC6804 conversion
+    LTC68042cell_nextVoltages(LTC_TRIGGERMODE_ROUND_ROBIN); //first call starts LTC6804 conversion
     uint32_t timeSinceLTC6804conversionStarted_us = millis();
 
     //other startup initialization tasks
@@ -120,7 +120,7 @@ void keyOn_coldBootTasks(void)
     LED(3,ON);
 
     //read and process cell voltages, waiting for conversion to finish if needed
-    while(LTC68042cell_nextVoltages(LTC_TRIGGERMODE_CONTINUOUS) != CELL_DATA_PROCESSED) { ; } //read all cell voltages back
+    while(LTC68042cell_nextVoltages(LTC_TRIGGERMODE_ROUND_ROBIN) != DONE__CELL_DATA_PROCESSED) { ; } //read all cell voltages back
     vPackSpoof_setVoltage();
     SoC_setBatteryStateNow_percent(SoC_estimateFromRestingCellVoltage_percent());
     BATTSCI_enable(); //must occur after we have valid Vcell data

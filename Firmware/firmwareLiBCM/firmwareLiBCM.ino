@@ -48,7 +48,7 @@ void loop()
     {
         if (eeprom_expirationStatus_get() != FIRMWARE_EXPIRED) { BATTSCI_sendFrames(); } //P1648 when firmware expired
 
-        LTC68042cell_nextVoltages(LTC_TRIGGERMODE_CONTINUOUS); //round-robin handler measures QTY3 cell voltages per call
+        LTC68042cell_nextVoltages(LTC_TRIGGERMODE_ROUND_ROBIN); //round-robin handler measures QTY3 cell voltages per call
         METSCI_processLatestFrame();
         adc_updateBatteryCurrent();
         vPackSpoof_setVoltage();
