@@ -243,8 +243,43 @@ void processAllCellVoltages(void)
 
 bool checkIfAdcWaitOver(void)
 {
-   if ((LTC6804_MAX_CONVERSION_TIME_ms * 1000) < (micros() - conversionStart_us)) { return true;  }
-   else                                                                           { return false; }
+    if ((LTC6804_MAX_CONVERSION_TIME_ms * 1000) < (micros() - conversionStart_us)) { return true;  }
+    else                                                                           { return false; }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void doCellDataGather(uint8_t triggerMode, uint8_t * presentState)
+{
+    //retrieve next CVR from LTC, then validate and store in cellVoltages_counts[][] array
+    validateAndStoreNextCVR(chipAddress, cellVoltageRegister);
+
+    //determine which LTC68042 IC & CVR to read next
+    cellVoltageRegister++;
+    if (cellVoltageRegister >= 'E')
+    {
+        //LTC6804 only has registers A,B,C,D
+        cellVoltageRegister = 'A'; //reset back to first CVR
+        if (++chipAddress >= (FIRST_IC_ADDR + TOTAL_IC))
+        {
+            //last "LTC_STATE_GATHER" call for this cycle
+            //just finished reading last IC's last CVR... all cell voltages stored in cellVoltages_counts[][]
+            if (LTC_TRIGGERMODE_ROUND_ROBIN == triggerMode)
+            {
+                startCellConversionAndResetCellCounters(); //start the next cell conversion //takes a while to finish
+                *presentState = LTC_STATE_PROCESS; //all cell voltages gathered.  Process data on next run.
+            }
+            else if (LTC_TRIGGERMODE_TRIGGERED == triggerMode)
+            {
+                *presentState = LTC_STATE_PROCESS_TRIGGERED; //all cell voltages gathered.  Process data on next run, but trigger after that
+            }
+            else
+            {
+                Serial.print(F("\nillegal LTC68042cell trigger mode"));
+                while (1) {;} //hang here until watchdog resets.
+            }
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -279,15 +314,21 @@ uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
 
     if (LTC_TRIGGERMODE_FORCE_TRIGGERED == triggerMode)
     {
-        // in almost all cases, we do:
-        presentState = LTC_STATE_TRIGGER;
-        cellVoltageDataStatus = DONE__READY_TO_TRIGGER;
-
-        // now handle exceptions:
-        if      (LTC_STATE_FIRSTRUN == presentState) { LTC68042configure_programVolatileDefaults(); }
+        if      (LTC_STATE_FIRSTRUN == presentState)
+        {
+            LTC68042configure_programVolatileDefaults();
+            presentState = LTC_STATE_TRIGGER;
+            cellVoltageDataStatus = DONE__READY_TO_TRIGGER;
+        }
         else if (LTC_WAITING_FOR_ADC == presentState)
         {
-            if (false == checkIfAdcWaitOver())
+            if (true == checkIfAdcWaitOver())
+            {
+                //then wait is over
+                presentState = LTC_STATE_TRIGGER;
+                cellVoltageDataStatus = DONE__READY_TO_TRIGGER;
+            }
+            else
             {
                 // then we still need to wait
                 //presentState = LTC_WAITING_FOR_ADC; // stay in current state
@@ -300,44 +341,29 @@ uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
             presentState = LTC_WAITING_FOR_ADC;
             cellVoltageDataStatus = NO__WAITING_FOR_READY;
         }
-    }
-
-    //for LTC_WAITING_FOR_ADC: don't gather data or advance the state if the current
-    //  conversion is not complete (should not usually be necessary in key-on mode)
-    else if ( ( (LTC_WAITING_FOR_ADC == presentState) && (true == checkIfAdcWaitOver()) ) ||
-              (LTC_STATE_GATHER == presentState)
-            )
-    {
-        //retrieve next CVR from LTC, then validate and store in cellVoltages_counts[][] array
-        validateAndStoreNextCVR(chipAddress, cellVoltageRegister);
-
-        //determine which LTC68042 IC & CVR to read next
-        cellVoltageRegister++;
-        if (cellVoltageRegister >= 'E')
+        else
         {
-            //LTC6804 only has registers A,B,C,D
-            cellVoltageRegister = 'A'; //reset back to first CVR
-            if (++chipAddress >= (FIRST_IC_ADDR + TOTAL_IC))
-            {
-                //last "LTC_STATE_GATHER" call for this cycle
-                //just finished reading last IC's last CVR... all cell voltages stored in cellVoltages_counts[][]
-                if (LTC_TRIGGERMODE_ROUND_ROBIN == triggerMode)
-                {
-                    startCellConversionAndResetCellCounters(); //start the next cell conversion //takes a while to finish
-                    presentState = LTC_STATE_PROCESS; //all cell voltages gathered.  Process data on next run.
-                }
-                else if (LTC_TRIGGERMODE_TRIGGERED == triggerMode)
-                {
-                    presentState = LTC_STATE_PROCESS_TRIGGERED; //all cell voltages gathered.  Process data on next run, but trigger after that
-                }
-                else
-                {
-                    Serial.print(F("\nillegal LTC68042cell trigger mode"));
-                    while (1) {;} //hang here until watchdog resets.
-                }
-            }
+            // in all other cases, we do:
+            presentState = LTC_STATE_TRIGGER;
+            cellVoltageDataStatus = DONE__READY_TO_TRIGGER;
         }
     }
+
+    //for LTC_WAITING_FOR_ADC: if done waiting, fall through to GATHERdon't gather data or advance the state if the current
+    //  conversion is not complete (should not usually be necessary in key-on mode)
+    else if (LTC_WAITING_FOR_ADC == presentState)
+    {
+        if (true == checkIfAdcWaitOver())
+        {
+            //then wait is over
+            doCellDataGather(triggerMode, &presentState); // do first gather
+            presentState = LTC_STATE_GATHER;
+        }
+        //else
+            //presentState = LTC_WAITING_FOR_ADC; // hold in current state
+    }
+
+    else if (LTC_STATE_GATHER == presentState) { doCellDataGather(triggerMode, &presentState); }
 
     else if ((LTC_STATE_PROCESS == presentState) || (LTC_STATE_PROCESS_TRIGGERED == presentState))
     {
@@ -358,6 +384,7 @@ uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
 
         if (LTC_STATE_PROCESS_TRIGGERED == presentState) { presentState = LTC_STATE_TRIGGER;   } //trigger on next run
         else                                             { presentState = LTC_WAITING_FOR_ADC; } //wait if needed on next run (a trigger has already happened)
+
     }
 
     else if (LTC_STATE_FIRSTRUN == presentState)
