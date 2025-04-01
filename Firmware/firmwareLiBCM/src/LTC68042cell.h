@@ -38,7 +38,7 @@
     #define NO__GATHERING_CELL_DATA    0
     #define DONE__CELL_DATA_PROCESSED  1
     #define NO__WAITING_FOR_READY      2
-    #define DONE__READY_TO_TRIGGER     2
+    #define DONE__READY_TO_TRIGGER     3
 
     #define LTC6804_MAX_CONVERSION_TIME_ms 5 //4.43 ms in '2kHz' sampling mode
 
