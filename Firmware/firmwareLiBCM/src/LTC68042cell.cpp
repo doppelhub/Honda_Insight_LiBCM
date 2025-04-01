@@ -11,7 +11,7 @@
 //  Example: cellVoltages_counts[0][ 1] is IC_1 cell_02
 //  Example: cellVoltages_counts[3][11] is IC_4 cell_12
 uint16_t cellVoltages_counts[TOTAL_IC][CELLS_PER_IC];
-uint32_t conversionStart_ms = 0;
+uint32_t conversionStart_us = 0;
 
 //JTS2doLater: Add cell voltage test that sets user alert if a cell voltage suddenly changes from 'balanced' to 'majorly imbalanced'
 
@@ -37,7 +37,7 @@ void startCellConversion(void)
     cmd[3] = (uint8_t)(temp_pec);
 
     LTC68042configure_spiWrite(4,cmd); //send 'adcv' command to all LTC6804s (broadcast command)
-    conversionStart_ms = millis();
+    conversionStart_us = micros();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -236,73 +236,93 @@ void processAllCellVoltages(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+bool checkIfAdcWaitOver(void)
+{
+    if ((LTC6804_MAX_CONVERSION_TIME_ms * 1000) < (micros() - conversionStart_us)) { return true;  }
+    else                                                                           { return false; }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void doCellDataGather(uint8_t * presentState)
+{ //retrieve next CVR from LTC, then validate and store in cellVoltages_counts[][] array
+    //round-robin state handlers
+    static uint8_t chipAddress = FIRST_IC_ADDR;
+    static char cellVoltageRegister = 'A'; //LTC68042 contains QTY4 CVRs (A/B/C/D)
+
+    validateAndStoreNextCVR(chipAddress, cellVoltageRegister);
+
+    //determine which LTC68042 IC & CVR to read next
+    cellVoltageRegister++;
+    if (cellVoltageRegister >= 'E')
+    {
+        //LTC6804 only has registers A,B,C,D
+        cellVoltageRegister = 'A'; //reset back to first CVR
+        if (++chipAddress >= (FIRST_IC_ADDR + TOTAL_IC))
+        {
+            //last "LTC_STATE_GATHER" call for this cycle
+            //just finished reading last IC's last CVR... all cell voltages stored in cellVoltages_counts[][]
+            startCellConversion(); //start the next cell conversion //takes a while to finish
+            chipAddress = FIRST_IC_ADDR; //reset to first LTC IC
+            *presentState = LTC_STATE_PROCESS; //all cell voltages gathered.  Process data on next run.
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 //either gather next QTY3 cell voltages from LTC6804, or process a complete batch of returned cell voltage data.
 //raw cell voltages are stored in file-scoped "cellVoltages_counts[][]"" array
 //latest validated results are stored in a different, globally-accessible array inside "LTC68042_result.c"
 //Example with QTY48 cells:
 //  -the absolute first call starts a conversion.
-//  After that, the behavior is as follows:
+//  After that, the behavior is as follows (see note):
 //  -the next sixteen calls ( (48 cells) / (3 cells per call) = 16 calls ) read back QTY48 cell voltages.
-//  -The seventeenth call performs all pack voltage math and stores valid results in LTC68042_result.c
+//    (the last "read back" call also starts another conversion)
+//  -the seventeenth call performs all pack voltage math and stores valid results in LTC68042_result.c
 //
-//returns false while gathering data, true each time all data is processed
+// Note: if called too soon after a conversion is triggered, the state machine will return immediately, so more
+//   calls will be required until the wait time expires.
+// returns NO__GATHERING_CELL_DATA while gathering data, DONE__CELL_DATA_PROCESSED each time all data is processed
 bool LTC68042cell_nextVoltages(void)
 {
     static uint8_t presentState = LTC_STATE_FIRSTRUN;
-    static bool conversionInProcess = false; //used to speed up execution of conversion complete test
-    bool cellVoltageDataStatus = GATHERING_CELL_DATA;
+    bool cellVoltageDataStatus = NO__GATHERING_CELL_DATA;
 
     if (LTC68042configure_wakeup() == LTC6804_CORE_JUST_WOKE_UP) { presentState = LTC_STATE_FIRSTRUN; }
 
-    if (presentState == LTC_STATE_GATHER)
-    { //retrieve next CVR from LTC, then validate and store in cellVoltages_counts[][] array
-        // but don't gather data or advance the state if the  current conversion is not complete (should not usually be necessary)
-        if ( ( ! conversionInProcess) || (LTC6804_MAX_CONVERSION_TIME_ms < (millis() - conversionStart_ms)) )
+    //for LTC_WAITING_FOR_ADC: if done waiting, fall through to GATHER
+    //  don't gather data or advance the state if the current
+    //  conversion is not complete (should not usually be necessary in key-on mode)
+    if (LTC_WAITING_FOR_ADC == presentState)
+    {
+        if (true == checkIfAdcWaitOver())
         {
-            //then no conversion is in process or it has completed
-            conversionInProcess = false;
-
-            //round-robin state handlers
-            static uint8_t chipAddress = FIRST_IC_ADDR;
-            static char cellVoltageRegister = 'A'; //LTC68042 contains QTY4 CVRs (A/B/C/D)
-
-            validateAndStoreNextCVR(chipAddress, cellVoltageRegister);
-
-            //determine which LTC68042 IC & CVR to read next
-            cellVoltageRegister++;
-            if (cellVoltageRegister >= 'E')
-            {
-                //LTC6804 only has registers A,B,C,D
-                cellVoltageRegister = 'A'; //reset back to first CVR
-
-                if (++chipAddress >= (FIRST_IC_ADDR + TOTAL_IC))
-                {
-                    //just finished reading last IC's last CVR... all cell voltages stored in cellVoltages_counts[][]
-                    startCellConversion(); //start the next cell conversion //takes a while to finish
-                    conversionInProcess = true;
-
-                    chipAddress = FIRST_IC_ADDR; //reset to first LTC IC
-                    presentState = LTC_STATE_PROCESS; //all cell voltages gathered.  Process data on next run.
-                }
-            }
+            //then wait is over
+            doCellDataGather(&presentState); // do first gather
+            presentState = LTC_STATE_GATHER;
         }
+        //else
+            //presentState = LTC_WAITING_FOR_ADC; // hold in current state
     }
 
-    else if (presentState == LTC_STATE_PROCESS)
+    else if (LTC_STATE_GATHER == presentState) { doCellDataGather(&presentState); }
+
+    else if (LTC_STATE_PROCESS == presentState)
     {
         //all cell voltages read...
         processAllCellVoltages(); //do math and store in LTC68042_result.c
-        cellVoltageDataStatus = CELL_DATA_PROCESSED;
-        presentState = LTC_STATE_GATHER; //gather data on next run
+        cellVoltageDataStatus = DONE__CELL_DATA_PROCESSED;
+        presentState = LTC_WAITING_FOR_ADC; //wait if needed on next run (a trigger has already happened)
+
     }
 
-    else if (presentState == LTC_STATE_FIRSTRUN)
+    else if (LTC_STATE_FIRSTRUN == presentState)
     {
         //LTC6804 ICs were previously off
         LTC68042configure_programVolatileDefaults();
         startCellConversion();
-        conversionInProcess = true;
-        presentState = LTC_STATE_GATHER;
+        presentState = LTC_WAITING_FOR_ADC;
     }
 
     else
@@ -321,8 +341,8 @@ bool LTC68042cell_nextVoltages(void)
 //JTS2doNext: rewrite to remove double call hack
 void LTC68042cell_acquireAllCellVoltages(void)
 {
-    while (LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //clear old data (if any)
-    while (LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //gather new data
+    while (LTC68042cell_nextVoltages() != DONE__CELL_DATA_PROCESSED) { ; } //clear old data (if any)
+    while (LTC68042cell_nextVoltages() != DONE__CELL_DATA_PROCESSED) { ; } //gather new data
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
