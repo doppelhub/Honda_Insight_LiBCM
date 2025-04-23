@@ -111,7 +111,6 @@ void keyOn_coldBootTasks(void)
     gpio_turnPowerSensors_on();
     LTC68042configure_pulseChipSelectLow(SPECIFIED_MAX_WAKEUP_TIME_LTCCORE_MICROSECONDS); //wake LTC6804
     LTC68042cell_nextVoltages(LTC_TRIGGERMODE_ROUND_ROBIN); //first call starts LTC6804 conversion
-    uint32_t timeSinceLTC6804conversionStarted_us = millis();
 
     //other startup initialization tasks
     vPackSpoof_handleKeyON();

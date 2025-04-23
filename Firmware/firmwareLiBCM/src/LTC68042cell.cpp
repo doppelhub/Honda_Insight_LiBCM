@@ -249,9 +249,11 @@ bool checkIfAdcWaitOver(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void doCellDataGather(uint8_t triggerMode, uint8_t * presentState)
-{
-    //retrieve next CVR from LTC, then validate and store in cellVoltages_counts[][] array
+uint8_t doCellDataGather(uint8_t triggerMode)
+{ //retrieve next CVR from LTC, then validate and store in cellVoltages_counts[][] array
+    //round-robin state handlers
+    uint8_t nextPresentState = LTC_STATE_GATHER; // default to remaining in gather state
+
     validateAndStoreNextCVR(chipAddress, cellVoltageRegister);
 
     //determine which LTC68042 IC & CVR to read next
@@ -267,11 +269,11 @@ void doCellDataGather(uint8_t triggerMode, uint8_t * presentState)
             if (LTC_TRIGGERMODE_ROUND_ROBIN == triggerMode)
             {
                 startCellConversionAndResetCellCounters(); //start the next cell conversion //takes a while to finish
-                *presentState = LTC_STATE_PROCESS; //all cell voltages gathered.  Process data on next run.
+                nextPresentState = LTC_STATE_PROCESS; //all cell voltages gathered.  Process data on next run.
             }
             else if (LTC_TRIGGERMODE_TRIGGERED == triggerMode)
             {
-                *presentState = LTC_STATE_PROCESS_TRIGGERED; //all cell voltages gathered.  Process data on next run, but trigger after that
+                nextPresentState = LTC_STATE_PROCESS_TRIGGERED; //all cell voltages gathered.  Process data on next run, but trigger after that
             }
             else
             {
@@ -280,6 +282,7 @@ void doCellDataGather(uint8_t triggerMode, uint8_t * presentState)
             }
         }
     }
+    return nextPresentState;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -349,21 +352,21 @@ uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
         }
     }
 
-    //for LTC_WAITING_FOR_ADC: if done waiting, fall through to GATHERdon't gather data or advance the state if the current
+    else if (LTC_STATE_GATHER == presentState) { presentState = doCellDataGather(triggerMode); }
+
+    //for LTC_WAITING_FOR_ADC: if done waiting, fall through to GATHER
+    //  don't gather data or advance the state if the current
     //  conversion is not complete (should not usually be necessary in key-on mode)
     else if (LTC_WAITING_FOR_ADC == presentState)
     {
         if (true == checkIfAdcWaitOver())
         {
             //then wait is over
-            doCellDataGather(triggerMode, &presentState); // do first gather
-            presentState = LTC_STATE_GATHER;
+            presentState = doCellDataGather(triggerMode); // do first gather
         }
         //else
             //presentState = LTC_WAITING_FOR_ADC; // hold in current state
     }
-
-    else if (LTC_STATE_GATHER == presentState) { doCellDataGather(triggerMode, &presentState); }
 
     else if ((LTC_STATE_PROCESS == presentState) || (LTC_STATE_PROCESS_TRIGGERED == presentState))
     {
