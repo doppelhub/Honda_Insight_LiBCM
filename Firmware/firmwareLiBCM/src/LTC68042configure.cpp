@@ -17,7 +17,7 @@ uint8_t configurationRegisterData[6]; //[CFGR0, CFGR1, CFGR2, CFGR3, CFGR4, CFGR
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //Write LTC6804 configuration registers
-//if (icAddress == BROADCAST_TO_ALL_ICS), this function broadcasts the same data to all LTC6804 ICs 
+//if (icAddress == BROADCAST_TO_ALL_ICS), this function broadcasts the same data to all LTC6804 ICs
 //
 // | config[0] | config[1] | config[2] | config[3] | config[4] | config[5] |
 // |-----------|-----------|-----------|-----------|-----------|-----------|
@@ -34,7 +34,7 @@ void LTC68042configure_writeConfigRegisters(uint8_t icAddress)
     else                                   { cmd[0] = 0x80 + (icAddress << 3); } //see datasheet Tables 33 & 34
 
     cmd[1] = 0x01; //send "write configuration registers" command ('WRCFG')
-  
+
     uint16_t temp_pec = LTC68042configure_calcPEC15(2, cmd); //calculate PEC
 
     cmd[2] = (uint8_t)(temp_pec >> 8); //upper PEC byte
@@ -74,7 +74,7 @@ void LTC68042configure_setBalanceResistors(uint8_t icAddress, uint16_t cellBitma
 //CFGR0:3 are reset when LTC watchdog timer expires (~2000 milliseconds)
 //CFGR4:5 are reset when LTC watchdog timer expires, unless software timer is set (and hasn't expired)
 void LTC68042configure_programVolatileDefaults(void)
-{                                                // BIT7    BIT6    BIT5    BIT4    BIT3    BIT2    BIT1   BIT0                
+{                                                // BIT7    BIT6    BIT5    BIT4    BIT3    BIT2    BIT1   BIT0
                                                  ///////////////////////////////////////////////////////////////
     configurationRegisterData[0] = 0b11111111 ;  //GPIO5   GPIO4   GPIO3   GPIO2   GPIO1   REFON   SWTRD  ADCOPT
     configurationRegisterData[1] = 0x00       ;  //VUV[7]  VUV[6]  VUV[5]  VUV[4]  VUV[3]  VUV[2]  VUV[1] VUV[0]
@@ -95,6 +95,29 @@ void LTC68042configure_programVolatileDefaults(void)
         //Note: fast, normal, or slow is configured in ADCV command
 
     LTC68042configure_writeConfigRegisters(BROADCAST_TO_ALL_ICS);
+    LTC68042cell_dischargeAllowedDuringConversion_set(IS_DISCHARGE_ALLOWED_DURING_CONVERSION);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+// Fatal Error terminal routine
+// Display the specified error message on the LCD display, beep, and turn off LiBCM
+void LTC68042configure_anounceFatalErrorAndDie(uint8_t warningToDisplay)
+{
+    lcdTransmit_begin();
+    delay(50); //delay doesn't matter because this is a fatal error
+    lcdTransmit_displayOn();
+    delay(50); //delay doesn't matter because this is a fatal error
+    lcdTransmit_Warning(warningToDisplay);
+
+    gpio_turnBuzzer_on_highFreq(); //call GPIO directly
+
+    wdt_disable(); //turn off watchdog to prevent reset
+    wdt_enable(WDTO_8S);
+
+    delay(7000); //give the user enough time to read error message
+
+    gpio_turnLiBCM_off(); //game over... thanks for playing
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -114,7 +137,7 @@ bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
             uint8_t errorCount_LTC6804_underTest[TOTAL_IC_60S] = {0}; //allocate for 60S even when user selects 48S
 
             //read data back from either QTY4 ICs (if user selects PACK_IS_48S in config.h), or QTY5 ICs (if user selects PACK_IS_60S in config.h)
-            //we don't care about the actual returned data; only that the PEC error count doesn't increment 
+            //we don't care about the actual returned data; only that the PEC error count doesn't increment
             for (uint8_t dut = 0; dut < TOTAL_IC; dut++)
             {
                 errorCount_LTC6804_underTest[dut] = LTC6804_rdaux(1,1,FIRST_IC_ADDR + dut); //read register 'A' on specified LTC6804
@@ -135,7 +158,7 @@ bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
                 //alert user and then turn off
 
                 Serial.print(F("\nError: measured cell count disagrees with user specified cell count in config.h."
-                               "\nLiBCM is disabled due to cell voltage monitoring IC issue. Debug:"));            
+                               "\nLiBCM is disabled due to cell voltage monitoring IC issue. Debug:"));
 
                 //cells 1:48 are the same for both 48S & 60S
                 for (uint8_t dut = 0; dut < TOTAL_IC; dut++)
@@ -153,21 +176,7 @@ bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
                     if (errorCount_LTC6804_underTest[4] == 0) { Serial.print(F("FAIL")); } //IC4 powered by cells 49:60
                     else                                      { Serial.print(F("pass")); }
                 }
-
-                lcdTransmit_begin();
-                delay(50); //delay doesn't matter because this is a fatal error
-                lcdTransmit_displayOn();
-                delay(50); //delay doesn't matter because this is a fatal error
-                lcdTransmit_Warning(LCD_WARN_CELL_COUNT);
-
-                gpio_turnBuzzer_on_highFreq(); //call GPIO directly
-                
-                wdt_disable(); //turn off watchdog to prevent reset
-                wdt_enable(WDTO_8S);
-
-                delay(7000); //give the user enough time to read error message
-
-                gpio_turnLiBCM_off(); //game over... thanks for playing
+                LTC68042configure_anounceFatalErrorAndDie(LCD_WARN_CELL_COUNT); //game over... thanks for playing
             }
         }
     #endif
@@ -187,7 +196,7 @@ void LTC68042configure_initialize(void)
 void LTC68042configure_pulseChipSelectLow(uint16_t lowPulsePeriod_us)
 {
     digitalWrite(PIN_SPI_CS,LOW); //low edge wakes up LTC
-    delayMicroseconds(lowPulsePeriod_us); //wait specified time for LTC to wake  
+    delayMicroseconds(lowPulsePeriod_us); //wait specified time for LTC to wake
     digitalWrite(PIN_SPI_CS,HIGH);
     lastTimeDataSent_millis = millis();
 }
@@ -197,12 +206,12 @@ void LTC68042configure_pulseChipSelectLow(uint16_t lowPulsePeriod_us)
 //wake up LTC core if watchdog timed out
 bool LTC68042configure_wakeupCore(void)
 {
-    const uint16_t T_SLEEP_WATCHDOG_MILLIS = 1800; //'tsleep' = 1800 (min) to 2200 (max) ms 
+    const uint16_t T_SLEEP_WATCHDOG_MILLIS = 1800; //'tsleep' = 1800 (min) to 2200 (max) ms
 
     bool wasCoreAlreadyAwake = LTC6804_CORE_ALREADY_AWAKE;
 
     if ((uint32_t)(millis() - lastTimeDataSent_millis) > T_SLEEP_WATCHDOG_MILLIS)
-    { 
+    {
         //LTC6804 core (probably) asleep
         LTC68042configure_pulseChipSelectLow(SPECIFIED_MAX_WAKEUP_TIME_LTCCORE_MICROSECONDS);
         wasCoreAlreadyAwake = LTC6804_CORE_JUST_WOKE_UP;
@@ -219,7 +228,7 @@ void LTC68042configure_wakeupIsoSPI(void)
     const uint8_t T_IDLE_isoSPI_MILLIS = 4; //'tIDLE' = 4.3 (min) to 6.7 (max) ms
 
     if ((uint32_t)(millis() - lastTimeDataSent_millis) > T_IDLE_isoSPI_MILLIS)
-    { 
+    {
         //LTC6804 isoSPI might be asleep (tIDLE elapsed)
          LTC68042configure_pulseChipSelectLow(SPECIFIED_MAX_WAKEUP_TIME_isoSPI_MICROSECONDS);
     }
@@ -232,8 +241,276 @@ bool LTC68042configure_wakeup(void)
     bool wasCoreAlreadyAwake = LTC68042configure_wakeupCore();
 
     if (wasCoreAlreadyAwake == LTC6804_CORE_ALREADY_AWAKE) { LTC68042configure_wakeupIsoSPI(); }
-  
+
     return wasCoreAlreadyAwake;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+static uint16_t cellVoltagesTest_counts[TOTAL_IC][CELLS_PER_IC];
+static uint32_t latestStateTimestamp_ms = 0;
+static uint16_t test1_cellStatusBitmap[TOTAL_IC] = {0};
+static uint16_t test2_cellStatusBitmap[TOTAL_IC] = {0};
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+///////// test helper functions
+void testHelper_clearCellTestFlags(int16_t testFlagBitmap[])
+{
+    for (uint8_t ic = 0; ic < TOTAL_IC; ic++)
+    {
+        testFlagBitmap[ic] = 0;
+    }
+}
+
+//helper function to set up a cell discharge circuit test
+void testHelper_saveCellVoltages(void)
+{
+    //save the prior cell voltage results away for later reference
+    for (uint8_t ic = 0; ic < TOTAL_IC; ic++)
+    {
+        for (uint8_t cellNumber = 0; cellNumber < CELLS_PER_IC; cellNumber++)
+        {
+            cellVoltagesTest_counts[ic][cellNumber] = LTC68042result_specificCellVoltage_get(ic, cellNumber);
+        }
+    }
+}
+
+//helper function to set up a cell discharge circuit test
+void testHelper_setCellDischarge(uint16_t cellDischargeBitmap)
+{
+    //turn on all odd or even cell balance circuits only
+    for (uint8_t ic = 0; ic < TOTAL_IC; ic++)
+    {
+        LTC68042configure_setBalanceResistors(
+           FIRST_IC_ADDR + ic,
+           cellDischargeBitmap,
+           LTC6804_DISCHARGE_TIMEOUT_02_SECONDS);
+        debugUSB_setCellBalanceStatus(ic, cellDischargeBitmap, 0); //WGCToDo: change arg 3 (cellDischargeVoltageThreshold) to something useful?
+    }
+}
+
+//helper function that looks for:
+//  adjacent cell voltage absulut deltas greater than a minimum (indicating discharge circuit works)
+//  cell voltages not insanely high or low (indicating no open sense wires)
+// returns true if all tests pass
+bool testHelper_checkInterCellDeltaAndSaneCellVoltages(
+   uint16_t cellFailsDeltaBitmap[], //cell bitmap for cells that are failing to discharge
+   uint16_t cellFailsHighBitmap[],  //cell bitmap for cells with excessively high voltage
+   uint16_t cellFailsLowBitmap[])   //cell bitmap for cells with excessively low voltage
+{
+    bool didTestPass = true;
+
+    for (uint8_t ic = 0; ic < TOTAL_IC; ic++)
+    {
+        for (uint8_t cellNumber = 0 ; cellNumber < CELLS_PER_IC; cellNumber++)
+        {
+            if (TESTBASIC_SANE_HIGH_TESTLIMIT_counts < cellVoltagesTest_counts[ic][cellNumber])
+            {
+                //then this cell fails high
+                cellFailsHighBitmap[ic] |= (1 << cellNumber);
+            }
+            else if (TESTBASIC_SANE_LOW_TESTLIMIT_counts > cellVoltagesTest_counts[ic][cellNumber])
+            {
+                //then this cell fails low
+                cellFailsLowBitmap[ic] |= (1 << cellNumber);
+            }
+            else if((CELLS_PER_IC - 1) > cellNumber) //WGCToDo: could also account for end cells on adjacent IC's
+            {
+                //check voltage delta between this cell and the next higher
+                int16_t cellDelta =   LTC68042result_specificCellVoltage_get(ic, cellNumber)      //voltage while discharging
+                                    - LTC68042result_specificCellVoltage_get(ic, cellNumber + 1); //voltage while discharging
+
+                //account for any initial cell imbalance
+                cellDelta -=   cellVoltagesTest_counts[ic][cellNumber]                //resting voltage
+                             - cellVoltagesTest_counts[ic][cellNumber + 1];           //resting voltage
+
+                if (0 > cellDelta) { cellDelta = - cellDelta; } //absolute value of cellDelta
+                if (TESTBASIC_DELTA_TESTLIMIT_counts > cellDelta)
+                {
+                    //cell fails, not enough IR drop delta, => current (I) too low (assuming R is not too low...)
+                    cellFailsDeltaBitmap[ic] |= (1 << cellNumber);
+                }
+            }
+        }
+        if (cellFailsHighBitmap[ic] || cellFailsLowBitmap[ic] || cellFailsDeltaBitmap[ic]) { didTestPass = false; }
+    }
+
+    return didTestPass;
+}
+
+void testHelper_printCellVoltages(const __FlashStringHelper * title)
+{
+    //WGCToDo: maybe add my own dedicated debug mode instead of DEBUGUSB_STREAM_DEBUG ('$DISP=DBG' -> 'DB2')
+    if (debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_DEBUG)
+    {
+        Serial.println(F("")); //newline
+        Serial.print(title);
+        for (uint8_t ic = 0; ic < TOTAL_IC; ic++) debugUSB_printOneICsCellVoltages( ic, FOUR_DECIMAL_PLACES);
+        Serial.println("");
+    }
+}
+
+void testHelper_printTestResults(uint16_t cellFailuresBitmap[])
+{
+    bool allICsPassed = true;
+    for (uint8_t ic = 0; ic < TOTAL_IC; ic++) {if (cellFailuresBitmap[ic]) allICsPassed = false; }
+
+    if (allICsPassed)
+    {
+        Serial.print(F(" Passed"));
+    }
+    else
+    {
+        Serial.print(F(" FAILED!  Failed cell bitmaps: (0x) "));
+        for (uint8_t ic = 0; ic < (TOTAL_IC - 1); ic++)
+        {
+            Serial.print(cellFailuresBitmap[ic], HEX);
+            Serial.print(F(", "));
+        }
+        Serial.print(cellFailuresBitmap[TOTAL_IC - 1], HEX);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+//Run quick basic confidence test on BMS circuits
+bool LTC68042configure_basicConfidenceTest(void)
+{
+    bool didTestPass = true;
+
+    //note test start time
+    latestStateTimestamp_ms = millis();
+
+    //set up test
+    testHelper_clearCellTestFlags(test1_cellStatusBitmap); // re-use some available statics
+    testHelper_clearCellTestFlags(test2_cellStatusBitmap); // re-use some available statics
+    uint16_t test3_EvenTestCellFailsHighBitmap[TOTAL_IC] = {0};
+    uint16_t test4_EvenTestCellFailsLowBitmap[TOTAL_IC] = {0};
+    uint16_t test5_OddTestCellFailsHighBitmap[TOTAL_IC] = {0};
+    uint16_t test6_OddTestCellFailsLowBitmap[TOTAL_IC] = {0};
+    LTC68042cell_dischargeAllowedDuringConversion_set(DCP_ENABLED);
+
+    //verify LTC68042result_errorCount_get() doesn't increase during test
+    uint8_t errorCounts = LTC68042result_errorCount_get();
+
+    //tell the world that cells are balancing
+    cellBalance_set_cellsAreBalancing(YES);
+
+    //================== start with resting cell voltages
+    LTC68042cell_acquireAllCellVoltages(); //abandon any in-process acquisition (waiting for it to complete, if needed)
+    testHelper_saveCellVoltages();
+    testHelper_printCellVoltages(F("Resting:")); // controlled by '$DISP=DBG'
+
+    //================== now do even cells
+    testHelper_setCellDischarge(TESTBASIC_EvenCellsBitMap);
+
+    //measure and check while even cells are discharging
+    LTC68042cell_acquireAllCellVoltages();
+    testHelper_printCellVoltages(F("Even:")); // controlled by '$DISP=DBG'
+    didTestPass &= testHelper_checkInterCellDeltaAndSaneCellVoltages(
+      test1_cellStatusBitmap,            //cells not discharging
+      test3_EvenTestCellFailsHighBitmap, //cell voltages that way high => open sense wire
+      test4_EvenTestCellFailsLowBitmap); //cell voltages that way low  => open sense wire
+
+    //================== now do odd cells
+    //  (Yes, some redundncy in detecting open sense wires)
+    testHelper_setCellDischarge(TESTBASIC_OddCellsBitMap);
+
+    //measure and check while odd cells are discharging
+    LTC68042cell_acquireAllCellVoltages();
+    testHelper_printCellVoltages(F("Odd:")); // controlled by '$DISP=DBG'
+    didTestPass &= testHelper_checkInterCellDeltaAndSaneCellVoltages(
+      test2_cellStatusBitmap,            //cells not discharging
+      test5_OddTestCellFailsHighBitmap,  //cell voltages that way high => open sense wire
+      test6_OddTestCellFailsLowBitmap);  //cell voltages that way low  => open sense wire
+
+    //turn off all cell discharge circuits
+    disableDischargeResistors();
+
+    //tell the world that cells are no longer balancing
+    cellBalance_set_cellsAreBalancing(NO);
+
+    //test is done
+    uint32_t now_ms = millis();
+    errorCounts -= LTC68042result_errorCount_get();
+    LTC68042cell_dischargeAllowedDuringConversion_set(IS_DISCHARGE_ALLOWED_DURING_CONVERSION);
+
+    if (! didTestPass)
+    {
+        Serial.print(F("\nBasic BMS circuit test"));
+        Serial.print(F("\n   Acquisition errors: "));
+        if (0 == errorCounts) { Serial.print(F("None. Test should be good")); }
+        else
+        {
+            Serial.print(F("ERRORS OCCURRED. Test results may not be accurate, but there are other issues"));
+        }
+        Serial.print(F("\n   Discharge Circuit EVEN cell test: "));
+        testHelper_printTestResults(test1_cellStatusBitmap);
+        Serial.print(F("\n   Discharge Circuit ODD  cell test: "));
+        testHelper_printTestResults(test2_cellStatusBitmap);
+        Serial.print(F("\n   HIGH Cells EVEN cell test: "));
+        testHelper_printTestResults(test3_EvenTestCellFailsHighBitmap);
+        Serial.print(F("\n   LOW  Cells EVEN cell test: "));
+        testHelper_printTestResults(test4_EvenTestCellFailsLowBitmap);
+        Serial.print(F("\n   HIGH Cells ODD  cell test: "));
+        testHelper_printTestResults(test5_OddTestCellFailsHighBitmap);
+        Serial.print(F("\n   LOW  Cells ODD  cell test: "));
+        testHelper_printTestResults(test6_OddTestCellFailsLowBitmap);
+        Serial.println("");
+
+        uint16_t dischargeCellFlags = 0;
+        uint16_t openWireCellFlags = 0;
+        for (uint8_t ic = 0; ic < TOTAL_IC; ic++)
+        {
+            dischargeCellFlags =    test1_cellStatusBitmap[ic]
+                                  | test2_cellStatusBitmap[ic];
+            if (dischargeCellFlags)
+            {
+                Serial.print(F(" IC "));
+                Serial.print(ic);
+                Serial.print(F(" cells "));
+                for (uint8_t cellNumber = 0 ; cellNumber < CELLS_PER_IC; cellNumber++)
+                {
+                    if (dischargeCellFlags & (1 << cellNumber)) {
+                         Serial.print(cellNumber);
+                         Serial.print(F(", "));
+                    }
+                }
+                Serial.println(F("\n   likely have faulty LiBCM Cell Balance circuits"));
+            }
+
+            openWireCellFlags =    test3_EvenTestCellFailsHighBitmap[ic]
+                                 | test4_EvenTestCellFailsLowBitmap[ic]
+                                 | test5_OddTestCellFailsHighBitmap[ic]
+                                 | test6_OddTestCellFailsLowBitmap[ic];
+            if (openWireCellFlags)
+            {
+                Serial.print(F(" IC "));
+                Serial.print(ic);
+                Serial.print(F(" cells "));
+                for (uint8_t cellNumber = 0 ; cellNumber < CELLS_PER_IC; cellNumber++)
+                {
+                    if (openWireCellFlags & (1 << cellNumber)) {
+                         Serial.print(cellNumber);
+                         Serial.print(F(", "));
+                    }
+                }
+                Serial.println(F("\n   likely have open sense cable wire connections"));
+            }
+        }
+        Serial.print(F("\nBasic BMS test FAILED!   (elapsed test time (ms): "));
+        Serial.print(now_ms - latestStateTimestamp_ms);
+        Serial.println(")");
+        LTC68042configure_anounceFatalErrorAndDie(LCD_WARN_BASIC_TEST); //game over... thanks for testing
+    }
+    else
+    {
+        Serial.print(F("\nBasic BMS test passed (elapsed test time (ms): "));
+        Serial.print(now_ms - latestStateTimestamp_ms);
+        Serial.println(")");
+    }
+    return didTestPass;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -249,7 +526,7 @@ uint16_t LTC68042configure_calcPEC15(uint8_t len, //data array length
         addr = ( (remainder>>7)^data[i] ) & 0xff;//calculate PEC table address
         remainder = (remainder<<8) ^ crc15Table[addr];
     }
-  
+
     return(remainder<<1);//The CRC15 LSB is 0, so multiply by 2
 }
 

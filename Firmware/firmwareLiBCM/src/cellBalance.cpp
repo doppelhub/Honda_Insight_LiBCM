@@ -21,7 +21,7 @@ bool cellsAreBalancing = NO;
 // if (hasOneSecondPassed && (balancingComplete == FALSE)) {
 //    for (cellNumber=1; cellNumber<NUMCELLS; cellNumber++) {
 //       if (cellStatus[cellNumber] == BALANCING) { cellBalanceTimer_seconds[cellNumber]++; }
-// }} 
+// }}
 
 //Allow LiBCM to print this array over USB
 // -if all cells are similar, then all array elements should have similar values (ideally they would all be 0).
@@ -36,6 +36,7 @@ bool cellsAreBalancing = NO;
 /////////////////////////////////////////////////////////////////////////////////////////
 
 bool cellBalance_areCellsBalancing(void) { return cellsAreBalancing; }
+void cellBalance_set_cellsAreBalancing(bool cellsBalancing) { cellsAreBalancing = cellsBalancing; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 

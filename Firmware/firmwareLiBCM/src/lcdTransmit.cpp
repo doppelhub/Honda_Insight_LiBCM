@@ -52,7 +52,7 @@ bool whichCycleFrameToDisplay(void)
     uint32_t timeKeyOn_ms = time_sinceLatestKeyOn_ms();
 
     uint16_t frameDisplayPeriod_ms = 0;
-    
+
     if      (cycleFrameNumber == CYCLEFRAME_A)  { frameDisplayPeriod_ms = CYCLEFRAME_A_PERIOD_ms; }
     else if (cycleFrameNumber == CYCLEFRAME_B)  { frameDisplayPeriod_ms = CYCLEFRAME_B_PERIOD_ms; }
 
@@ -90,7 +90,7 @@ bool lcd_flashBacklight(void)
         else                      { lcd2.backlight();   isBacklightOn = YES; }
 
         lastBacklightStateChange_ms = millis();
-        didscreenUpdateOccur = SCREEN_UPDATED;      
+        didscreenUpdateOccur = SCREEN_UPDATED;
     }
 
     return didscreenUpdateOccur;
@@ -169,7 +169,7 @@ bool lcd_printWattHours(void)
     uint16_t wattHours_new = 0;
     if      (cycleFrameNumber == CYCLEFRAME_A) { wattHours_new = wattHoursAssist; }
     else if (cycleFrameNumber == CYCLEFRAME_B) { wattHours_new = wattHoursRegen;  }
-        
+
 
     if (wattHours_new != wattHours_onScreen)
     {
@@ -202,9 +202,9 @@ bool lcd_printSoC(void)
     {
         lcd2.setCursor(7,3); //'ss.s' screen position
         if (SoC_deciPercent < 100) { lcd2.print('0'); } //add leading '0' when SoC is less than 10.0%
-        
+
         if (key_getSampledState() == KEYSTATE_ON) { lcd2.print(SoC_deciPercent * 0.1, 1);                      } //integrator
-        else                                      { lcd2.print(SoC_deciPercent * 0.1, 0); lcd2.print(F(".x")); } //uint SoC LUT 
+        else                                      { lcd2.print(SoC_deciPercent * 0.1, 0); lcd2.print(F(".x")); } //uint SoC LUT
 
         SoC_onScreen = SoC_deciPercent;
         didscreenUpdateOccur = SCREEN_UPDATED;
@@ -269,9 +269,9 @@ bool lcd_printTempBattery(void)
         lcd2.setCursor(12,0);
 
         if ((battTemp >= 0) && (battTemp < 10)) { lcd2.print(' '); } //leading space on " 0" to " 9" degC
-        
+
         lcd2.print(battTemp);
-        
+
         if ( battTemp >= -9 ) { lcd2.print('C'); } //'C' not printed below -9C (e.g. "-10")
 
         didscreenUpdateOccur = SCREEN_UPDATED;
@@ -430,27 +430,27 @@ bool lcd_printCurrent(void)
         int16_t abs_deciAmps = abs(deciAmps);
 
         lcd2.setCursor(6,2);
-  
+
         //add leading space when necessary
         if ((abs_deciAmps <   100) || //less than 10 amps (e.g. " +9.9")
-            (abs_deciAmps >= 1000)  ) //decimal not displayed above 100 amps (e.g. " +100") 
+            (abs_deciAmps >= 1000)  ) //decimal not displayed above 100 amps (e.g. " +100")
         {
             lcd2.print(' ');
         }
 
         #ifdef DISPLAY_NEGATIVE_SIGN_DURING_ASSIST
-            if      (deciAmps > 0) { lcd2.print('-'); } //When discharging battery (i.e. assist), we display '-' symbol, even though internally it's '+' 
-            else if (deciAmps < 0) { lcd2.print('+'); } //When    charging battery (i.e. regen ), we display '+' symbol, even though internally it's '-' 
+            if      (deciAmps > 0) { lcd2.print('-'); } //When discharging battery (i.e. assist), we display '-' symbol, even though internally it's '+'
+            else if (deciAmps < 0) { lcd2.print('+'); } //When    charging battery (i.e. regen ), we display '+' symbol, even though internally it's '-'
             else                   { lcd2.print(' '); }
         #elif defined DISPLAY_POSITIVE_SIGN_DURING_ASSIST
             if      (deciAmps > 0) { lcd2.print('+'); } //When discharging battery (i.e. assist), we display '+' symbol
-            else if (deciAmps < 0) { lcd2.print('-'); } //When    charging battery (i.e. regen ), we display '+' symbol 
+            else if (deciAmps < 0) { lcd2.print('-'); } //When    charging battery (i.e. regen ), we display '+' symbol
             else                   { lcd2.print(' '); }
         #endif
 
         if (abs_deciAmps < 1000) { lcd2.print(abs_deciAmps * 0.1, 1); }
         else                     { lcd2.print(abs_deciAmps * 0.1, 0); }
-        
+
         deciAmps_onScreen = deciAmps;
         didscreenUpdateOccur = SCREEN_UPDATED;
     }
@@ -513,12 +513,12 @@ bool lcd_printPower(void)
         if (abs_deci_kW <  100) { lcd2.print(' '); } //add one leading space (e.g. " +9.9")
 
         #ifdef DISPLAY_NEGATIVE_SIGN_DURING_ASSIST
-            if      (deci_kW > 0) { lcd2.print('-'); } //When discharging battery (i.e. assist), we display '-' symbol, even though internally it's '+' 
-            else if (deci_kW < 0) { lcd2.print('+'); } //When    charging battery (i.e. regen ), we display '+' symbol, even though internally it's '-' 
+            if      (deci_kW > 0) { lcd2.print('-'); } //When discharging battery (i.e. assist), we display '-' symbol, even though internally it's '+'
+            else if (deci_kW < 0) { lcd2.print('+'); } //When    charging battery (i.e. regen ), we display '+' symbol, even though internally it's '-'
             else                  { lcd2.print(' '); }
         #elif defined DISPLAY_POSITIVE_SIGN_DURING_ASSIST
             if      (deci_kW > 0) { lcd2.print('+'); } //When discharging battery (i.e. assist), we display '+' symbol
-            else if (deci_kW < 0) { lcd2.print('-'); } //When    charging battery (i.e. regen ), we display '-' symbol 
+            else if (deci_kW < 0) { lcd2.print('-'); } //When    charging battery (i.e. regen ), we display '-' symbol
             else                  { lcd2.print(' '); }
         #endif
 
@@ -665,7 +665,15 @@ void lcdTransmit_Warning(uint8_t warningToDisplay)
         lcd2.setCursor(0,1); lcd2.print(F("       count doesn't"));
         lcd2.setCursor(0,2); lcd2.print(F("       match setting"));
         lcd2.setCursor(0,3); lcd2.print(F("       in config.h  "));
-    }   
+    }
+
+    else if (warningToDisplay == LCD_WARN_BASIC_TEST)
+    {
+        lcd2.setCursor(0,0); lcd2.print(F("ALERT: Cell balance "));
+        lcd2.setCursor(0,1); lcd2.print(F("  circuit fauit     "));
+        lcd2.setCursor(0,2); lcd2.print(F("  Sense cable or    "));
+        lcd2.setCursor(0,3); lcd2.print(F("  LiBCM PCB         "));
+    }
 
     if (++whichRowToPrint > 3) { whichRowToPrint = 0; }
 
@@ -691,7 +699,7 @@ bool lcd_updateValue(uint8_t stateToUpdate)
     bool didScreenUpdateOccur = SCREEN_DIDNT_UPDATE;
     switch (stateToUpdate)
     {
-        case LCDVALUE_CALC_CYCLEFRAME: didScreenUpdateOccur = whichCycleFrameToDisplay();      break;             
+        case LCDVALUE_CALC_CYCLEFRAME: didScreenUpdateOccur = whichCycleFrameToDisplay();      break;
         case LCDVALUE_SECONDS        : didScreenUpdateOccur = lcd_printTime_unitless();        break;
         case LCDVALUE_VPACK_ACTUAL   : didScreenUpdateOccur = lcd_printStackVoltage_actual();  break;
         case LCDVALUE_VPACK_SPOOFED  : didScreenUpdateOccur = lcd_printStackVoltage_spoofed(); break;
@@ -746,7 +754,7 @@ void updateNextVariable(void)
 
     do
     {
-        if (isMinimumDisplayPeriodMet(lcdVariableToUpdate) == YES) 
+        if (isMinimumDisplayPeriodMet(lcdVariableToUpdate) == YES)
         {
             didScreenUpdateOccur = lcd_updateValue(lcdVariableToUpdate);
         }
@@ -784,7 +792,7 @@ void updateNextVariable(void)
     //      |****|****|****|****    cellMaxNow    cellMaxKey  battTemp  isoSPI  fan  charger  heater balance
     //Row0 "Hx.xxx<y.yy kkCEFGHB" | Hx.xxx        <y.yy       kkC       E       f|F  G        H      B
     //
-    //      |****|****|****|****    cellMinNow    cellMinKey  VpackActual  VpackSpoof         
+    //      |****|****|****|****    cellMinNow    cellMinKey  VpackActual  VpackSpoof
     //Row1 "La.aaa>j.jj rrr~mmmV" | La.aaa        >j.jj       rrr~         mmmV       //'~' prints as a right arrow
     //
     //      |****|****|****|****    cellDeltamV   packAmps    power_kW
@@ -821,7 +829,7 @@ bool updateNextStatic(void)
     }
 
     bool doneDisplayingStaticValues = NO;
-    
+
     if (++lcdStaticElementToUpdate > LCDSTATIC_MAX_VALUE)
     {
         doneDisplayingStaticValues = YES;

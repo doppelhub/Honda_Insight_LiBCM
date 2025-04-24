@@ -30,6 +30,7 @@ void key_handleKeyEvent_off(void)
     eeprom_keyOffCheckForExpiredFirmware();
     LTC68042configure_doesActualPackSizeMatchUserConfig();
 
+    LTC68042configure_basicConfidenceTest();
     time_latestKeyOff_ms_set(millis()); //MUST RUN LAST!
 }
 

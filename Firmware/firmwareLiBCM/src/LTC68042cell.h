@@ -44,5 +44,6 @@
 
     uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode);
     void LTC68042cell_acquireAllCellVoltages(void);
+    void LTC68042cell_dischargeAllowedDuringConversion_set(bool dcpState);
 
 #endif

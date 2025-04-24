@@ -11,6 +11,7 @@
 //  Example: cellVoltages_counts[0][ 1] is IC_1 cell_02
 //  Example: cellVoltages_counts[3][11] is IC_4 cell_12
 uint16_t cellVoltages_counts[TOTAL_IC][CELLS_PER_IC];
+bool     dcp_State = IS_DISCHARGE_ALLOWED_DURING_CONVERSION;
 uint8_t  chipAddress = FIRST_IC_ADDR;
 char     cellVoltageRegister = 'A'; //LTC68042 contains QTY4 CVRs (A/B/C/D)
 uint32_t conversionStart_us = 0;
@@ -19,7 +20,10 @@ uint32_t conversionStart_us = 0;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//tell all LTC68042 ICs to measure all cells
+void LTC68042cell_dischargeAllowedDuringConversion_set(bool dcpState) { dcp_State = dcpState; };
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//tell all BMS ICs to measure all cells
 void startCellConversionAndResetCellCounters(void)
 {
     uint8_t cmd[4];
@@ -27,7 +31,7 @@ void startCellConversionAndResetCellCounters(void)
     //JTS2doLater: Replace magic numbers with #define
     //Cell Voltage conversion command
     uint8_t ADCV[2] = { ((MD_FILTERED & 0x02 ) >> 1) + 0x02,  //set bit 9 true
-                        ((MD_FILTERED & 0x01 ) << 7) + 0x60 + (IS_DISCHARGE_ALLOWED_DURING_CONVERSION<<4) + CELL_CH_ALL };
+                        ((MD_FILTERED & 0x01 ) << 7) + 0x60 + ((dcp_State ? 1 : 0)<<4) + CELL_CH_ALL };
 
     //Load 'ADCV' command into cmd array
     cmd[0] = ADCV[0];
@@ -250,10 +254,10 @@ bool checkIfAdcWaitOver(void)
 /////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t doCellDataGather(uint8_t triggerMode)
-{ //retrieve next CVR from LTC, then validate and store in cellVoltages_counts[][] array
-    //round-robin state handlers
+{
     uint8_t nextPresentState = LTC_STATE_GATHER; // default to remaining in gather state
 
+    //retrieve next CVR from LTC, then validate and store in cellVoltages_counts[][] array
     validateAndStoreNextCVR(chipAddress, cellVoltageRegister);
 
     //determine which LTC68042 IC & CVR to read next
@@ -352,6 +356,8 @@ uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
         }
     }
 
+    else if (LTC_STATE_GATHER == presentState) { presentState = doCellDataGather(triggerMode); }
+
     //for LTC_WAITING_FOR_ADC: if done waiting, fall through to GATHER
     //  don't gather data or advance the state if the current
     //  conversion is not complete (should not usually be necessary in key-on mode)
@@ -365,8 +371,6 @@ uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
         //else
             //presentState = LTC_WAITING_FOR_ADC; // hold in current state
     }
-
-    else if (LTC_STATE_GATHER == presentState) { presentState = doCellDataGather(triggerMode); }
 
     else if ((LTC_STATE_PROCESS == presentState) || (LTC_STATE_PROCESS_TRIGGERED == presentState))
     {
@@ -387,7 +391,6 @@ uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
 
         if (LTC_STATE_PROCESS_TRIGGERED == presentState) { presentState = LTC_STATE_TRIGGER;   } //trigger on next run
         else                                             { presentState = LTC_WAITING_FOR_ADC; } //wait if needed on next run (a trigger has already happened)
-
     }
 
     else if (LTC_STATE_FIRSTRUN == presentState)
