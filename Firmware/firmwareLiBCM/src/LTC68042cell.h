@@ -10,7 +10,7 @@
     #define LTC_STATE_GATHER             2
     #define LTC_STATE_PROCESS            3
 
-    #define GATHERING_CELL_DATA    0
+    #define GATHERING_CELL_DATA  0
     #define CELL_DATA_PROCESSED  1
 
     #define LTC6804_MAX_CONVERSION_TIME_ms 5 //4.43 ms in '2kHz' sampling mode
