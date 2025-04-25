@@ -285,18 +285,20 @@ uint8_t doCellDataGather(void)
 //
 // Note: if called too soon after a conversion is triggered, the state machine will return immediately, so more
 //   calls will be required until the wait time expires.
-// returns NO__GATHERING_CELL_DATA while gathering data, DONE__CELL_DATA_PROCESSED each time all data is processed
+// returns GATHERING_CELL_DATA while gathering data, CELL_DATA_PROCESSED each time all data is processed
 bool LTC68042cell_nextVoltages(void)
 {
     static uint8_t presentState = LTC_STATE_FIRSTRUN;
-    bool cellVoltageDataStatus = NO__GATHERING_CELL_DATA;
+    bool cellVoltageDataStatus = GATHERING_CELL_DATA;
 
     if (LTC68042configure_wakeup() == LTC6804_CORE_JUST_WOKE_UP) { presentState = LTC_STATE_FIRSTRUN; }
+
+    if (LTC_STATE_GATHER == presentState) { presentState = doCellDataGather(); }
 
     //for LTC_WAITING_FOR_ADC: if done waiting, fall through to GATHER
     //  don't gather data or advance the state if the current
     //  conversion is not complete (should not usually be necessary in key-on mode)
-    if (LTC_WAITING_FOR_ADC == presentState)
+    else if (LTC_WAITING_FOR_ADC == presentState)
     {
         if (true == checkIfAdcWaitOver())
         {
@@ -307,18 +309,16 @@ bool LTC68042cell_nextVoltages(void)
             //presentState = LTC_WAITING_FOR_ADC; // hold in current state
     }
 
-    else if (LTC_STATE_GATHER == presentState) { presentState = doCellDataGather(); }
-
-    else if (LTC_STATE_PROCESS == presentState)
+    else if (presentState == LTC_STATE_PROCESS)
     {
         //all cell voltages read...
         processAllCellVoltages(); //do math and store in LTC68042_result.c
-        cellVoltageDataStatus = DONE__CELL_DATA_PROCESSED;
+        cellVoltageDataStatus = CELL_DATA_PROCESSED;
         presentState = LTC_WAITING_FOR_ADC; //wait if needed on next run (a trigger has already happened)
 
     }
 
-    else if (LTC_STATE_FIRSTRUN == presentState)
+    else if (presentState == LTC_STATE_FIRSTRUN)
     {
         //LTC6804 ICs were previously off
         LTC68042configure_programVolatileDefaults();
@@ -342,8 +342,8 @@ bool LTC68042cell_nextVoltages(void)
 //JTS2doNext: rewrite to remove double call hack
 void LTC68042cell_acquireAllCellVoltages(void)
 {
-    while (LTC68042cell_nextVoltages() != DONE__CELL_DATA_PROCESSED) { ; } //clear old data (if any)
-    while (LTC68042cell_nextVoltages() != DONE__CELL_DATA_PROCESSED) { ; } //gather new data
+    while (LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //clear old data (if any)
+    while (LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //gather new data
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

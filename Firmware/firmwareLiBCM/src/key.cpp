@@ -119,7 +119,7 @@ void keyOn_coldBootTasks(void)
     LED(3,ON);
 
     //read and process cell voltages, waiting for conversion to finish if needed
-    while(LTC68042cell_nextVoltages() != DONE__CELL_DATA_PROCESSED) { ; } //read all cell voltages back
+    while(LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //read all cell voltages back
     vPackSpoof_setVoltage();
     SoC_setBatteryStateNow_percent(SoC_estimateFromRestingCellVoltage_percent());
     BATTSCI_enable(); //must occur after we have valid Vcell data
