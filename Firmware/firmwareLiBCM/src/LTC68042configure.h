@@ -47,9 +47,9 @@
     #define AUX_CH_GPIO5 5
     #define AUX_CH_VREF2 6
 
-    //JTS2doLater: Does reducing corner frequency to 26 Hz reduce assist/regen noise? //Add 214 ms wait before reading 
+    //JTS2doLater: Does reducing corner frequency to 26 Hz reduce assist/regen noise? //Add 214 ms wait before reading
     //ADC LPF Fcorner:       Total conversion time (QTY12 cells/IC)
-    //ADCOPT(CFGR0[0] = 0)    
+    //ADCOPT(CFGR0[0] = 0)
     // MD = 01 27000 Hz        1.2 ms fast
     // MD = 10  7000 Hz        2.5 ms (default)
     // MD = 11    26 Hz      213.5 ms filtered
@@ -66,7 +66,7 @@
     #define MD_NORMAL 2
     #define MD_FILTERED 3
 
-    
+
     // |CH | Dec  | Channels to convert |
     // |---|------|---------------------|
     // |000| 0    | All Cells           |
@@ -179,24 +179,41 @@
 
     #define LTC6804_MASK_REFON_BIT 0x02
 
+    //======================= Basic cell discharge circuit test
+    #define TESTBASIC_EvenCellsBitMap 0b0000010101010101
+    #define TESTBASIC_OddCellsBitMap  0b0000101010101010
+    // This quick test first aims to detect open BMS sense wires by
+    //   verifying that cell voltages measure within sane limits while
+    //   the cell balance circuits are active.
+    // Sane cell voltage high limit (while cell balance circuit is active):
+    //   a measured cell voltage above this value is "not sane", and
+    //   probably indicates an open BMS sense wire
+    #define TESTBASIC_SANE_HIGH_TESTLIMIT_counts   CELL_VMAX_REGEN
+    // Sane cell voltage low limit (while cell balance circuit is active):
+    //   a measured cell voltage below this value is "not sane", and
+    //   probably (also) indicates an open BMS sense wire
+    #define TESTBASIC_SANE_LOW_TESTLIMIT_counts    CELL_VMIN_GRIDCHARGER
+    // Next, the test attempts verify that the cell discharge circuits
+    //   actually draw current by measuring the IR drop in the BMS sense
+    //   wires and connections.
+    // Cells with a voltage delta below this limit either aren't drawing
+    //   current or are always drawing current. Either way there is a
+    //   BMS discharge circuit failure.
+    //   Another possibility is that they have anomalously low
+    //   cable/wire/connection resistance (deemed unlikely).
+    // cell voltage delta limit:
+    #define TESTBASIC_DELTA_TESTLIMIT_counts  30 //WGCToDoNext: this limit surely needs refinement, and likely won't work in BMS_TYPE_WGCLiBCM at all
+
+    //Exteral (public) functions (aka LTC68042 API)
     void LTC68042configure_initialize(void);
-
     void LTC68042configure_handleKeyStateChange(void);
-
     bool LTC68042configure_wakeup(void);
-
     uint16_t LTC68042configure_calcPEC15(uint8_t len, uint8_t const data[]);
-
-    void LTC68042configure_spiWrite( uint8_t length, uint8_t const data[]);
-
+    void LTC68042configure_spiWrite(uint8_t length, uint8_t const data[]);
     void LTC68042configure_spiWriteRead(uint8_t *TxData, uint8_t TXlen, uint8_t *rx_data, uint8_t RXlen);
-
     void LTC68042configure_programVolatileDefaults(void);
-    
     void LTC68042configure_setBalanceResistors(uint8_t icAddress, uint16_t cellBitmap, uint8_t softwareTimeout);
-
     bool LTC68042configure_doesActualPackSizeMatchUserConfig(void);
-
     void LTC68042configure_pulseChipSelectLow(uint16_t lowPulsePeriod_us);
-
+    bool LTC68042configure_basicConfidenceTest(void);
 #endif

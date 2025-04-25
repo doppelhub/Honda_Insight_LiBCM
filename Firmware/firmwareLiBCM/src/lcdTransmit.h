@@ -8,7 +8,7 @@
     #define SCREEN_UPDATED      true
 
     //define screen elements
-    //up to one screen element is updated each loop, using round robbin state machine 
+    //up to one screen element is updated each loop, using round robbin state machine
     #define LCDVALUE_NO_UPDATE        0
     #define LCDVALUE_CALC_CYCLEFRAME  1
     #define LCDVALUE_SECONDS          2
@@ -79,6 +79,7 @@
     #define LCD_WARN_FW_EXPIRED 2
     #define LCD_WARN_COVER_GONE 3
     #define LCD_WARN_CELL_COUNT 4
+    #define LCD_WARN_BASIC_TEST 5
     void lcdTransmit_Warning(uint8_t warningToDisplay);
 
 #endif
