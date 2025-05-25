@@ -117,6 +117,7 @@ void processChargerDisableReason(uint8_t canWeCharge)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doLater: add timer/current logic to detect if grid charger isn't working
 void chargerControlSignals_handler(void)
 {
     static uint8_t isChargingAllowed_previous = NO__UNINITIALIZED;

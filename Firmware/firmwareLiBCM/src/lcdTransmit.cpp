@@ -622,7 +622,14 @@ void lcdTransmit_displayOff(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/*JTS2doLater: Add a keyOff powerup splash screen
+********************
+Welcome to LiBCM
+V0.9.4d
+*/
+
 /*JTS2doLater: Add the following alert if LiBCM loses control
+********************
 LiBCM DETECTED A
 DANGEROUS CONDITION.
 TURN OFF IMA SWITCH
@@ -636,7 +643,7 @@ void lcdTransmit_Warning(uint8_t warningToDisplay)
 
     if (warningToDisplay == LCD_WARN_KEYON_GRID)
     {
-        //                                            ********************
+        //                                             ********************
         if      (whichRowToPrint == 0) { lcd2.print(F("ALERT: Grid Charger "));}
         else if (whichRowToPrint == 1) { lcd2.print(F("       Plugged In!! "));}
         else if (whichRowToPrint == 2) { lcd2.print(F("LiBCM sent P1648 to "));}

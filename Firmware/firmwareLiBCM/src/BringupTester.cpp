@@ -41,6 +41,16 @@ void serialUSB_waitForAnyUserInput(void)
 void bringupTester_gridcharger(void)
 {
     #ifdef RUN_BRINGUP_TESTER_GRIDCHARGER
+        if (gpio_isUserSwitchOn() == NO)
+        {
+            //user just installed LiBCM, but hasn't installed firmware yet
+            Serial.print(F("\nPlease install LiBCM firmware\nSee linsight.org/install/firmware"));
+
+            lcdTransmit_begin();
+            lcdTransmit_displayOn();
+            for (uint8_t ii = 0; ii < 4; ii++) { lcdTransmit_Warning(LCD_WARN_FW_EXPIRED); }
+        }
+    
         while (1) //this function never returns
         {       
             Serial.print(F("\nRunning Grid Charger Test: "));
