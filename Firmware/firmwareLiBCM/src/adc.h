@@ -6,8 +6,8 @@
 
     uint8_t adc_packVoltage_VpinIn(void);
 
-    int16_t adc_getLatestBatteryCurrent_amps    (void);
-    int16_t adc_getLatestBatteryCurrent_deciAmps(void);
+    int16_t adc_getLatestBatteryCurrent_amps    (void); //assist is positive
+    int16_t adc_getLatestBatteryCurrent_deciAmps(void); //regen  is negative
 
     int16_t adc_getLatestSpoofedCurrent_amps(void);
     int16_t adc_getLatestSpoofedCurrent_deciAmps(void);

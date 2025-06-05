@@ -4,6 +4,14 @@
 #ifndef wattHours_h
     #define wattHours_h
 
-    void energy_integrate_centiJoules(void);
+	#define NUM_BYTES_PER_Wh_RECORD 6
+	#define NUM_Wh_RECORDS          256
+	#define NUM_BYTES_Wh_HISTORY    (NUM_BYTES_PER_Wh_RECORD * NUM_Wh_RECORDS)
+
+	uint16_t energy_getAssist_Wh(void);
+	uint16_t energy_getRegen_Wh (void);
+	
+	void energy_keyOn(void);
+	void energy_handler(void);
 
 #endif

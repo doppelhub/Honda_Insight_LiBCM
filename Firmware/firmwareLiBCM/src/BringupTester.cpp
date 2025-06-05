@@ -17,7 +17,7 @@ void serialUSB_waitForEmptyBuffer(void)
 
 void serialUSB_waitForAnyUserInput(void)
 {
-    const uint32_t maxTestPeriod_ms = 60000; //prevent overcharging modules if user walks off mid-test
+    const uint32_t maxTestPeriod_ms = 120000; //prevent overcharging modules if user walks off mid-test
     uint32_t timestamp_testStartTime_ms = millis();
     static bool hasTooMuchTimePassed = false;
 

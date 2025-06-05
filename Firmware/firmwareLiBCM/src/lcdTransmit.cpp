@@ -163,12 +163,9 @@ bool lcd_printWattHours(void)
 
     lcd2.setCursor(12,3);
 
-    uint16_t wattHoursAssist = 12345; //JTS2doNow: Add total watt hour math function
-    uint16_t wattHoursRegen  =     5; //JTS2doNow: Add total watt hour math function
-
     uint16_t wattHours_new = 0;
-    if      (cycleFrameNumber == CYCLEFRAME_A) { wattHours_new = wattHoursAssist; }
-    else if (cycleFrameNumber == CYCLEFRAME_B) { wattHours_new = wattHoursRegen;  }
+    if      (cycleFrameNumber == CYCLEFRAME_A) { wattHours_new = energy_getAssist_Wh(); }
+    else if (cycleFrameNumber == CYCLEFRAME_B) { wattHours_new = energy_getRegen_Wh();  }
         
 
     if (wattHours_new != wattHours_onScreen)
@@ -444,7 +441,7 @@ bool lcd_printCurrent(void)
             else                   { lcd2.print(' '); }
         #elif defined DISPLAY_POSITIVE_SIGN_DURING_ASSIST
             if      (deciAmps > 0) { lcd2.print('+'); } //When discharging battery (i.e. assist), we display '+' symbol
-            else if (deciAmps < 0) { lcd2.print('-'); } //When    charging battery (i.e. regen ), we display '+' symbol 
+            else if (deciAmps < 0) { lcd2.print('-'); } //When    charging battery (i.e. regen ), we display '-' symbol 
             else                   { lcd2.print(' '); }
         #endif
 
