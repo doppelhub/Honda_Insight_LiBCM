@@ -108,6 +108,11 @@ void LiDisplay_begin(void)
             #define LIDISPLAY_GRIDCHARGE_PAGE_ID 5
         #endif
 
+		#ifdef LIDISPLAY_USE_NERD_SCREEN
+			#undef LIDISPLAY_DRIVING_PAGE_ID
+			#define LIDISPLAY_DRIVING_PAGE_ID 6
+		#endif
+
         LiDisplayElementToUpdate = 0;
 
         LiDisplaySplashPending = false;
@@ -777,7 +782,14 @@ void LiDisplay_updateElement() {
 			{
 				// 6 elements update very frequently so we won't track their previous value
 				case 0: LiDisplay_updateStringVal(0, "t3", 0, String((LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps())*0.001)); break;
-				case 1: LiDisplay_calculateChrgAsstGaugeBars(); LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId)); break;
+				case 1:
+					if (LIDISPLAY_DRIVING_PAGE_ID == 0) {
+						LiDisplay_calculateChrgAsstGaugeBars();
+						LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId));
+					} else {
+
+					}
+					break;
 				case 2: LiDisplay_updateStringVal(0, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
 				case 3: LiDisplay_updateStringVal(0, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
 				case 4: LiDisplay_updateStringVal(0, "t13", 0, key_time); break;
@@ -813,10 +825,17 @@ void LiDisplay_updateElement() {
 						LiDisplay_updateStringVal(0, "t11", 0, (String(temperature_battery_getLatest()) + "C"));
 						LiDisplayTemp_onScreen = temperature_battery_getLatest();
 					}
-					else // Nothing else needed to update so we will update the chrg asst bar display again instead.
+					else
 					{
-						LiDisplay_calculateChrgAsstGaugeBars();
-						LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId));
+						if (LIDISPLAY_DRIVING_PAGE_ID == 0) {
+							// Nothing else needed to update so we will update the chrg asst bar display again instead.
+							LiDisplay_calculateChrgAsstGaugeBars();
+							LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId));
+						}
+						else {
+							LiDisplay_updateStringVal(0, "t17", 0, (String((LTC68042result_maxEverCellVoltage_get() * 0.0001),3)));
+							LiDisplay_updateStringVal(0, "t19", 0, (String((LTC68042result_minEverCellVoltage_get() * 0.0001),3)));
+						}
 					}
 				break;
 				default: maxElementId = LIDISPLAY_DRIVING_PAGE_INTITIAL_MAX_ELEMENT_ID; break;
@@ -974,6 +993,9 @@ void LiDisplay_keyOn(void)
         LiDisplaySoCBars_onScreen = 100;
 
     #endif
+	#ifdef LIDISPLAY_FEELING_NERDY
+		LiDisplay_updateNumericVal(LIDISPLAY_DRIVING_PAGE_ID, "t27", 4, "65535");
+	#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
