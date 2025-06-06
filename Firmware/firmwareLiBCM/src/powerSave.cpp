@@ -18,6 +18,7 @@ volatile uint8_t interruptSource = USB_INTERRUPT; //see ISR(PCINT1_vect) for mor
 //turn LiBCM off if any cell voltage is too low
 //LiBCM remains off until the next keyON occurs
 //prevents over-discharge during extended keyOFF
+//JTS2doLater: while grid charging, assert error if pack SoC doesn't increase 1% every hour (due to HW issue) 
 void powerSave_turnOffLiBCM_ifPackEmpty(void)
 {
     if (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER)

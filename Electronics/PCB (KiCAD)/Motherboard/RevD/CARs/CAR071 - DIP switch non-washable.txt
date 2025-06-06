@@ -1,0 +1,14 @@
+Some PCBs from D147 to D225 might have non-functional DIP switches.  Affected switches have poor contact resistance, due to ultrasonic washing.  This isn't a huge deal because these DIP switches are only used for debug/factory testing.  However, it's possible a future firmware update could repurpose the 'USER' switch for some user feature (right now it's only used during manufacturing FVT).  If that happens, then some users won't be able to use whatever feature is selectable when the 'USER' switch is 'ON'.
+
+Background:
+LiBCM PCBs manufactured up to and including D225 used a non-washable SMT DIP switch.  However, washing was added to the manufacturing process at some point between D147 and D191.  Units manufactured prior to adding the washing step are not affected. Specifics:
+PCBs with serial number D146 and earlier are not affected (they were not washed).
+Ultrasonic washing was added at some point between D147 to D191.
+PCBs with serial number D192 to D225 were certainly washed, and might have spotty DIP switches.
+PCBs with serial number D226 and later are not affected (they use washable DIP switch).
+
+Workaround:
+Repeatedly cycling the switch on and off seems to restore reliable contact.  Probably a surface oxide issue caused by cleaning solution.  The old switch wasn't rated for washing, so not really surprised it fails when washed.
+
+Solution:
+The old part (DS04-254-2-02BK-SMT) was changed to a washable type (219-2LPSTR) starting with D226.

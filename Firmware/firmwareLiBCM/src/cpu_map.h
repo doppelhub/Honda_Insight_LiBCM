@@ -10,12 +10,12 @@
     #define CPU_MAP_MEGA2560
 
     #ifdef CPU_MAP_MEGA2560
-    
+
         #define PIN_BATTCURRENT A0
         #define PIN_USER_SW     A1
         #define PIN_VPIN_IN     A2
-        #define PIN_TEMP_YEL    A3
-        #define PIN_TEMP_GRN    A4
+        #define PIN_TEMP_YEL    A3 // 5AhG3: Exhaust, FoMoCo Top middle battery module
+        #define PIN_TEMP_GRN    A4 // 5AhG3: Intake, FoMoCo Top rear battery module
         #define PIN_TEMP_WHT    A5
         #define PIN_TEMP_BLU    A6
         #define PIN_FANOEM_LOW  A7
@@ -48,7 +48,7 @@
         #define PIN_BATTSCI_DE     41
         #define PIN_COVER_SWITCH   42
         #define PIN_GPIO0_CS_MIMA  43
-        #define PIN_GPIO3          44 //with daughterboard: 1500W charger current (if installed) //without daughterboard: heater (if installed) 
+        #define PIN_GPIO3          44 //with daughterboard: 1500W charger current (if installed) //without daughterboard: heater (if installed)
         #define PIN_BUZZER_PWM     45
         #define PIN_LED3           46
         #define PIN_SPI_EXT_CS     47

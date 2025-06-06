@@ -45,6 +45,7 @@ void key_handleKeyEvent_on(void)
     LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyON();
+    energy_keyOn();
     LED(1,HIGH);
 
     time_latestKeyOn_ms_set(millis()); //MUST RUN LAST!

@@ -1,2 +1,6 @@
 Existing 33 uF capacitor URY2F330MRD is discontinued.
 Starting on D200, using 22 uF capacitor URY2G220MRD, which is also discontinued, but I have QTY140 in stock.  Once those are gone, find something else.
+
+Looks like 10 mm lead spaced caps are $$$$, whereas 7.5 mm lead spaced caps are cheaper.  Switching to 7.5 mm requires a board spin, so maybe stick with more expensive 10 mm lead spaced cap.  Possible substitutes:
+EKXJ421ELL330ML20S
+UCY2G330MHD3

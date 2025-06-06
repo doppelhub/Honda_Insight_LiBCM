@@ -43,6 +43,7 @@ void loop()
     LiDisplay_handler();
     batteryHistory_handler();
     cellBalance_handler();
+    energy_handler();
 
     if (key_getSampledState() == KEYSTATE_ON)
     {
