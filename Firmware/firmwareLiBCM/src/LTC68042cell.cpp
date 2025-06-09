@@ -11,20 +11,23 @@
 //  Example: cellVoltages_counts[0][ 1] is IC_1 cell_02
 //  Example: cellVoltages_counts[3][11] is IC_4 cell_12
 uint16_t cellVoltages_counts[TOTAL_IC][CELLS_PER_IC];
+uint8_t  chipAddress = FIRST_IC_ADDR;
+char     cellVoltageRegister = 'A'; //LTC68042 contains QTY4 CVRs (A/B/C/D)
+uint32_t conversionStart_us = 0;
 
 //JTS2doLater: Add cell voltage test that sets user alert if a cell voltage suddenly changes from 'balanced' to 'majorly imbalanced'
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //tell all LTC68042 ICs to measure all cells
-void startCellConversion(void)
+void startCellConversionAndResetCellCounters(void)
 {
     uint8_t cmd[4];
 
     //JTS2doLater: Replace magic numbers with #define
     //Cell Voltage conversion command
     uint8_t ADCV[2] = { ((MD_FILTERED & 0x02 ) >> 1) + 0x02,  //set bit 9 true
-                        ((MD_FILTERED & 0x01 ) << 7) + 0x60 + (IS_DISCHARGE_ALLOWED_DURING_CONVERSION<<4) + CELL_CH_ALL }; 
+                        ((MD_FILTERED & 0x01 ) << 7) + 0x60 + (IS_DISCHARGE_ALLOWED_DURING_CONVERSION<<4) + CELL_CH_ALL };
 
     //Load 'ADCV' command into cmd array
     cmd[0] = ADCV[0];
@@ -35,7 +38,11 @@ void startCellConversion(void)
     cmd[2] = (uint8_t)(temp_pec >> 8);
     cmd[3] = (uint8_t)(temp_pec);
 
-    LTC68042configure_spiWrite(4,cmd); //send 'adcv' command to all LTC6804s (broadcast command) 
+    LTC68042configure_spiWrite(4,cmd); //send 'adcv' command to all LTC6804s (broadcast command)
+
+    conversionStart_us = micros();
+    chipAddress = FIRST_IC_ADDR; //reset to first LTC IC
+    cellVoltageRegister = 'A';
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -80,7 +87,7 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
     uint16_t cellY_Voltage_counts;
     uint16_t cellZ_Voltage_counts;
 
-    do //repeats until PECs match (i.e. no data transmission errors) 
+    do //repeats until PECs match (i.e. no data transmission errors)
     {
         uint8_t returnedData[NUM_RX_BYTES];
 
@@ -107,11 +114,11 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
         cellX_Voltage_counts = 0;
         cellY_Voltage_counts = 0;
         cellZ_Voltage_counts = 0;
-    } 
+    }
 
     //Determine which LTC cell voltages were read into returnedData
     uint8_t cellX=0; //1st cell in returnedData (LTC cell 1, 4, 7, or 10)
-    uint8_t cellY=0; //2nd cell in returnedData (LTC cell 2, 5, 8, or 11) 
+    uint8_t cellY=0; //2nd cell in returnedData (LTC cell 2, 5, 8, or 11)
     uint8_t cellZ=0; //3rd cell in returnedData (LTC cell 3, 6, 9, or 12)
     switch (cellVoltageRegister)  //LUT to prevent QTY3 multiplies & QTY12 adds per call
     {
@@ -149,7 +156,7 @@ void processAllCellVoltages(void)
         //Note that the additional voltage error is solely a function of the resistance in the cabling between the modules, and has nothing to do with the cell ESR.
         //However, due to the high frequency chopping that occurs on the IGBT driver, the current might not actually be flowing the moment the LTC6804 samples the cells.
         //If no current is flowing at the precise moment the LTC6804 ADC samples the cells, the current-proportional voltage correction (on cell 19) will actually
-        //introduce its own voltage error (rather than correcting the voltage), due to how the OEM Battery Current Sensor measures the true average current (without chopping). 
+        //introduce its own voltage error (rather than correcting the voltage), due to how the OEM Battery Current Sensor measures the true average current (without chopping).
         //Therefore, to pick the 'correct' voltage, LiBCM calculates the voltage correction, and then picks whichever voltage is closest to the other cells.
         //
         //Note that the ultimate root cause for this behavior is that the OEM EHW5 BMS connectors don't allow us to separately sense cell 18+ from cell 19-.
@@ -158,7 +165,7 @@ void processAllCellVoltages(void)
         //However, that IC is backordered for years, hence the above hardware decision and this workaround.
         //It's not ideal, but it's what we've got.  STFP!
 
-        //cell 19 is the seventh cell on the second IC  
+        //cell 19 is the seventh cell on the second IC
         #define CELL19_CHIP_NUMBER 1 //array is zero-indexed // '1' is the 2nd IC
         #define CELL19_CELL_NUMBER 6 //array is zero-indexed // '6' is seventh cell (i.e. stack cell 19)
 
@@ -176,14 +183,14 @@ void processAllCellVoltages(void)
 
     //loop through every cell in pack
     for (int chip = 0 ; chip < TOTAL_IC; chip++) //actual LTC serial address: 'chip' + FIRST_IC_ADDR )
-    { 
+    {
         for (int cell=0; cell < CELLS_PER_IC; cell++) //actual LTC cell number: 'cell' + 1 (zero-indexed)
-        { 
+        {
             uint16_t cellVoltageUnderTest = cellVoltages_counts[chip][cell];
-        
-            //accumulate Vpack  
+
+            //accumulate Vpack
             packVoltage_RAW += cellVoltageUnderTest;
-            
+
             //find hi/lo cells
             if (cellVoltageUnderTest < loCellVoltage) { loCellVoltage = cellVoltageUnderTest; }
             if (cellVoltageUnderTest > hiCellVoltage) { hiCellVoltage = cellVoltageUnderTest; }
@@ -198,25 +205,25 @@ void processAllCellVoltages(void)
     }
 
     LTC68042result_packVoltage_set( (uint8_t)(packVoltage_RAW * 0.0001) );
-    
+
     LTC68042result_loCellVoltage_set(loCellVoltage);
     LTC68042result_hiCellVoltage_set(hiCellVoltage);
 
     #ifdef BATTERY_TYPE_5AhG3
         //Now we need to determine which cell 19 voltage is correct (the actual measured value, or the current-adjusted one)
         //We do this by determining which voltage has the smallest magnitude from the max/min cell voltages (determined above).
-        
+
         uint16_t midpointVoltage = ((hiCellVoltage - loCellVoltage) >> 1) + loCellVoltage;
         uint16_t cell19deltaMagnitude_measured = 0;
         uint16_t cell19deltaMagnitude_adjusted = 0;
 
         //find measured voltage magnitude from midpoint
         if (cell19Voltage_measured > midpointVoltage) { cell19deltaMagnitude_measured = cell19Voltage_measured - midpointVoltage; }
-        else                                          { cell19deltaMagnitude_measured = midpointVoltage - cell19Voltage_measured; } 
+        else                                          { cell19deltaMagnitude_measured = midpointVoltage - cell19Voltage_measured; }
 
         //find adjusted voltage magnitude from midpoint
         if (cell19Voltage_adjusted > midpointVoltage) { cell19deltaMagnitude_adjusted = cell19Voltage_adjusted - midpointVoltage; }
-        else                                          { cell19deltaMagnitude_adjusted = midpointVoltage - cell19Voltage_adjusted; } 
+        else                                          { cell19deltaMagnitude_adjusted = midpointVoltage - cell19Voltage_adjusted; }
 
         uint16_t cell19Voltage_final = 0;
 
@@ -234,66 +241,171 @@ void processAllCellVoltages(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//either gather next QTY3 cell voltages from LTC6804, or process a complete batch of returned cell voltage data.
-//raw cell voltages are stored in file-scoped "cellVoltages_counts[][]"" array
-//latest validated results are stored in a different, globally-accessible array inside "LTC68042_result.c"
-//Example with QTY48 cells:
-//  -the absolute first call starts a conversion.
-//  After that, the behavior is as follows:  
-//  -the next sixteen calls ( (48 cells) / (3 cells per call) = 16 calls ) read back QTY48 cell voltages.
-//  -The seventeenth call performs all pack voltage math and stores valid results in LTC68042_result.c
-//
-//returns false while gathering data, true each time all data is processed
-bool LTC68042cell_nextVoltages(void)
+bool checkIfAdcWaitOver(void)
 {
-    static uint8_t presentState = LTC_STATE_FIRSTRUN;
-    bool cellVoltageDataStatus = GATHERING_CELL_DATA;
+    if ((LTC6804_MAX_CONVERSION_TIME_ms * 1000) < (micros() - conversionStart_us)) { return true;  }
+    else                                                                           { return false; }
+}
 
-    if (LTC68042configure_wakeup() == LTC6804_CORE_JUST_WOKE_UP) { presentState = LTC_STATE_FIRSTRUN; }
+/////////////////////////////////////////////////////////////////////////////////////////
 
-    if (presentState == LTC_STATE_GATHER)
-    { //retrieve next CVR from LTC, then validate and store in cellVoltages_counts[][] array
+uint8_t doCellDataGather(uint8_t triggerMode)
+{ //retrieve next CVR from LTC, then validate and store in cellVoltages_counts[][] array
+    //round-robin state handlers
+    uint8_t nextPresentState = LTC_STATE_GATHER; // default to remaining in gather state
 
-        //round-robin state handlers
-        static uint8_t chipAddress = FIRST_IC_ADDR;
-        static char cellVoltageRegister = 'A'; //LTC68042 contains QTY4 CVRs (A/B/C/D)
+    validateAndStoreNextCVR(chipAddress, cellVoltageRegister);
 
-        validateAndStoreNextCVR(chipAddress, cellVoltageRegister);
-
-        //determine which LTC68042 IC & CVR to read next
-        cellVoltageRegister++;
-        if (cellVoltageRegister >= 'E')
-        { 
-            //LTC6804 only has registers A,B,C,D
-            cellVoltageRegister = 'A'; //reset back to first CVR
-
-            if (++chipAddress >= (FIRST_IC_ADDR + TOTAL_IC))
-            { 
-                //just finished reading last IC's last CVR... all cell voltages stored in cellVoltages_counts[][]
-                startCellConversion(); //start the next cell conversion //takes a while to finish
-                
-                chipAddress = FIRST_IC_ADDR; //reset to first LTC IC
-                presentState = LTC_STATE_PROCESS; //all cell voltages gathered.  Process data on next run.
+    //determine which LTC68042 IC & CVR to read next
+    cellVoltageRegister++;
+    if (cellVoltageRegister >= 'E')
+    {
+        //LTC6804 only has registers A,B,C,D
+        cellVoltageRegister = 'A'; //reset back to first CVR
+        if (++chipAddress >= (FIRST_IC_ADDR + TOTAL_IC))
+        {
+            //last "LTC_STATE_GATHER" call for this cycle
+            //just finished reading last IC's last CVR... all cell voltages stored in cellVoltages_counts[][]
+            if (LTC_TRIGGERMODE_ROUND_ROBIN == triggerMode)
+            {
+                startCellConversionAndResetCellCounters(); //start the next cell conversion //takes a while to finish
+                nextPresentState = LTC_STATE_PROCESS; //all cell voltages gathered.  Process data on next run.
+            }
+            else if (LTC_TRIGGERMODE_TRIGGERED == triggerMode)
+            {
+                nextPresentState = LTC_STATE_PROCESS_TRIGGERED; //all cell voltages gathered.  Process data on next run, but trigger after that
+            }
+            else
+            {
+                Serial.print(F("\nillegal LTC68042cell trigger mode"));
+                while (1) {;} //hang here until watchdog resets.
             }
         }
     }
+    return nextPresentState;
+}
 
-    else if (presentState == LTC_STATE_PROCESS)
-    {   
-        //all cell voltages read... 
-        processAllCellVoltages(); //do math and store in LTC68042_result.c
-        cellVoltageDataStatus = CELL_DATA_PROCESSED;
-        presentState = LTC_STATE_GATHER; //gather data on next run
+/////////////////////////////////////////////////////////////////////////////////////////
+
+//for triggerMode LTC_TRIGGERMODE_ROUND_ROBIN or LTC_TRIGGERMODE_TRIGGERED,
+//either gather next QTY3 cell voltages from LTC6804, or process a complete batch of returned cell voltage data.
+//raw cell voltages are stored in file-scoped "cellVoltages_counts[][]"" array
+//latest validated results are stored in a different, globally-accessible array inside "LTC68042_result.c"
+//for triggerMode LTC_TRIGGERMODE_FORCE_TRIGGERED, abandons any existing conversion and moves to a "ready to trigger" state (see note)
+//  see LTC68042cell.h for more explanation
+//Example with QTY48 cells (except if triggerMode is LTC_TRIGGERMODE_FORCE_TRIGGERED):
+//  -the absolute first call starts a conversion.
+//  After that, the behavior is as follows (see note):
+//  -the next sixteen calls ( (48 cells) / (3 cells per call) = 16 calls ) read back QTY48 cell voltages.
+//  -if triggerMode is LTC_TRIGGERMODE_ROUND_ROBIN, the last "read back" call also starts another conversion
+//  -the seventeenth call performs all pack voltage math and stores valid results in LTC68042_result.c
+//  -if triggerMode is LTC_TRIGGERMODE_TRIGGERED, an eighteenth call is required to start another conversion
+//
+// Note: if called too soon after a conversion is triggered, the state machine will return immediately, so more
+//   calls will be required until the wait time expires.
+//if called with triggerMode LTC_TRIGGERMODE_ROUND_ROBIN or LTC_TRIGGERMODE_TRIGGERED,
+// returns NO__GATHERING_CELL_DATA while gathering data, DONE__CELL_DATA_PROCESSED each time all data is processed
+//if called with triggerMode LTC_TRIGGERMODE_FORCE_TRIGGERED,
+// returns DONE__READY_TO_TRIGGER if state machine is ready to trigger a conversion on the next call, else
+//   NO__WAITING_FOR_READY if a wait is required
+uint8_t LTC68042cell_nextVoltages(uint8_t triggerMode)
+{
+    static uint8_t presentState = LTC_STATE_FIRSTRUN;
+    uint8_t cellVoltageDataStatus = NO__GATHERING_CELL_DATA;
+
+    if (LTC68042configure_wakeup() == LTC6804_CORE_JUST_WOKE_UP) { presentState = LTC_STATE_FIRSTRUN; }
+
+    if (LTC_TRIGGERMODE_FORCE_TRIGGERED == triggerMode)
+    {
+        if      (LTC_STATE_FIRSTRUN == presentState)
+        {
+            LTC68042configure_programVolatileDefaults();
+            presentState = LTC_STATE_TRIGGER;
+            cellVoltageDataStatus = DONE__READY_TO_TRIGGER;
+        }
+        else if (LTC_WAITING_FOR_ADC == presentState)
+        {
+            if (true == checkIfAdcWaitOver())
+            {
+                //then wait is over
+                presentState = LTC_STATE_TRIGGER;
+                cellVoltageDataStatus = DONE__READY_TO_TRIGGER;
+            }
+            else
+            {
+                // then we still need to wait
+                //presentState = LTC_WAITING_FOR_ADC; // stay in current state
+                cellVoltageDataStatus = NO__WAITING_FOR_READY;
+            }
+        }
+        else if (LTC_STATE_PROCESS == presentState)
+        {
+            //then a conversion might be in process, so
+            presentState = LTC_WAITING_FOR_ADC;
+            cellVoltageDataStatus = NO__WAITING_FOR_READY;
+        }
+        else
+        {
+            // in all other cases, we do:
+            presentState = LTC_STATE_TRIGGER;
+            cellVoltageDataStatus = DONE__READY_TO_TRIGGER;
+        }
     }
 
-    else if (presentState == LTC_STATE_FIRSTRUN)
+    else if (LTC_STATE_GATHER == presentState) { presentState = doCellDataGather(triggerMode); }
+
+    //for LTC_WAITING_FOR_ADC: if done waiting, fall through to GATHER
+    //  don't gather data or advance the state if the current
+    //  conversion is not complete (should not usually be necessary in key-on mode)
+    else if (LTC_WAITING_FOR_ADC == presentState)
+    {
+        if (true == checkIfAdcWaitOver())
+        {
+            //then wait is over
+            presentState = doCellDataGather(triggerMode); // do first gather
+        }
+        //else
+            //presentState = LTC_WAITING_FOR_ADC; // hold in current state
+    }
+
+    else if ((LTC_STATE_PROCESS == presentState) || (LTC_STATE_PROCESS_TRIGGERED == presentState))
+    {
+        //all cell voltages read...
+
+        //handle transision from LTC_STATE_PROCESS_TRIGGERED to LTC_TRIGGERMODE_ROUND_ROBIN
+        if ((LTC_STATE_PROCESS_TRIGGERED == presentState) && (LTC_TRIGGERMODE_ROUND_ROBIN == triggerMode))
+        {
+            //then triggerMode changed from TRIGGERED to ROUND_ROBIN: allow the change of mode,
+            //  and start a belated conversion ...
+            startCellConversionAndResetCellCounters();
+            //we are now effectively back to ROUND_ROBIN, so this is needed for next state determination coming right up
+            presentState = LTC_STATE_PROCESS;
+        }
+
+        processAllCellVoltages(); //do math and store in LTC68042_result.c
+        cellVoltageDataStatus = DONE__CELL_DATA_PROCESSED;
+
+        if (LTC_STATE_PROCESS_TRIGGERED == presentState) { presentState = LTC_STATE_TRIGGER;   } //trigger on next run
+        else                                             { presentState = LTC_WAITING_FOR_ADC; } //wait if needed on next run (a trigger has already happened)
+
+    }
+
+    else if (LTC_STATE_FIRSTRUN == presentState)
     {
         //LTC6804 ICs were previously off
         LTC68042configure_programVolatileDefaults();
-        startCellConversion();
-        presentState = LTC_STATE_GATHER;
+        startCellConversionAndResetCellCounters();
+        presentState = LTC_WAITING_FOR_ADC;
     }
-    
+
+    else if (LTC_STATE_TRIGGER == presentState)
+    {
+        //then trigger a conversion
+        //  Note: by design, can't get to this state while a conversion is in process, so no check is performent
+        startCellConversionAndResetCellCounters();
+        presentState = LTC_WAITING_FOR_ADC;
+    }
+
     else
     {
         Serial.print(F("\nillegal LTC68042cell state"));
@@ -307,11 +419,10 @@ bool LTC68042cell_nextVoltages(void)
 
 //Only call when keyOFF //takes too long to execute when keyON (causes check engine light)
 //Results are stored in "LTC68042_results.c"
-//JTS2doNext: rewrite to remove double call hack
 void LTC68042cell_acquireAllCellVoltages(void)
 {
-    while (LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //clear old data (if any)
-    while (LTC68042cell_nextVoltages() != CELL_DATA_PROCESSED) { ; } //gather new data
+    while (LTC68042cell_nextVoltages(LTC_TRIGGERMODE_FORCE_TRIGGERED) != DONE__READY_TO_TRIGGER)    { ; } //abandon any in-process acquisition (waiting for it to complete, if needed)
+    while (LTC68042cell_nextVoltages(LTC_TRIGGERMODE_TRIGGERED)       != DONE__CELL_DATA_PROCESSED) { ; } //gather new data
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -324,7 +435,7 @@ void LTC68042cell_openShortTest(void)
 
     // 1b: Measure all cell voltages
     LTC68042cell_acquireAllCellVoltages();
-    
+
     // 1c: Verify all cells between 2.0:2.1 volts
 
     // 2a: Turn on all odd sense resistors
