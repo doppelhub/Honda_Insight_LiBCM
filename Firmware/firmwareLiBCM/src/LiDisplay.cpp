@@ -12,7 +12,7 @@
 #define LIDISPLAY_SETTINGS_PAGE_ID 4
 
 // These are the numbers of updatable elements on the respective screens
-#define LIDISPLAY_DRIVING_PAGE_INTITIAL_MAX_ELEMENT_ID 6
+#define LIDISPLAY_DRIVING_PAGE_INTITIAL_MAX_ELEMENT_ID 7
 #define LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID 1
 #define LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID 6
 
@@ -41,18 +41,22 @@ uint8_t LiDisplaySoCBarCount = 0;
 uint8_t LiDisplayChrgAsstPicId = 22;
 uint8_t LiDisplayWaitingForCommand = 0;
 
-// Initializing to 100 (absurd number for all 4 variables) so that on first run they will be updated on screen
+// Initializing to 100 (absurd number for all 6 variables) so that on first run they will be updated on screen
 static uint8_t  LiDisplayPackVoltageActual_onScreen = 100;
+static uint8_t  LiDisplayPackVoltageSpoofed_onScreen = 100;
 static uint8_t  LiDisplaySoC_onScreen = 100;
 static uint8_t  LiDisplayFanSpeed_onScreen = 100;
 static uint8_t  LiDisplaySoCBars_onScreen = 100;
 static uint8_t  LiDisplayTemp_onScreen = 100;
+
 static uint16_t LiDisplayAverageCellVoltage = 0;
 static uint8_t maxElementId = 8;
 static uint8_t LiDisplay_powerState = 0; // 0=Key off GC unplug    1=Key on GC unplug    2=Key off GC plugged    3=Key on GC plugged
+static uint8_t LiDisplay_heaterState_onScreen = 2; // 0=Heater Off (hidden)		1=Heater On		2=Uninitialized
 
 bool LiDisplaySplashPending = false;
 bool LiDisplayPowerOffPending = false;
+bool LiDisplayOnKeyOnWithNerdScreenEnabled = false;
 bool LiDisplayOnGridChargerConnected = false;
 bool LiDisplaySettingsPageRequested = false;
 //bool LiDisplayGridChargerPageRequested = false;
@@ -75,6 +79,7 @@ String gc_currently_selected_cell_id_str = "99";    // An absurd initialization 
 static uint32_t key_time_begin_ms = 0;
 
 static uint8_t currentFanSpeed = 0;
+static uint8_t currentHeaterState = 3;	// 3 is an absurd initialization value
 
 bool gc_sixty_s_fomoco_e_block_enabled = false;
 
@@ -190,9 +195,19 @@ void LiDisplay_calculateCorrectPage()
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void LiDisplay_resetDrivingPageVariables()
+{
+	maxElementId = LIDISPLAY_DRIVING_PAGE_INTITIAL_MAX_ELEMENT_ID;
+	LiDisplayPackVoltageActual_onScreen = 100;
+	LiDisplay_heaterState_onScreen = 2;
+	LiDisplayTemp_onScreen = 100;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void LiDisplay_resetGridChargerPageVariables()
 {
-	maxElementId = 6;
+	maxElementId = LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID;
 	gc_sixty_s_fomoco_e_block_enabled = false;
 	LiDisplayPackVoltageActual_onScreen = 100;
 	LiDisplayTemp_onScreen = 100;
@@ -205,7 +220,7 @@ void LiDisplay_resetSplashPageVariables()
 	// Splash page is only shown for a few seconds
 	// When we go to the splash page we want to make the correct updates (firmware hours and version) as fast as possible
 	LiDisplayElementToUpdate = 0;
-	maxElementId = 1;
+	maxElementId = LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -548,6 +563,13 @@ void LiDisplay_calculateFanSpeedStr() {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void LiDisplay_calculateHeaterState() {
+    if (gpio_isHeaterOnNow() == YES)	{ currentHeaterState = 1; }
+	else								{ currentHeaterState = 0; }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void LiDisplay_initializeSettingsPage() {
     // Start off at CELL_VMAX_GRIDCHARGER
     LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t3", 0, editableParamMap[0]);
@@ -567,9 +589,12 @@ void LiDisplay_exitSettingsPage(void) {
     LiDisplay_calculateCorrectPage();
 
     switch (LiDisplayCurrentPageNum) {
-        case LIDISPLAY_DRIVING_PAGE_ID: LiDisplaySoCBars_onScreen = 100; break; // Resets SoC Bar Display for Driving Page
+        case LIDISPLAY_DRIVING_PAGE_ID: LiDisplay_resetDrivingPageVariables(); break;
         case LIDISPLAY_SPLASH_PAGE_ID: LiDisplay_resetSplashPageVariables(); break;
-        case LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID: LiDisplaySoCBars_onScreen = 100; maxElementId = 6; gc_sixty_s_fomoco_e_block_enabled = false; break;
+        case LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID:
+			maxElementId = 8;
+			gc_sixty_s_fomoco_e_block_enabled = false;
+			break;
         case LIDISPLAY_GRIDCHARGE_PAGE_ID: LiDisplay_resetGridChargerPageVariables(); break;
         default : break;
     }
@@ -777,7 +802,6 @@ void LiDisplay_updateElement() {
 	switch (LiDisplayCurrentPageNum)
 	{
 		case LIDISPLAY_DRIVING_PAGE_ID:
-			maxElementId = LIDISPLAY_DRIVING_PAGE_INTITIAL_MAX_ELEMENT_ID;
 			switch (LiDisplayElementToUpdate)
 			{
 				// 6 elements update very frequently so we won't track their previous value
@@ -794,12 +818,20 @@ void LiDisplay_updateElement() {
 				case 3: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
 				case 4: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t13", 0, key_time); break;
 				case 5: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t14", 0, (String(((LTC68042result_hiCellVoltage_get() * 0.1) - (LTC68042result_loCellVoltage_get() * 0.1)),1)+"")); break;
+				case 6: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t26", 0, String(adc_getLatestBatteryCurrent_amps()*0.001)); break;
 				// The other elements update less frequently.  We will update 1 of them.
 				// Priority is from least-likely to change to most-likely to change.
-				case 6:
+				case 7:
 					LiDisplay_checkFirmwareExpiration();
 					LiDisplay_calculateFanSpeedStr();
 					LiDisplay_calculateSoCGaugeBars();
+					LiDisplay_calculateHeaterState();
+					if (LiDisplay_heaterState_onScreen != currentHeaterState)
+					{
+						if (currentHeaterState == 1) { LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t22", 0, (String("HEATER ON"))); }
+						if (currentHeaterState == 0) { LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t22", 0, (String(" "))); }
+						LiDisplay_heaterState_onScreen = currentHeaterState;
+					}
 					if (LiDisplayFanSpeed_onScreen != currentFanSpeed)
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed])));
@@ -819,6 +851,11 @@ void LiDisplay_updateElement() {
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t4", 0, String(LTC68042result_packVoltage_get()));
 						LiDisplayPackVoltageActual_onScreen = LTC68042result_packVoltage_get();
+					}
+					else if (LiDisplayPackVoltageSpoofed_onScreen != vPackSpoof_getSpoofedPackVoltage())
+					{
+						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t24", 0, String(vPackSpoof_getSpoofedPackVoltage()));
+						LiDisplayPackVoltageSpoofed_onScreen = vPackSpoof_getSpoofedPackVoltage();
 					}
 					else if (LiDisplayTemp_onScreen != temperature_battery_getLatest())
 					{
@@ -843,7 +880,6 @@ void LiDisplay_updateElement() {
 		break;
 
 		case LIDISPLAY_SPLASH_PAGE_ID:
-			maxElementId = LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID;
 			// Splash page is the easiest.  It only has two elements that can be updated.
 			if (LiDisplayElementToUpdate >= 2) { LiDisplayElementToUpdate = 0; }
 			switch (LiDisplayElementToUpdate)
@@ -945,17 +981,23 @@ void LiDisplay_handler(void)
 		LiDisplay_calculateCorrectPage();
 
 
-        if (LiDisplayOnGridChargerConnected)
+        if (LiDisplayOnGridChargerConnected || LiDisplayOnKeyOnWithNerdScreenEnabled)
 		{
-			// Driver just plugged in the grid charger.  We need to wait for the Nextion to fully power on before we tell it to go to the Grid Charging page.
+			// When powered on the Nextion automatically always displays page 0 which is the normal driving screen
+			// If they plugged in the grid charger, OR if they want to use the nerd screen we need to wait about 400ms before we tell the Nextion to switch to the correct screen
             if ((millis() - hmi_power_millis) < LIDISPLAY_MINIMUM_TIME_TO_UPDATE_AFTER_POWER_ON_MILLIS) { return; } // ensure at least 400ms have passed since screen turned on.
 			else
 			{
                 LiDisplay_updatePage();
-                LiDisplayOnGridChargerConnected = false;
+				if (LiDisplayOnGridChargerConnected) { LiDisplayOnGridChargerConnected = false; }
+				if (LiDisplayOnKeyOnWithNerdScreenEnabled) { LiDisplayOnKeyOnWithNerdScreenEnabled = false; }
                 return;
             }
         }
+
+
+
+
 
         if ((millis() - millis_previous) > LIDISPLAY_UPDATE_RATE_MILLIS)
         {
@@ -993,6 +1035,9 @@ void LiDisplay_keyOn(void)
         LiDisplaySoCBars_onScreen = 100;
 
     #endif
+	#ifdef LIDISPLAY_USE_NERD_SCREEN
+		LiDisplayOnKeyOnWithNerdScreenEnabled = true;
+	#endif
 	#ifdef LIDISPLAY_FEELING_NERDY
 		LiDisplay_updateNumericVal(LIDISPLAY_DRIVING_PAGE_ID, "t27", 4, "65535");
 	#endif
