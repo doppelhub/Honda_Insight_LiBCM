@@ -6,6 +6,7 @@
 #include "libcm.h"
 
 #define LIDISPLAY_DRIVING_PAGE_ID 0
+#define LIDISPLAY_DRIVING_PAGE_REQ_ID 0
 #define LIDISPLAY_SPLASH_PAGE_ID 1
 #define LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID 2
 #define LIDISPLAY_GRIDCHARGE_PAGE_ID 3
@@ -114,8 +115,13 @@ void LiDisplay_begin(void)
         #endif
 
 		#ifdef LIDISPLAY_USE_NERD_SCREEN
+			// Nerd Screen driving page is named page6
+			// Nerd Screen driving page index is 7
+			// This means to switch to the page we need to send 7, but to change elements on the page, they need a 6
 			#undef LIDISPLAY_DRIVING_PAGE_ID
-			#define LIDISPLAY_DRIVING_PAGE_ID 7
+			#define LIDISPLAY_DRIVING_PAGE_ID 6
+			#undef LIDISPLAY_DRIVING_PAGE_REQ_ID
+			#define LIDISPLAY_DRIVING_PAGE_REQ_ID 7
 		#endif
 
         LiDisplayElementToUpdate = 0;
@@ -178,7 +184,7 @@ void LiDisplay_calculateCorrectPage()
         else if  (LiDisplaySplashPending)         { LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID;             }
         else if  (LiDisplaySettingsPageRequested) { LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID;           }
 		//else if  (LiDisplayGridChargerPageRequested) { LiDisplaySetPageNum = LIDISPLAY_GRIDCHARGE_PAGE_ID;           }
-        else                                      { LiDisplaySetPageNum = LIDISPLAY_DRIVING_PAGE_ID;            }
+        else                                      { LiDisplaySetPageNum = LIDISPLAY_DRIVING_PAGE_REQ_ID;            }
     }
 	else
 	{
@@ -589,7 +595,7 @@ void LiDisplay_exitSettingsPage(void) {
     LiDisplay_calculateCorrectPage();
 
     switch (LiDisplayCurrentPageNum) {
-        case LIDISPLAY_DRIVING_PAGE_ID: LiDisplay_resetDrivingPageVariables(); break;
+        case LIDISPLAY_DRIVING_PAGE_REQ_ID: LiDisplay_resetDrivingPageVariables(); break;
         case LIDISPLAY_SPLASH_PAGE_ID: LiDisplay_resetSplashPageVariables(); break;
         case LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID:
 			maxElementId = 8;
@@ -1026,7 +1032,7 @@ void LiDisplay_keyOn(void)
         key_time_begin_ms = millis();
         LiDisplay_calculateKeyTimeStr(true);
 		LiDisplayCurrentPageNum = 100;	// When the Nextion is turned on set this to a nonsensical number to initialize it.
-        LiDisplaySetPageNum = LIDISPLAY_DRIVING_PAGE_ID;
+        LiDisplaySetPageNum = LIDISPLAY_DRIVING_PAGE_REQ_ID;
 
         // Reset these
         LiDisplayPackVoltageActual_onScreen = 100;
