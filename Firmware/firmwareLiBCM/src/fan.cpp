@@ -237,7 +237,7 @@ void fan_handler(void)
 
     determineFastestFanSpeedRequest(); //result stored in fanSpeed_goal
 
-    if (SoC_isThermalManagementAllowed() == NO) { fanSpeed_now = FAN_OFF; } //not enough energy to run fans
+    if (powerSave_isThermalManagementAllowed() == NO) { fanSpeed_now = FAN_OFF; } //not enough energy to run fans
     else
     {
         if ((fanSpeed_now != fanSpeed_goal)                &&

@@ -235,7 +235,7 @@ void gpio_turnTemperatureSensors_off(void) {digitalWrite(PIN_TEMP_EN, LOW); }
 
 void gpio_turnPackHeater_on(void)
 {
-    if (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM)
+    if (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LIBCM)
     {
         pinMode(PIN_GPIO3,OUTPUT);
         digitalWrite(PIN_GPIO3,HIGH);
@@ -251,7 +251,7 @@ void gpio_turnPackHeater_on(void)
 
 void gpio_turnPackHeater_off(void)
 {
-    if (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM)
+    if (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LIBCM)
     {
         pinMode(PIN_GPIO3,INPUT);
         digitalWrite(PIN_GPIO3,LOW);
@@ -269,7 +269,7 @@ bool gpio_isHeaterOnNow(void)
 {
     uint8_t pinState = PIN_STATE_ERROR;
 
-    if      (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM) { pinState = gpio_getPinState(PIN_GPIO3); }
+    if      (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LIBCM) { pinState = gpio_getPinState(PIN_GPIO3); }
     else if (heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)   { pinState = gpio_getPinState(PIN_GPIO1); }
     else                                                               { return NO;                              }
 

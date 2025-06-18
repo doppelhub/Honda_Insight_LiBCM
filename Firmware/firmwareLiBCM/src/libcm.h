@@ -52,5 +52,6 @@
     #include "LiControl.h"
     #include "batteryHistory.h"
     #include "powerSave.h"
+    #include "energy.h"
 
 #endif

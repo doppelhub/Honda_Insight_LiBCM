@@ -15,6 +15,42 @@ volatile uint8_t interruptSource = USB_INTERRUPT; //see ISR(PCINT1_vect) for mor
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//turn LiBCM off if any cell voltage is too low
+//LiBCM remains off until the next keyON occurs
+//prevents over-discharge during extended keyOFF
+//JTS2doLater: while grid charging, assert error if pack SoC doesn't increase 1% every hour (due to HW issue) 
+void powerSave_turnOffLiBCM_ifPackEmpty(void)
+{
+    if (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER)
+    {
+        Serial.print(F("\nBattery is empty"));
+        gpio_turnLiBCM_off(); //game over, thanks for playing
+    }
+    else if ((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //battery is low
+             (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true) && //give user time to plug in charger
+             (gpio_isGridChargerChargingNow() == NO)                  ) //grid charger isn't charging
+    {   
+        Serial.print(F("\nBattery is low"));
+        gpio_turnLiBCM_off(); //game over, thanks for playing
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool powerSave_isThermalManagementAllowed(void)
+{
+    bool enoughEnergy = NO;
+
+    if ((key_getSampledState() == KEYSTATE_ON)                                                  ||
+        ((gpio_isGridChargerPluggedInNow() == YES) && (SoC_getBatteryStateNow_percent() > 3))   ||
+        (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC_PERCENT) )
+    { enoughEnergy = YES; }
+
+    return enoughEnergy;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void wakeupInterrupts_keyOn_enable(void)
 {
     PCIFR  |= (1 << PCIF0 ); //clear pending interrupt flag, if set
@@ -155,6 +191,10 @@ void powerSave_turnOffIfAllowed(void)
             (time_sinceLatestGridChargerUnplug_get_ms() > PERIOD_TO_DISABLE_TURNOFF_AFTER_CHARGER_UNPLUGGED_ms) &&
             (timeSinceLatestKeyOff_ms > (POWEROFF_DELAY_AFTER_KEYOFF_DAYS * MILLISECONDS_PER_DAY))               )
         {
+            uint32_t timeSinceLastKeyOff_ms = millis() - time_latestKeyOff_ms_get();
+            uint16_t delta_hours = timeSinceLastKeyOff_ms / MILLISECONDS_PER_HOUR;
+            eeprom_hoursSinceLastFirmwareUpdate_set(delta_hours + eeprom_hoursSinceLastFirmwareUpdate_get());
+
             gpio_turnLiBCM_off();
         }
     #endif

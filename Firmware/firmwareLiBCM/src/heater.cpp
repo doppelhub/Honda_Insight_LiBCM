@@ -40,7 +40,7 @@ bool isHeaterConnectedtoPin(int16_t pinToTest)
 void heater_begin(void)
 {
     if (isHeaterConnectedtoPin(PIN_GPIO1) == true) { heaterLocation = HEATER_CONNECTED_DAUGHTERBOARD;   }
-    if (isHeaterConnectedtoPin(PIN_GPIO3) == true) { heaterLocation = HEATER_CONNECTED_DIRECT_TO_LICBM; }
+    if (isHeaterConnectedtoPin(PIN_GPIO3) == true) { heaterLocation = HEATER_CONNECTED_DIRECT_TO_LIBCM; }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -74,7 +74,7 @@ bool heater_isPackTooHot(void)
 
 void heater_handler(void)
 {
-    if ((SoC_isThermalManagementAllowed() == NO)       || //not enough energy to heat pack
+    if ((powerSave_isThermalManagementAllowed() == NO) || //not enough energy to heat pack
         (heater_isConnected() == HEATER_NOT_CONNECTED) || //heater not installed         
         (heater_isPackTooHot() == YES)                  ) //pack is too hot
     { gpio_turnPackHeater_off(); } //heater not allowed

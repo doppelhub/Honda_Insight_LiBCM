@@ -128,7 +128,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
         {
             Serial.print(F("\nHeater connected to: "));
             if (heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)   { Serial.print(F("Daughterboard")); }
-            if (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM) { Serial.print(F("LiBCM Header"));  }
+            if (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LIBCM) { Serial.print(F("LiBCM Header"));  }
             Serial.print(F("\nBlink Heater LED"));
             gpio_turnPackHeater_on();
             delay(100);
@@ -166,6 +166,7 @@ void printHelp(void)
         "\n -'$RATE=___': USB updates per second (1 to 255 Hz)"
         "\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
         "\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)"
+        "\n -'$TRIP': print energy consumption and distance records ('TRIP=CLR' to zero all)"
         "\n"
         "\nDebug characters:"
         "\n -'@': isoSPI error occurred"
@@ -184,7 +185,6 @@ void printHelp(void)
         "\n -'BATTmAh' display battery capacity in mAh.  'BATTmAh=____' to set."
         "\n -'SoC_MAX' display max allowed SoC.  'SoC_MAX=__' to set."
         "\n -'SoC_MIN' display min allowed SoC.  'SoC_MIN=__' to set."
-        "\n -'GRIDVMAX' display max grid charger voltage. 'GRIDVMAX=_.___' to set."
         */
         ));
     //When adding new commands, make sure to add cases to the following functions:
@@ -357,6 +357,19 @@ void USB_userInterface_executeUserInput(void)
             {
                 Serial.print(F("\nBATTSCI period is (ms): "));
                 Serial.print(BATTSCI_framePeriod_ms_get(),DEC);
+            }
+        }
+
+        //TRIP
+        else if ((line[1] == 'T') && (line[2] == 'R') && (line[3] == 'I') && (line[4] == 'P'))
+        {
+            if ((line[5] == '=') && (line[6] == 'C') && (line[7] == 'L') && (line[8] == 'R'))
+            {
+                eeprom_wattHourHistory_reset();
+            }
+            else if (line[5] == STRING_TERMINATION_CHARACTER)
+            {
+                eeprom_wattHourHistory_printTripHistory();
             }
         }
 

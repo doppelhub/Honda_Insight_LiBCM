@@ -21,6 +21,11 @@
     #define FIRMWARE_EXPIRED   0b10101010 //alternating bit pattern for EEPROM read/write integrity
     #define FIRMWARE_UNEXPIRED 0b01010101
 
+    #define EEPROM_OFFSET_TIME 0
+    #define EEPROM_OFFSET_DIST 2
+    #define EEPROM_OFFSET_ASST 4
+    #define EEPROM_OFFSET_RGEN 6
+
     void eeprom_keyOffCheckForExpiredFirmware(void);
     
     uint16_t eeprom_hoursSinceLastFirmwareUpdate_get(void);
@@ -49,6 +54,10 @@
     void eeprom_batteryHistory_incrementValue(uint8_t indexTemperature, uint8_t indexSoC);
 
     uint16_t eeprom_batteryHistory_getValue(uint8_t indexTemperature, uint8_t indexSoC);
+
+    void eeprom_wattHourHistory_storeSession(uint16_t time_s, uint16_t distance_TBD, uint16_t assist_Wh, uint16_t regen_Wh);
+    void eeprom_wattHourHistory_printTripHistory(void);
+    void eeprom_wattHourHistory_reset(void);
 
     void eeprom_begin(void);
 

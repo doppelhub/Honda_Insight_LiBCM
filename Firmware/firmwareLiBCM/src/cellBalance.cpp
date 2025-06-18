@@ -94,6 +94,7 @@ void disableDischargeResistors(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNext: Add "balance really unbalanced pack" code outlined in ic.net post #3876
 uint8_t isBalancingAllowed(void)
 {
     //order is important

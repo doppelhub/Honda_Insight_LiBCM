@@ -4,12 +4,14 @@
 #ifndef LTC68042configure_h
     #define LTC68042configure_h
 
-    //JTS2doLater: LiBCM also needs to determine cell count, and then sound an alarm if different from user-entered value (safety issue)
+    #define TOTAL_IC_48S 4
+    #define TOTAL_IC_60S 5
+
     //choose number of LTC ICs in isoSPI network
     #ifdef RUN_BRINGUP_TESTER_MOTHERBOARD
-        #define TOTAL_IC 5
+        #define TOTAL_IC TOTAL_IC_60S
     #elif defined STACK_IS_48S
-        #define TOTAL_IC 4
+        #define TOTAL_IC TOTAL_IC_48S
         #ifdef STACK_IS_60S
             #error (pack is specified as both 48S and 60S. Select only one option in config.h)
         #endif
@@ -17,7 +19,7 @@
         #ifdef BATTERY_TYPE_5AhG3
             #error (incompatible config.h parameters selected: 60S not supported with 5AhG3 cells)
         #endif
-        #define TOTAL_IC 5
+        #define TOTAL_IC TOTAL_IC_60S
     #else
         #error (Select pack size - 48S or 60S - in config.h)
     #endif

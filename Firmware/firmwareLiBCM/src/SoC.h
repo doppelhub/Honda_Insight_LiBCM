@@ -9,16 +9,13 @@
     uint16_t SoC_getBatteryStateNow_mAh(void);
     void     SoC_setBatteryStateNow_mAh(uint16_t newPackCharge_mAh);
 
-    uint8_t SoC_getBatteryStateNow_percent(void);
-    void    SoC_setBatteryStateNow_percent(uint8_t newSoC);
+    void     SoC_setBatteryStateNow_percent(uint8_t newSoC);
+    uint8_t  SoC_getBatteryStateNow_percent(void);
+    uint16_t SoC_getBatteryStateNow_deciPercent(void); //JTS2doNow: Use this in Battsci, etc.
 
     uint8_t SoC_estimateFromRestingCellVoltage_percent(void);
 
     void SoC_updateUsingLatestOpenCircuitVoltage(void);
-
-    void SoC_turnOffLiBCM_ifPackEmpty(void);
-
-    bool SoC_isThermalManagementAllowed(void);
 
     void SoC_handler(void);
 
