@@ -11,19 +11,19 @@
 int8_t tempBattery = ROOM_TEMP_DEGC;
 int8_t tempIntake  = ROOM_TEMP_DEGC;
 int8_t tempCharger = ROOM_TEMP_DEGC;
-#ifndef BATTERY_TYPE_47AhFoMoCo // No explicit exhaust nor ambient temp sensors in FoMoCo case
-int8_t tempExhaust = ROOM_TEMP_DEGC;
-int8_t tempAmbient = ROOM_TEMP_DEGC;
+#ifndef BATTERY_TYPE_47Ah //47Ah Kits don't have exhaust or ambient sensors
+    int8_t tempExhaust = ROOM_TEMP_DEGC;
+    int8_t tempAmbient = ROOM_TEMP_DEGC;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-int8_t temperature_battery_getLatest(void)    { return tempBattery; }
-int8_t temperature_intake_getLatest(void)     { return tempIntake;  } //GRN (5AhG3 case) or WHT (FoMoCo case) OEM temp sensor
-int8_t temperature_gridCharger_getLatest(void){ return tempCharger; } //BLU OEM temp sensor
-#ifndef BATTERY_TYPE_47AhFoMoCo // No explicit exhaust nor ambient temp sensors in FoMoCo case
-int8_t temperature_exhaust_getLatest(void)    { return tempExhaust; } //YEL OEM temp sensor
-int8_t temperature_ambient_getLatest(void)    { return tempAmbient; } //WHT OEM temp sensor
+int8_t temperature_battery_getLatest(void)     { return tempBattery; }
+int8_t temperature_intake_getLatest(void)      { return tempIntake;  } //OEM temp sensor: 5AhG3=GRN 47Ah=WHT
+int8_t temperature_gridCharger_getLatest(void) { return tempCharger; } //BLU OEM temp sensor
+#ifndef BATTERY_TYPE_47Ah //47Ah Kits don't have exhaust or ambient sensors
+    int8_t temperature_exhaust_getLatest(void) { return tempExhaust; } //YEL OEM temp sensor
+    int8_t temperature_ambient_getLatest(void) { return tempAmbient; } //WHT OEM temp sensor
 #endif
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -36,7 +36,7 @@ void temperature_measureOEM(void)
         tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_YEL);
         tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
         tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
-    #elif defined BATTERY_TYPE_47AhFoMoCo
+    #elif defined BATTERY_TYPE_47Ah
         tempIntake  = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
         tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
     #endif
@@ -54,10 +54,10 @@ void temperature_measureBattery(void)
     batteryTemps[1] = temperature_measureOneSensor_degC(PIN_TEMP_BAY1);
     batteryTemps[2] = temperature_measureOneSensor_degC(PIN_TEMP_BAY2);
     batteryTemps[3] = temperature_measureOneSensor_degC(PIN_TEMP_BAY3);
-  #ifdef BATTERY_TYPE_47AhFoMoCo
-    batteryTemps[4] = temperature_measureOneSensor_degC(PIN_TEMP_GRN); //Top rear battery module
-    batteryTemps[5] = temperature_measureOneSensor_degC(PIN_TEMP_YEL); //Top middle battery module
-  #endif
+    #ifdef BATTERY_TYPE_47Ah
+        batteryTemps[4] = temperature_measureOneSensor_degC(PIN_TEMP_GRN); //Top rear battery module
+        batteryTemps[5] = temperature_measureOneSensor_degC(PIN_TEMP_YEL); //Top middle battery module
+    #endif
 
 
     //stores hottest and coldest temp sensor value
@@ -69,29 +69,21 @@ void temperature_measureBattery(void)
         if ((batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_HI) ||
             (batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_LO)  )
         {
-  #ifdef BATTERY_TYPE_5AhG3
-            Serial.print(F("\nCheck Batt Temp Sensor! Bay: "));
-            Serial.print(String(ii,DEC));
-  #elif defined BATTERY_TYPE_47AhFoMoCo
-          Serial.print(F("\nCheck Batt Temp Sensor!"));
-          switch (ii) {
-            case 1:
-              Serial.print(F(" Middle tray rail, driver side")); //BAY1
-              break;
-            case 2:
-              Serial.print(F(" Bottom tray, middle")); //BAY2
-              break;
-            case 3:
-              Serial.print(F(" Middle tray rail, passenger side")); //BAY3
-              break;
-            case 4:
-              Serial.print(F(" Top rear battery module"));
-              break;
-            case 5:
-              Serial.print(F(" Top middle battery module"));
-              break;
-          }
-  #endif
+            Serial.print(F("\nCheck Batt Temp Sensor: "));
+            
+            #ifdef BATTERY_TYPE_5AhG3
+                Serial.print(F("Bay "));
+                Serial.print(String(ii,DEC));
+            #elif defined BATTERY_TYPE_47Ah
+                switch (ii)
+                {
+                    case 1: Serial.print(F(" Middle tray, driver"   )); break; //5AhG3 BAY1
+                    case 2: Serial.print(F(" Bottom tray, center"   )); break; //5AhG3 BAY2
+                    case 3: Serial.print(F(" Middle tray, passenger")); break; //5AhG3 BAY3
+                    case 4: Serial.print(F(" Top rear battery"      )); break;
+                    case 5: Serial.print(F(" Top middle battery"    )); break;
+                }
+            #endif
         }
         else
         {
@@ -126,19 +118,18 @@ void temperature_printAll_latest(void)
     Serial.print(temperature_gridCharger_getLatest());
     Serial.print(F("\nIn: "));
     Serial.print(temperature_intake_getLatest());
-  #ifndef BATTERY_TYPE_47AhFoMoCo
-    Serial.print(F("\nAmb: "));
-    Serial.print(temperature_ambient_getLatest());
-    Serial.print(F("\nOut: "));
-    Serial.print(temperature_exhaust_getLatest());
-  #endif
+    #ifndef BATTERY_TYPE_47Ah
+        Serial.print(F("\nAmb: "));
+        Serial.print(temperature_ambient_getLatest());
+        Serial.print(F("\nOut: "));
+        Serial.print(temperature_exhaust_getLatest());
+    #endif
     Serial.print(F("\nBatt: "));
     Serial.print(temperature_battery_getLatest());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNext: add separate case for FoMoCo
 void temperature_measureAndPrintAll(void)
 {
     if (gpio_getPinState(PIN_TEMP_EN) == PIN_OUTPUT_HIGH)
@@ -146,33 +137,34 @@ void temperature_measureAndPrintAll(void)
         Serial.print(F("\nTemperatures(C):"));
         Serial.print(F("\nBLU (Charger): "));
         Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BLU));
-      #ifdef BATTERY_TYPE_5AhG3
-        Serial.print(F("\nGRN (Intake): "));
-        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
-        Serial.print(F("\nWHT (Ambient): "));
-        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
-        Serial.print(F("\nYEL (Exhaust): "));
-        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
-        Serial.print(F("\nBAY1: "));
-        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY1));
-        Serial.print(F("\nBAY2: "));
-        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
-        Serial.print(F("\nBAY3: "));
-        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));
-      #elif defined BATTERY_TYPE_47AhFoMoCo
-        Serial.print(F("\nGRN (Top rear battery module): "));
-        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
-        Serial.print(F("\nWHT (Intake): "));
-        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
-        Serial.print(F("\nYEL (Top middle battery module): "));
-        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
-        Serial.print(F("\nMiddle tray rail, driver side: ")); //BAY1
-        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY1));
-        Serial.print(F("\nBottom tray, middle: ")); //BAY2
-        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
-        Serial.print(F("\nMiddle tray rail, passenger side: ")); //BAY3
-        Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));
-      #endif
+        
+        #ifdef BATTERY_TYPE_5AhG3
+            Serial.print(F("\nGRN (intake): "));
+            Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
+            Serial.print(F("\nWHT (ambient): "));
+            Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
+            Serial.print(F("\nYEL (exhaust): "));
+            Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
+            Serial.print(F("\nBAY1: "));
+            Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY1));
+            Serial.print(F("\nBAY2: "));
+            Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
+            Serial.print(F("\nBAY3: "));
+            Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));
+        #elif defined BATTERY_TYPE_47Ah
+            Serial.print(F("\nGRN (top rear battery): "));
+            Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
+            Serial.print(F("\nWHT (air intake): "));
+            Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_WHT));
+            Serial.print(F("\nYEL (top middle battery): "));
+            Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_YEL));
+            Serial.print(F("\nMiddle tray, driver: ")); //BAY1
+            Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY1));
+            Serial.print(F("\nBottom tray, middle: ")); //BAY2
+            Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
+            Serial.print(F("\nMiddle tray, passenger: ")); //BAY3
+            Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));
+        #endif
     }
     else
     {

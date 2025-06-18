@@ -7,7 +7,7 @@
     int8_t temperature_battery_getLatest(void);
     int8_t temperature_intake_getLatest(void);
     int8_t temperature_gridCharger_getLatest(void);
-  #ifndef BATTERY_TYPE_47AhFoMoCo
+  #ifndef BATTERY_TYPE_47Ah
     int8_t temperature_exhaust_getLatest(void);
     int8_t temperature_ambient_getLatest(void); //IMA bay temperature
   #endif
@@ -38,7 +38,7 @@
 
   #ifdef BATTERY_TYPE_5AhG3
     #define NUM_BATTERY_TEMP_SENSORS 3
-  #elif defined BATTERY_TYPE_47AhFoMoCo
+  #elif defined BATTERY_TYPE_47Ah
     // what were 2 OEM temp sensors (PIN_TEMP_GRN, PIN_TEMP_YEL) are now on battery modules
     #define NUM_BATTERY_TEMP_SENSORS 5
   #endif

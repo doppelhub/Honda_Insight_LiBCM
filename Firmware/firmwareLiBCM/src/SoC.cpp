@@ -209,7 +209,7 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
         return estimatedSoC;
     }
 
-#elif defined BATTERY_TYPE_47AhFoMoCo
+#elif defined BATTERY_TYPE_47Ah
 
     uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
         {

@@ -23,7 +23,7 @@
         #define CELL_VREST_85_PERCENT_SoC 40000 //for maximum life, resting cell voltage should remain below 85% SoC
         #define CELL_VREST_10_PERCENT_SoC 34200 //for maximum life, resting cell voltage should remain above 10% SoC
         #define STACK_mAh_NOM 5000 //5 Ah nominal //nominal pack size (0:100% SoC)
-    #elif defined BATTERY_TYPE_47AhFoMoCo
+    #elif defined BATTERY_TYPE_47Ah
         #define CELL_VREST_85_PERCENT_SoC 39700
         #define CELL_VREST_10_PERCENT_SoC 34000
         #define STACK_mAh_NOM 47000

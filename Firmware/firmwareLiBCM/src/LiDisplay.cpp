@@ -97,7 +97,7 @@ void LiDisplay_begin(void)
 {
     #ifdef LIDISPLAY_CONNECTED
 
-        #ifdef BATTERY_TYPE_47AhFoMoCo
+        #ifdef BATTERY_TYPE_47Ah
             #undef LIDISPLAY_GRIDCHARGE_PAGE_ID
             #define LIDISPLAY_GRIDCHARGE_PAGE_ID 5
         #endif
@@ -856,7 +856,7 @@ void LiDisplay_updateElement() {
 					LiDisplay_calculateFanSpeedStr();
 					if (!gc_sixty_s_fomoco_e_block_enabled && (MAX_CELL_INDEX == 59))
 					{
-						LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t16", 3, "65516"); // E block label will be missing on a 60S FoMoCo pack display if we don't run this once.
+						LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t16", 3, "65516"); // E block label will be missing on a 60S 47Ah pack display if we don't run this once.
 						gc_sixty_s_fomoco_e_block_enabled = true;
 					}
 					else if (LiDisplayFanSpeed_onScreen != currentFanSpeed)
