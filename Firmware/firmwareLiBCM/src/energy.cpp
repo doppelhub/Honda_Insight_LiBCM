@@ -23,20 +23,9 @@ int32_t energySinceLastCall_uWh(void)
 	uint8_t period_ms = (uint8_t)(milliseconds_now - timestamp_lastCall_ms);
 	timestamp_lastCall_ms = milliseconds_now;
 	
-	if (period_ms > (time_loopPeriod_ms_get() << 2)) { return 0; } //ignore keyOn, chargeOn
+	if (period_ms > (time_loopPeriod_ms_get() << 2)) { return 0; } //ignore keyOn
 
-	int16_t packCurrent_deciAmps = adc_getLatestBatteryCurrent_deciAmps();
-
-	if (gpio_isGridChargerChargingNow() == YES)
-	{
-		//10b current sensor can't accurately measure sustained low current grid charging
-		//non-ideal hack: spoof fixed charge current
-		if      (packCurrent_deciAmps < -1 ) { ; } //not actually charging
-		else if (packCurrent_deciAmps < -15) { packCurrent_deciAmps = -450;  } // 450 mA charger
-		else if (packCurrent_deciAmps < -27) { packCurrent_deciAmps = -2100; } //2100 mA charger
-	}
-
-	int32_t power_deciWatts = (int32_t)packCurrent_deciAmps * LTC68042result_packVoltage_get();
+	int32_t power_deciWatts = (int32_t)adc_getLatestBatteryCurrent_deciAmps() * LTC68042result_packVoltage_get();
 
 	int32_t uWh_sinceLastUpdate = (power_deciWatts * period_ms * 114) >> 12; //divide by 36
 
@@ -53,7 +42,7 @@ void energy_zeroWh(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void energy_storeTrip(uint8_t caller)
+void energy_storeTrip(void)
 {
 	uint16_t distance_TBD = 0; //JTS2doLater: Add distance //requires SPI link to LiControl
 
@@ -63,8 +52,7 @@ void energy_storeTrip(uint8_t caller)
 		eeprom_wattHourHistory_storeSession(time_sinceLatestKeyOn_seconds(),
 											distance_TBD,
 											wattHours_assist,
-											wattHours_regen,
-											caller);
+											wattHours_regen               );
 	}
 
 	energy_zeroWh();
@@ -86,7 +74,7 @@ void accumulate_uWh_to_Wh(void)
 		while (uWh_helper >= 1000000)
 		{
 			uWh_helper -= 1000000;
-			if (wattHours_regen < 0x7FFF) { wattHours_regen++; } //MSb stores charge source: grid or regen
+			if (wattHours_regen < 0xFFFF) { wattHours_regen++; }
 		}
 		uWh_remainder_regen = uWh_helper;
 	}
@@ -108,13 +96,7 @@ void accumulate_uWh_to_Wh(void)
 
 void energy_handler(void)
 {
-	if ((key_getSampledState() == KEYSTATE_ON) ||
-		(gpio_isGridChargerChargingNow() == YES ) )
-	{
-		accumulate_uWh_to_Wh();
-	}
+	if (key_getSampledState() == KEYSTATE_ON) { accumulate_uWh_to_Wh(); }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
-
-//JTS2doNow: Remove Wh accumulation while grid charging.  User can sum all drive sessions to determine how much charging they're doing.

@@ -88,13 +88,11 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     }
     else if (testToRun == '4')
     {
-        Serial.print(F("storing fake trip data A"));
-        eeprom_wattHourHistory_storeSession(54321,12345,33333,22222,ENERGY_SOURCE_GRID_CHARGER);
+        printText_UNUSED();
     }
     else if (testToRun == '5')
     {
-        Serial.print(F("storing fake trip data B"));
-        eeprom_wattHourHistory_storeSession(987,654,321,11111,ENERGY_SOURCE_ENGINE_REGEN);
+        printText_UNUSED();
     }
     else if (testToRun == '6')
     {

@@ -297,22 +297,19 @@ void eeprom_batteryHistory_reset(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void eeprom_wattHourHistory_storeSession(   uint16_t time_s,
-                                            uint16_t distance_TBD,
-                                            uint16_t assist_Wh,
-                                            uint16_t regen_Wh,
-                                            uint8_t caller)
+void eeprom_wattHourHistory_storeSession( uint16_t time_s,
+                                          uint16_t distance_TBD,
+                                          uint16_t assist_Wh,
+                                          uint16_t regen_Wh    )
 {
     uint8_t recordNumber = EEPROM.read(EEPROM_ADDRESS_NEXT_Wh_RECORD);
 
     if (recordNumber >= NUM_Wh_RECORDS) { recordNumber = 0; }
 
     uint16_t baseAddress = EEPROM_ADDRESS_Wh_RECORDS + recordNumber * NUM_BYTES_PER_Wh_RECORD;
-    
-    if (caller == ENERGY_SOURCE_GRID_CHARGER) { regen_Wh |= FLAG_CHARGE_IS_FROM_GRID; }
 
     writeToEEPROM_uint16(baseAddress + EEPROM_OFFSET_TIME, time_s      );
-    writeToEEPROM_uint16(baseAddress + EEPROM_OFFSET_DIST, distance_TBD); //JTS2doLater: Implement distance //requires LiControl+SPI
+    writeToEEPROM_uint16(baseAddress + EEPROM_OFFSET_DIST, distance_TBD); //JTS2doLater: implement, requires LiControl+SPI
     writeToEEPROM_uint16(baseAddress + EEPROM_OFFSET_ASST, assist_Wh   );
     writeToEEPROM_uint16(baseAddress + EEPROM_OFFSET_RGEN, regen_Wh    );
 
@@ -326,11 +323,10 @@ void eeprom_wattHourHistory_printTripHistory(void)
     uint8_t oldestRecordAddress = EEPROM.read(EEPROM_ADDRESS_NEXT_Wh_RECORD);
 
     Serial.print(F("\n\nTrip History (oldest trip first):"
-                   "\ntime(s), distance(TBD), assist(Wh), regenEngine(Wh), regenGrid(Wh)\n"));
+                   "\ntime(s), distance(TBD), assist(Wh), regen(Wh)\n"));
     
     uint32_t totalAssist_Wh = 0;
-    uint32_t totalregenGrid_Wh = 0;
-    uint32_t totalregenEngine_Wh = 0;
+    uint32_t totalregen_Wh = 0;
 
     for (uint8_t ii = 0; ii < NUM_Wh_RECORDS; ii++)
     {
@@ -340,11 +336,6 @@ void eeprom_wattHourHistory_printTripHistory(void)
         uint16_t baseAddress = EEPROM_ADDRESS_Wh_RECORDS + recordToPrint * NUM_BYTES_PER_Wh_RECORD;
 
         Serial.print('\n');
-
-        //JTS2doNow; Delete this debug code
-        Serial.print(F("Debug recordToPrint:"));
-        Serial.print(recordToPrint,DEC);
-        Serial.print(',');
         
         //print time
         uint16_t time_s = readFromEEPROM_uint16(baseAddress + EEPROM_OFFSET_TIME);
@@ -362,27 +353,15 @@ void eeprom_wattHourHistory_printTripHistory(void)
         Serial.print(',');
         totalAssist_Wh += assist_Wh;
 
-        //print either regenEngine or regenGrid
+        //print regen
         uint16_t regen_Wh = readFromEEPROM_uint16(baseAddress + EEPROM_OFFSET_RGEN);
-        if (regen_Wh & FLAG_CHARGE_IS_FROM_GRID)
-        {
-            regen_Wh &= ~FLAG_CHARGE_IS_FROM_GRID;
-
-            Serial.print(F("0,"));
-            Serial.print(regen_Wh);
-            totalregenGrid_Wh += regen_Wh;
-        }
-        else //regen is from engine
-        {
-            Serial.print(regen_Wh);
-            Serial.print(F(",0"));
-            totalregenEngine_Wh += regen_Wh;
-        }
+        Serial.print(regen_Wh);
+        totalregen_Wh += regen_Wh;
     }
 
-    Serial.print(F("\n\nTOTAL(Wh):\n assist     : ")); Serial.print(totalAssist_Wh,      DEC);
-    Serial.print(F(              "\n regenEngine: ")); Serial.print(totalregenEngine_Wh, DEC);
-    Serial.print(F(              "\n regenGrid  : ")); Serial.print(totalregenGrid_Wh,   DEC);
+    Serial.print(F("\n\nTOTAL(Wh):\n assist: ")); Serial.print(totalAssist_Wh, DEC);
+    Serial.print(F(              "\n regen:  ")); Serial.print(totalregen_Wh,  DEC);
+    Serial.print('\n');
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -395,17 +374,9 @@ void eeprom_wattHourHistory_reset(void)
     Serial.print(F("\nInitializing energy history"));
     
     eeprom_eraseRange(minAddress, maxAddress, EEPROM_ADDRESS_FORMATTED_VALUE);
-    EEPROM.update(EEPROM_ADDRESS_NEXT_Wh_RECORD, EEPROM_ADDRESS_FORMATTED_VALUE);
+    EEPROM.update(EEPROM_ADDRESS_NEXT_Wh_RECORD, 0);
     
     Serial.print(F("\nDone"));
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-//JTS2doNow: Remove from production
-void eeprom_TEST_DEBUG_REMOVE_FROM_PRODUCTION_reset_whatHourRingBuffer(void)
-{
-    EEPROM.update(EEPROM_ADDRESS_NEXT_Wh_RECORD, EEPROM_ADDRESS_FORMATTED_VALUE);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

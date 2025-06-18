@@ -29,7 +29,7 @@ void key_handleKeyEvent_off(void)
     //JTS2doLater: Add built-in test suite, including VREF, VCELL, Balancing, temp verify (batt and OEM), etc.
     eeprom_keyOffCheckForExpiredFirmware();
     LTC68042configure_doesActualPackSizeMatchUserConfig();
-    energy_storeTrip(ENERGY_SOURCE_ENGINE_REGEN);
+    energy_storeTrip();
 
     time_latestKeyOff_ms_set(millis()); //MUST RUN LAST!
 }
