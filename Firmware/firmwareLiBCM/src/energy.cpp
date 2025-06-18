@@ -24,9 +24,20 @@ int32_t energySinceLastCall_uWh(void)
 	timestamp_lastCall_ms = milliseconds_now;
 	
 	if (period_ms > (time_loopPeriod_ms_get() << 2)) { return 0; } //ignore keyOn, chargeOn
-	
-	int32_t power_deciWatts = (int32_t)adc_getLatestBatteryCurrent_deciAmps() * LTC68042result_packVoltage_get();
-	
+
+	int16_t packCurrent_deciAmps = adc_getLatestBatteryCurrent_deciAmps();
+
+	if (gpio_isGridChargerChargingNow() == YES)
+	{
+		//10b current sensor can't accurately measure sustained low current grid charging
+		//non-ideal hack: spoof fixed charge current
+		if      (packCurrent_deciAmps < -1 ) { ; } //not actually charging
+		else if (packCurrent_deciAmps < -15) { packCurrent_deciAmps = -450;  } // 450 mA charger
+		else if (packCurrent_deciAmps < -27) { packCurrent_deciAmps = -2100; } //2100 mA charger
+	}
+
+	int32_t power_deciWatts = (int32_t)packCurrent_deciAmps * LTC68042result_packVoltage_get();
+
 	int32_t uWh_sinceLastUpdate = (power_deciWatts * period_ms * 114) >> 12; //divide by 36
 
 	return uWh_sinceLastUpdate;
@@ -34,10 +45,29 @@ int32_t energySinceLastCall_uWh(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void energy_keyOn(void)
+void energy_zeroWh(void)
 {
 	wattHours_assist = 0;
 	wattHours_regen  = 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void energy_storeTrip(uint8_t caller)
+{
+	uint16_t distance_TBD = 0; //JTS2doLater: Add distance //requires SPI link to LiControl
+
+	if ((wattHours_regen  > MIN_Wh_TO_STORE_TRIP) ||
+		(wattHours_assist > MIN_Wh_TO_STORE_TRIP)  )
+	{
+		eeprom_wattHourHistory_storeSession(time_sinceLatestKeyOn_seconds(),
+											distance_TBD,
+											wattHours_assist,
+											wattHours_regen,
+											caller);
+	}
+
+	energy_zeroWh();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -56,7 +86,7 @@ void accumulate_uWh_to_Wh(void)
 		while (uWh_helper >= 1000000)
 		{
 			uWh_helper -= 1000000;
-			if (wattHours_regen < 32767) { wattHours_regen++; } //MSb stores charge source: grid or regen
+			if (wattHours_regen < 0x7FFF) { wattHours_regen++; } //MSb stores charge source: grid or regen
 		}
 		uWh_remainder_regen = uWh_helper;
 	}
@@ -68,7 +98,7 @@ void accumulate_uWh_to_Wh(void)
 		while (uWh_helper >= 1000000)
 		{
 			uWh_helper -= 1000000;
-			if (wattHours_assist < 65535) { wattHours_assist++; }
+			if (wattHours_assist < 0xFFFF) { wattHours_assist++; }
 		}
 		uWh_remainder_assist = uWh_helper;
 	}
@@ -86,3 +116,5 @@ void energy_handler(void)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
+
+//JTS2doNow: Remove Wh accumulation while grid charging.  User can sum all drive sessions to determine how much charging they're doing.

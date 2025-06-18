@@ -168,6 +168,7 @@ void handleEvent_plugin(void)
     Serial.print(F("Plugged In"));
     gpio_setGridCharger_powerLevel('0');
     gpio_turnPowerSensors_on(); //to measure current //JTS2doLater: to save power, move into YES__CHARGING_ALLOWED (solve powerup hysteresis)
+    energy_zeroWh();
     latestPlugin_ms = millis();
 }
 
@@ -179,6 +180,7 @@ void handleEvent_unplug(void)
     gpio_turnGridCharger_off();
     gpio_setGridCharger_powerLevel('Z'); //reduces power consumption
     gpio_turnPowerSensors_off();
+    energy_storeTrip(ENERGY_SOURCE_GRID_CHARGER);
     fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);
     buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, BUZZER_OFF);
     time_latestGridChargerUnplug_set();

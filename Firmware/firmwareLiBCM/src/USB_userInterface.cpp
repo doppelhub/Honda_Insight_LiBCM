@@ -88,11 +88,13 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     }
     else if (testToRun == '4')
     {
-        printText_UNUSED();
+        Serial.print(F("storing fake trip data A"));
+        eeprom_wattHourHistory_storeSession(54321,12345,33333,22222,ENERGY_SOURCE_GRID_CHARGER);
     }
     else if (testToRun == '5')
     {
-        printText_UNUSED();
+        Serial.print(F("storing fake trip data B"));
+        eeprom_wattHourHistory_storeSession(987,654,321,11111,ENERGY_SOURCE_ENGINE_REGEN);
     }
     else if (testToRun == '6')
     {
@@ -166,6 +168,7 @@ void printHelp(void)
         "\n -'$RATE=___': USB updates per second (1 to 255 Hz)"
         "\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
         "\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)"
+        "\n -'$TRIP': print energy consumption and distance records ('TRIP=CLR' to zero all)"
         "\n"
         "\nDebug characters:"
         "\n -'@': isoSPI error occurred"
@@ -184,7 +187,6 @@ void printHelp(void)
         "\n -'BATTmAh' display battery capacity in mAh.  'BATTmAh=____' to set."
         "\n -'SoC_MAX' display max allowed SoC.  'SoC_MAX=__' to set."
         "\n -'SoC_MIN' display min allowed SoC.  'SoC_MIN=__' to set."
-        "\n -'GRIDVMAX' display max grid charger voltage. 'GRIDVMAX=_.___' to set."
         */
         ));
     //When adding new commands, make sure to add cases to the following functions:
@@ -357,6 +359,19 @@ void USB_userInterface_executeUserInput(void)
             {
                 Serial.print(F("\nBATTSCI period is (ms): "));
                 Serial.print(BATTSCI_framePeriod_ms_get(),DEC);
+            }
+        }
+
+        //TRIP
+        else if ((line[1] == 'T') && (line[2] == 'R') && (line[3] == 'I') && (line[4] == 'P'))
+        {
+            if ((line[5] == '=') && (line[6] == 'C') && (line[7] == 'L') && (line[8] == 'R'))
+            {
+                eeprom_wattHourHistory_reset();
+            }
+            else if (line[5] == STRING_TERMINATION_CHARACTER)
+            {
+                eeprom_wattHourHistory_printTripHistory();
             }
         }
 
