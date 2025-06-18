@@ -807,11 +807,11 @@ void LiDisplay_updateElement() {
 	// During a frame, if we get to this function we will try to update 1 screen element, prioritizing elements that change frequently and skipping over ones that don't unless their value has changed.
 	switch (LiDisplayCurrentPageNum)
 	{
-		case LIDISPLAY_DRIVING_PAGE_ID:
+		case LIDISPLAY_DRIVING_PAGE_REQ_ID:
 			switch (LiDisplayElementToUpdate)
 			{
 				// 6 elements update very frequently so we won't track their previous value
-				case 0: LiDisplay_updateStringVal(0, "t3", 0, String((LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps())*0.001)); break;
+				case 0: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t3", 0, String((LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps())*0.001)); break;
 				case 1:
 					if (LIDISPLAY_DRIVING_PAGE_ID == 0) {
 						LiDisplay_calculateChrgAsstGaugeBars();
@@ -820,11 +820,11 @@ void LiDisplay_updateElement() {
 						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t26", 0, String(adc_getLatestBatteryCurrent_amps()*0.001));
 					}
 					break;
-				case 2: LiDisplay_updateStringVal(1, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
-				case 3: LiDisplay_updateStringVal(2, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
-				case 4: LiDisplay_updateStringVal(3, "t13", 0, key_time); break;
-				case 5: LiDisplay_updateStringVal(4, "t14", 0, (String(((LTC68042result_hiCellVoltage_get() * 0.1) - (LTC68042result_loCellVoltage_get() * 0.1)),1)+"")); break;
-				case 6: LiDisplay_updateStringVal(5, "t26", 0, String(adc_getLatestBatteryCurrent_amps()*0.001)); break;
+				case 2: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
+				case 3: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
+				case 4: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t13", 0, key_time); break;
+				case 5: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t14", 0, (String(((LTC68042result_hiCellVoltage_get() * 0.1) - (LTC68042result_loCellVoltage_get() * 0.1)),1)+"")); break;
+				case 6: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_REQ_ID, "t26", 0, String(adc_getLatestBatteryCurrent_amps()*0.001)); break;
 				// The other elements update less frequently.  We will update 1 of them.
 				// Priority is from least-likely to change to most-likely to change.
 				case 7:
@@ -834,8 +834,8 @@ void LiDisplay_updateElement() {
 					LiDisplay_calculateHeaterState();
 					if (LiDisplay_heaterState_onScreen != currentHeaterState)
 					{
-						if (currentHeaterState == 1) { LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t22", 0, (String("HEATER ON"))); }
-						if (currentHeaterState == 0) { LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t22", 0, (String(" "))); }
+						if (currentHeaterState == 1) { LiDisplay_updateStringVal(7, "t22", 0, (String("HEATER ON"))); }
+						if (currentHeaterState == 0) { LiDisplay_updateStringVal(7, "t22", 0, (String(" "))); }
 						LiDisplay_heaterState_onScreen = currentHeaterState;
 					}
 					if (LiDisplayFanSpeed_onScreen != currentFanSpeed)
