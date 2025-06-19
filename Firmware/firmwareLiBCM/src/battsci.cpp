@@ -87,7 +87,7 @@ uint8_t BATTSCI_writeByte(uint8_t data)
         Serial.print(data,HEX);
         Serial.print(',');
     }
-    
+
     return data;
 }
 
@@ -104,7 +104,12 @@ void BATTSCI_setPackVoltage(uint8_t spoofedVoltage) { spoofedVoltageToSend_Count
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //Convert from battery current (unit: deciAmps) to BATTSCI format (unit: 50 mA per count)
-void BATTSCI_setSpoofedCurrent_deciAmps(int16_t deciAmps) { spoofedCurrentToSend_Counts = 2048 - (deciAmps << 1); } 
+void BATTSCI_setSpoofedCurrent_deciAmps(int16_t deciAmps) { spoofedCurrentToSend_Counts = 2048 - (deciAmps << 1); }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+// Allow LiDisplay Nerd Screen to report most recent spoofed SoC
+uint16_t BATTSCI_previousOutputSoC_deciPercent_get(void) { return previousOutputSoC_deciPercent; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -146,7 +151,7 @@ int16_t cellVoltageOffsetDueToESR(void)
     //  vCellCorrection_ESR = Icell_deciAmps / 10       * 20 counts
     //  vCellCorrection_ESR = Icell_deciAmps            * 2
     //  vCellCorrection_ESR = Icell_deciAmps            * CELL_ESR_mOHM
-    return (int16_t)(adc_getLatestBatteryCurrent_deciAmps() * CELL_ESR_mOHM); //100 uV = 1 deciAmp * 1 mOhm 
+    return (int16_t)(adc_getLatestBatteryCurrent_deciAmps() * CELL_ESR_mOHM); //100 uV = 1 deciAmp * 1 mOhm
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -197,7 +202,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
         {
             flags |= BATTSCI_DISABLE_REGEN_FLAG; //when this flag is set, MCM draws zero power from IMA motor
             eeprom_hasLibcmDisabledRegen_set(EEPROM_LIBCM_DISABLED_REGEN);
-        } 
+        }
 
     return flags;
 }
@@ -337,7 +342,7 @@ void BATTSCI_sendFrames(void)
         static uint8_t frame2send = 0x87; //stores the next frame type to send
 
         if (debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI)
-        { 
+        {
             if (frame2send == 0x87) { Serial.print('\n'); }
             else                    { Serial.print(' ');  }
             Serial.print(F("BAT:"));

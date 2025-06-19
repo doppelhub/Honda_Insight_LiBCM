@@ -817,14 +817,14 @@ void LiDisplay_updateElement() {
 						LiDisplay_calculateChrgAsstGaugeBars();
 						LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId));
 					} else {
-						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t26", 0, String(adc_getLatestBatteryCurrent_amps()*0.001));
+						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t23", 0, String(BATTSCI_previousOutputSoC_deciPercent_get())); // Spoofed SoC sent to MCM
 					}
 					break;
 				case 2: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
 				case 3: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
 				case 4: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t13", 0, key_time); break;
 				case 5: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t14", 0, (String(((LTC68042result_hiCellVoltage_get() * 0.1) - (LTC68042result_loCellVoltage_get() * 0.1)),1)+"")); break;
-				case 6: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_REQ_ID, "t26", 0, String(adc_getLatestBatteryCurrent_amps()*0.001)); break;
+				case 6: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t26", 0, String(adc_getLatestBatteryCurrent_amps()*0.001)); break;
 				// The other elements update less frequently.  We will update 1 of them.
 				// Priority is from least-likely to change to most-likely to change.
 				case 7:
@@ -834,38 +834,38 @@ void LiDisplay_updateElement() {
 					LiDisplay_calculateHeaterState();
 					if (LiDisplay_heaterState_onScreen != currentHeaterState)
 					{
-						if (currentHeaterState == 1) { LiDisplay_updateStringVal(7, "t22", 0, (String("HEATER ON"))); }
-						if (currentHeaterState == 0) { LiDisplay_updateStringVal(7, "t22", 0, (String(" "))); }
+						if (currentHeaterState == 1) { LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t22", 0, (String("HEATER ON"))); }
+						if (currentHeaterState == 0) { LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t22", 0, (String(" "))); }
 						LiDisplay_heaterState_onScreen = currentHeaterState;
 					}
-					if (LiDisplayFanSpeed_onScreen != currentFanSpeed)
+					else if (LiDisplayFanSpeed_onScreen != currentFanSpeed)
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed])));
 						LiDisplayFanSpeed_onScreen = currentFanSpeed;
 					}
 					else if ((LIDISPLAY_DRIVING_PAGE_ID == 0) && (LiDisplaySoCBars_onScreen != LiDisplaySoCBarCount))
 					{
-						LiDisplay_updateNumericVal(0, "p0", 2, String(LiDisplaySoCBarCount));
+						LiDisplay_updateNumericVal(LIDISPLAY_DRIVING_PAGE_ID, "p0", 2, String(LiDisplaySoCBarCount));
 						LiDisplaySoCBars_onScreen = LiDisplaySoCBarCount;
 					}
 					else if (LiDisplaySoC_onScreen != SoC_getBatteryStateNow_percent())
 					{
-						LiDisplay_updateStringVal(8, "t1", 0, (String(SoC_getBatteryStateNow_percent()) + "%"));
+						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t1", 0, (String(SoC_getBatteryStateNow_percent()) + "%"));
 						LiDisplaySoC_onScreen = SoC_getBatteryStateNow_percent();
 					}
 					else if (LiDisplayPackVoltageActual_onScreen != LTC68042result_packVoltage_get())
 					{
-						LiDisplay_updateStringVal(9, "t4", 0, String(LTC68042result_packVoltage_get()));
+						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t4", 0, String(LTC68042result_packVoltage_get()));
 						LiDisplayPackVoltageActual_onScreen = LTC68042result_packVoltage_get();
 					}
 					else if (LiDisplayPackVoltageSpoofed_onScreen != vPackSpoof_getSpoofedPackVoltage())
 					{
-						LiDisplay_updateStringVal(8, "t24", 0, String(vPackSpoof_getSpoofedPackVoltage()));
+						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t24", 0, String(vPackSpoof_getSpoofedPackVoltage()));
 						LiDisplayPackVoltageSpoofed_onScreen = vPackSpoof_getSpoofedPackVoltage();
 					}
 					else if (LiDisplayTemp_onScreen != temperature_battery_getLatest())
 					{
-						LiDisplay_updateStringVal(9, "t11", 0, (String(temperature_battery_getLatest()) + "C"));
+						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t11", 0, (String(temperature_battery_getLatest()) + "C"));
 						LiDisplayTemp_onScreen = temperature_battery_getLatest();
 					}
 					else
@@ -873,11 +873,11 @@ void LiDisplay_updateElement() {
 						if (LIDISPLAY_DRIVING_PAGE_ID == 0) {
 							// Nothing else needed to update so we will update the chrg asst bar display again instead.
 							LiDisplay_calculateChrgAsstGaugeBars();
-							LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId));
+							LiDisplay_updateNumericVal(LIDISPLAY_DRIVING_PAGE_ID, "p1", 2, String(LiDisplayChrgAsstPicId));
 						}
 						else {
-							LiDisplay_updateStringVal(6, "t17", 0, (String((LTC68042result_maxEverCellVoltage_get() * 0.0001),3)));
-							LiDisplay_updateStringVal(7, "t19", 0, (String((LTC68042result_minEverCellVoltage_get() * 0.0001),3)));
+							LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t17", 0, (String((LTC68042result_maxEverCellVoltage_get() * 0.0001),3))); // Peak cell V
+							LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t19", 0, (String((LTC68042result_minEverCellVoltage_get() * 0.0001),3))); // Trough cell V
 						}
 					}
 				break;
