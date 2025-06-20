@@ -42,9 +42,10 @@ uint8_t LiDisplaySoCBarCount = 0;
 uint8_t LiDisplayChrgAsstPicId = 22;
 uint8_t LiDisplayWaitingForCommand = 0;
 
-// Initializing to 100 (absurd number for all 6 variables) so that on first run they will be updated on screen
+// Initializing to an absurd number for all 7 variables so that on first run they will be updated on screen
 static uint8_t  LiDisplayPackVoltageActual_onScreen = 100;
 static uint8_t  LiDisplayPackVoltageSpoofed_onScreen = 100;
+static uint16_t  LiDisplayAverageCellVoltage_onScreen = 9999;
 static uint8_t  LiDisplaySoC_onScreen = 100;
 static uint8_t  LiDisplayFanSpeed_onScreen = 100;
 static uint8_t  LiDisplaySoCBars_onScreen = 100;
@@ -169,7 +170,8 @@ void LiDisplay_updateStringVal(uint8_t page, String elementName, uint8_t element
 
 void LiDisplay_updateDebugTextBox(String raw_data_string) {
     #ifdef LIDISPLAY_DEBUG_ENABLED
-        LiDisplay_updateStringVal(0, "t12", 0, raw_data_string);    // T12 is a text box on the bottom of the driving page screen.
+		if (LiDisplayCurrentPageNum == LIDISPLAY_DRIVING_PAGE_REQ_ID) { LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t12", 0, raw_data_string); }
+        else { LiDisplay_updateStringVal(LiDisplayCurrentPageNum, "t12", 0, raw_data_string); }
     #endif
 }
 
@@ -801,6 +803,26 @@ bool LiDisplay_checkForPendingPageUpdate() {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+String LiDisplay_formatSpoofedValueDisplayStr(uint16_t spoofedValToFormat, bool use_decimal) {
+	String formattedSpoofedVal = "";
+	if (!use_decimal) { formattedSpoofedVal = String( String("(") + spoofedValToFormat + String(")") ); }
+	else { formattedSpoofedVal = String( String("(") + String((spoofedValToFormat * 0.1),1) + String(")") ); }
+	return formattedSpoofedVal;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+uint16_t LiDisplay_calculateAvgCellVoltage() {
+	#ifdef STACK_IS_48S
+		return (LTC68042result_packVoltage_get() * 0.020833);
+	#endif
+	#ifdef STACK_IS_60S
+		return (LTC68042result_packVoltage_get() * 0.016666);
+	#endif
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void LiDisplay_updateElement() {
 	// Each page has different elements on it, and a different quantity of elements.
 	// Some elements need rapid updating, others rarely change.
@@ -817,7 +839,7 @@ void LiDisplay_updateElement() {
 						LiDisplay_calculateChrgAsstGaugeBars();
 						LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId));
 					} else {
-						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t23", 0, String(BATTSCI_previousOutputSoC_deciPercent_get())); // Spoofed SoC sent to MCM
+						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t23", 0, LiDisplay_formatSpoofedValueDisplayStr(BATTSCI_previousOutputSoC_deciPercent_get(), true)); // Spoofed SoC sent to MCM
 					}
 					break;
 				case 2: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
@@ -860,12 +882,16 @@ void LiDisplay_updateElement() {
 					}
 					else if (LiDisplayPackVoltageSpoofed_onScreen != vPackSpoof_getSpoofedPackVoltage())
 					{
-						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t24", 0, String(vPackSpoof_getSpoofedPackVoltage()));
+						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t24", 0, LiDisplay_formatSpoofedValueDisplayStr((uint16_t)vPackSpoof_getSpoofedPackVoltage(), false));
 						LiDisplayPackVoltageSpoofed_onScreen = vPackSpoof_getSpoofedPackVoltage();
+					}
+					else if ((LIDISPLAY_DRIVING_PAGE_REQ_ID == 7) && (LiDisplayAverageCellVoltage_onScreen != LiDisplay_calculateAvgCellVoltage())) {
+						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t28", 0, String((LiDisplay_calculateAvgCellVoltage() * 0.0001),3));
+						LiDisplayAverageCellVoltage_onScreen = LiDisplay_calculateAvgCellVoltage();
 					}
 					else if (LiDisplayTemp_onScreen != temperature_battery_getLatest())
 					{
-						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t11", 0, (String(temperature_battery_getLatest()) + "C"));
+						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t11", 0, (String(temperature_battery_getLatest()) + char(176) + "C"));
 						LiDisplayTemp_onScreen = temperature_battery_getLatest();
 					}
 					else
@@ -963,6 +989,7 @@ void LiDisplay_updateElement() {
 				default: maxElementId = LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID;	break;
 			}
 		break;
+		case LIDISPLAY_SETTINGS_PAGE_ID: break; // Placeholder for now (19 June 2025)
 		default : break;
 	}
 
