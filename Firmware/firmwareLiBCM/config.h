@@ -96,7 +96,7 @@
     #define CELL_VMAX_REGEN                     43000 //43000 = 4.3000 volts
     #define CELL_VMIN_ASSIST                    31900
     #define CELL_VMAX_GRIDCHARGER               39600 //MUST be less than 'CELL_VREST_085_PERCENT_SoC'
-    #define CELL_VMIN_GRIDCHARGER               28000 //grid charger will not charge severely empty cells
+    #define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
     #define CELL_VMIN_KEYOFF                    CELL_VREST_010_PERCENT_SoC //when car is off, LiBCM turns off below this voltage
     #define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled when battery is less than this percent charged
     #define CELL_BALANCE_MAX_TEMP_C             40
@@ -132,7 +132,7 @@
     //#define RUN_BRINGUP_TESTER_MOTHERBOARD //requires external test PCB (that you don't have)
     //#define RUN_BRINGUP_TESTER_GRIDCHARGER //requires external test equipment
 
-    //#define CHECK_FOR_SAFETY_COVER //comment if testing LiBCM without the cover
+    #define CHECK_FOR_SAFETY_COVER //comment if testing LiBCM without the cover
 
     #define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000 //JTS2doLater: Model after "debugUSB_printLatestData"
 

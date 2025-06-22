@@ -146,9 +146,6 @@ uint16_t hoursSincePreviousKeyOff(void)
 
     remainder_ms = delta_ms;
 
-    Serial.print(F("\nRemainder_ms: "));
-    Serial.print(remainder_ms);
-
     return delta_hours;
 }
 

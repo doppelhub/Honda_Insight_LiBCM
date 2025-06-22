@@ -124,7 +124,7 @@ uint8_t isBalancingMandatory(void)
     //keyState           doesn't matter
     //grid charger state doesn't matter
     //pack temperature   doesn't matter
-    if (LTC68042result_loCellVoltage_get()     <  VCELL_CRITICALLY_DISCHARGED       ) { return NO__ATLEASTONECELL_TOO_LOW; }
+    if (LTC68042result_loCellVoltage_get()     <  CELL_VMIN_GRIDCHARGER             ) { return NO__ATLEASTONECELL_TOO_LOW; }
     if (adc_getLatestSpoofedCurrent_deciAmps() >  CELL_IMAX_MAJOR_IMBALANCE_DECIAMPS) { return NO__PACK_CURRENT_TOO_HIGH;  }
     if (adc_getLatestSpoofedCurrent_deciAmps() < -CELL_IMAX_MAJOR_IMBALANCE_DECIAMPS) { return NO__PACK_CURRENT_TOO_HIGH;  }
 
