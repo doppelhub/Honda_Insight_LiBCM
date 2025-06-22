@@ -7,12 +7,18 @@
     bool LTC68042result_wasDataProcessedThisLoop_get(void          );
     void LTC68042result_wasDataProcessedThisLoop_set(bool newStatus);
 
-    uint8_t LTC68042result_errorCount_get       (void                 );
-    void    LTC68042result_errorCount_set       (uint8_t newErrorCount);
-    void    LTC68042result_errorCount_increment (void                 );
+    uint8_t LTC68042result_errorCount_get      (void                 );
+    void    LTC68042result_errorCount_set      (uint8_t newErrorCount);
+    void    LTC68042result_errorCount_increment(void                 );
 
-    void    LTC68042result_packVoltage_set (uint8_t voltage);
-    uint8_t LTC68042result_packVoltage_get (void           );
+    void    LTC68042result_packVoltage_set(uint8_t voltage);
+    uint8_t LTC68042result_packVoltage_get(void           );
+
+    void    LTC68042result_loCellNum_set(uint8_t cellNumber);
+    uint8_t LTC68042result_loCellNum_get(void); //first cell is '1'
+
+    void    LTC68042result_hiCellNum_set(uint8_t cellNumber);
+    uint8_t LTC68042result_hiCellNum_get(void); //first cell is '1'
 
     void     LTC68042result_minEverCellVoltage_set(uint16_t newMin_counts);
     uint16_t LTC68042result_minEverCellVoltage_get(void                  );
@@ -30,5 +36,5 @@
     uint16_t LTC68042result_deltaCellVoltage_get(void                    );
 
     void     LTC68042result_specificCellVoltage_set(uint8_t icNumber, uint8_t cellNumber, uint16_t cellVoltage);
-    uint16_t LTC68042result_specificCellVoltage_get (uint8_t icNumber, uint8_t cellNumber);
+    uint16_t LTC68042result_specificCellVoltage_get(uint8_t icNumber, uint8_t cellNumber);
 #endif
