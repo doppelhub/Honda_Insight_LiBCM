@@ -30,6 +30,11 @@
         #define CELL_VREST_85_PERCENT_SoC 39700
         #define CELL_VREST_10_PERCENT_SoC 34000
         #define STACK_mAh_NOM 47000
+    #elif defined BATTERY_TYPE_21AHPrius
+        #define CELL_VREST_85_PERCENT_SoC 40450
+        #define CELL_VREST_10_PERCENT_SoC 34930
+        #define STACK_mAh_NOM 20400
+
     #else
         #error (Battery type not specified in config.h)
     #endif

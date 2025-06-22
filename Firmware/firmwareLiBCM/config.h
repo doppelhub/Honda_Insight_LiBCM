@@ -26,6 +26,7 @@
     //choose your battery type:
         //#define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
         //#define BATTERY_TYPE_47AhFoMoCo
+	//#define BATTERY_TYPE 21AHPrius
 
     //choose how many cells are in series:
         //#define STACK_IS_48S //All 5AhG3 Kits & FoMoCo Kits with QTY4 modules
