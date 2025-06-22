@@ -398,7 +398,7 @@ bool lcd_printCellVoltage_delta(void)
 
     static uint16_t deltaVoltage_onScreen = 0;
 
-    uint16_t deltaVoltage_LTC6804 = LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get();
+    uint16_t deltaVoltage_LTC6804 = LTC68042result_deltaCellVoltage_get();
 
     if (deltaVoltage_onScreen != deltaVoltage_LTC6804)
     {

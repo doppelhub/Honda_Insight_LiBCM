@@ -4,6 +4,9 @@
 #ifndef LTC68042result_h
     #define LTC68042result_h
 
+    bool LTC68042result_wasDataProcessedThisLoop_get(void          );
+    void LTC68042result_wasDataProcessedThisLoop_set(bool newStatus);
+
     uint8_t LTC68042result_errorCount_get       (void                 );
     void    LTC68042result_errorCount_set       (uint8_t newErrorCount);
     void    LTC68042result_errorCount_increment (void                 );
@@ -23,9 +26,9 @@
     void     LTC68042result_hiCellVoltage_set(uint16_t newHi_counts);
     uint16_t LTC68042result_hiCellVoltage_get(void                 );
 
+    void     LTC68042result_deltaCellVoltage_set(uint16_t newDelta_counts);
+    uint16_t LTC68042result_deltaCellVoltage_get(void                    );
+
     void     LTC68042result_specificCellVoltage_set(uint8_t icNumber, uint8_t cellNumber, uint16_t cellVoltage);
     uint16_t LTC68042result_specificCellVoltage_get (uint8_t icNumber, uint8_t cellNumber);
-
 #endif
-
-// void printCellVoltage_all(); //JTS2doLater: Add back

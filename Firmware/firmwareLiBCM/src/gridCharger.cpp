@@ -54,7 +54,7 @@ uint8_t gridCharger_isAllowedNow(void)
     if (gpio_isGridChargerPluggedInNow()    == NO                                       ) { return NO__CHARGER_UNPLUGGED;       }
     if (key_getSampledState()               == KEYSTATE_ON                              ) { return NO__KEY_IS_ON;               }
     //cell voltage checks
-    if (LTC68042result_hiCellVoltage_get()   > CELL_VREST_85_PERCENT_SoC                ) { return NO__ATLEASTONECELL_TOO_HIGH; }
+    if (LTC68042result_hiCellVoltage_get()   > CELL_VREST_085_PERCENT_SoC               ) { return NO__ATLEASTONECELL_TOO_HIGH; }
     if (LTC68042result_loCellVoltage_get()   < CELL_VMIN_GRIDCHARGER                    ) { return NO__ATLEASTONECELL_TOO_LOW;  }
     if (LTC68042result_hiCellVoltage_get()   > CELL_VMAX_GRIDCHARGER                    ) { return NO__ATLEASTONECELL_FULL;     }
     if (LTC68042result_hiCellVoltage_get()   > determineMaxAllowedCellVoltage()         ) { return NO__CELL_VOLTAGE_HYSTERESIS; }

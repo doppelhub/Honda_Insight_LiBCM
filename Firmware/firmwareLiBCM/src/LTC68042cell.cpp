@@ -199,8 +199,10 @@ void processAllCellVoltages(void)
 
     LTC68042result_packVoltage_set( (uint8_t)(packVoltage_RAW * 0.0001) );
     
+    //JTS2doNow: Store hi/lo cell voltage numbers in LTC68042result
     LTC68042result_loCellVoltage_set(loCellVoltage);
     LTC68042result_hiCellVoltage_set(hiCellVoltage);
+    LTC68042result_deltaCellVoltage_set(hiCellVoltage - loCellVoltage);
 
     #ifdef BATTERY_TYPE_5AhG3
         //Now we need to determine which cell 19 voltage is correct (the actual measured value, or the current-adjusted one)
@@ -299,6 +301,9 @@ bool LTC68042cell_nextVoltages(void)
         Serial.print(F("\nillegal LTC68042cell state"));
         while (1) {;} //hang here until watchdog resets.
     }
+
+    if (cellVoltageDataStatus == CELL_DATA_PROCESSED) { LTC68042result_wasDataProcessedThisLoop_set(YES); }
+    else                                              { LTC68042result_wasDataProcessedThisLoop_set(NO);  }
 
     return cellVoltageDataStatus;
 }

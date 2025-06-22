@@ -9,8 +9,9 @@
     #define EEPROM_LIBCM_DISABLED_ASSIST 0xCC
     #define EEPROM_ASSIST_NEVER_LIMITED  0x33
 
-    #define EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE 0xFF
-    #define EEPROM_ADDRESS_FORMATTED_VALUE       0x00
+    #define EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_16b 0xFFFF
+    #define EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_8b  0xFF
+    #define EEPROM_ADDRESS_FORMATTED_VALUE           0x00
 
     #define BYTES_IN_DATE 12 //JTS2doLater: Is date 11 bytes or 12?
     #define BYTES_IN_TIME  9 //JTS2doLater: Is time  9 bytes or  8?
@@ -39,6 +40,9 @@
     uint8_t eeprom_hasLibcmDisabledRegen_get(void);
     void    eeprom_hasLibcmDisabledRegen_set(uint8_t);
 
+    uint16_t eeprom_maxCellVoltageDelta_get(void);
+    void     eeprom_maxCellVoltageDelta_set(uint16_t);  
+
     uint8_t eeprom_delayKeyON_ms_get(void);
     void    eeprom_delayKeyON_ms_set(uint8_t);
 
@@ -62,5 +66,7 @@
     void eeprom_begin(void);
 
     void writeToEEPROM_uint16(uint16_t startAddress, uint16_t value);
+
+    void eeprom_printAll(void);
 
 #endif

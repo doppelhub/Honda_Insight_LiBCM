@@ -53,6 +53,9 @@ void printDebug(void)
 
     Serial.print(F("\n -Has LiBCM limited regen since last cleared?: "));
     (eeprom_hasLibcmDisabledRegen_get() == EEPROM_LIBCM_DISABLED_REGEN) ? Serial.print(F("YES")) : Serial.print(F("NO"));
+
+    Serial.print(F("\n -Maximum resting cell delta (min is '1000' = 100.0 mV): "));
+    Serial.print(eeprom_maxCellVoltageDelta_get(), DEC);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -115,7 +118,6 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     else if (testToRun == 'T') { temperature_measureAndPrintAll(); }
     else if (testToRun == 'R') { LTC6804gpio_areAllVoltageReferencesPassing(); }
     else if (testToRun == 'W') { batteryHistory_printAll(); }
-    else if (testToRun == 'E') { eeprom_resetAll_userConfirm(); }
     else if (testToRun == 'C')
     {
         LTC68042cell_acquireAllCellVoltages();
@@ -150,31 +152,32 @@ void(* rebootLiBCM) (void) = 0;//declare reset function at address 0
 void printHelp(void)
 {
     Serial.print(F("\n\nLiBCM commands:"
-        "\n -'$BOOT': restart LiBCM"
-        "\n -'$OFF': turn LiBCM off (for testing purposes)"
+        "\n -'$BOOT' : restart LiBCM"
+        "\n -'$OFF'  : turn LiBCM off (for testing purposes)"
         "\n -'$TESTR': run LTC6804 VREF test"
         "\n -'$TESTW': battery temp & SoC history"
         "\n -'$TESTH': blink heater LED"
         "\n -'$TESTC': print cell voltages"
         "\n -'$TESTT': print temperatures"
-        "\n -'$TESTE': EEPROM factory reset"
-        "\n -'$TEST1'/2/3/4: run temporary debug test code. See 'USB_userInterface_runTestCode()')"
-        "\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
-        "\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
-        "\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"
-        "\n -'$DISP=PWR'/SCI/CELL/TEMP/DBG/OFF: data to stream (power/BAT&METSCI/Vcell/temperature/none)"
-        "\n -'$RATE=___': USB updates per second (1 to 255 Hz)"
-        "\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
-        "\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)"
-        "\n -'$TRIP': print energy consumption and distance records ('TRIP=CLR' to zero all)"
+        "\n -'$EPROM': dump EEPROM. '$EPROM=RST' to factory reset"
+        "\n -'$TEST_': 1/2/3/4: run temporary debug test code. See 'USB_userInterface_runTestCode()')"
+        "\n -'$DEBUG': info stored in EEPROM. '$DEBUG=CLR' to restore defaults"
+        "\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=_' to set (0 to 254 ms)"
+        "\n -'$SoC'  : battery charge in percent. '$SoC=_' to set (0 to 100%)"
+        "\n -'$DISP=_: PWR/SCI/CELL/TEMP/DBG/OFF: data to stream"
+        "\n -'$RATE=_: USB updates per second (1 to 255 Hz)"
+        "\n -'$LOOP  : LiBCM loop period. '$LOOP=_' to set (1 to 255 ms)"
+        "\n -'$SCIms': period between BATTSCI frames. '$SCIms=_' to set (0 to 255 ms)"
+        "\n -'$TRIP' : print energy consumption and distance records ('TRIP=CLR' to zero all)"
         "\n"
         "\nDebug characters:"
         "\n -'@': isoSPI error occurred"
         "\n -'*': loop period exceeded"
         "\n"
+        "\nTip: Hit up arrow to recall previous commands"
+        "\n"
         /*
         "\nFuture LiBCM commands (not presently supported"
-        "\n -'$DEFAULT' restore all EEPROM values to default"
         "\n -'$FAN' display fan status.  '$FAN=OFF'/LOW/HI to set."
         "\n -'$IHACK' display current hack setting.  '$IHACK=00'/20/40/60 to set."
         "\n -'$VHACK' display voltage hack setting.  '$VHACK=OEM'/ASSISTONLY_VAR/ASSISTONLY_BIN/ALWAYS."
@@ -182,7 +185,6 @@ void printHelp(void)
         "\n -'$ASSIST_ON' enable assist until LiBCM resets."
         "\n -'$REGEN_OFF' disable regen until LiBCM resets."
         "\n -'$REGEN_ON' enable regen until LiBCM resets."
-        "\n -'BATTmAh' display battery capacity in mAh.  'BATTmAh=____' to set."
         "\n -'SoC_MAX' display max allowed SoC.  'SoC_MAX=__' to set."
         "\n -'SoC_MIN' display min allowed SoC.  'SoC_MIN=__' to set."
         */
@@ -373,6 +375,19 @@ void USB_userInterface_executeUserInput(void)
             }
         }
 
+        //EPROM
+        else if ((line[1] == 'E') && (line[2] == 'P') && (line[3] == 'R') && (line[4] == 'O') && (line[5] == 'M'))
+        {
+            if ((line[6] == '=') && (line[7] == 'R') && (line[8] == 'S') && (line[9] == 'T'))
+            {
+                eeprom_resetAll_userConfirm();
+            }
+            else if (line[6] == STRING_TERMINATION_CHARACTER)
+            {
+                eeprom_printAll();
+            }
+        }
+        
         //$DEFAULT
         else { Serial.print(F("\nInvalid Entry")); }
     }

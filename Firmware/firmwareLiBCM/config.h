@@ -7,8 +7,8 @@
     #define config_h
     #include "src/libcm.h"
 
-    #define FW_VERSION "0.9.5f"
-    #define BUILD_DATE "2025JUN17"
+    #define FW_VERSION "0.9.5g"
+    #define BUILD_DATE "2025JUN18"
 
     //////////////////////////////////////////////////////////////////
 
@@ -95,14 +95,11 @@
 
     #define CELL_VMAX_REGEN                     43000 //43000 = 4.3000 volts
     #define CELL_VMIN_ASSIST                    31900
-    #define CELL_VMAX_GRIDCHARGER               39600 //3.9 volts is 75% SoC //other values: See SoC.cpp //MUST be less than 'CELL_VREST_85_PERCENT_SoC'
-    #define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
-    #define CELL_VMIN_KEYOFF                    CELL_VREST_10_PERCENT_SoC //when car is off, LiBCM turns off below this voltage
+    #define CELL_VMAX_GRIDCHARGER               39600 //MUST be less than 'CELL_VREST_085_PERCENT_SoC'
+    #define CELL_VMIN_GRIDCHARGER               28000 //grid charger will not charge severely empty cells
+    #define CELL_VMIN_KEYOFF                    CELL_VREST_010_PERCENT_SoC //when car is off, LiBCM turns off below this voltage
     #define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled when battery is less than this percent charged
-    #define CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE 32    //'32' = 3.2 mV //CANNOT exceed 255 counts (25.5 mV)
-    #define CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT 22    //'22' = 2.2 mV //LTC6804 measurement uncertainty is 2.2 mV //MUST be less than CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
     #define CELL_BALANCE_MAX_TEMP_C             40
-    //#define ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN //uncomment to disable keyOFF cell balancing (unless the grid charger is plugged in)
 
     //temp setpoints
     #define COOL_BATTERY_ABOVE_TEMP_C_KEYOFF       36 //cabin air cooling
@@ -135,7 +132,7 @@
     //#define RUN_BRINGUP_TESTER_MOTHERBOARD //requires external test PCB (that you don't have)
     //#define RUN_BRINGUP_TESTER_GRIDCHARGER //requires external test equipment
 
-    #define CHECK_FOR_SAFETY_COVER //comment if testing LiBCM without the cover
+    //#define CHECK_FOR_SAFETY_COVER //comment if testing LiBCM without the cover
 
     #define DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS 1000 //JTS2doLater: Model after "debugUSB_printLatestData"
 
