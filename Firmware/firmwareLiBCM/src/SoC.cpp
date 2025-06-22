@@ -374,6 +374,121 @@ bool SoC_isThermalManagementAllowed(void)
 
             return estimatedSoC;
         }
+
+#elif defined BATTERY_TYPE_21AHPrius
+
+    uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
+        {
+            uint16_t restingCellVoltage = LTC68042result_loCellVoltage_get();
+            uint8_t estimatedSoC = 0;
+
+            //Data from Ecky, source to be provided later
+            if      (restingCellVoltage >= 42000) { estimatedSoC = 100; }
+            else if (restingCellVoltage >= 41850) { estimatedSoC =  99; }
+            else if (restingCellVoltage >= 41740) { estimatedSoC =  98; }
+            else if (restingCellVoltage >= 41640) { estimatedSoC =  97; }
+            else if (restingCellVoltage >= 41530) { estimatedSoC =  96; }
+            else if (restingCellVoltage >= 41430) { estimatedSoC =  95; }
+            else if (restingCellVoltage >= 41320) { estimatedSoC =  94; }
+            else if (restingCellVoltage >= 41230) { estimatedSoC =  93; }
+            else if (restingCellVoltage >= 41120) { estimatedSoC =  92; }
+            else if (restingCellVoltage >= 41040) { estimatedSoC =  91; }
+            else if (restingCellVoltage >= 40940) { estimatedSoC =  90; }
+            else if (restingCellVoltage >= 40840) { estimatedSoC =  89; }
+            else if (restingCellVoltage >= 40750) { estimatedSoC =  88; }
+            else if (restingCellVoltage >= 40650) { estimatedSoC =  87; }
+            else if (restingCellVoltage >= 40560) { estimatedSoC =  86; }
+            else if (restingCellVoltage >= CELL_VREST_85_PERCENT_SoC) { estimatedSoC =  85; } //max cell voltage for long lifetime //40450
+            else if (restingCellVoltage >= 40360) { estimatedSoC =  84; }
+            else if (restingCellVoltage >= 40270) { estimatedSoC =  83; }
+            else if (restingCellVoltage >= 40170) { estimatedSoC =  82; }
+            else if (restingCellVoltage >= 40080) { estimatedSoC =  81; }
+            else if (restingCellVoltage >= 39990) { estimatedSoC =  80; }
+            else if (restingCellVoltage >= 39890) { estimatedSoC =  79; }
+            else if (restingCellVoltage >= 39810) { estimatedSoC =  78; }
+            else if (restingCellVoltage >= 39710) { estimatedSoC =  77; }
+            else if (restingCellVoltage >= 39610) { estimatedSoC =  76; }
+            else if (restingCellVoltage >= 39520) { estimatedSoC =  75; }
+            else if (restingCellVoltage >= 39420) { estimatedSoC =  74; }
+            else if (restingCellVoltage >= 39320) { estimatedSoC =  73; }
+            else if (restingCellVoltage >= 39210) { estimatedSoC =  72; }
+            else if (restingCellVoltage >= 39080) { estimatedSoC =  71; }
+            else if (restingCellVoltage >= 38930) { estimatedSoC =  70; }
+            else if (restingCellVoltage >= 38760) { estimatedSoC =  69; }
+            else if (restingCellVoltage >= 38620) { estimatedSoC =  68; }
+            else if (restingCellVoltage >= 38500) { estimatedSoC =  67; }
+            else if (restingCellVoltage >= 38390) { estimatedSoC =  66; }
+            else if (restingCellVoltage >= 38300) { estimatedSoC =  65; }
+            else if (restingCellVoltage >= 38200) { estimatedSoC =  64; }
+            else if (restingCellVoltage >= 38120) { estimatedSoC =  63; }
+            else if (restingCellVoltage >= 38040) { estimatedSoC =  62; }
+            else if (restingCellVoltage >= 37950) { estimatedSoC =  61; }
+            else if (restingCellVoltage >= 37880) { estimatedSoC =  60; }
+            else if (restingCellVoltage >= 37790) { estimatedSoC =  59; }
+            else if (restingCellVoltage >= 37720) { estimatedSoC =  58; }
+            else if (restingCellVoltage >= 37650) { estimatedSoC =  57; }
+            else if (restingCellVoltage >= 37580) { estimatedSoC =  56; }
+            else if (restingCellVoltage >= 37510) { estimatedSoC =  55; }
+            else if (restingCellVoltage >= 37440) { estimatedSoC =  54; }
+            else if (restingCellVoltage >= 37370) { estimatedSoC =  53; }
+            else if (restingCellVoltage >= 37300) { estimatedSoC =  52; }
+            else if (restingCellVoltage >= 37240) { estimatedSoC =  51; }
+            else if (restingCellVoltage >= 37180) { estimatedSoC =  50; }
+            else if (restingCellVoltage >= 37120) { estimatedSoC =  49; }
+            else if (restingCellVoltage >= 37060) { estimatedSoC =  48; }
+            else if (restingCellVoltage >= 37000) { estimatedSoC =  47; }
+            else if (restingCellVoltage >= 36950) { estimatedSoC =  46; }
+            else if (restingCellVoltage >= 36900) { estimatedSoC =  45; }
+            else if (restingCellVoltage >= 36850) { estimatedSoC =  44; }
+            else if (restingCellVoltage >= 36800) { estimatedSoC =  43; }
+            else if (restingCellVoltage >= 36750) { estimatedSoC =  42; }
+            else if (restingCellVoltage >= 36700) { estimatedSoC =  41; }
+            else if (restingCellVoltage >= 36660) { estimatedSoC =  40; }
+            else if (restingCellVoltage >= 36600) { estimatedSoC =  39; }
+            else if (restingCellVoltage >= 36560) { estimatedSoC =  38; }
+            else if (restingCellVoltage >= 36520) { estimatedSoC =  37; }
+            else if (restingCellVoltage >= 36470) { estimatedSoC =  36; }
+            else if (restingCellVoltage >= 36420) { estimatedSoC =  35; }
+            else if (restingCellVoltage >= 36380) { estimatedSoC =  34; }
+            else if (restingCellVoltage >= 36330) { estimatedSoC =  33; }
+            else if (restingCellVoltage >= 36280) { estimatedSoC =  32; }
+            else if (restingCellVoltage >= 36230) { estimatedSoC =  31; }
+            else if (restingCellVoltage >= 36180) { estimatedSoC =  30; }
+            else if (restingCellVoltage >= 36120) { estimatedSoC =  29; }
+            else if (restingCellVoltage >= 36060) { estimatedSoC =  28; }
+            else if (restingCellVoltage >= 35990) { estimatedSoC =  27; }
+            else if (restingCellVoltage >= 35930) { estimatedSoC =  26; }
+            else if (restingCellVoltage >= 35880) { estimatedSoC =  25; }
+            else if (restingCellVoltage >= 35810) { estimatedSoC =  24; }
+            else if (restingCellVoltage >= 35740) { estimatedSoC =  23; }
+            else if (restingCellVoltage >= 35660) { estimatedSoC =  22; }
+            else if (restingCellVoltage >= 35560) { estimatedSoC =  21; }
+            else if (restingCellVoltage >= 35470) { estimatedSoC =  20; }
+            else if (restingCellVoltage >= 35370) { estimatedSoC =  19; }
+            else if (restingCellVoltage >= 35250) { estimatedSoC =  18; }
+            else if (restingCellVoltage >= 35170) { estimatedSoC =  17; }
+            else if (restingCellVoltage >= 35130) { estimatedSoC =  16; }
+            else if (restingCellVoltage >= 35100) { estimatedSoC =  15; }
+            else if (restingCellVoltage >= 35070) { estimatedSoC =  14; }
+            else if (restingCellVoltage >= 35040) { estimatedSoC =  13; }
+            else if (restingCellVoltage >= 35000) { estimatedSoC =  12; }
+            else if (restingCellVoltage >= 34970) { estimatedSoC =  11; }
+            else if (restingCellVoltage >= CELL_VREST_10_PERCENT_SoC) { estimatedSoC =  10; } //min cell voltage for long lifetime //34930
+            else if (restingCellVoltage >= 34870) { estimatedSoC =   9; }
+            else if (restingCellVoltage >= 34780) { estimatedSoC =   8; }
+            else if (restingCellVoltage >= 34550) { estimatedSoC =   7; }
+            else if (restingCellVoltage >= 34190) { estimatedSoC =   6; }
+            else if (restingCellVoltage >= 33770) { estimatedSoC =   5; }
+            else if (restingCellVoltage >= 33280) { estimatedSoC =   4; }
+            else if (restingCellVoltage >= 32680) { estimatedSoC =   3; }
+            else if (restingCellVoltage >= 31900) { estimatedSoC =   2; }
+            else if (restingCellVoltage >= 30880) { estimatedSoC =   1; }
+            else                                  { estimatedSoC =   0; } //30000
+
+            return estimatedSoC;
+        }
+
+
 #endif  
 
 /////////////////////////////////////////////////////////////////////////////////////////
