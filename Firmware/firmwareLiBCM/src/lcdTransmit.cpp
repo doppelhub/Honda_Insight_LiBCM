@@ -164,20 +164,26 @@ bool lcd_printWattHours(void)
     lcd2.setCursor(12,3);
 
     uint16_t wattHours_new = 0;
-    if      (cycleFrameNumber == CYCLEFRAME_A) { wattHours_new = energy_getAssist_Wh(); }
-    else if (cycleFrameNumber == CYCLEFRAME_B) { wattHours_new = energy_getRegen_Wh();  }
-        
+
+    uint8_t cycleFrameHelper = cycleFrameNumber;
+
+    //always display assistWh during assist, and regenWh during regen
+    if      ( adc_getLatestBatteryCurrent_amps() > +5) { cycleFrameHelper = CYCLEFRAME_A; } //assist
+    else if ( adc_getLatestBatteryCurrent_amps() < -5) { cycleFrameHelper = CYCLEFRAME_B; } //regen
+
+    if      (cycleFrameHelper == CYCLEFRAME_A) { wattHours_new = energy_getAssist_Wh(); }
+    else if (cycleFrameHelper == CYCLEFRAME_B) { wattHours_new = energy_getRegen_Wh();  }
 
     if (wattHours_new != wattHours_onScreen)
     {
-                                                                     //("RxxxxxWh:RxxxxxWh")
-        if      (wattHours_new < 10   ) { lcd2.print(F("    ")); } //("    r0":"    r9")
-        else if (wattHours_new < 100  ) { lcd2.print(F("   ") ); } //("   r10":"   r99")
-        else if (wattHours_new < 1000 ) { lcd2.print(F("  ")  ); } //("  r100":"  r999")
-        else if (wattHours_new < 10000) { lcd2.print( (' ')   ); } //(" r1000":" r9999")
-
-        if      (cycleFrameNumber == CYCLEFRAME_A) { lcd2.print('a'); }
-        else if (cycleFrameNumber == CYCLEFRAME_B) { lcd2.print('r'); }
+                                                                   //(ZxxxxxWh:ZxxxxxWh)
+        if      (wattHours_new < 10   ) { lcd2.print(F("    ")); } //(    r0Wh:    r9Wh)
+        else if (wattHours_new < 100  ) { lcd2.print(F("   ") ); } //(   r10Wh:   r99Wh)
+        else if (wattHours_new < 1000 ) { lcd2.print(F("  ")  ); } //(  r100Wh:  r999Wh)
+        else if (wattHours_new < 10000) { lcd2.print( (' ')   ); } //( r1000Wh: r9999Wh)
+                                                                   //(r10000Wh:r99999Wh)
+        if      (cycleFrameHelper == CYCLEFRAME_A) { lcd2.print('a'); }
+        else if (cycleFrameHelper == CYCLEFRAME_B) { lcd2.print('r'); }
 
         lcd2.print(String(wattHours_new));
 
@@ -392,7 +398,7 @@ bool lcd_printCellVoltage_delta(void)
 
     static uint16_t deltaVoltage_onScreen = 0;
 
-    uint16_t deltaVoltage_LTC6804 = LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get();
+    uint16_t deltaVoltage_LTC6804 = LTC68042result_deltaCellVoltage_get();
 
     if (deltaVoltage_onScreen != deltaVoltage_LTC6804)
     {

@@ -112,7 +112,7 @@ void LiDisplay_begin(void)
 {
     #ifdef LIDISPLAY_CONNECTED
 
-        #ifdef BATTERY_TYPE_47AhFoMoCo
+        #ifdef BATTERY_TYPE_47Ah
             #undef LIDISPLAY_GRIDCHARGE_PAGE_ID
             #define LIDISPLAY_GRIDCHARGE_PAGE_ID 5
         #endif
@@ -345,7 +345,7 @@ LiDisplay_updateNextCellValue() {
     static uint8_t cellToUpdate = 0;
     static uint8_t ic_index = 0;
     static uint8_t ic_cell_num = 0;
-    static uint16_t cell_avg_voltage = 0;
+    static uint16_t cell_avg_voltage = 0; //TODO_NATALYA - JTS: this doesn't need to be static
     static String cell_color_number = "2016";
     static int cell_voltage_diff_from_avg = 0;
     static int temp_cell_voltage = 0;
@@ -363,10 +363,11 @@ LiDisplay_updateNextCellValue() {
     else if (cellToUpdate <= 59) { ic_index = 4; ic_cell_num = (cellToUpdate - 48); }
 
     // 09 Feb 2023 -- cell_avg_voltage is a crude approximation of the centre of the voltage range.  Ideally this would be replaced with the median cell voltage.
-    LiDisplayAverageCellVoltage = ((LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get()) * 0.5);
+    LiDisplayAverageCellVoltage = ((LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get()) * 0.5); //TODO_NATALYA - JTS: replace this line with next line
+    //LiDisplayAverageCellVoltage = (LTC68042result_deltaCellVoltage_get() >> 1 ) + LTC68042result_loCellVoltage_get(); 
 
-    cell_avg_voltage = (LiDisplayAverageCellVoltage + LTC68042result_loCellVoltage_get());
-    LiDisplayAverageCellVoltage = (cell_avg_voltage); // TODO_NATALYA - get rid of cell_avg_voltage
+    cell_avg_voltage = (LiDisplayAverageCellVoltage + LTC68042result_loCellVoltage_get()); //TODO_NATALYA - JTS: remove entire line and entire variable
+    LiDisplayAverageCellVoltage = (cell_avg_voltage); // TODO_NATALYA - get rid of cell_avg_voltage //TODO_NATALYA - JTS: remove entire line
     temp_cell_voltage = LTC68042result_specificCellVoltage_get(ic_index, ic_cell_num);
 
     cell_voltage_diff_from_avg = cell_avg_voltage - temp_cell_voltage;
@@ -962,7 +963,7 @@ void LiDisplay_updateElement() {
 					LiDisplay_calculateFanSpeedStr();
 					if (!gc_sixty_s_fomoco_e_block_enabled && (MAX_CELL_INDEX == 59))
 					{
-						LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t16", 3, "65516"); // E block label will be missing on a 60S FoMoCo pack display if we don't run this once.
+						LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t16", 3, "65516"); // E block label will be missing on a 60S 47Ah pack display if we don't run this once.
 						gc_sixty_s_fomoco_e_block_enabled = true;
 					}
 					else if (LiDisplayFanSpeed_onScreen != currentFanSpeed)

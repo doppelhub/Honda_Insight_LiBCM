@@ -130,15 +130,10 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//results stored in LTC68042results.c
-void processAllCellVoltages(void)
+//For hardware reasons, cell 19's measured voltage is corrected here
+uint16_t calculateVoltageCell19(uint16_t cell19Voltage_measured, uint16_t hiCellVoltage, uint16_t loCellVoltage)
 {
-    uint32_t packVoltage_RAW = 0; //Multiply by 0.0001 for volts
-    uint16_t loCellVoltage = 65535;
-    uint16_t hiCellVoltage = 0;
-
-    #ifdef BATTERY_TYPE_5AhG3
-        //On LiBCM, QTY3 LTC6804 ICs measure QTY2 18S EHW5 modules:
+    //On LiBCM, QTY3 LTC6804 ICs measure QTY2 18S EHW5 modules:
         // -LTC6804 'A' measures the first QTY12 cells in the 1st 18S module (stack cells 01:12).  No problems here.
         // -LTC6804 'C' measures the  last QTY12 cells in the 2nd 18S module (stack cells 25:36).  No problems here.
         // -LTC6804 'B' measures the remaining QTY6 cells in both modules (stack cells 13:18 in module 'A', as well as stack cells 19:24 in module 'C').
@@ -157,79 +152,88 @@ void processAllCellVoltages(void)
         //The ideal solution would be to use the LTC6813 - which measures QTY18 cells - on both 18S EHW5 modules.
         //However, that IC is backordered for years, hence the above hardware decision and this workaround.
         //It's not ideal, but it's what we've got.  STFP!
+ 
+    const uint8_t VOLTAGECORRECTION_mV_PER_AMP     =  1; //1 mV/A error measured on 4 AWG cable between modules
+    const uint8_t LTC6804_COUNTS_PER_mV            = 10; //LSB is 100 uV
+    const uint8_t LTC6804_COUNT_ADJUSTMENT_PER_AMP = (VOLTAGECORRECTION_mV_PER_AMP * LTC6804_COUNTS_PER_mV);
 
-        //cell 19 is the seventh cell on the second IC  
-        #define CELL19_CHIP_NUMBER 1 //array is zero-indexed // '1' is the 2nd IC
-        #define CELL19_CELL_NUMBER 6 //array is zero-indexed // '6' is seventh cell (i.e. stack cell 19)
+    uint16_t midpointVoltage = ((hiCellVoltage - loCellVoltage) >> 1) + loCellVoltage;
+    uint16_t cell19absDelta_measured = 0;
+    uint16_t cell19absDelta_adjusted = 0;
+    uint16_t cell19Voltage_adjusted = cell19Voltage_measured + adc_getLatestBatteryCurrent_amps() * LTC6804_COUNT_ADJUSTMENT_PER_AMP;
 
-        #define VOLTAGECORRECTION_mV_PER_AMP 1 //1 mV/A error measured on RevC hardware //only corrects cell 19 for this specific issue
-        #define LTC6804_COUNTS_PER_mV 10 //LSB is 100 uV
-        #define LTC6804_COUNT_ADJUSTMENT_PER_AMP (VOLTAGECORRECTION_mV_PER_AMP * LTC6804_COUNTS_PER_mV) //preprocessor handles this multiply
+    //find measured voltage magnitude from midpoint
+    if (cell19Voltage_measured > midpointVoltage) { cell19absDelta_measured = cell19Voltage_measured - midpointVoltage; }
+    else                                          { cell19absDelta_measured = midpointVoltage - cell19Voltage_measured; } 
 
-        uint16_t cell19Voltage_measured = cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER]; //store cell 19 voltage for later
-        uint16_t cell19Voltage_adjusted = cell19Voltage_measured + adc_getLatestBatteryCurrent_amps() * LTC6804_COUNT_ADJUSTMENT_PER_AMP;
+    //find adjusted voltage magnitude from midpoint
+    if (cell19Voltage_adjusted > midpointVoltage) { cell19absDelta_adjusted = cell19Voltage_adjusted - midpointVoltage; }
+    else                                          { cell19absDelta_adjusted = midpointVoltage - cell19Voltage_adjusted; } 
 
-        //temporarily replace cell 19's voltage with cell 18's, to prevent cell 19's (possibly incorrect) voltage from being either the highest or lowest voltage
-        cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER] = cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER - 1];
-        //we'll restore cell 19's voltage after we determine pack hi/lo (in the for loops below)
+    uint16_t cell19Voltage_closest = 0;
+
+    if (cell19absDelta_measured > cell19absDelta_adjusted) { cell19Voltage_closest = cell19Voltage_adjusted; } //adjusted value is closer to midpoint
+    else                                                   { cell19Voltage_closest = cell19Voltage_measured; } //measured value is closer to midpoint
+
+    return cell19Voltage_closest;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+//results stored in LTC68042results.c
+void processAllCellVoltages(void)
+{
+    #ifdef BATTERY_TYPE_5AhG3
+        //store actual cell 19 voltage measurement for later recall
+        uint16_t cell19Voltage_measured = cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER];
+        
+        //temporarily replace cell 19's voltage with another cell
+        uint16_t cell19Voltage_spoofed = cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER - 1];
+        cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER] = cell19Voltage_spoofed;
+        //see calculateVoltageCell19() for explanation
     #endif
+
+    uint32_t packVoltage_RAW = 0; //Multiply by 0.0001 for volts
+    uint16_t loCellVoltage = 65535;
+    uint16_t hiCellVoltage = 0;
+    uint8_t loCellNumber = 0;
+    uint8_t hiCellNumber = 0;
 
     //loop through every cell in pack
     for (int chip = 0 ; chip < TOTAL_IC; chip++) //actual LTC serial address: 'chip' + FIRST_IC_ADDR )
-    { 
-        for (int cell=0; cell < CELLS_PER_IC; cell++) //actual LTC cell number: 'cell' + 1 (zero-indexed)
+    {
+        for (int cell=0; cell < CELLS_PER_IC; cell++) //physical LTC cell number (1 to 48): 'cell' + 1 (array is zero-indexed)
         { 
-            uint16_t cellVoltageUnderTest = cellVoltages_counts[chip][cell];
-        
-            //accumulate Vpack  
-            packVoltage_RAW += cellVoltageUnderTest;
+            uint16_t Vcell = cellVoltages_counts[chip][cell];
+
+            LTC68042result_specificCellVoltage_set(chip, cell, Vcell);
+
+            packVoltage_RAW += Vcell;
             
-            //find hi/lo cells
-            if (cellVoltageUnderTest < loCellVoltage) { loCellVoltage = cellVoltageUnderTest; }
-            if (cellVoltageUnderTest > hiCellVoltage) { hiCellVoltage = cellVoltageUnderTest; }
-
-            //check for new maxEver/minEver cells (if any)
-            //If BATTERY_TYPE_5AhG3 is defined, cell 19 voltage cannot become maxEver or minEver right now, but we'll check again down below
-            if (cellVoltageUnderTest > LTC68042result_maxEverCellVoltage_get()) {LTC68042result_maxEverCellVoltage_set(cellVoltageUnderTest); }
-            if (cellVoltageUnderTest < LTC68042result_minEverCellVoltage_get()) {LTC68042result_minEverCellVoltage_set(cellVoltageUnderTest); }
-
-            LTC68042result_specificCellVoltage_set(chip, cell, cellVoltageUnderTest);
+            if (Vcell < loCellVoltage) { loCellVoltage = Vcell; loCellNumber = chip*CELLS_PER_IC+cell+1; }
+            if (Vcell > hiCellVoltage) { hiCellVoltage = Vcell; hiCellNumber = chip*CELLS_PER_IC+cell+1; }
         }
     }
 
-    LTC68042result_packVoltage_set( (uint8_t)(packVoltage_RAW * 0.0001) );
-    
+    #ifdef BATTERY_TYPE_5AhG3
+        uint16_t cell19Voltage_final = calculateVoltageCell19(cell19Voltage_measured, hiCellVoltage, loCellVoltage);
+
+        LTC68042result_specificCellVoltage_set(CELL19_CHIP_NUMBER, CELL19_CELL_NUMBER, cell19Voltage_final);
+        if (cell19Voltage_final > hiCellVoltage) { hiCellVoltage = cell19Voltage_final; hiCellNumber = 19; }
+        if (cell19Voltage_final < loCellVoltage) { loCellVoltage = cell19Voltage_final; loCellNumber = 19; }
+
+        packVoltage_RAW = packVoltage_RAW - cell19Voltage_spoofed + cell19Voltage_measured; //correct total pack voltage
+    #endif
+
     LTC68042result_loCellVoltage_set(loCellVoltage);
     LTC68042result_hiCellVoltage_set(hiCellVoltage);
+    LTC68042result_loCellNum_set(loCellNumber);
+    LTC68042result_hiCellNum_set(hiCellNumber);
+    LTC68042result_deltaCellVoltage_set(hiCellVoltage - loCellVoltage);
+    LTC68042result_packVoltage_set( (uint8_t)(packVoltage_RAW * 0.0001) );
 
-    #ifdef BATTERY_TYPE_5AhG3
-        //Now we need to determine which cell 19 voltage is correct (the actual measured value, or the current-adjusted one)
-        //We do this by determining which voltage has the smallest magnitude from the max/min cell voltages (determined above).
-        
-        uint16_t midpointVoltage = ((hiCellVoltage - loCellVoltage) >> 1) + loCellVoltage;
-        uint16_t cell19deltaMagnitude_measured = 0;
-        uint16_t cell19deltaMagnitude_adjusted = 0;
-
-        //find measured voltage magnitude from midpoint
-        if (cell19Voltage_measured > midpointVoltage) { cell19deltaMagnitude_measured = cell19Voltage_measured - midpointVoltage; }
-        else                                          { cell19deltaMagnitude_measured = midpointVoltage - cell19Voltage_measured; } 
-
-        //find adjusted voltage magnitude from midpoint
-        if (cell19Voltage_adjusted > midpointVoltage) { cell19deltaMagnitude_adjusted = cell19Voltage_adjusted - midpointVoltage; }
-        else                                          { cell19deltaMagnitude_adjusted = midpointVoltage - cell19Voltage_adjusted; } 
-
-        uint16_t cell19Voltage_final = 0;
-
-        if (cell19deltaMagnitude_measured > cell19deltaMagnitude_adjusted) { cell19Voltage_final = cell19Voltage_adjusted; } //adjusted value is closer to midpoint
-        else                                                               { cell19Voltage_final = cell19Voltage_measured; } //measured value is closer to midpoint
-
-        //store whichever cell 19 voltage is closest to the other cells
-        LTC68042result_specificCellVoltage_set(CELL19_CHIP_NUMBER, CELL19_CELL_NUMBER, cell19Voltage_final);
-
-        //finally, we need to check if cell 19 is either the highest or lowest voltage
-        if (cell19Voltage_final > hiCellVoltage) { LTC68042result_hiCellVoltage_set(cell19Voltage_final); }
-        if (cell19Voltage_final < loCellVoltage) { LTC68042result_loCellVoltage_set(cell19Voltage_final); }
-    #endif
+    if (hiCellVoltage > LTC68042result_maxEverCellVoltage_get()) {LTC68042result_maxEverCellVoltage_set(hiCellVoltage); }
+    if (loCellVoltage < LTC68042result_minEverCellVoltage_get()) {LTC68042result_minEverCellVoltage_set(loCellVoltage); }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -299,6 +303,9 @@ bool LTC68042cell_nextVoltages(void)
         Serial.print(F("\nillegal LTC68042cell state"));
         while (1) {;} //hang here until watchdog resets.
     }
+
+    if (cellVoltageDataStatus == CELL_DATA_PROCESSED) { LTC68042result_wasDataProcessedThisLoop_set(YES); }
+    else                                              { LTC68042result_wasDataProcessedThisLoop_set(NO);  }
 
     return cellVoltageDataStatus;
 }

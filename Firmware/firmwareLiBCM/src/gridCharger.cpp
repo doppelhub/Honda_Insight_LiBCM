@@ -24,12 +24,12 @@ void runFansIfNeeded(void)
     else if (fan_getSpeed_now() == FAN_OFF ) { hysteresis_C = FAN_SPEED_HYSTERESIS_OFF_degC;  }
 
     if      ( (temperature_intake_getLatest()  < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C)) &&
-  #ifndef BATTERY_TYPE_47AhFoMoCo
+  #ifndef BATTERY_TYPE_47Ah
               (temperature_ambient_getLatest() < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C)) &&
   #endif
               (temperature_battery_getLatest() < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C))  ) { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);  }
     else if ( (temperature_intake_getLatest()  < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C)) &&
-  #ifndef BATTERY_TYPE_47AhFoMoCo
+  #ifndef BATTERY_TYPE_47Ah
               (temperature_ambient_getLatest() < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C)) &&
   #endif
               (temperature_battery_getLatest() < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C))  ) { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_LOW);  }
@@ -54,7 +54,7 @@ uint8_t gridCharger_isAllowedNow(void)
     if (gpio_isGridChargerPluggedInNow()    == NO                                       ) { return NO__CHARGER_UNPLUGGED;       }
     if (key_getSampledState()               == KEYSTATE_ON                              ) { return NO__KEY_IS_ON;               }
     //cell voltage checks
-    if (LTC68042result_hiCellVoltage_get()   > CELL_VREST_85_PERCENT_SoC                ) { return NO__ATLEASTONECELL_TOO_HIGH; }
+    if (LTC68042result_hiCellVoltage_get()   > CELL_VREST_085_PERCENT_SoC               ) { return NO__ATLEASTONECELL_TOO_HIGH; }
     if (LTC68042result_loCellVoltage_get()   < CELL_VMIN_GRIDCHARGER                    ) { return NO__ATLEASTONECELL_TOO_LOW;  }
     if (LTC68042result_hiCellVoltage_get()   > CELL_VMAX_GRIDCHARGER                    ) { return NO__ATLEASTONECELL_FULL;     }
     if (LTC68042result_hiCellVoltage_get()   > determineMaxAllowedCellVoltage()         ) { return NO__CELL_VOLTAGE_HYSTERESIS; }
@@ -65,7 +65,7 @@ uint8_t gridCharger_isAllowedNow(void)
     if (temperature_battery_getLatest()      > DISABLE_GRIDCHARGING_ABOVE_BATTERY_TEMP_C) { return NO__BATTERY_IS_HOT;          }
     if (temperature_intake_getLatest()       > DISABLE_GRIDCHARGING_ABOVE_INTAKE_TEMP_C ) { return NO__AIRINTAKE_IS_HOT;        }
     if (temperature_intake_getLatest()      == TEMPERATURE_SENSOR_FAULT_LO              ) { return NO__TEMP_UNPLUGGED_INTAKE;   }
-  #ifndef BATTERY_TYPE_47AhFoMoCo
+  #ifndef BATTERY_TYPE_47Ah
     if (temperature_exhaust_getLatest()      > DISABLE_GRIDCHARGING_ABOVE_EXHAUST_TEMP_C) { return NO__TEMP_EXHAUST_IS_HOT;     }
   #endif
     //time checks

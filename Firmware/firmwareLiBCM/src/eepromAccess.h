@@ -9,8 +9,9 @@
     #define EEPROM_LIBCM_DISABLED_ASSIST 0xCC
     #define EEPROM_ASSIST_NEVER_LIMITED  0x33
 
-    #define EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE 0xFF
-    #define EEPROM_ADDRESS_FORMATTED_VALUE       0x00
+    #define EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_16b 0xFFFF
+    #define EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_8b  0xFF
+    #define EEPROM_ADDRESS_FORMATTED_VALUE           0x00
 
     #define BYTES_IN_DATE 12 //JTS2doLater: Is date 11 bytes or 12?
     #define BYTES_IN_TIME  9 //JTS2doLater: Is time  9 bytes or  8?
@@ -20,6 +21,11 @@
 
     #define FIRMWARE_EXPIRED   0b10101010 //alternating bit pattern for EEPROM read/write integrity
     #define FIRMWARE_UNEXPIRED 0b01010101
+
+    #define EEPROM_OFFSET_TIME 0
+    #define EEPROM_OFFSET_DIST 2
+    #define EEPROM_OFFSET_ASST 4
+    #define EEPROM_OFFSET_RGEN 6
 
     void eeprom_keyOffCheckForExpiredFirmware(void);
     
@@ -33,6 +39,9 @@
 
     uint8_t eeprom_hasLibcmDisabledRegen_get(void);
     void    eeprom_hasLibcmDisabledRegen_set(uint8_t);
+
+    uint16_t eeprom_maxCellVoltageDelta_get(void);
+    void     eeprom_maxCellVoltageDelta_set(uint16_t);  
 
     uint8_t eeprom_delayKeyON_ms_get(void);
     void    eeprom_delayKeyON_ms_set(uint8_t);
@@ -50,8 +59,14 @@
 
     uint16_t eeprom_batteryHistory_getValue(uint8_t indexTemperature, uint8_t indexSoC);
 
+    void eeprom_wattHourHistory_storeSession(uint16_t time_s, uint16_t distance_TBD, uint16_t assist_Wh, uint16_t regen_Wh);
+    void eeprom_wattHourHistory_printTripHistory(void);
+    void eeprom_wattHourHistory_reset(void);
+
     void eeprom_begin(void);
 
     void writeToEEPROM_uint16(uint16_t startAddress, uint16_t value);
+
+    void eeprom_printAll(void);
 
 #endif

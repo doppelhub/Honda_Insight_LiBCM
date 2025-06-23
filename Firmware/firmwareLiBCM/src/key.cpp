@@ -29,6 +29,7 @@ void key_handleKeyEvent_off(void)
     //JTS2doLater: Add built-in test suite, including VREF, VCELL, Balancing, temp verify (batt and OEM), etc.
     eeprom_keyOffCheckForExpiredFirmware();
     LTC68042configure_doesActualPackSizeMatchUserConfig();
+    energy_storeTrip();
 
     time_latestKeyOff_ms_set(millis()); //MUST RUN LAST!
 }
@@ -45,7 +46,7 @@ void key_handleKeyEvent_on(void)
     LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyON();
-    energy_keyOn();
+    energy_zeroWh();
     LED(1,HIGH);
 
     time_latestKeyOn_ms_set(millis()); //MUST RUN LAST!
