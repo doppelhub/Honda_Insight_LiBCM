@@ -51,6 +51,9 @@ static uint8_t  LiDisplayFanSpeed_onScreen = 100;
 static uint8_t  LiDisplaySoCBars_onScreen = 100;
 static uint8_t  LiDisplayTemp_onScreen = 100;
 
+// Nerd Screen Only
+static uint8_t	LiDisplay_NS_loCellNum_onScreen = 100;
+static uint8_t	LiDisplay_NS_hiCellNum_onScreen = 100;
 
 
 static uint16_t LiDisplayAverageCellVoltage = 0;
@@ -211,6 +214,8 @@ void LiDisplay_resetDrivingPageVariables()
 	LiDisplayPackVoltageActual_onScreen = 100;
 	LiDisplay_heaterState_onScreen = 2;
 	LiDisplayTemp_onScreen = 100;
+	LiDisplay_NS_loCellNum_onScreen = 100;
+	LiDisplay_NS_hiCellNum_onScreen = 100;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -364,7 +369,7 @@ LiDisplay_updateNextCellValue() {
 
     // 09 Feb 2023 -- cell_avg_voltage is a crude approximation of the centre of the voltage range.  Ideally this would be replaced with the median cell voltage.
     LiDisplayAverageCellVoltage = ((LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get()) * 0.5); //TODO_NATALYA - JTS: replace this line with next line
-    //LiDisplayAverageCellVoltage = (LTC68042result_deltaCellVoltage_get() >> 1 ) + LTC68042result_loCellVoltage_get(); 
+    //LiDisplayAverageCellVoltage = (LTC68042result_deltaCellVoltage_get() >> 1 ) + LTC68042result_loCellVoltage_get();
 
     cell_avg_voltage = (LiDisplayAverageCellVoltage + LTC68042result_loCellVoltage_get()); //TODO_NATALYA - JTS: remove entire line and entire variable
     LiDisplayAverageCellVoltage = (cell_avg_voltage); // TODO_NATALYA - get rid of cell_avg_voltage //TODO_NATALYA - JTS: remove entire line
@@ -893,6 +898,14 @@ void LiDisplay_updateElement() {
 						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t28", 0, String(LiDisplay_calculateAvgCellVoltage()));
 						LiDisplayAverageCellVoltage_onScreen = LiDisplay_calculateAvgCellVoltage();
 					}
+					else if ((LIDISPLAY_DRIVING_PAGE_REQ_ID == 7) && (LiDisplay_NS_hiCellNum_onScreen != LTC68042result_hiCellNum_get())) {
+						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t20", 0, String(LTC68042result_hiCellNum_get()));
+						LiDisplay_NS_hiCellNum_onScreen = LTC68042result_hiCellNum_get();
+					}
+					else if ((LIDISPLAY_DRIVING_PAGE_REQ_ID == 7) && (LiDisplay_NS_loCellNum_onScreen != LTC68042result_loCellNum_get())) {
+						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t21", 0, String(LTC68042result_loCellNum_get()));
+						LiDisplay_NS_loCellNum_onScreen = LTC68042result_loCellNum_get();
+					}
 					else if (LiDisplayTemp_onScreen != temperature_battery_getLatest())
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t11", 0, (String(temperature_battery_getLatest()) + char(176) + "C"));
@@ -1070,6 +1083,8 @@ void LiDisplay_keyOn(void)
         LiDisplaySoC_onScreen = 100;
         LiDisplayFanSpeed_onScreen = 100;
         LiDisplaySoCBars_onScreen = 100;
+		LiDisplay_NS_loCellNum_onScreen = 100;
+		LiDisplay_NS_hiCellNum_onScreen = 100;
 
     #endif
 	#ifdef LIDISPLAY_USE_NERD_SCREEN
