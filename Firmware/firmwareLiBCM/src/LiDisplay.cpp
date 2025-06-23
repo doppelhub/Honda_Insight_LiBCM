@@ -51,6 +51,8 @@ static uint8_t  LiDisplayFanSpeed_onScreen = 100;
 static uint8_t  LiDisplaySoCBars_onScreen = 100;
 static uint8_t  LiDisplayTemp_onScreen = 100;
 
+
+
 static uint16_t LiDisplayAverageCellVoltage = 0;
 static uint8_t maxElementId = 8;
 static uint8_t LiDisplay_powerState = 0; // 0=Key off GC unplug    1=Key on GC unplug    2=Key off GC plugged    3=Key on GC plugged
@@ -886,7 +888,8 @@ void LiDisplay_updateElement() {
 						LiDisplayPackVoltageSpoofed_onScreen = vPackSpoof_getSpoofedPackVoltage();
 					}
 					else if ((LIDISPLAY_DRIVING_PAGE_REQ_ID == 7) && (LiDisplayAverageCellVoltage_onScreen != LiDisplay_calculateAvgCellVoltage())) {
-						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t28", 0, String((LiDisplay_calculateAvgCellVoltage() * 0.0001),3));
+						//LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t28", 0, String((LiDisplay_calculateAvgCellVoltage() * 0.0001),3));
+						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t28", 0, String(LiDisplay_calculateAvgCellVoltage()));
 						LiDisplayAverageCellVoltage_onScreen = LiDisplay_calculateAvgCellVoltage();
 					}
 					else if (LiDisplayTemp_onScreen != temperature_battery_getLatest())
