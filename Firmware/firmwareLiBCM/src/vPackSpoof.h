@@ -16,14 +16,16 @@
     #define MAXIMIZE_POWER_ABOVE_CURRENT_AMPS (BEGIN_SPOOFING_VOLTAGE_ABOVE_AMPS + ADDITIONAL_AMPS_UNTIL_MAX_VSPOOF)
 
     #define VSPOOF_TO_MAXIMIZE_POWER 125 //Maximum assist occurs when MCM thinks pack is at 120 volts
-    
-    #define ADDITIONAL_VPIN_OFFSET_VOLTS 0 //this many volts are added to VPIN output //use with OBDIIC&C to make BATTSCI voltage equal to VPIN voltage
-    #define ADDITIONAL_MCMe_OFFSET_VOLTS 0 //this many volts are added to MCMe output //use with OBDIIC&C to make BATTSCI voltage equal to MCMe voltage
 
     void vPackSpoof_setVoltage(void);
 
     void vPackSpoof_handleKeyOFF(void);
     void vPackSpoof_handleKeyON(void);
+
+    uint8_t vPackSpoof_getBVO(void);
+    void    vPackSpoof_setBVO(uint8_t action);
+    uint8_t vPackSpoof_getMVO(void);
+    void    vPackSpoof_setMVO(uint8_t action);
 
     uint8_t vPackSpoof_getSpoofedPackVoltage(void);
 

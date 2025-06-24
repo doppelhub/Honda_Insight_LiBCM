@@ -222,7 +222,7 @@ void processAllCellVoltages(void)
         if (cell19Voltage_final > hiCellVoltage) { hiCellVoltage = cell19Voltage_final; hiCellNumber = 19; }
         if (cell19Voltage_final < loCellVoltage) { loCellVoltage = cell19Voltage_final; loCellNumber = 19; }
 
-        packVoltage_RAW = packVoltage_RAW - cell19Voltage_spoofed + cell19Voltage_measured; //correct total pack voltage
+        packVoltage_RAW = packVoltage_RAW - cell19Voltage_spoofed + cell19Voltage_measured;
     #endif
 
     LTC68042result_loCellVoltage_set(loCellVoltage);
