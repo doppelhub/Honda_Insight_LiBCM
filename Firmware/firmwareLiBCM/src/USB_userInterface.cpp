@@ -169,8 +169,7 @@ void printHelp(void)
         "\n -'$LOOP  : LiBCM loop period. '$LOOP=_' to set (1 to 255 ms)"
         "\n -'$SCIms': period between BATTSCI frames. '$SCIms=_' to set (0 to 255 ms)"
         "\n -'$TRIP' : print energy consumption and distance records ('TRIP=CLR' to zero all)"
-        "\n -'$BVO=_ : +/-/0: increase/decrease/reset BVO (OBDIIC&C parameter 0x0A)"
-        "\n -'$MVO=_ : +/-/0: increase/decrease/reset MVO (OBDIIC&C parameter 0x05)"
+        "\n -'$SPOOF': print voltage spoofing calibration commands and instructions"
         "\n"
         "\nDebug characters:"
         "\n -'@': isoSPI error occurred"
@@ -190,6 +189,25 @@ void printHelp(void)
         "\n -'SoC_MAX' display max allowed SoC.  'SoC_MAX=__' to set."
         "\n -'SoC_MIN' display min allowed SoC.  'SoC_MIN=__' to set."
         */
+        ));
+    //When adding new commands, make sure to add cases to the following functions:
+        //USB_userInterface_executeUserInput()
+        //eeprom_resetDebugValues() //if debug data is stored in EEPROM
+        //eeprom_verifyDataValid() //if data is stored in EEPROM
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+//JTS2doNow: Add '$SPOOF' code
+//JTS2doNow: Finish this function
+void printVspoofInstructions(void)
+{
+    Serial.print(F("\n\nVoltage Spoofing Commands:"
+        "\n -'$BVO=_ : +/-/0: increase/decrease/reset BVO (OBDIIC&C parameter 0x0A)"
+        "\n -'$MVO=_ : +/-/0: increase/decrease/reset MVO (OBDIIC&C parameter 0x05)"
+        "\n"
+        "\n"
+    
         ));
     //When adding new commands, make sure to add cases to the following functions:
         //USB_userInterface_executeUserInput()
@@ -394,20 +412,21 @@ void USB_userInterface_executeUserInput(void)
             Serial.print(' ');
             if      ( (line[4]=='=')                                      &&
                      ((line[5]=='+') || (line[5]=='-') || (line[5]=='0')) &&
-                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_setBVO(line[5]);        }
-            else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_getBVO()); }
+                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetBVO_adjust(line[5]);        }
+            else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetBVO_get()); }
             else                                                             { printText_invalidEntry();          }
         }
         
         //$MVO
+        //JTS2doNow: Change to latest name //'mvo' no longer used
         else if ((line[1]=='M') && (line[2]=='V') && (line[3]=='O'))
         {
             //MVO affects VPIN output
             Serial.print(' ');
             if      ( (line[4]=='=')                                      &&
                      ((line[5]=='+') || (line[5]=='-') || (line[5]=='0')) &&
-                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_setMVO(line[5]);        }
-            else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_getMVO()); }
+                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetMVO_adjust(line[5]);        }
+            else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetMVO_get()); }
             else                                                             { printText_invalidEntry();          }
         }
 

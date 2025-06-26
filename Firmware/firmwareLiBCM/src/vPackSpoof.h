@@ -22,10 +22,10 @@
     void vPackSpoof_handleKeyOFF(void);
     void vPackSpoof_handleKeyON(void);
 
-    uint8_t vPackSpoof_getBVO(void);
-    void    vPackSpoof_setBVO(uint8_t action);
-    uint8_t vPackSpoof_getMVO(void);
-    void    vPackSpoof_setMVO(uint8_t action);
+    int8_t vPackSpoof_offsetBVO_get(void);
+    void   vPackSpoof_offsetBVO_adjust(uint8_t action);
+    int8_t vPackSpoof_offsetMVO_get(void);
+    void   vPackSpoof_offsetMVO_adjust(uint8_t action);
 
     uint8_t vPackSpoof_getSpoofedPackVoltage(void);
 
