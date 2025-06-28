@@ -206,8 +206,15 @@ void printVspoofInstructions(void)
         "\n -'$BVO=_ : +/-/0: increase/decrease/reset BVO (OBDIIC&C parameter 0x0A)"
         "\n -'$MVO=_ : +/-/0: increase/decrease/reset MVO (OBDIIC&C parameter 0x05)"
         "\n"
-        "\n"
-    
+        "\nInstructions:"
+        "\n 1: KeyON, engine not running, no IMA CELs"
+        "\n 2: Display above parameters on OBDIIC&C"
+        "\n 3: Compare LiBCM's spoofed pack voltage to the above parameters."
+        "\n 4: Adjust above parameters as needed to make all voltages equal."
+        "\n    For example, if OBDII BVO is 169 volts & Vspoof is 175 volts,"
+        "\n                 type $BVO=+ to increase BVO. Repeat as needed."
+        "\n Goal: All three parameters within 5 volts."
+
         ));
     //When adding new commands, make sure to add cases to the following functions:
         //USB_userInterface_executeUserInput()
@@ -429,6 +436,12 @@ void USB_userInterface_executeUserInput(void)
             else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetMVO_get()); }
             else                                                             { printText_invalidEntry();          }
         }
+
+        //$SPOOF
+        else if ((line[1]=='S') && (line[2]=='P') && (line[3]=='O') && (line[4]=='O') && (line[5]=='F'))
+        {
+            printVspoofInstructions();
+        }        
 
         //DEFAULT
         else { printText_invalidEntry(); }
