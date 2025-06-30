@@ -120,16 +120,6 @@ void LiDisplay_begin(void)
             #define LIDISPLAY_GRIDCHARGE_PAGE_ID 5
         #endif
 
-		#ifdef LIDISPLAY_USE_NERD_SCREEN
-			// Nerd Screen driving page is named page6
-			// Nerd Screen driving page index is 7
-			// This means to switch to the page we need to send 7, but to change elements on the page, they need a 6
-			#undef LIDISPLAY_DRIVING_PAGE_ID
-			#define LIDISPLAY_DRIVING_PAGE_ID 6
-			#undef LIDISPLAY_DRIVING_PAGE_REQ_ID
-			#define LIDISPLAY_DRIVING_PAGE_REQ_ID 7
-		#endif
-
         LiDisplayElementToUpdate = 0;
 
         LiDisplaySplashPending = false;
@@ -854,7 +844,7 @@ void LiDisplay_updateElement() {
 				case 3: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
 				case 4: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t13", 0, key_time); break;
 				case 5: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t14", 0, (String(((LTC68042result_hiCellVoltage_get() * 0.1) - (LTC68042result_loCellVoltage_get() * 0.1)),1)+"")); break;
-				case 6: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t26", 0, String(adc_getLatestBatteryCurrent_amps()*0.001)); break;
+				case 6: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t26", 0, String(adc_getLatestBatteryCurrent_amps())); break;	// Amps
 				// The other elements update less frequently.  We will update 1 of them.
 				// Priority is from least-likely to change to most-likely to change.
 				case 7:
@@ -924,7 +914,7 @@ void LiDisplay_updateElement() {
 						}
 					}
 				break;
-				default: maxElementId = LIDISPLAY_DRIVING_PAGE_INTITIAL_MAX_ELEMENT_ID; break;
+				default: maxElementId = LIDISPLAY_DRIVING_PAGE_INTITIAL_MAX_ELEMENT_ID; LiDisplayElementToUpdate = 0; break;
 			}
 		break;
 
@@ -1088,6 +1078,13 @@ void LiDisplay_keyOn(void)
 
     #endif
 	#ifdef LIDISPLAY_USE_NERD_SCREEN
+		// Nerd Screen driving page is named page6
+		// Nerd Screen driving page index is 7
+		// This means to switch to the page we need to send 7, but to change elements on the page, they need a 6
+		#undef LIDISPLAY_DRIVING_PAGE_ID
+		#define LIDISPLAY_DRIVING_PAGE_ID 6
+		#undef LIDISPLAY_DRIVING_PAGE_REQ_ID
+		#define LIDISPLAY_DRIVING_PAGE_REQ_ID 7
 		LiDisplayOnKeyOnWithNerdScreenEnabled = true;
 	#endif
 	#ifdef LIDISPLAY_FEELING_NERDY
