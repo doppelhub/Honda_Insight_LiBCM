@@ -46,6 +46,11 @@
     uint8_t eeprom_delayKeyON_ms_get(void);
     void    eeprom_delayKeyON_ms_set(uint8_t);
 
+    int8_t eeprom_getVspoofOffset_BVO(void);
+    void    eeprom_setVspoofOffset_BVO(int8_t);
+    int8_t eeprom_getVspoofOffset_MVO(void);
+    void    eeprom_setVspoofOffset_MVO(int8_t);
+
     void eeprom_resetDebugValues(void);
 
     void eeprom_verifyDataValid(void);
