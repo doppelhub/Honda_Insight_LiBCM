@@ -27,7 +27,7 @@ const uint16_t EEPROM_ADDRESS_NEXT_Wh_RECORD      = 0x012; //EEPROM range is 0x0
 const uint16_t EEPROM_ADDRESS_COMPILE_TIME        = 0x013; //EEPROM range is 0x013:0x01B ( 9B)
 const uint16_t EEPROM_ADDRESS_MAX_VCELL_DELTA     = 0x01C; //EEPROM range is 0x01C:0x01D ( 2B)
 const uint16_t EEPROM_ADDRESS_BVO_OFFSET          = 0x01E; //EEPROM range is 0x01E       ( 1B)
-const uint16_t EEPROM_ADDRESS_MVO_OFFSET          = 0x01F; //EEPROM range is 0x01F       ( 1B)
+const uint16_t EEPROM_ADDRESS_MDV_OFFSET          = 0x01F; //EEPROM range is 0x01F       ( 1B)
 //this EEPROM space still available
 //The following addresses start from end of EEPROM space and work backwards to beginning
 const uint16_t EEPROM_ADDRESS_BATT_HISTORY        = EEPROM_LAST_USABLE_ADDRESS - NUM_BYTES_BATTERY_HISTORY;        //0xA57:0xF9F (1536B)
@@ -205,8 +205,8 @@ void    eeprom_delayKeyON_ms_set(uint8_t delay_ms)                  { EEPROM.upd
 
 int8_t eeprom_getVspoofOffset_BVO(void)             { return EEPROM.read  (EEPROM_ADDRESS_BVO_OFFSET);                   }
 void   eeprom_setVspoofOffset_BVO(int8_t newOffset_counts) { EEPROM.update(EEPROM_ADDRESS_BVO_OFFSET, newOffset_counts); }
-int8_t eeprom_getVspoofOffset_MVO(void)             { return EEPROM.read  (EEPROM_ADDRESS_MVO_OFFSET);                   }
-void   eeprom_setVspoofOffset_MVO(int8_t newOffset_counts) { EEPROM.update(EEPROM_ADDRESS_MVO_OFFSET, newOffset_counts); }
+int8_t eeprom_getVspoofOffset_MDV(void)             { return EEPROM.read  (EEPROM_ADDRESS_MDV_OFFSET);                   }
+void   eeprom_setVspoofOffset_MDV(int8_t newOffset_counts) { EEPROM.update(EEPROM_ADDRESS_MDV_OFFSET, newOffset_counts); }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -262,10 +262,10 @@ void eeprom_verifyDataValid(void)
         EEPROM.update(EEPROM_ADDRESS_BVO_OFFSET, EEPROM_ADDRESS_FORMATTED_VALUE);
     }
 
-    if (EEPROM.read(EEPROM_ADDRESS_MVO_OFFSET) == EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_8b)
+    if (EEPROM.read(EEPROM_ADDRESS_MDV_OFFSET) == EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_8b)
     {
-        printMessage_RestoringEEPROM(); Serial.print(F("MVO_OFFSET"));
-        EEPROM.update(EEPROM_ADDRESS_MVO_OFFSET, EEPROM_ADDRESS_FORMATTED_VALUE);
+        printMessage_RestoringEEPROM(); Serial.print(F("MDV_OFFSET"));
+        EEPROM.update(EEPROM_ADDRESS_MDV_OFFSET, EEPROM_ADDRESS_FORMATTED_VALUE);
     }
 }
 

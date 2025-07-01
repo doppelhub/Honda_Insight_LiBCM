@@ -37,7 +37,7 @@ void vPackSpoof_handleKeyOFF(void)
 /////////////////////////////////////////////////////////////////////////////////////////
 
 int8_t vPackSpoof_offsetBVO_get(void) { return eeprom_getVspoofOffset_BVO(); }
-int8_t vPackSpoof_offsetMVO_get(void) { return eeprom_getVspoofOffset_MVO(); }
+int8_t vPackSpoof_offsetMDV_get(void) { return eeprom_getVspoofOffset_MDV(); }
 
 void vPackSpoof_offsetBVO_adjust(uint8_t action)
 {
@@ -46,11 +46,11 @@ void vPackSpoof_offsetBVO_adjust(uint8_t action)
     else if (action == '0') { eeprom_setVspoofOffset_BVO(0);                                }
 }
 
-void vPackSpoof_offsetMVO_adjust(uint8_t action)
+void vPackSpoof_offsetMDV_adjust(uint8_t action)
 {
-    if      (action == '+') { eeprom_setVspoofOffset_MVO(eeprom_getVspoofOffset_MVO() + 1); }
-    else if (action == '-') { eeprom_setVspoofOffset_MVO(eeprom_getVspoofOffset_MVO() - 1); }
-    else if (action == '0') { eeprom_setVspoofOffset_MVO(0);                                }
+    if      (action == '+') { eeprom_setVspoofOffset_MDV(eeprom_getVspoofOffset_MDV() + 1); }
+    else if (action == '-') { eeprom_setVspoofOffset_MDV(eeprom_getVspoofOffset_MDV() - 1); }
+    else if (action == '0') { eeprom_setVspoofOffset_MDV(0);                                }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -89,7 +89,7 @@ void spoofVoltage_VPINout(void)
                                                                //  V_DIV_CORRECTION = (x * 141) >> 7
     int16_t pwmCounts_VPIN_out = (int16_t)(intermediateMath / LTC68042result_packVoltage_get());
 
-    pwmCounts_VPIN_out += eeprom_getVspoofOffset_MVO();
+    pwmCounts_VPIN_out += eeprom_getVspoofOffset_MDV();
 
     //bounds checking
     if      (pwmCounts_VPIN_out > 255) {pwmCounts_VPIN_out = 255;}

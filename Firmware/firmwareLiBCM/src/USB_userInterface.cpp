@@ -203,8 +203,8 @@ void printHelp(void)
 void printVspoofInstructions(void)
 {
     Serial.print(F("\n\nVoltage Spoofing Commands:"
-        "\n -'$BVO=_ : +/-/0: increase/decrease/reset BVO (OBDIIC&C parameter 0x0A)"
-        "\n -'$MVO=_ : +/-/0: increase/decrease/reset MVO (OBDIIC&C parameter 0x05)"
+        "\n -'$BVO=_ : +/-/0: increase/decrease/reset OBDIIC&C parameter 0x0A"
+        "\n -'$MDV=_ : +/-/0: increase/decrease/reset OBDIIC&C parameter 0x05"
         "\n"
         "\nInstructions:"
         "\n 1: KeyON, engine not running, no IMA CELs"
@@ -424,16 +424,15 @@ void USB_userInterface_executeUserInput(void)
             else                                                             { printText_invalidEntry();          }
         }
         
-        //$MVO
-        //JTS2doNow: Change to latest name //'mvo' no longer used
-        else if ((line[1]=='M') && (line[2]=='V') && (line[3]=='O'))
+        //$MDV
+        else if ((line[1]=='M') && (line[2]=='D') && (line[3]=='V'))
         {
-            //MVO affects VPIN output
+            //MDV affects VPIN output
             Serial.print(' ');
             if      ( (line[4]=='=')                                      &&
                      ((line[5]=='+') || (line[5]=='-') || (line[5]=='0')) &&
-                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetMVO_adjust(line[5]);        }
-            else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetMVO_get()); }
+                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetMDV_adjust(line[5]);        }
+            else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetMDV_get()); }
             else                                                             { printText_invalidEntry();          }
         }
 
