@@ -182,12 +182,8 @@ void printHelp(void)
         "\n -'$FAN' display fan status.  '$FAN=OFF'/LOW/HI to set."
         "\n -'$IHACK' display current hack setting.  '$IHACK=00'/20/40/60 to set."
         "\n -'$VHACK' display voltage hack setting.  '$VHACK=OEM'/ASSISTONLY_VAR/ASSISTONLY_BIN/ALWAYS."
-        "\n -'$ASSIST_OFF' disable assist until LiBCM resets."
-        "\n -'$ASSIST_ON' enable assist until LiBCM resets."
-        "\n -'$REGEN_OFF' disable regen until LiBCM resets."
-        "\n -'$REGEN_ON' enable regen until LiBCM resets."
-        "\n -'SoC_MAX' display max allowed SoC.  'SoC_MAX=__' to set."
-        "\n -'SoC_MIN' display min allowed SoC.  'SoC_MIN=__' to set."
+        "\n -'$AST=ON/OFF'"
+        "\n -'$RGN=ON/OFF'"
         */
         ));
     //When adding new commands, make sure to add cases to the following functions:
@@ -198,28 +194,24 @@ void printHelp(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add '$SPOOF' code
-//JTS2doNow: Finish this function
 void printVspoofInstructions(void)
 {
     Serial.print(F("\n\nVoltage Spoofing Commands:"
-        "\n -'$BVO=_ : +/-/0: increase/decrease/reset OBDIIC&C parameter 0x0A"
-        "\n -'$MDV=_ : +/-/0: increase/decrease/reset OBDIIC&C parameter 0x05"
+        "\n -'$BVO=_ : +/-/0: adjust OBDIIC&C parameter 0x0A"
+        "\n -'$MDV=_ : +/-/0: adjust OBDIIC&C parameter 0x05"
+        "\n -'$SPF=_ : +/-/0: adjust max allowed spoofed pack voltage"
         "\n"
-        "\nInstructions:"
-        "\n 1: KeyON, engine not running, no IMA CELs"
-        "\n 2: Display above parameters on OBDIIC&C"
-        "\n 3: Compare LiBCM's spoofed pack voltage to the above parameters."
-        "\n 4: Adjust above parameters as needed to make all voltages equal."
-        "\n    For example, if OBDII BVO is 169 volts & Vspoof is 175 volts,"
-        "\n                 type $BVO=+ to increase BVO. Repeat as needed."
-        "\n Goal: All three parameters within 5 volts."
-
+        "\nCalibration instructions:"
+        "\n 0: KeyON, engine off, IMA light must remain off throughout test"
+        "\n 1: Configure OBDIIC&C to display BVO parameter 0x0A"
+        "\n 2: Configure OBDIIC&C to display MDV parameter 0x05"
+        "\n 4: Adjust BVO (on OBDIIC&C) until equal to SPF (on LiBCM LCD)"
+        "\n    Example: BVO is 169 volts & SPF is 175 volts. Type '$BVO=+' repeatedly until BVO=SPF"
+        "\n    Note: If '$BVO=+' doesn't increase BVO, type '$SPF=-' to reduce SPF"
+        "\n 5: Adjust MDV until equal to SPF"
+        "\n    Example: MDV is 171 volts & SPF is 168 volts. Type '$MDV=-' repeatedly until MDV=SPF"
+        "\n 6: Verify SPF & BVO & MDV are within 5 volts (ideally 0 volts)"
         ));
-    //When adding new commands, make sure to add cases to the following functions:
-        //USB_userInterface_executeUserInput()
-        //eeprom_resetDebugValues() //if debug data is stored in EEPROM
-        //eeprom_verifyDataValid() //if data is stored in EEPROM
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -419,9 +411,9 @@ void USB_userInterface_executeUserInput(void)
             Serial.print(' ');
             if      ( (line[4]=='=')                                      &&
                      ((line[5]=='+') || (line[5]=='-') || (line[5]=='0')) &&
-                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetBVO_adjust(line[5]);        }
+                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetBVO_adjust(line[5]);     }
             else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetBVO_get()); }
-            else                                                             { printText_invalidEntry();          }
+            else                                                             { printText_invalidEntry();                 }
         }
         
         //$MDV
@@ -431,9 +423,21 @@ void USB_userInterface_executeUserInput(void)
             Serial.print(' ');
             if      ( (line[4]=='=')                                      &&
                      ((line[5]=='+') || (line[5]=='-') || (line[5]=='0')) &&
-                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetMDV_adjust(line[5]);        }
+                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetMDV_adjust(line[5]);     }
             else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetMDV_get()); }
-            else                                                             { printText_invalidEntry();          }
+            else                                                             { printText_invalidEntry();                 }
+        }
+
+        //$SPF
+        else if ((line[1]=='S') && (line[2]=='P') && (line[3]=='F'))
+        {
+            //MDV affects VPIN output
+            Serial.print(' ');
+            if      ( (line[4]=='=')                                      &&
+                     ((line[5]=='+') || (line[5]=='-') || (line[5]=='0')) &&
+                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetSPF_adjust(line[5]);     }
+            else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetSPF_get()); }
+            else                                                             { printText_invalidEntry();                 }
         }
 
         //$SPOOF

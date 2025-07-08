@@ -117,6 +117,7 @@ void processChargerDisableReason(uint8_t canWeCharge)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doLater: add current feedback to 1500 charger, so LiBCM can cycle charger if no output current detected
 //JTS2doLater: add timer/current logic to detect if grid charger isn't working
 void chargerControlSignals_handler(void)
 {

@@ -113,7 +113,7 @@ void validateAndStoreNextCVR(uint8_t chipAddress, char cellVoltageRegister)
     uint8_t cellX=0; //1st cell in returnedData (LTC cell 1, 4, 7, or 10)
     uint8_t cellY=0; //2nd cell in returnedData (LTC cell 2, 5, 8, or 11) 
     uint8_t cellZ=0; //3rd cell in returnedData (LTC cell 3, 6, 9, or 12)
-    switch (cellVoltageRegister)  //LUT to prevent QTY3 multiplies & QTY12 adds per call
+    switch (cellVoltageRegister) //LUT prevents QTY3 multiplies & QTY12 adds per call
     {
         case 'A': cellX=0;  cellY=1;  cellZ=2 ; break; //LTC cells  1/ 2/ 3 (LTC 1-indexed, array 0-indexed)
         case 'B': cellX=3;  cellY=4;  cellZ=5 ; break; //LTC cells  4/ 5/ 6

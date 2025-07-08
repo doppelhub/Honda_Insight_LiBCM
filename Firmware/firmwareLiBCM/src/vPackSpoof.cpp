@@ -38,6 +38,7 @@ void vPackSpoof_handleKeyOFF(void)
 
 int8_t vPackSpoof_offsetBVO_get(void) { return eeprom_getVspoofOffset_BVO(); }
 int8_t vPackSpoof_offsetMDV_get(void) { return eeprom_getVspoofOffset_MDV(); }
+int8_t vPackSpoof_offsetSPF_get(void) { return eeprom_getVspoofOffset_SPF(); }
 
 void vPackSpoof_offsetBVO_adjust(uint8_t action)
 {
@@ -51,6 +52,14 @@ void vPackSpoof_offsetMDV_adjust(uint8_t action)
     if      (action == '+') { eeprom_setVspoofOffset_MDV(eeprom_getVspoofOffset_MDV() + 1); }
     else if (action == '-') { eeprom_setVspoofOffset_MDV(eeprom_getVspoofOffset_MDV() - 1); }
     else if (action == '0') { eeprom_setVspoofOffset_MDV(0);                                }
+}
+
+
+void vPackSpoof_offsetSPF_adjust(uint8_t action)
+{
+    if      (action == '+') { eeprom_setVspoofOffset_SPF(eeprom_getVspoofOffset_SPF() + 1); }
+    else if (action == '-') { eeprom_setVspoofOffset_SPF(eeprom_getVspoofOffset_SPF() - 1); }
+    else if (action == '0') { eeprom_setVspoofOffset_SPF(0);                                }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -106,8 +115,6 @@ uint8_t calculate_Vspoof_maxPossible(void)
     //The max allowed voltage is a function of the actual pack voltage
     //Derivation: ~/Electronics/PCB (KiCAD)/RevD/V&V/VPIN-MCMe Calibration.ods
 
-    //JTS2doNow: Decide if adding more headroom here is easier than changing existing calibration method
-
     uint8_t actualPackVoltage = LTC68042result_packVoltage_get();
     uint8_t maxAllowedVspoof = 0;
 
@@ -127,6 +134,8 @@ uint8_t calculate_Vspoof_maxPossible(void)
     else if (actualPackVoltage < 236) { maxAllowedVspoof = actualPackVoltage - 19; }
     else if (actualPackVoltage < 245) { maxAllowedVspoof = actualPackVoltage - 20; }
     else                              { maxAllowedVspoof = actualPackVoltage - 21; }
+
+    maxAllowedVspoof += eeprom_getVspoofOffset_SPF();
 
     return maxAllowedVspoof;
 }

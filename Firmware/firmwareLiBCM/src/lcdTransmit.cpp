@@ -98,7 +98,7 @@ bool lcd_flashBacklight(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Build string in RAM, then send all at once to display (much faster).
+//JTS2doLater: Build string in RAM, then send all at once to display (much faster).
 
 //alternates between:
     //time since last keyON, and; //"tuuuuu" in seconds
