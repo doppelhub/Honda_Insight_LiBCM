@@ -53,6 +53,9 @@ void printDebug(void)
 
     Serial.print(F("\n -Has LiBCM limited regen since last cleared?: "));
     (eeprom_hasLibcmDisabledRegen_get() == EEPROM_LIBCM_DISABLED_REGEN) ? Serial.print(F("YES")) : Serial.print(F("NO"));
+
+    Serial.print(F("\n -Maximum resting cell delta (min is '1000' = 100.0 mV): "));
+    Serial.print(eeprom_maxCellVoltageDelta_get(), DEC);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -115,7 +118,6 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     else if (testToRun == 'T') { temperature_measureAndPrintAll(); }
     else if (testToRun == 'R') { LTC6804gpio_areAllVoltageReferencesPassing(); }
     else if (testToRun == 'W') { batteryHistory_printAll(); }
-    else if (testToRun == 'E') { eeprom_resetAll_userConfirm(); }
     else if (testToRun == 'C')
     {
         LTC68042cell_acquireAllCellVoltages();
@@ -150,41 +152,38 @@ void(* rebootLiBCM) (void) = 0;//declare reset function at address 0
 void printHelp(void)
 {
     Serial.print(F("\n\nLiBCM commands:"
-        "\n -'$BOOT': restart LiBCM"
-        "\n -'$OFF': turn LiBCM off (for testing purposes)"
+        "\n -'$BOOT' : restart LiBCM"
+        "\n -'$OFF'  : turn LiBCM off (for testing purposes)"
         "\n -'$TESTR': run LTC6804 VREF test"
         "\n -'$TESTW': battery temp & SoC history"
         "\n -'$TESTH': blink heater LED"
         "\n -'$TESTC': print cell voltages"
         "\n -'$TESTT': print temperatures"
-        "\n -'$TESTE': EEPROM factory reset"
-        "\n -'$TEST1'/2/3/4: run temporary debug test code. See 'USB_userInterface_runTestCode()')"
-        "\n -'$DEBUG': info stored in EEPROM. 'DEBUG=CLR' to restore defaults"
-        "\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=___' to set (0 to 254 ms)"
-        "\n -'$SoC': battery charge in percent. 'SoC=___' to set (0 to 100%)"
-        "\n -'$DISP=PWR'/SCI/CELL/TEMP/DBG/OFF: data to stream (power/BAT&METSCI/Vcell/temperature/none)"
-        "\n -'$RATE=___': USB updates per second (1 to 255 Hz)"
-        "\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
-        "\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)"
-        "\n -'$TRIP': print energy consumption and distance records ('TRIP=CLR' to zero all)"
+        "\n -'$EPROM': dump EEPROM. '$EPROM=RST' to factory reset"
+        "\n -'$TEST_': 1/2/3/4: run temporary debug test code. See 'USB_userInterface_runTestCode()')"
+        "\n -'$DEBUG': info stored in EEPROM. '$DEBUG=CLR' to restore defaults"
+        "\n -'$KEYms': delay after keyON before LiBCM starts. 'KEYms=_' to set (0 to 254 ms)"
+        "\n -'$SoC'  : battery charge in percent. '$SoC=_' to set (0 to 100%)"
+        "\n -'$DISP=_: PWR/SCI/CELL/TEMP/DBG/OFF: data to stream"
+        "\n -'$RATE=_: USB updates per second (1 to 255 Hz)"
+        "\n -'$LOOP  : LiBCM loop period. '$LOOP=_' to set (1 to 255 ms)"
+        "\n -'$SCIms': period between BATTSCI frames. '$SCIms=_' to set (0 to 255 ms)"
+        "\n -'$TRIP' : print energy consumption and distance records ('TRIP=CLR' to zero all)"
+        "\n -'$SPOOF': print voltage spoofing calibration commands and instructions"
         "\n"
         "\nDebug characters:"
         "\n -'@': isoSPI error occurred"
         "\n -'*': loop period exceeded"
         "\n"
+        "\nTip: Hit up arrow to recall previous commands"
+        "\n"
         /*
         "\nFuture LiBCM commands (not presently supported"
-        "\n -'$DEFAULT' restore all EEPROM values to default"
         "\n -'$FAN' display fan status.  '$FAN=OFF'/LOW/HI to set."
         "\n -'$IHACK' display current hack setting.  '$IHACK=00'/20/40/60 to set."
         "\n -'$VHACK' display voltage hack setting.  '$VHACK=OEM'/ASSISTONLY_VAR/ASSISTONLY_BIN/ALWAYS."
-        "\n -'$ASSIST_OFF' disable assist until LiBCM resets."
-        "\n -'$ASSIST_ON' enable assist until LiBCM resets."
-        "\n -'$REGEN_OFF' disable regen until LiBCM resets."
-        "\n -'$REGEN_ON' enable regen until LiBCM resets."
-        "\n -'BATTmAh' display battery capacity in mAh.  'BATTmAh=____' to set."
-        "\n -'SoC_MAX' display max allowed SoC.  'SoC_MAX=__' to set."
-        "\n -'SoC_MIN' display min allowed SoC.  'SoC_MIN=__' to set."
+        "\n -'$AST=ON/OFF'"
+        "\n -'$RGN=ON/OFF'"
         */
         ));
     //When adding new commands, make sure to add cases to the following functions:
@@ -192,6 +191,32 @@ void printHelp(void)
         //eeprom_resetDebugValues() //if debug data is stored in EEPROM
         //eeprom_verifyDataValid() //if data is stored in EEPROM
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void printVspoofInstructions(void)
+{
+    Serial.print(F("\n\nVoltage Spoofing Commands:"
+        "\n -'$BVO=_ : +/-/0: adjust OBDIIC&C parameter 0x0A"
+        "\n -'$MDV=_ : +/-/0: adjust OBDIIC&C parameter 0x05"
+        "\n -'$SPF=_ : +/-/0: adjust max allowed spoofed pack voltage"
+        "\n"
+        "\nCalibration instructions:"
+        "\n 0: KeyON, engine off, IMA light must remain off throughout test"
+        "\n 1: Configure OBDIIC&C to display BVO parameter 0x0A"
+        "\n 2: Configure OBDIIC&C to display MDV parameter 0x05"
+        "\n 4: Adjust BVO (on OBDIIC&C) until equal to SPF (on LiBCM LCD)"
+        "\n    Example: BVO is 169 volts & SPF is 175 volts. Type '$BVO=+' repeatedly until BVO=SPF"
+        "\n    Note: If '$BVO=+' doesn't increase BVO, type '$SPF=-' to reduce SPF"
+        "\n 5: Adjust MDV until equal to SPF"
+        "\n    Example: MDV is 171 volts & SPF is 168 volts. Type '$MDV=-' repeatedly until MDV=SPF"
+        "\n 6: Verify SPF & BVO & MDV are within 5 volts (ideally 0 volts)"
+        ));
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void printText_invalidEntry (void) { Serial.print(F("\nInvalid Entry")); }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -222,13 +247,13 @@ uint8_t get_uint8_FromInput(uint8_t digit1, uint8_t digit2, uint8_t digit3)
 //determine which command to run
 void USB_userInterface_executeUserInput(void)
 {
-    if (line[0] == '$') //valid commands start with '$'
+    if (line[0]=='$') //valid commands start with '$'
     {
         //$HELP
-        if ((line[1] == 'H') && (line[2] == 'E') && (line[3] == 'L') && (line[4] == 'P')) { printHelp(); }
+        if ((line[1]=='H') && (line[2]=='E') && (line[3]=='L') && (line[4]=='P')) { printHelp(); }
 
         //$BOOT
-        else if ((line[1] == 'B') && (line[2] == 'O') && (line[3] == 'O') && (line[4] == 'T'))
+        else if ((line[1]=='B') && (line[2]=='O') && (line[3]=='O') && (line[4]=='T'))
         {
             Serial.print(F("\nRebooting LiBCM"));
             delay(50); //give serial buffer time to send
@@ -236,7 +261,7 @@ void USB_userInterface_executeUserInput(void)
         }
 
         //$OFF
-        else if ((line[1] == 'O') && (line[2] == 'F') && (line[3] == 'F'))
+        else if ((line[1]=='O') && (line[2]=='F') && (line[3]=='F'))
         {
             Serial.print(F("\nUnplug USB cable before the counter gets to zero:"));
             Serial.print(F("\nLiBCM turning off in "));
@@ -258,125 +283,173 @@ void USB_userInterface_executeUserInput(void)
         }
 
         //$TEST
-        else if ((line[1] == 'T') && (line[2] == 'E') && (line[3] == 'S') && (line[4] == 'T')) { USB_userInterface_runTestCode(line[5]); }
+        else if ((line[1]=='T') && (line[2]=='E') && (line[3]=='S') && (line[4]=='T')) { USB_userInterface_runTestCode(line[5]); }
 
         //$DEBUG
-        else if ((line[1] == 'D') && (line[2] == 'E') && (line[3] == 'B') && (line[4] == 'U') && (line[5] == 'G'))
+        else if ((line[1]=='D') && (line[2]=='E') && (line[3]=='B') && (line[4]=='U') && (line[5]=='G'))
         {
-            if ((line[6] == '=') && (line[7] == 'C') && (line[8] == 'L') && (line[9] == 'R'))
+            if ((line[6]=='=') && (line[7]=='C') && (line[8]=='L') && (line[9]=='R'))
             {
                 Serial.print(F("\nRestoring default DEBUG values"));
                 eeprom_resetDebugValues();
             }
-            else if (line[6] == STRING_TERMINATION_CHARACTER) { printDebug(); }
+            else if (line[6]==STRING_TERMINATION_CHARACTER) { printDebug();             }
+            else                                            { printText_invalidEntry(); }
         }
-/*
-        //$LIDISP //TOTO_Natalya: Move to '$TEST' //JTS2doLater: Delete if no longer used
-        else if ((line[1] == 'L') && (line[2] == 'I') && (line[3] == 'D') && (line[4] == 'I') && (line[5] == 'S') && (line[6] == 'P'))
-        {
-            LiDisplay_setDebugMode(line[7]);
-        } */
 
-        //KEYms
-        else if ((line[1] == 'K') && (line[2] == 'E') && (line[3] == 'Y') && (line[4] == 'M') && (line[5] == 'S'))
+        //$KEYms
+        else if ((line[1]=='K') && (line[2]=='E') && (line[3]=='Y') && (line[4]=='M') && (line[5]=='S'))
         {
-            if (line[6] == '=')
+            if (line[6]=='=')
             {
                 uint8_t newKeyOnDelay_ms = get_uint8_FromInput(line[7],line[8],line[9]);
                 Serial.print(F("\nnewKeyOnDelay_ms is "));
                 Serial.print(newKeyOnDelay_ms, DEC);
                 eeprom_delayKeyON_ms_set(newKeyOnDelay_ms);
             }
-            else if (line[6] == STRING_TERMINATION_CHARACTER)
+            else if (line[6]==STRING_TERMINATION_CHARACTER)
             {
                 Serial.print(F("\n Additional delay before LiBCM responds to keyON event (ms): "));
                 Serial.print( eeprom_delayKeyON_ms_get(), DEC);
             }
+            else { printText_invalidEntry(); }
         }
 
-        //SoC
-        else if ((line[1] == 'S') && (line[2] == 'O') && (line[3] == 'C'))
+        //$SoC
+        else if ((line[1]=='S') && (line[2]=='O') && (line[3]=='C'))
         {
-            if (line[4] == '=')
+            if (line[4]=='=')
             {
                 uint8_t newSoC_percent = get_uint8_FromInput(line[5],line[6],line[7]);
                 Serial.print(F("\nnewSoC is "));
                 Serial.print(newSoC_percent, DEC);
                 SoC_setBatteryStateNow_percent(newSoC_percent);
             }
-            else if (line[4] == STRING_TERMINATION_CHARACTER)
+            else if (line[4]==STRING_TERMINATION_CHARACTER)
             {
                 Serial.print(F("\nBattery SoC is (%): "));
                 Serial.print(SoC_getBatteryStateNow_percent(),DEC);
             }
+            else { printText_invalidEntry(); }
         }
 
-        //DISP
+        //$DISP
         //JTS2doLater: Make this function work while grid charging, too
-        else if ((line[1] == 'D') && (line[2] == 'I') && (line[3] == 'S') && (line[4] == 'P') && (line[5] == '='))
+        else if ((line[1]=='D') && (line[2]=='I') && (line[3]=='S') && (line[4]=='P') && (line[5]=='='))
         {
-            if      ((line[6] == 'P') && (line[7] == 'W') && (line[8] == 'R')) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_POWER);      }
-            else if ((line[6] == 'S') && (line[7] == 'C') && (line[8] == 'I')) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_BATTMETSCI); }
-            else if ((line[6] == 'C') && (line[7] == 'E') && (line[8] == 'L')) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_CELL);       }
-            else if ((line[6] == 'O') && (line[7] == 'F') && (line[8] == 'F')) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_NONE);       }
-            else if ((line[6] == 'T') && (line[7] == 'E') && (line[8] == 'M')) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_TEMP);       }
-            else if ((line[6] == 'D') && (line[7] == 'B') && (line[8] == 'G')) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_DEBUG);      }
+            if      ((line[6]=='P') && (line[7]=='W') && (line[8]=='R')) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_POWER);      }
+            else if ((line[6]=='S') && (line[7]=='C') && (line[8]=='I')) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_BATTMETSCI); }
+            else if ((line[6]=='C') && (line[7]=='E') && (line[8]=='L')) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_CELL);       }
+            else if ((line[6]=='O') && (line[7]=='F') && (line[8]=='F')) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_NONE);       }
+            else if ((line[6]=='T') && (line[7]=='E') && (line[8]=='M')) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_TEMP);       }
+            else if ((line[6]=='D') && (line[7]=='B') && (line[8]=='G')) { debugUSB_dataTypeToStream_set(DEBUGUSB_STREAM_DEBUG);      }
+            else                                                         { printText_invalidEntry();                                  }
         }
 
-        //RATE
-        else if ((line[1] == 'R') && (line[2] == 'A') && (line[3] == 'T') && (line[4] == 'E') && (line[5] == '='))
+        //$RATE
+        else if ((line[1]=='R') && (line[2]=='A') && (line[3]=='T') && (line[4]=='E') && (line[5]=='='))
         {
             uint8_t newUpdatesPerSecond = get_uint8_FromInput(line[6],line[7],line[8]);
             debugUSB_dataUpdatePeriod_ms_set( time_hertz_to_milliseconds(newUpdatesPerSecond) );
         }
 
-        //LOOP
-        else if ((line[1] == 'L') && (line[2] == 'O') && (line[3] == 'O') && (line[4] == 'P'))
+        //$LOOP
+        else if ((line[1]=='L') && (line[2]=='O') && (line[3]=='O') && (line[4]=='P'))
         {
-            if (line[5] == '=')
+            if (line[5]=='=')
             {
                 uint8_t newLooprate_ms = get_uint8_FromInput(line[6],line[7],line[8]);
                 time_loopPeriod_ms_set(newLooprate_ms);
             }
-            else if (line[5] == STRING_TERMINATION_CHARACTER)
+            else if (line[5]==STRING_TERMINATION_CHARACTER)
             {
                 Serial.print(F("\nLoop period is (ms): "));
                 Serial.print(time_loopPeriod_ms_get(),DEC);
             }
+            else { printText_invalidEntry(); }
         }
 
-        //SCIms
-        else if ((line[1] == 'S') && (line[2] == 'C') && (line[3] == 'I') && (line[4] == 'M') && (line[5] == 'S'))
+        //$SCIms
+        else if ((line[1]=='S') && (line[2]=='C') && (line[3]=='I') && (line[4]=='M') && (line[5]=='S'))
         {
-            if (line[6] == '=')
+            if (line[6]=='=')
             {
                 uint8_t newPeriod_ms = get_uint8_FromInput(line[7],line[8],line[9]);
                 BATTSCI_framePeriod_ms_set(newPeriod_ms);
             }
-            else if (line[6] == STRING_TERMINATION_CHARACTER)
+            else if (line[6]==STRING_TERMINATION_CHARACTER)
             {
                 Serial.print(F("\nBATTSCI period is (ms): "));
                 Serial.print(BATTSCI_framePeriod_ms_get(),DEC);
             }
+            else { printText_invalidEntry(); }
         }
 
-        //TRIP
-        else if ((line[1] == 'T') && (line[2] == 'R') && (line[3] == 'I') && (line[4] == 'P'))
+        //$TRIP
+        else if ((line[1]=='T') && (line[2]=='R') && (line[3]=='I') && (line[4]=='P'))
         {
-            if ((line[5] == '=') && (line[6] == 'C') && (line[7] == 'L') && (line[8] == 'R'))
+            if ((line[5]=='=') && (line[6]=='C') && (line[7]=='L') && (line[8]=='R'))
             {
                 eeprom_wattHourHistory_reset();
             }
-            else if (line[5] == STRING_TERMINATION_CHARACTER)
-            {
-                eeprom_wattHourHistory_printTripHistory();
-            }
+            else if (line[5]==STRING_TERMINATION_CHARACTER) { eeprom_wattHourHistory_printTripHistory(); }
+            else                                            { printText_invalidEntry();                  }
         }
 
-        //$DEFAULT
-        else { Serial.print(F("\nInvalid Entry")); }
+        //$EPROM
+        else if ((line[1]=='E') && (line[2]=='P') && (line[3]=='R') && (line[4]=='O') && (line[5]=='M'))
+        {
+            if ((line[6]=='=') && (line[7]=='R') && (line[8]=='S') && (line[9]=='T')) { eeprom_resetAll_userConfirm(); }
+            else if (line[6]==STRING_TERMINATION_CHARACTER)                           { eeprom_printAll();             }
+            else                                                                      { printText_invalidEntry();      }
+        }
+
+        //$BVO
+        else if ((line[1]=='B') && (line[2]=='V') && (line[3]=='O'))
+        {
+            //BVO affects MCMe output
+            Serial.print(' ');
+            if      ( (line[4]=='=')                                      &&
+                     ((line[5]=='+') || (line[5]=='-') || (line[5]=='0')) &&
+                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetBVO_adjust(line[5]);     }
+            else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetBVO_get()); }
+            else                                                             { printText_invalidEntry();                 }
+        }
+        
+        //$MDV
+        else if ((line[1]=='M') && (line[2]=='D') && (line[3]=='V'))
+        {
+            //MDV affects VPIN output
+            Serial.print(' ');
+            if      ( (line[4]=='=')                                      &&
+                     ((line[5]=='+') || (line[5]=='-') || (line[5]=='0')) &&
+                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetMDV_adjust(line[5]);     }
+            else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetMDV_get()); }
+            else                                                             { printText_invalidEntry();                 }
+        }
+
+        //$SPF
+        else if ((line[1]=='S') && (line[2]=='P') && (line[3]=='F'))
+        {
+            //MDV affects VPIN output
+            Serial.print(' ');
+            if      ( (line[4]=='=')                                      &&
+                     ((line[5]=='+') || (line[5]=='-') || (line[5]=='0')) &&
+                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetSPF_adjust(line[5]);     }
+            else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetSPF_get()); }
+            else                                                             { printText_invalidEntry();                 }
+        }
+
+        //$SPOOF
+        else if ((line[1]=='S') && (line[2]=='P') && (line[3]=='O') && (line[4]=='O') && (line[5]=='F'))
+        {
+            printVspoofInstructions();
+        }        
+
+        //DEFAULT
+        else { printText_invalidEntry(); }
     }
-    else { Serial.print(F("\nInvalid Entry")); }
+    else { printText_invalidEntry(); }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

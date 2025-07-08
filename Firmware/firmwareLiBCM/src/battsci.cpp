@@ -192,7 +192,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
         if ((BATTSCI_isPackFull() == YES)                                                                || //pack is full
             ((temperature_battery_getLatest() < TEMP_FREEZING_DEGC + 2) && (BATTSCI_isPackEmpty() == NO)) ) //pack too cold to charge; DCDC still powered
             //JTS2doLater: Allow minimal regen when pack below freezing (e.g. using LiControl to limit max regen)
-            //JTS2doNow: Disable assist and regen if pack too hot
+            //JTS2doLater: Disable assist and regen if pack too hot
     #endif
         {
             flags |= BATTSCI_DISABLE_REGEN_FLAG; //when this flag is set, MCM draws zero power from IMA motor
@@ -219,7 +219,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
 // 0x32 = 50d = 0b0011 0010: pack empty
 // 0x52 = 82d = 0b0101 0010: pack full (usually... see "Day1-1" for case where pack is empty)
 
-//JTS2doNow: Allow regen at lower temperatures (see calculations in LiBCM Support Thread post#3637)
+//JTS2doLater: Allow regen at lower temperatures (see calculations in LiBCM Support Thread post#3637)
 //kindly request regen and/or no regen from MCM
 uint8_t BATTSCI_calculateChargeRequestByte(void)
 {

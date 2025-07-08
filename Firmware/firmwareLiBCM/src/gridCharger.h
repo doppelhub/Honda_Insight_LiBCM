@@ -6,8 +6,9 @@
 
     #define VCELL_HYSTERESIS 150 // '150' = 15 mV //prevents rapid grid charger on/off toggling when first cell is full
 
-    #define YES__CHARGING_ALLOWED       0b01111111 //if charging allowed,  first three bits are '011'
-    #define NO__UNINITIALIZED           0b10000000 //if charging disabled, first three bits are '100' //safety feature in case a single bit flips 
+    #define YES__CHARGING_ALLOWED       0b01111111 //first three bits are '011' for 'YES__'
+    #define DELAY_DO_NOTHING            0b00111110 //first three bits are '001' for 'DELAY'
+    #define NO__UNINITIALIZED           0b10000000 //first three bits are '100' for 'NO__' //safety feature in case a single bit flips 
     #define NO__CHARGER_IS_HOT          0b10000001
     #define NO__BATTERY_IS_COLD         0b10000010
     #define NO__BATTERY_IS_HOT          0b10000011
@@ -15,7 +16,7 @@
     #define NO__TEMP_UNPLUGGED_GRID     0b10000101
     #define NO__TEMP_UNPLUGGED_INTAKE   0b10000110
     #define NO__TEMP_EXHAUST_IS_HOT     0b10000111
-    #define NO__ATLEASTONECELL_TOO_HIGH 0b10001000 //JTS2doLater: Allow charging if highest cell below 4.3000 when charger plugged in
+    #define NO__ATLEASTONECELL_TOO_HIGH 0b10001000
     #define NO__ATLEASTONECELL_FULL     0b10001001
     #define NO__ATLEASTONECELL_TOO_LOW  0b10001010
     #define NO__JUST_PLUGGED_IN         0b10001011
@@ -25,10 +26,13 @@
     #define NO__CELL_VOLTAGE_HYSTERESIS 0b10001111
     #define NO__CHARGER_UNPLUGGED       0b10010000
     #define NO__SoC_TOO_LOW             0b10010001
+    #define NO__PACK_CURRENT_TOO_HIGH   0b10010010
+    //place other NO__ conditions here
+    #define NO__CHARGING_NOT_REQUESTED  0b10011111
 
     #define DISABLE_GRIDCHARGING_ABOVE_CHARGER_TEMP_C 60
     #define DISABLE_GRIDCHARGING_BELOW_BATTERY_TEMP_C -25
-    #define DISABLE_GRIDCHARGING_ABOVE_BATTERY_TEMP_C 40
+    #define DISABLE_GRIDCHARGING_ABOVE_BATTERY_TEMP_C 43
     #define DISABLE_GRIDCHARGING_ABOVE_INTAKE_TEMP_C  45
     #define DISABLE_GRIDCHARGING_ABOVE_EXHAUST_TEMP_C 50
 

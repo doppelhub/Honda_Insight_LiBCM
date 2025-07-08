@@ -1,9 +1,13 @@
 //Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
-//The latest results gathered from LTC6804 are stored here.
+//latest LTC6804 results are stored here
 
 #include "libcm.h"
+
+bool wasProcessed = NO;
+bool LTC68042result_wasDataProcessedThisLoop_get(void          ) { return wasProcessed;      }
+void LTC68042result_wasDataProcessedThisLoop_set(bool newStatus) { wasProcessed = newStatus; } 
 
 uint8_t isoSPI_errorCount = 0;
 uint8_t LTC68042result_errorCount_get       (void                 ) { return isoSPI_errorCount;               }
@@ -12,7 +16,15 @@ void    LTC68042result_errorCount_increment (void                 ) { isoSPI_err
 
 uint8_t packVoltage_actual = 170;
 void    LTC68042result_packVoltage_set (uint8_t voltage) { packVoltage_actual = voltage; }
-uint8_t LTC68042result_packVoltage_get (void           ) { return packVoltage_actual; }
+uint8_t LTC68042result_packVoltage_get (void           ) { return packVoltage_actual;    }
+
+uint8_t loCellNumber = 0;
+void    LTC68042result_loCellNum_set(uint8_t cellNumber) { loCellNumber = cellNumber; }
+uint8_t LTC68042result_loCellNum_get(void)               { return loCellNumber;       }
+
+uint8_t hiCellNumber = 0;
+void    LTC68042result_hiCellNum_set(uint8_t cellNumber) { hiCellNumber = cellNumber; }
+uint8_t LTC68042result_hiCellNum_get(void)               { return hiCellNumber;       }
 
 uint16_t minEverCellVoltage_counts = 65535; //since last key event
 void     LTC68042result_minEverCellVoltage_set(uint16_t newMin_counts) { minEverCellVoltage_counts = newMin_counts; }
@@ -29,6 +41,10 @@ uint16_t LTC68042result_loCellVoltage_get(void                 ) { return loCell
 uint16_t hiCellVoltage_counts = 34567;
 void     LTC68042result_hiCellVoltage_set(uint16_t newHi_counts) { hiCellVoltage_counts = newHi_counts; }
 uint16_t LTC68042result_hiCellVoltage_get(void                 ) { return hiCellVoltage_counts;         }
+
+uint16_t deltaCellVoltage_counts = 0;
+void     LTC68042result_deltaCellVoltage_set(uint16_t newDelta_counts) { deltaCellVoltage_counts = newDelta_counts; }
+uint16_t LTC68042result_deltaCellVoltage_get(void                    ) { return deltaCellVoltage_counts;            }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
