@@ -67,6 +67,7 @@ bool whichCycleFrameToDisplay(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Fix failure-to-flash issue in #4394
 //flash backlight if requested
 bool lcd_flashBacklight(void)
 {

@@ -78,6 +78,7 @@ uint8_t gridCharger_isAllowedNow(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doLater: Pcode if both key and charger on
 //JTS2doLater: display status on LCD
 void processChargerDisableReason(uint8_t canWeCharge)
 {

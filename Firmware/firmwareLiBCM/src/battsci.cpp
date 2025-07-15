@@ -17,7 +17,10 @@
 uint8_t spoofedVoltageToSend_Counts = 0; //formatted as MCM expects to see it (Vpack / 2) //2 volts per count
 int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2048 - deciAmps * 2) //50 mA per count
 
-uint8_t framePeriod_ms = 33; //JTS2doLater: Add 'g_' to all file-scoped globals
+uint8_t framePeriod_ms = 33;
+uint8_t frameAA_byte2 = 0; //JTS2doNow: Remove (probably) debug code
+uint8_t frameAA_byte3 = 0;
+uint8_t frameAA_byte4 = 0;
 
 //JTS2doLater: post#3093 (http://insightcentral.net/threads/libcm-open-beta-support-thread.128957) explains how make the OEM SoC gauge update
 //JTS2doLater: Add different SoC profile for "charges every day" crew
@@ -41,6 +44,12 @@ const uint16_t remap_actualToSpoofedSoC[101] = {
 };  //Data empirically gathered from OEM NiMH IMA system //see ../Firmware/Prototype Building Blocks/Remap SoC.ods for calculations
 
 uint16_t previousOutputSoC_deciPercent = 0;
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void battsci_frameAA_byte2_set(uint8_t newValue) { frameAA_byte2 = newValue; }
+void battsci_frameAA_byte3_set(uint8_t newValue) { frameAA_byte3 = newValue; }
+void battsci_frameAA_byte4_set(uint8_t newValue) { frameAA_byte4 = newValue; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -357,7 +366,7 @@ void BATTSCI_sendFrames(void)
 
             frameSum_87 += BATTSCI_writeByte( highByte(spoofedCurrentToSend_Counts << 1) & 0x7F ); //B5 Battery Current (upper byte)
             frameSum_87 += BATTSCI_writeByte(  lowByte(spoofedCurrentToSend_Counts     ) & 0x7F ); //B6 Battery Current (lower byte)
-            frameSum_87 += BATTSCI_writeByte( 0x32 );                                              //B7 always 0x32, except before 0xAAbyte5 changes from 0x00 to 0x10 (then 0x23)
+            frameSum_87 += BATTSCI_writeByte( 0x32 );                                              //B7 0x32 after 0xAAbyte5 changes from 0x00 to 0x10 //0x23 before that
             frameSum_87 += BATTSCI_writeByte( BATTSCI_calculateTemperatureByte() );                //B8 max battery module temp
             frameSum_87 += BATTSCI_writeByte( BATTSCI_calculateTemperatureByte() );                //B9 min battery module temp
             frameSum_87 += BATTSCI_writeByte( METSCI_getPacketB3() );                              //B10 MCM latest B3 data byte
@@ -369,18 +378,18 @@ void BATTSCI_sendFrames(void)
         {
             //Place 0xAA frame into serial send buffer
             uint8_t frameSum_AA = 0; //this will overflow, which is ok for CRC
-            frameSum_AA += BATTSCI_writeByte( 0xAA );                                           //B0 Never changes
-            frameSum_AA += BATTSCI_writeByte( 0x10 );                                           //B1 Always 0x10, unless METSCI signal not received
-            frameSum_AA += BATTSCI_writeByte( 0x00 ); //JTS2doLater: Add critical Pcodes          //B2 Never changes unless P codes
-            frameSum_AA += BATTSCI_writeByte( 0x00 ); //JTS2doLater: Pcode if key and charger on  //B3 Never changes unless P codes
-            frameSum_AA += BATTSCI_writeByte( 0x00 );                                           //B4 Never changes unless P codes
-            frameSum_AA += BATTSCI_writeByte( BATTSCI_calculateRegenAssistFlags()  );           //B5 Disable assist/regen flags
-            frameSum_AA += BATTSCI_writeByte( BATTSCI_calculateChargeRequestByte() );           //B6 Request regen/noRegen if battery low/high
-            frameSum_AA += BATTSCI_writeByte( 0x61 );                                           //B7 BCM hardware/firmware version?
+            frameSum_AA += BATTSCI_writeByte( 0xAA );                                              //B0 Never changes
+            frameSum_AA += BATTSCI_writeByte( 0x10 );                                              //B1 0x10 if METSCI signal received //0x00 otherwise
+            frameSum_AA += BATTSCI_writeByte( frameAA_byte2 ); //JTS2doNow: Add critical Pcodes    //B2 Never changes unless P codes
+            frameSum_AA += BATTSCI_writeByte( frameAA_byte3 );                                     //B3 Never changes unless P codes
+            frameSum_AA += BATTSCI_writeByte( frameAA_byte4 );                                     //B4 Never changes unless P codes
+            frameSum_AA += BATTSCI_writeByte( BATTSCI_calculateRegenAssistFlags()  );              //B5 Disable assist/regen flags
+            frameSum_AA += BATTSCI_writeByte( BATTSCI_calculateChargeRequestByte() );              //B6 Request regen/noRegen if battery low/high
+            frameSum_AA += BATTSCI_writeByte( 0x61 );                                              //B7 BCM hardware/firmware version?
             frameSum_AA += BATTSCI_writeByte( highByte(spoofedCurrentToSend_Counts << 1) & 0x7F ); //B8 Battery Current (upper byte)
             frameSum_AA += BATTSCI_writeByte(  lowByte(spoofedCurrentToSend_Counts     ) & 0x7F ); //B9 Battery Current (lower byte)
-            frameSum_AA += BATTSCI_writeByte( METSCI_getPacketB4() );                           //B10 MCM latest B4 data byte //
-                           BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_AA) );         //B11 Send Checksum. sum(byte0:byte11) should equal 0
+            frameSum_AA += BATTSCI_writeByte( METSCI_getPacketB4() );                              //B10 MCM latest B4 data byte //
+                           BATTSCI_writeByte( BATTSCI_calculateChecksum(frameSum_AA) );            //B11 Send Checksum. sum(byte0:byte11) should equal 0
             frame2send = 0x87;
         }
     }
