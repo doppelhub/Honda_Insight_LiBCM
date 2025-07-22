@@ -43,20 +43,21 @@ uint8_t LiDisplayChrgAsstPicId = 22;
 uint8_t LiDisplayWaitingForCommand = 0;
 
 // Initializing to an absurd number for all 7 variables so that on first run they will be updated on screen
-static uint8_t  LiDisplayPackVoltageActual_onScreen = 100;
-static uint8_t  LiDisplayPackVoltageSpoofed_onScreen = 100;
-static uint16_t  LiDisplayAverageCellVoltage_onScreen = 9999;
-static uint8_t  LiDisplaySoC_onScreen = 100;
-static uint8_t  LiDisplayFanSpeed_onScreen = 100;
-static uint8_t  LiDisplaySoCBars_onScreen = 100;
-static uint8_t  LiDisplayTemp_onScreen = 100;
+static uint16_t  LiDisplay_AvgCellVoltage_onScreen = 9999;
+static uint8_t  LiDisplay_BattTemp_onScreen = 100;
+static uint8_t  LiDisplay_FanSpeed_onScreen = 100;
+static uint8_t  LiDisplay_PackVoltageActual_onScreen = 100;
+static uint8_t  LiDisplay_PackVoltageSpoofed_onScreen = 100;
+static uint8_t  LiDisplay_SoC_onScreen = 100;
+static uint8_t  LiDisplay_SoCBars_onScreen = 100;
 
 // Nerd Screen Only
 static uint8_t	LiDisplay_NS_loCellNum_onScreen = 100;
 static uint8_t	LiDisplay_NS_hiCellNum_onScreen = 100;
+bool LiDisplay_NS_NSMessagePending = false;
 
 
-static uint16_t LiDisplayAverageCellVoltage = 0;
+static uint16_t LiDisplay_AvgCellVoltage = 0;
 static uint8_t maxElementId = 8;
 static uint8_t LiDisplay_powerState = 0; // 0=Key off GC unplug    1=Key on GC unplug    2=Key off GC plugged    3=Key on GC plugged
 static uint8_t LiDisplay_heaterState_onScreen = 2; // 0=Heater Off (hidden)		1=Heater On		2=Uninitialized
@@ -66,6 +67,7 @@ bool LiDisplayPowerOffPending = false;
 bool LiDisplayOnKeyOnWithNerdScreenEnabled = false;
 bool LiDisplayOnGridChargerConnected = false;
 bool LiDisplaySettingsPageRequested = false;
+
 //bool LiDisplayGridChargerPageRequested = false;
 static bool LiDisplayNeedToVerifyPowerState = false;
 static uint16_t total_splash_page_delay_ms = 250; // Has to be at least 150 ms because of Nextion delays.
@@ -121,10 +123,10 @@ void LiDisplay_begin(void)
         #endif
 
         LiDisplayElementToUpdate = 0;
-
         LiDisplaySplashPending = false;
         LiDisplayPowerOffPending = false;
 		new_power_state_millis = 0;
+
     #elif defined RUN_BRINGUP_TESTER_MOTHERBOARD //do nothing
     #else
         power_usart1_disable(); //disable USART1 clock to save power
@@ -201,9 +203,14 @@ void LiDisplay_calculateCorrectPage()
 void LiDisplay_resetDrivingPageVariables()
 {
 	maxElementId = LIDISPLAY_DRIVING_PAGE_INTITIAL_MAX_ELEMENT_ID;
-	LiDisplayPackVoltageActual_onScreen = 100;
+	LiDisplayElementToUpdate = 0;
+
+	LiDisplay_FanSpeed_onScreen = 100;
+	LiDisplay_PackVoltageActual_onScreen = 100;
 	LiDisplay_heaterState_onScreen = 2;
-	LiDisplayTemp_onScreen = 100;
+	LiDisplay_SoC_onScreen = 100;
+	LiDisplay_SoCBars_onScreen = 100;
+	LiDisplay_BattTemp_onScreen = 100;
 	LiDisplay_NS_loCellNum_onScreen = 100;
 	LiDisplay_NS_hiCellNum_onScreen = 100;
 }
@@ -213,9 +220,11 @@ void LiDisplay_resetDrivingPageVariables()
 void LiDisplay_resetGridChargerPageVariables()
 {
 	maxElementId = LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID;
+	LiDisplayElementToUpdate = 0;
+
 	gc_sixty_s_fomoco_e_block_enabled = false;
-	LiDisplayPackVoltageActual_onScreen = 100;
-	LiDisplayTemp_onScreen = 100;
+	LiDisplay_PackVoltageActual_onScreen = 100;
+	LiDisplay_BattTemp_onScreen = 100;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -224,8 +233,8 @@ void LiDisplay_resetSplashPageVariables()
 {
 	// Splash page is only shown for a few seconds
 	// When we go to the splash page we want to make the correct updates (firmware hours and version) as fast as possible
-	LiDisplayElementToUpdate = 0;
 	maxElementId = LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID;
+	LiDisplayElementToUpdate = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -358,11 +367,11 @@ LiDisplay_updateNextCellValue() {
     else if (cellToUpdate <= 59) { ic_index = 4; ic_cell_num = (cellToUpdate - 48); }
 
     // 09 Feb 2023 -- cell_avg_voltage is a crude approximation of the centre of the voltage range.  Ideally this would be replaced with the median cell voltage.
-    LiDisplayAverageCellVoltage = ((LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get()) * 0.5); //TODO_NATALYA - JTS: replace this line with next line
-    //LiDisplayAverageCellVoltage = (LTC68042result_deltaCellVoltage_get() >> 1 ) + LTC68042result_loCellVoltage_get();
+    LiDisplay_AvgCellVoltage = ((LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get()) * 0.5); //TODO_NATALYA - JTS: replace this line with next line
+    //LiDisplay_AvgCellVoltage = (LTC68042result_deltaCellVoltage_get() >> 1 ) + LTC68042result_loCellVoltage_get();
 
-    cell_avg_voltage = (LiDisplayAverageCellVoltage + LTC68042result_loCellVoltage_get()); //TODO_NATALYA - JTS: remove entire line and entire variable
-    LiDisplayAverageCellVoltage = (cell_avg_voltage); // TODO_NATALYA - get rid of cell_avg_voltage //TODO_NATALYA - JTS: remove entire line
+    cell_avg_voltage = (LiDisplay_AvgCellVoltage + LTC68042result_loCellVoltage_get()); //TODO_NATALYA - JTS: remove entire line and entire variable
+    LiDisplay_AvgCellVoltage = (cell_avg_voltage); // TODO_NATALYA - get rid of cell_avg_voltage //TODO_NATALYA - JTS: remove entire line
     temp_cell_voltage = LTC68042result_specificCellVoltage_get(ic_index, ic_cell_num);
 
     cell_voltage_diff_from_avg = cell_avg_voltage - temp_cell_voltage;
@@ -588,9 +597,6 @@ void LiDisplay_initializeSettingsPage() {
 
 void LiDisplay_exitSettingsPage(void) {
     LiDisplaySettingsPageRequested = false;
-
-	LiDisplaySoC_onScreen = 100;
-	LiDisplaySoCBars_onScreen = 100;
 
     LiDisplay_calculateCorrectPage();
 
@@ -830,7 +836,7 @@ void LiDisplay_updateElement() {
 		case LIDISPLAY_DRIVING_PAGE_REQ_ID:
 			switch (LiDisplayElementToUpdate)
 			{
-				// 6 elements update very frequently so we won't track their previous value
+				// 7 elements update very frequently so we won't track their previous value
 				case 0: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t3", 0, String((LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps())*0.001)); break;
 				case 1:
 					if (LIDISPLAY_DRIVING_PAGE_ID == 0) {
@@ -858,35 +864,35 @@ void LiDisplay_updateElement() {
 						if (currentHeaterState == 0) { LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t22", 0, (String(" "))); }
 						LiDisplay_heaterState_onScreen = currentHeaterState;
 					}
-					else if (LiDisplayFanSpeed_onScreen != currentFanSpeed)
+					else if (LiDisplay_FanSpeed_onScreen != currentFanSpeed)
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed])));
-						LiDisplayFanSpeed_onScreen = currentFanSpeed;
+						LiDisplay_FanSpeed_onScreen = currentFanSpeed;
 					}
-					else if ((LIDISPLAY_DRIVING_PAGE_ID == 0) && (LiDisplaySoCBars_onScreen != LiDisplaySoCBarCount))
+					else if ((LIDISPLAY_DRIVING_PAGE_ID == 0) && (LiDisplay_SoCBars_onScreen != LiDisplaySoCBarCount))
 					{
 						LiDisplay_updateNumericVal(LIDISPLAY_DRIVING_PAGE_ID, "p0", 2, String(LiDisplaySoCBarCount));
-						LiDisplaySoCBars_onScreen = LiDisplaySoCBarCount;
+						LiDisplay_SoCBars_onScreen = LiDisplaySoCBarCount;
 					}
-					else if (LiDisplaySoC_onScreen != SoC_getBatteryStateNow_percent())
+					else if (LiDisplay_SoC_onScreen != SoC_getBatteryStateNow_percent())
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t1", 0, (String(SoC_getBatteryStateNow_percent()) + "%"));
-						LiDisplaySoC_onScreen = SoC_getBatteryStateNow_percent();
+						LiDisplay_SoC_onScreen = SoC_getBatteryStateNow_percent();
 					}
-					else if (LiDisplayPackVoltageActual_onScreen != LTC68042result_packVoltage_get())
+					else if (LiDisplay_PackVoltageActual_onScreen != LTC68042result_packVoltage_get())
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t4", 0, String(LTC68042result_packVoltage_get()));
-						LiDisplayPackVoltageActual_onScreen = LTC68042result_packVoltage_get();
+						LiDisplay_PackVoltageActual_onScreen = LTC68042result_packVoltage_get();
 					}
-					else if (LiDisplayPackVoltageSpoofed_onScreen != vPackSpoof_getSpoofedPackVoltage())
+					else if (LiDisplay_PackVoltageSpoofed_onScreen != vPackSpoof_getSpoofedPackVoltage())
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t24", 0, LiDisplay_formatSpoofedValueDisplayStr((uint16_t)vPackSpoof_getSpoofedPackVoltage(), false));
-						LiDisplayPackVoltageSpoofed_onScreen = vPackSpoof_getSpoofedPackVoltage();
+						LiDisplay_PackVoltageSpoofed_onScreen = vPackSpoof_getSpoofedPackVoltage();
 					}
-					else if ((LIDISPLAY_DRIVING_PAGE_REQ_ID == 7) && (LiDisplayAverageCellVoltage_onScreen != LiDisplay_calculateAvgCellVoltage())) {
+					else if ((LIDISPLAY_DRIVING_PAGE_REQ_ID == 7) && (LiDisplay_AvgCellVoltage_onScreen != LiDisplay_calculateAvgCellVoltage())) {
 						//LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t28", 0, String((LiDisplay_calculateAvgCellVoltage() * 0.0001),3));
 						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t28", 0, String(LiDisplay_calculateAvgCellVoltage()));
-						LiDisplayAverageCellVoltage_onScreen = LiDisplay_calculateAvgCellVoltage();
+						LiDisplay_AvgCellVoltage_onScreen = LiDisplay_calculateAvgCellVoltage();
 					}
 					else if ((LIDISPLAY_DRIVING_PAGE_REQ_ID == 7) && (LiDisplay_NS_hiCellNum_onScreen != LTC68042result_hiCellNum_get())) {
 						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t20", 0, String(LTC68042result_hiCellNum_get()));
@@ -896,10 +902,14 @@ void LiDisplay_updateElement() {
 						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t21", 0, String(LTC68042result_loCellNum_get()));
 						LiDisplay_NS_loCellNum_onScreen = LTC68042result_loCellNum_get();
 					}
-					else if (LiDisplayTemp_onScreen != temperature_battery_getLatest())
+					else if (LiDisplay_BattTemp_onScreen != temperature_battery_getLatest())
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t11", 0, (String(temperature_battery_getLatest()) + char(176) + "C"));
-						LiDisplayTemp_onScreen = temperature_battery_getLatest();
+						LiDisplay_BattTemp_onScreen = temperature_battery_getLatest();
+					}
+					else if (LiDisplay_NS_NSMessagePending) {
+						LiDisplay_updateNumericVal(LIDISPLAY_DRIVING_PAGE_ID, "t27", 4, "65535");
+						LiDisplay_NS_NSMessagePending = false;
 					}
 					else
 					{
@@ -959,7 +969,7 @@ void LiDisplay_updateElement() {
 					else { LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE"); }
 
 				break;
-				case 1: LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t3", 0, String(LiDisplayAverageCellVoltage * 0.0001,3)); break;
+				case 1: LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t3", 0, String(LiDisplay_AvgCellVoltage * 0.0001,3)); break;
 				case 2: LiDisplay_updateNextCellValue();    break;
 				case 3: LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t8", 0, String(gc_time));  break;
 				case 4:
@@ -969,25 +979,25 @@ void LiDisplay_updateElement() {
 						LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t16", 3, "65516"); // E block label will be missing on a 60S 47Ah pack display if we don't run this once.
 						gc_sixty_s_fomoco_e_block_enabled = true;
 					}
-					else if (LiDisplayFanSpeed_onScreen != currentFanSpeed)
+					else if (LiDisplay_FanSpeed_onScreen != currentFanSpeed)
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed])));
-						LiDisplayFanSpeed_onScreen = currentFanSpeed;
+						LiDisplay_FanSpeed_onScreen = currentFanSpeed;
 					}
-					else if (LiDisplaySoC_onScreen != SoC_getBatteryStateNow_percent())
+					else if (LiDisplay_SoC_onScreen != SoC_getBatteryStateNow_percent())
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t1", 0, (String(SoC_getBatteryStateNow_percent()) + "%"));
-						LiDisplaySoC_onScreen = SoC_getBatteryStateNow_percent();
+						LiDisplay_SoC_onScreen = SoC_getBatteryStateNow_percent();
 					}
-					else if (LiDisplayTemp_onScreen != temperature_battery_getLatest())
+					else if (LiDisplay_BattTemp_onScreen != temperature_battery_getLatest())
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t19", 0, (String(temperature_battery_getLatest()) + "C"));
-						LiDisplayTemp_onScreen = temperature_battery_getLatest();
+						LiDisplay_BattTemp_onScreen = temperature_battery_getLatest();
 					}
-					else if (LiDisplayPackVoltageActual_onScreen != LTC68042result_packVoltage_get())
+					else if (LiDisplay_PackVoltageActual_onScreen != LTC68042result_packVoltage_get())
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t4", 0, String(LTC68042result_packVoltage_get()));
-						LiDisplayPackVoltageActual_onScreen = LTC68042result_packVoltage_get();
+						LiDisplay_PackVoltageActual_onScreen = LTC68042result_packVoltage_get();
 					}
 					else LiDisplay_updateNextCellValue();     break;
 
@@ -1036,9 +1046,6 @@ void LiDisplay_handler(void)
         }
 
 
-
-
-
         if ((millis() - millis_previous) > LIDISPLAY_UPDATE_RATE_MILLIS)
         {
             millis_previous = millis();
@@ -1067,14 +1074,10 @@ void LiDisplay_keyOn(void)
         LiDisplay_calculateKeyTimeStr(true);
 		LiDisplayCurrentPageNum = 100;	// When the Nextion is turned on set this to a nonsensical number to initialize it.
         LiDisplaySetPageNum = LIDISPLAY_DRIVING_PAGE_REQ_ID;
+		LiDisplaySplashPending = false;
+		LiDisplayPowerOffPending = false;
 
-        // Reset these
-        LiDisplayPackVoltageActual_onScreen = 100;
-        LiDisplaySoC_onScreen = 100;
-        LiDisplayFanSpeed_onScreen = 100;
-        LiDisplaySoCBars_onScreen = 100;
-		LiDisplay_NS_loCellNum_onScreen = 100;
-		LiDisplay_NS_hiCellNum_onScreen = 100;
+		LiDisplay_resetDrivingPageVariables();
 
     #endif
 	#ifdef LIDISPLAY_USE_NERD_SCREEN
@@ -1088,7 +1091,7 @@ void LiDisplay_keyOn(void)
 		LiDisplayOnKeyOnWithNerdScreenEnabled = true;
 	#endif
 	#ifdef LIDISPLAY_FEELING_NERDY
-		LiDisplay_updateNumericVal(LIDISPLAY_DRIVING_PAGE_ID, "t27", 4, "65535");
+		LiDisplay_NS_NSMessagePending = true;
 	#endif
 }
 
@@ -1129,16 +1132,16 @@ void LiDisplay_gridChargerPluggedIn(void)
             Serial1.begin(57600,SERIAL_8N1);
             hmi_power_millis = millis();
         }
-        gc_sixty_s_fomoco_e_block_enabled = false;
+		LiDisplay_resetGridChargerPageVariables();
+
         LiDisplayOnGridChargerConnected = true;
         gc_connected_millis = millis();
         gc_charging_seconds = 0;
         gc_charging_minutes = 0;
         gc_charging_hours = 0;
         gc_begin_soc_str = (String(SoC_getBatteryStateNow_percent()) + "%");
-        LiDisplaySoC_onScreen = 100;
-        LiDisplayFanSpeed_onScreen = 100;
-        maxElementId = 6;
+        LiDisplay_SoC_onScreen = 100;
+        LiDisplay_FanSpeed_onScreen = 100;
     #endif
 }
 
@@ -1148,7 +1151,6 @@ void LiDisplay_gridChargerUnplugged(void)
 {
     #ifdef LIDISPLAY_CONNECTED
         Serial.print(F("\nLiDisplay_gridChargerUnplugged"));
-		LiDisplayElementToUpdate = 0;
         gc_connected_millis_most_recent_diff = 0;
         // Check if gpio HMI was already off
         if (gpio_HMIStateNow())
