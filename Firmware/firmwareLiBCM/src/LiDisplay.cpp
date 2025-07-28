@@ -1064,6 +1064,16 @@ void LiDisplay_handler(void)
 
 void LiDisplay_keyOn(void)
 {
+	#ifdef LIDISPLAY_USE_NERD_SCREEN
+		// Nerd Screen driving page is named page6
+		// Nerd Screen driving page index is 7
+		// This means to switch to the page we need to send 7, but to change elements on the page, they need a 6
+		#undef LIDISPLAY_DRIVING_PAGE_ID
+		#define LIDISPLAY_DRIVING_PAGE_ID 6
+		#undef LIDISPLAY_DRIVING_PAGE_REQ_ID
+		#define LIDISPLAY_DRIVING_PAGE_REQ_ID 7
+		LiDisplayOnKeyOnWithNerdScreenEnabled = true;
+	#endif
     #ifdef LIDISPLAY_CONNECTED
         Serial.print(F("\nLiDisplay_keyOn"));
         Serial.print(F("\nLiDisplay HMI Power On"));
@@ -1080,16 +1090,6 @@ void LiDisplay_keyOn(void)
 		LiDisplay_resetDrivingPageVariables();
 
     #endif
-	#ifdef LIDISPLAY_USE_NERD_SCREEN
-		// Nerd Screen driving page is named page6
-		// Nerd Screen driving page index is 7
-		// This means to switch to the page we need to send 7, but to change elements on the page, they need a 6
-		#undef LIDISPLAY_DRIVING_PAGE_ID
-		#define LIDISPLAY_DRIVING_PAGE_ID 6
-		#undef LIDISPLAY_DRIVING_PAGE_REQ_ID
-		#define LIDISPLAY_DRIVING_PAGE_REQ_ID 7
-		LiDisplayOnKeyOnWithNerdScreenEnabled = true;
-	#endif
 	#ifdef LIDISPLAY_FEELING_NERDY
 		LiDisplay_NS_NSMessagePending = true;
 	#endif
