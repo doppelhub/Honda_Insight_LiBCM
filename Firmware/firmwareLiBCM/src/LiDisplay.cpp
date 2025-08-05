@@ -5,8 +5,11 @@
 
 #include "libcm.h"
 
-#define LIDISPLAY_DRIVING_PAGE_ID 0
-#define LIDISPLAY_DRIVING_PAGE_REQ_ID 0
+static uint8_t LiDisplay_DrivingPageId = 0;
+static uint8_t LiDisplay_DrivingPageReqId = 0;
+
+//#define LIDISPLAY_DRIVING_PAGE_ID 0
+// #define LIDISPLAY_DRIVING_PAGE_REQ_ID 0
 #define LIDISPLAY_SPLASH_PAGE_ID 1
 #define LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID 2
 #define LIDISPLAY_GRIDCHARGE_PAGE_ID 3
@@ -37,7 +40,7 @@
 
 uint8_t LiDisplayElementToUpdate = 0;
 uint8_t LiDisplayCurrentPageNum = 0;
-uint8_t LiDisplaySetPageNum = LIDISPLAY_DRIVING_PAGE_ID;
+uint8_t LiDisplaySetPageNum = LiDisplay_DrivingPageId;
 uint8_t LiDisplaySoCBarCount = 0;
 uint8_t LiDisplayChrgAsstPicId = 22;
 uint8_t LiDisplayWaitingForCommand = 0;
@@ -167,7 +170,7 @@ void LiDisplay_updateStringVal(uint8_t page, String elementName, uint8_t element
 
 void LiDisplay_updateDebugTextBox(String raw_data_string) {
     #ifdef LIDISPLAY_DEBUG_ENABLED
-		if (LiDisplayCurrentPageNum == LIDISPLAY_DRIVING_PAGE_REQ_ID) { LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t12", 0, raw_data_string); }
+		if (LiDisplayCurrentPageNum == LiDisplay_DrivingPageReqId) { LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t12", 0, raw_data_string); }
         else { LiDisplay_updateStringVal(LiDisplayCurrentPageNum, "t12", 0, raw_data_string); }
     #endif
 }
@@ -183,7 +186,7 @@ void LiDisplay_calculateCorrectPage()
         else if  (LiDisplaySplashPending)         { LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID;             }
         else if  (LiDisplaySettingsPageRequested) { LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID;           }
 		//else if  (LiDisplayGridChargerPageRequested) { LiDisplaySetPageNum = LIDISPLAY_GRIDCHARGE_PAGE_ID;           }
-        else                                      { LiDisplaySetPageNum = LIDISPLAY_DRIVING_PAGE_REQ_ID;            }
+        else                                      { LiDisplaySetPageNum = LiDisplay_DrivingPageReqId;            }
     }
 	else
 	{
@@ -601,7 +604,9 @@ void LiDisplay_exitSettingsPage(void) {
     LiDisplay_calculateCorrectPage();
 
     switch (LiDisplayCurrentPageNum) {
-        case LIDISPLAY_DRIVING_PAGE_REQ_ID: LiDisplay_resetDrivingPageVariables(); break;
+        case 0:
+		case 7:
+			LiDisplay_resetDrivingPageVariables(); break;
         case LIDISPLAY_SPLASH_PAGE_ID: LiDisplay_resetSplashPageVariables(); break;
         case LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID:
 			maxElementId = 8;
@@ -694,7 +699,7 @@ void LiDisplay_processCommand(String cmd_str) {
     if (String(cmd_obj_type) == "b")
 	{
         // Button Pressed
-        if ((cmd_page_id == (uint8_t)LIDISPLAY_DRIVING_PAGE_ID) || (cmd_page_id == (uint8_t)LIDISPLAY_GRIDCHARGE_PAGE_ID))
+        if ((cmd_page_id == (uint8_t)LiDisplay_DrivingPageId) || (cmd_page_id == (uint8_t)LIDISPLAY_GRIDCHARGE_PAGE_ID))
 		{
             if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_SCREEN)
 			{	// Screen Button from either Driving or GC Page
@@ -833,24 +838,25 @@ void LiDisplay_updateElement() {
 	// During a frame, if we get to this function we will try to update 1 screen element, prioritizing elements that change frequently and skipping over ones that don't unless their value has changed.
 	switch (LiDisplayCurrentPageNum)
 	{
-		case LIDISPLAY_DRIVING_PAGE_REQ_ID:
+		case 0:
+		case 7:
 			switch (LiDisplayElementToUpdate)
 			{
 				// 7 elements update very frequently so we won't track their previous value
-				case 0: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t3", 0, String((LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps())*0.001)); break;
+				case 0: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t3", 0, String((LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps())*0.001)); break;
 				case 1:
-					if (LIDISPLAY_DRIVING_PAGE_ID == 0) {
+					if (LiDisplay_DrivingPageId == 0) {
 						LiDisplay_calculateChrgAsstGaugeBars();
 						LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId));
 					} else {
-						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t23", 0, LiDisplay_formatSpoofedValueDisplayStr(BATTSCI_previousOutputSoC_deciPercent_get(), true)); // Spoofed SoC sent to MCM
+						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t23", 0, LiDisplay_formatSpoofedValueDisplayStr(BATTSCI_previousOutputSoC_deciPercent_get(), true)); // Spoofed SoC sent to MCM
 					}
 					break;
-				case 2: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
-				case 3: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
-				case 4: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t13", 0, key_time); break;
-				case 5: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t14", 0, (String(((LTC68042result_hiCellVoltage_get() * 0.1) - (LTC68042result_loCellVoltage_get() * 0.1)),1)+"")); break;
-				case 6: LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t26", 0, String(adc_getLatestBatteryCurrent_amps())); break;	// Amps
+				case 2: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
+				case 3: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
+				case 4: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t13", 0, key_time); break;
+				case 5: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t14", 0, (String(((LTC68042result_hiCellVoltage_get() * 0.1) - (LTC68042result_loCellVoltage_get() * 0.1)),1)+"")); break;
+				case 6: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t26", 0, String(adc_getLatestBatteryCurrent_amps())); break;	// Amps
 				// The other elements update less frequently.  We will update 1 of them.
 				// Priority is from least-likely to change to most-likely to change.
 				case 7:
@@ -860,67 +866,67 @@ void LiDisplay_updateElement() {
 					LiDisplay_calculateHeaterState();
 					if (LiDisplay_heaterState_onScreen != currentHeaterState)
 					{
-						if (currentHeaterState == 1) { LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t22", 0, (String("HEATER ON"))); }
-						if (currentHeaterState == 0) { LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t22", 0, (String(" "))); }
+						if (currentHeaterState == 1) { LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t22", 0, (String("HEATER ON"))); }
+						if (currentHeaterState == 0) { LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t22", 0, (String(" "))); }
 						LiDisplay_heaterState_onScreen = currentHeaterState;
 					}
 					else if (LiDisplay_FanSpeed_onScreen != currentFanSpeed)
 					{
-						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed])));
+						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "b1", 0, (String(fanSpeedDisplay[currentFanSpeed])));
 						LiDisplay_FanSpeed_onScreen = currentFanSpeed;
 					}
-					else if ((LIDISPLAY_DRIVING_PAGE_ID == 0) && (LiDisplay_SoCBars_onScreen != LiDisplaySoCBarCount))
+					else if ((LiDisplay_DrivingPageId == 0) && (LiDisplay_SoCBars_onScreen != LiDisplaySoCBarCount))
 					{
-						LiDisplay_updateNumericVal(LIDISPLAY_DRIVING_PAGE_ID, "p0", 2, String(LiDisplaySoCBarCount));
+						LiDisplay_updateNumericVal(LiDisplay_DrivingPageId, "p0", 2, String(LiDisplaySoCBarCount));
 						LiDisplay_SoCBars_onScreen = LiDisplaySoCBarCount;
 					}
 					else if (LiDisplay_SoC_onScreen != SoC_getBatteryStateNow_percent())
 					{
-						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t1", 0, (String(SoC_getBatteryStateNow_percent()) + "%"));
+						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t1", 0, (String(SoC_getBatteryStateNow_percent()) + "%"));
 						LiDisplay_SoC_onScreen = SoC_getBatteryStateNow_percent();
 					}
 					else if (LiDisplay_PackVoltageActual_onScreen != LTC68042result_packVoltage_get())
 					{
-						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t4", 0, String(LTC68042result_packVoltage_get()));
+						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t4", 0, String(LTC68042result_packVoltage_get()));
 						LiDisplay_PackVoltageActual_onScreen = LTC68042result_packVoltage_get();
 					}
 					else if (LiDisplay_PackVoltageSpoofed_onScreen != vPackSpoof_getSpoofedPackVoltage())
 					{
-						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t24", 0, LiDisplay_formatSpoofedValueDisplayStr((uint16_t)vPackSpoof_getSpoofedPackVoltage(), false));
+						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t24", 0, LiDisplay_formatSpoofedValueDisplayStr((uint16_t)vPackSpoof_getSpoofedPackVoltage(), false));
 						LiDisplay_PackVoltageSpoofed_onScreen = vPackSpoof_getSpoofedPackVoltage();
 					}
-					else if ((LIDISPLAY_DRIVING_PAGE_REQ_ID == 7) && (LiDisplay_AvgCellVoltage_onScreen != LiDisplay_calculateAvgCellVoltage())) {
-						//LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t28", 0, String((LiDisplay_calculateAvgCellVoltage() * 0.0001),3));
-						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t28", 0, String(LiDisplay_calculateAvgCellVoltage()));
+					else if ((LiDisplay_DrivingPageReqId == 7) && (LiDisplay_AvgCellVoltage_onScreen != LiDisplay_calculateAvgCellVoltage())) {
+						//LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t28", 0, String((LiDisplay_calculateAvgCellVoltage() * 0.0001),3));
+						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t28", 0, String(LiDisplay_calculateAvgCellVoltage()));
 						LiDisplay_AvgCellVoltage_onScreen = LiDisplay_calculateAvgCellVoltage();
 					}
-					else if ((LIDISPLAY_DRIVING_PAGE_REQ_ID == 7) && (LiDisplay_NS_hiCellNum_onScreen != LTC68042result_hiCellNum_get())) {
-						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t20", 0, String(LTC68042result_hiCellNum_get()));
+					else if ((LiDisplay_DrivingPageReqId == 7) && (LiDisplay_NS_hiCellNum_onScreen != LTC68042result_hiCellNum_get())) {
+						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t20", 0, String(LTC68042result_hiCellNum_get()));
 						LiDisplay_NS_hiCellNum_onScreen = LTC68042result_hiCellNum_get();
 					}
-					else if ((LIDISPLAY_DRIVING_PAGE_REQ_ID == 7) && (LiDisplay_NS_loCellNum_onScreen != LTC68042result_loCellNum_get())) {
-						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t21", 0, String(LTC68042result_loCellNum_get()));
+					else if ((LiDisplay_DrivingPageReqId == 7) && (LiDisplay_NS_loCellNum_onScreen != LTC68042result_loCellNum_get())) {
+						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t21", 0, String(LTC68042result_loCellNum_get()));
 						LiDisplay_NS_loCellNum_onScreen = LTC68042result_loCellNum_get();
 					}
 					else if (LiDisplay_BattTemp_onScreen != temperature_battery_getLatest())
 					{
-						LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t11", 0, (String(temperature_battery_getLatest()) + char(176) + "C"));
+						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t11", 0, (String(temperature_battery_getLatest()) + char(176) + "C"));
 						LiDisplay_BattTemp_onScreen = temperature_battery_getLatest();
 					}
 					else if (LiDisplay_NS_NSMessagePending) {
-						LiDisplay_updateNumericVal(LIDISPLAY_DRIVING_PAGE_ID, "t27", 4, "65535");
+						LiDisplay_updateNumericVal(LiDisplay_DrivingPageId, "t27", 4, "65535");
 						LiDisplay_NS_NSMessagePending = false;
 					}
 					else
 					{
-						if (LIDISPLAY_DRIVING_PAGE_ID == 0) {
+						if (LiDisplay_DrivingPageId == 0) {
 							// Nothing else needed to update so we will update the chrg asst bar display again instead.
 							LiDisplay_calculateChrgAsstGaugeBars();
-							LiDisplay_updateNumericVal(LIDISPLAY_DRIVING_PAGE_ID, "p1", 2, String(LiDisplayChrgAsstPicId));
+							LiDisplay_updateNumericVal(LiDisplay_DrivingPageId, "p1", 2, String(LiDisplayChrgAsstPicId));
 						}
 						else {
-							LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t17", 0, (String((LTC68042result_maxEverCellVoltage_get() * 0.0001),3))); // Peak cell V
-							LiDisplay_updateStringVal(LIDISPLAY_DRIVING_PAGE_ID, "t19", 0, (String((LTC68042result_minEverCellVoltage_get() * 0.0001),3))); // Trough cell V
+							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t17", 0, (String((LTC68042result_maxEverCellVoltage_get() * 0.0001),3))); // Peak cell V
+							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t19", 0, (String((LTC68042result_minEverCellVoltage_get() * 0.0001),3))); // Trough cell V
 						}
 					}
 				break;
@@ -1068,10 +1074,9 @@ void LiDisplay_keyOn(void)
 		// Nerd Screen driving page is named page6
 		// Nerd Screen driving page index is 7
 		// This means to switch to the page we need to send 7, but to change elements on the page, they need a 6
-		#undef LIDISPLAY_DRIVING_PAGE_ID
-		#define LIDISPLAY_DRIVING_PAGE_ID 6
-		#undef LIDISPLAY_DRIVING_PAGE_REQ_ID
-		#define LIDISPLAY_DRIVING_PAGE_REQ_ID 7
+
+		LiDisplay_DrivingPageId = 6;
+		LiDisplay_DrivingPageReqId = 7;
 		LiDisplayOnKeyOnWithNerdScreenEnabled = true;
 	#endif
     #ifdef LIDISPLAY_CONNECTED
@@ -1083,7 +1088,7 @@ void LiDisplay_keyOn(void)
         key_time_begin_ms = millis();
         LiDisplay_calculateKeyTimeStr(true);
 		LiDisplayCurrentPageNum = 100;	// When the Nextion is turned on set this to a nonsensical number to initialize it.
-        LiDisplaySetPageNum = LIDISPLAY_DRIVING_PAGE_REQ_ID;
+        LiDisplaySetPageNum = LiDisplay_DrivingPageReqId;
 		LiDisplaySplashPending = false;
 		LiDisplayPowerOffPending = false;
 
