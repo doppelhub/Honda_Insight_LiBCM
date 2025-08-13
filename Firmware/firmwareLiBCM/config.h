@@ -154,6 +154,10 @@
 	#define LIDISPLAY_SPLASH_PAGE_MS 3000 // How long the splash page shows on LiDisplay.  Default 3000 (3 seconds)
 	#define LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS 4000 // Keep displaying the grid charging page this long before showing splash page when GC unplugged
 
+    //set default charging speed
+        //Set to any value between 1-100
+        #define DEFAULT_CHARGE_POWER 100
+    
     /*
     JTS2doLater:
         #define SERIAL_H_LINE_CONNECTED NO //H-Line wire manually connected to OEM BCM connector pin B01 (this connection is not OEM)
