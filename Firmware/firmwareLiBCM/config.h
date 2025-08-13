@@ -32,8 +32,10 @@
         //#define STACK_IS_60S //47Ah Kits with QTY5 modules
 
     //choose which grid charger is installed
-        //#define GRIDCHARGER_IS_NOT_1500W //All 5AhG3 Kits & 'standard' 47Ah Kits
-        //#define GRIDCHARGER_IS_1500W     //47Ah Kits with 'fast' 6.5A charger
+        //#define GRIDCHARGER_5AhG3_ALL //All 5AhG3 Kits
+        //#define GRIDCHARGER_47Ah_LiBCM_2_1A //'standard' charger //~4% SoC/hour
+        //#define GRIDCHARGER_47Ah_LiBCM_6_5A //'upgraded' charger //~14% SoC/hour
+        //#define GRIDCHARGER_47Ah_VOLTGEN2_12A //3rd party Charger adapted by AfterEffect //~25% SoC/hour
 
     //choose ONE of the following
     //must match actual "current hack" hardware configuration:
@@ -118,6 +120,9 @@
     //Choose which sign (±) the LCD displays when the battery is discharging
     #define DISPLAY_POSITIVE_SIGN_DURING_ASSIST //current is positive when battery is discharging
     //#define DISPLAY_NEGATIVE_SIGN_DURING_ASSIST //current is negative when battery is discharging
+
+    //set default charging speed
+        #define DEFAULT_CHARGE_POWER 100 //default charging speed is 100% (full speed)
 
     //////////////////////////////////////////////////////////////////
 

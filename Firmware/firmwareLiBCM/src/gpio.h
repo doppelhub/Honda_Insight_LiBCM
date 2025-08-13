@@ -42,7 +42,7 @@
     void gpio_turnGridCharger_on( void);
     void gpio_turnGridCharger_off(void);
 
-    void gpio_setGridCharger_powerLevel(char powerLevel);
+    void gpio_setGridCharger_powerLevel(int powerLevel);
 
     void gpio_turnBuzzer_on_highFreq(void);
     void gpio_turnBuzzer_on_lowFreq(void);

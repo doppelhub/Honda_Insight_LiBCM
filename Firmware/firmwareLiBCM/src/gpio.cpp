@@ -140,31 +140,47 @@ void gpio_turnGridCharger_off(void) { digitalWrite(PIN_ABSTRACTED_GRID_EN, LOW);
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //JTS2doLater: 1500W charger requires different PWM values due to additional parallel 2k7 resistor on voltage control pin
-void gpio_setGridCharger_powerLevel(char powerLevel)
+void gpio_setGridCharger_powerLevel(int powerLevel)
 {
+    uint16_t pwmValue = 0;
+
     switch (powerLevel)
     {
-        #ifdef GRIDCHARGER_IS_1500W //wiring is different from other chargers
-            case '0': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
-                 digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  HIGH); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    0); break; //disable grid charger
-            case 'L': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
-                 digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    0); break; //enable grid charger low power
-          //case 'M': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
-               //digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   60); break; //PWM value TBD
-            case 'H': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
-                 digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,  255); break; //enable grid charger high power
-            case 'Z': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE, INPUT);     pinMode(PIN_ABSTRACTED_GRID_CURRENT,INPUT); break; //reduces power consumption    
-            default:  pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
-                 digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  HIGH); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    0); break; //disable charger
-        
-        #elif defined GRIDCHARGER_IS_NOT_1500W
-            case '0': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   255); break; //negative logic
-            case 'L': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    80); break; //JTS2doLater: Determine correct grid charger values
-            case 'M': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    40); break;
-            case 'H': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,     0); break;
-            case 'Z':     pinMode(PIN_ABSTRACTED_GRID_CURRENT, INPUT); break; //reduces power consumption
-            default:  analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   255); break; //disable charger
-        #endif
+        case 0: // Explicitly handle disabling the charger
+            #ifdef GRIDCHARGER_47Ah_LiBCM_6_5A
+                pinMode(PIN_ABSTRACTED_GRID_VOLTAGE, OUTPUT);
+                digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE, HIGH); 
+                analogWrite(PIN_ABSTRACTED_GRID_CURRENT, 0); 
+            #elif defined(GRIDCHARGER_5AhG3_ALL)
+                analogWrite(PIN_ABSTRACTED_GRID_CURRENT, 255); // Disable charger with negative logic
+            #elif defined(GRIDCHARGER_47Ah_LiBCM_2_1A)
+                analogWrite(PIN_ABSTRACTED_GRID_CURRENT, 255); // Disable charger with negative logic
+            #elif defined(GRIDCHARGER_47Ah_VOLTGEN2_12A)
+                analogWrite(PIN_ABSTRACTED_GRID_CURRENT, 0); // Disable charger
+            #endif
+            break;
+
+        default:
+            #ifdef GRIDCHARGER_47Ah_LiBCM_6_5A
+                // Map percentage to PWM value (0-255), limit to 5-95%
+                pwmValue = map(powerLevel, 0, 100, 13, 242);
+                pinMode(PIN_ABSTRACTED_GRID_VOLTAGE, OUTPUT);
+                digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE, LOW); 
+                analogWrite(PIN_ABSTRACTED_GRID_CURRENT, pwmValue);
+            #elif defined(GRIDCHARGER_5AhG3_ALL)
+                // Map percentage to PWM value (0-255), use reverse logic
+                pwmValue = map(powerLevel, 0, 100, 255, 0);
+                analogWrite(PIN_ABSTRACTED_GRID_CURRENT, pwmValue);
+            #elif defined(GRIDCHARGER_47Ah_LiBCM_2_1A)
+                // Map percentage to PWM value (0-255), use reverse logic
+                pwmValue = map(powerLevel, 0, 100, 255, 0);
+                analogWrite(PIN_ABSTRACTED_GRID_CURRENT, pwmValue);
+            #elif defined(GRIDCHARGER_47Ah_VOLTGEN2_12A)
+                // Map percentage to PWM value (275-1800)
+                pwmValue = map(powerLevel, 0, 100, 1800, 275);
+                analogWrite(PIN_ABSTRACTED_GRID_CURRENT, pwmValue);
+            #endif
+            break;
     }
 }
 
