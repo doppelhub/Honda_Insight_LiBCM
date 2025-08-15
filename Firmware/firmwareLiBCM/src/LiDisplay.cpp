@@ -600,6 +600,9 @@ void LiDisplay_exitSettingsPage(void) {
 
     switch (LiDisplayCurrentPageNum) {
         case 0:
+			LiDisplay_resetDrivingPageVariables(); break;
+		case 6:
+			LiDisplay_resetDrivingPageVariables(); break;
 		case 7:
 			LiDisplay_resetDrivingPageVariables(); break;
         case LIDISPLAY_SPLASH_PAGE_ID: LiDisplay_resetSplashPageVariables(); break;
@@ -857,7 +860,7 @@ void LiDisplay_updateElement() {
 				case 2: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
 				case 3: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
 				case 4: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t13", 0, key_time); break;
-				case 5: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t14", 0, (String(((LTC68042result_hiCellVoltage_get() * 0.1) - (LTC68042result_loCellVoltage_get() * 0.1)),1)+"")); break;
+				case 5: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t14", 0, (String(((LTC68042result_hiCellVoltage_get() * 0.1) - (LTC68042result_loCellVoltage_get() * 0.1)),1)+"mV")); break;	// Delta mV
 				case 6: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t26", 0, String(adc_getLatestBatteryCurrent_amps())); break;	// Amps
 				// The other elements update less frequently.  We will update 1 of them.
 				// Priority is from least-likely to change to most-likely to change.
