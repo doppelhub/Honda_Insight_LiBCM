@@ -23,6 +23,7 @@ static uint8_t LiDisplay_DrivingPageReqId = 0;
 
 #define LIDISPLAY_BUTTON_ID_SCREEN 0
 #define LIDISPLAY_BUTTON_ID_FAN 1
+#define LIDISPLAY_BUTTON_ID_BRIGHT 2
 
 // The Nextion takes some time to power on.  Commands sent before it's fully online will not be received or acted upon.
 // This causes problems if it's turning on because the grid charger was connected.
@@ -91,6 +92,7 @@ String gc_currently_selected_cell_id_str = "99";    // An absurd initialization 
 static uint32_t key_time_begin_ms = 0;
 
 static uint8_t currentFanSpeed = 0;
+static uint8_t LiDisplay_brightness = 100;
 
 bool gc_sixty_s_fomoco_e_block_enabled = false;
 
@@ -666,6 +668,7 @@ void LiDisplay_processCommand(String cmd_str) {
     char cmd_obj_type = "";
     String cmd_obj_id_str = "";
     uint8_t ic_cell_address[2] = {0,0};
+	String instruction_str = "";
 
     cmd_page_id = cmd_str[1] - '0'; // Subtract '0' from a char to get the actual integer value.
     cmd_obj_type = cmd_str[3];
@@ -704,6 +707,15 @@ void LiDisplay_processCommand(String cmd_str) {
 					case FAN_LOW: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_HIGH); LiDisplay_updateDebugTextBox("Requested Fan High"); break;
 					default: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_LOW); LiDisplay_updateDebugTextBox("Requested Fan Low"); break;
 				}
+			}
+			else if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_BRIGHT)
+			{
+				// Brightness button pressed
+				if (LiDisplay_brightness == 100) { instruction_str = "dims33"; LiDisplay_brightness = 33; LiDisplay_updateDebugTextBox("Req'd Bright 33"); }
+				else if (LiDisplay_brightness == 33) { instruction_str = "dims66"; LiDisplay_brightness = 66; LiDisplay_updateDebugTextBox("Req'd Bright 66"); }
+				else if (LiDisplay_brightness == 66) { instruction_str = "dims100"; LiDisplay_brightness = 100; LiDisplay_updateDebugTextBox("Req'd Bright 100"); }
+				LiDisplay_printString(instruction_str);
+				LiDisplay_writeInstructionTerminationBytes();
 			}
         }
 		else if (cmd_page_id == (uint8_t)LIDISPLAY_SETTINGS_PAGE_ID)
