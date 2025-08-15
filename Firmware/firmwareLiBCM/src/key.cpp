@@ -53,7 +53,7 @@ void key_handleKeyEvent_off(void)
     eeprom_keyOffCheckForExpiredFirmware();
     setFrequency_GridPWM_100Hz();
     LTC68042configure_doesActualPackSizeMatchUserConfig();
-    energy_storeTrip();-
+    energy_storeTrip();
 
     time_latestKeyOff_ms_set(millis()); //MUST RUN LAST!
 }
