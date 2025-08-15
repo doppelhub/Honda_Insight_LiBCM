@@ -660,7 +660,7 @@ String LiDisplay_readCommand() {
             if ((uint8_t)buffer != 26) ret += buffer;   // Ignore Empty Spaces
         }
     };
-
+	LiDisplay_updateDebugTextBox(ret);
     return ret;
 }
 
@@ -695,7 +695,7 @@ void LiDisplay_processCommand(String cmd_str) {
     if (String(cmd_obj_type) == "b")
 	{
         // Button Pressed
-        if ((cmd_page_id == (uint8_t)LiDisplay_DrivingPageId) || ((uint8_t)LiDisplay_DrivingPageReqId) || (cmd_page_id == (uint8_t)LIDISPLAY_GRIDCHARGE_PAGE_ID))
+        if ((cmd_page_id == (uint8_t)LiDisplay_DrivingPageId) || (cmd_page_id == (uint8_t)LiDisplay_DrivingPageReqId) || (cmd_page_id == (uint8_t)LIDISPLAY_GRIDCHARGE_PAGE_ID))
 		{
             if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_SCREEN)
 			{	// Screen Button from either Driving or GC Page
