@@ -20,6 +20,10 @@
 
     uint8_t LiDisplay_bytesAvailableForWrite(void);
 
+	String LiDisplay_printString(String data);
+
+	void LiDisplay_writeInstructionTerminationBytes();
+
     uint8_t LiDisplay_writeByte(uint8_t data);
 
     uint8_t LiDisplay_readByte(void);

@@ -91,7 +91,6 @@ String gc_currently_selected_cell_id_str = "99";    // An absurd initialization 
 static uint32_t key_time_begin_ms = 0;
 
 static uint8_t currentFanSpeed = 0;
-static uint8_t currentHeaterState = 3;	// 3 is an absurd initialization value
 
 bool gc_sixty_s_fomoco_e_block_enabled = false;
 
@@ -144,10 +143,8 @@ void LiDisplay_updateNumericVal(uint8_t page, String elementName, uint8_t elemen
 
         LiDisplay_Number_Str = "page" + String(page) + "." + String(elementName) + "." + attrMap[elementAttrIndex] + "=" + value;
 
-        Serial1.print(LiDisplay_Number_Str);
-        Serial1.write(0xFF);
-        Serial1.write(0xFF);
-        Serial1.write(0xFF);
+        LiDisplay_printString(LiDisplay_Number_Str);
+		LiDisplay_writeInstructionTerminationBytes();
     #endif
 }
 
@@ -159,10 +156,8 @@ void LiDisplay_updateStringVal(uint8_t page, String elementName, uint8_t element
 
         LiDisplay_String_Str = "page" + String(page) + "." + String(elementName) + "." + attrMap[elementAttrIndex] + "=" + String('"') + value + String('"');
 
-        Serial1.print(LiDisplay_String_Str);
-        Serial1.write(0xFF);
-        Serial1.write(0xFF);
-        Serial1.write(0xFF);
+        LiDisplay_printString(LiDisplay_String_Str);
+        LiDisplay_writeInstructionTerminationBytes();
     #endif
 }
 
@@ -207,10 +202,12 @@ void LiDisplay_resetDrivingPageVariables()
 {
 	maxElementId = LIDISPLAY_DRIVING_PAGE_INTITIAL_MAX_ELEMENT_ID;
 	LiDisplayElementToUpdate = 0;
-
+	// Set all the onScreen variables to their initialization values.
+	LiDisplay_AvgCellVoltage_onScreen = 9999;		// T28
 	LiDisplay_FanSpeed_onScreen = 100;
 	LiDisplay_PackVoltageActual_onScreen = 100;
-	LiDisplay_heaterState_onScreen = 2;
+	LiDisplay_PackVoltageSpoofed_onScreen = 100;	// T24
+	LiDisplay_heaterState_onScreen = 2;				// T22
 	LiDisplay_SoC_onScreen = 100;
 	LiDisplay_SoCBars_onScreen = 100;
 	LiDisplay_BattTemp_onScreen = 100;
@@ -310,10 +307,8 @@ void LiDisplay_updateGlobalObjectVal(String elementName, uint8_t elementAttrInde
 
         LiDisplay_ObjectUpdate_Str = String(elementName) + "." + attrMap[elementAttrIndex] + "=" + value;
 
-        Serial1.print(LiDisplay_ObjectUpdate_Str);
-        Serial1.write(0xFF);
-        Serial1.write(0xFF);
-        Serial1.write(0xFF);
+        LiDisplay_printString(LiDisplay_ObjectUpdate_Str);
+        LiDisplay_writeInstructionTerminationBytes();
     #endif
 }
 
@@ -391,10 +386,8 @@ LiDisplay_updateNextCellValue() {
 
     LiDisplay_Color_Str = "page" + String(LIDISPLAY_GRIDCHARGE_PAGE_ID) + ".j" + String(cellToUpdate) + ".pco" + "=" + cell_color_number;
 
-    Serial1.print(LiDisplay_Color_Str);
-    Serial1.write(0xFF);
-    Serial1.write(0xFF);
-    Serial1.write(0xFF);
+    LiDisplay_printString(LiDisplay_Color_Str);
+    LiDisplay_writeInstructionTerminationBytes();
 
     if (gc_currently_selected_cell_id_str.toInt() == cellToUpdate)
 	{
@@ -581,9 +574,9 @@ void LiDisplay_calculateFanSpeedStr() {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void LiDisplay_calculateHeaterState() {
-    if (gpio_isHeaterOnNow() == YES)	{ currentHeaterState = 1; }
-	else								{ currentHeaterState = 0; }
+uint8_t LiDisplay_calculateHeaterState() {
+    if (gpio_isHeaterOnNow() == YES)	{ return 1; }
+	else								{ return 0; }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -640,11 +633,8 @@ void LiDisplay_updatePage() {
         Serial.print("LiDisplay_updatePage ");
         Serial.print(LiDisplay_Page_Str);
 
-        Serial1.print(LiDisplay_Page_Str);
-
-        Serial1.write(0xFF);
-        Serial1.write(0xFF);
-        Serial1.write(0xFF);
+        LiDisplay_printString(LiDisplay_Page_Str);
+        LiDisplay_writeInstructionTerminationBytes();
 
         LiDisplayCurrentPageNum = LiDisplaySetPageNum;
 
@@ -659,8 +649,8 @@ String LiDisplay_readCommand() {
     String ret = "";
     char buffer = "";
 
-    while (Serial1.available() > 0) {
-        buffer = Serial1.read();
+    while (LiDisplay_bytesAvailableToRead() > 0) {
+        buffer = LiDisplay_readByte();
         if ((uint8_t)buffer != 0xff) {  // Ignore Termination character
             if ((uint8_t)buffer != 26) ret += buffer;   // Ignore Empty Spaces
         }
@@ -699,7 +689,7 @@ void LiDisplay_processCommand(String cmd_str) {
     if (String(cmd_obj_type) == "b")
 	{
         // Button Pressed
-        if ((cmd_page_id == (uint8_t)LiDisplay_DrivingPageId) || (cmd_page_id == (uint8_t)LIDISPLAY_GRIDCHARGE_PAGE_ID))
+        if ((cmd_page_id == (uint8_t)LiDisplay_DrivingPageId) || ((uint8_t)LiDisplay_DrivingPageReqId) || (cmd_page_id == (uint8_t)LIDISPLAY_GRIDCHARGE_PAGE_ID))
 		{
             if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_SCREEN)
 			{	// Screen Button from either Driving or GC Page
@@ -863,12 +853,16 @@ void LiDisplay_updateElement() {
 					LiDisplay_checkFirmwareExpiration();
 					LiDisplay_calculateFanSpeedStr();
 					LiDisplay_calculateSoCGaugeBars();
-					LiDisplay_calculateHeaterState();
-					if (LiDisplay_heaterState_onScreen != currentHeaterState)
+					if (LiDisplay_heaterState_onScreen != LiDisplay_calculateHeaterState())
 					{
-						if (currentHeaterState == 1) { LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t22", 0, (String("HEATER ON"))); }
-						if (currentHeaterState == 0) { LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t22", 0, (String(" "))); }
-						LiDisplay_heaterState_onScreen = currentHeaterState;
+						if (LiDisplay_calculateHeaterState() == 1) {
+							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t22", 0, (String("HEATER ON")));
+							LiDisplay_heaterState_onScreen = 1;
+						}
+						else if (LiDisplay_calculateHeaterState() == 0) {
+							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t22", 0, (String(" ")));
+							LiDisplay_heaterState_onScreen = 0;
+						}
 					}
 					else if (LiDisplay_FanSpeed_onScreen != currentFanSpeed)
 					{
@@ -1187,6 +1181,23 @@ uint8_t LiDisplay_bytesAvailableForWrite(void)
     #ifdef LIDISPLAY_CONNECTED
         return Serial1.availableForWrite();
     #endif
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+String LiDisplay_printString(String data)
+{
+    #ifdef LIDISPLAY_CONNECTED
+        Serial1.print(data);
+        return data;
+    #endif
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void LiDisplay_writeInstructionTerminationBytes()
+{
+	Serial1.write(0xFF); Serial1.write(0xFF); Serial1.write(0xFF);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
