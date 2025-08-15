@@ -126,34 +126,43 @@ void debugUSB_printLatest_data_gridCharger(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//JTS2doNow: Add hi/lo cell number
 void debugUSB_printData_power(void)
 {
     //t= 1080 microseconds max
     //comma delimiter to simplify data analysis
     //Complete string should be 63 characters or less (to prevent waiting for the buffer to empty)
-    //                        111111111122222222223333333333444444444455555555556666
-    //               123456789012345678901234567890123456789012345678901234567890123
-    //               ***************************************************************
-    //Serial.print(F("\n140,100,A, 170,156,V, 3.79,3.77,V, 34567,mAh, 28.5,kW, 23,C"  )); //use comma for easy parsing
-    Serial.print(F("\n"                                                             ));
-    Serial.print(String( adc_getLatestBatteryCurrent_amps()                         ));
-    Serial.print(F(     ","                                                         ));
-    Serial.print(String( adc_getLatestSpoofedCurrent_amps()                         ));
-    Serial.print(F(         ",A, "                                                  ));
-    Serial.print(String( LTC68042result_packVoltage_get()                           ));
-    Serial.print(F(                ","                                              ));
-    Serial.print(String( vPackSpoof_getSpoofedPackVoltage()                         ));
-    Serial.print(F(                    ",V, "                                       ));
-    Serial.print(String( (LTC68042result_hiCellVoltage_get() * 0.0001), 3           ));
-    Serial.print(F(                            ","                                  ));
-    Serial.print(String( (LTC68042result_loCellVoltage_get() * 0.0001), 3           ));
-    Serial.print(F(                                 ",V, "                          ));
-    Serial.print(String( SoC_getBatteryStateNow_mAh()                               ));
-    Serial.print(F(                                          ",mAh, "               ));
-    Serial.print(String( (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001), 1 ));
-    Serial.print(F(                                                    ",kW, "      ));
-    Serial.print(String( temperature_battery_getLatest()                            ));
-    Serial.print(F(                                                           ",C " ));
+    //                      111111111122222222223333333333444444444455555555556666
+    //             123456789012345678901234567890123456789012345678901234567890123
+    //             ***************************************************************
+    //            \n140,100,A, 170,156,V, 3.79,3.77,V, 34567,mAh, 28.5,kW, 23,C
+    //            \n140,100,A 170,156,V 3.79,3.77,V 48,47,# 34567,mAh 28.5,kW 23,C
+    Serial.print('\n'                                                               );
+    Serial.print(adc_getLatestBatteryCurrent_amps()                                 );
+    Serial.print(     ','                                                           );
+    Serial.print(adc_getLatestSpoofedCurrent_amps()                                 );
+    Serial.print(F(       ",A "                                                    ));
+    Serial.print(LTC68042result_packVoltage_get()                                   );
+    Serial.print(               ','                                                 );
+    Serial.print(vPackSpoof_getSpoofedPackVoltage()                                 );
+    Serial.print(F(                 ",V "                                          ));
+    Serial.print(LTC68042result_hiCellVoltage_get() * 0.0001, 3                     );
+    Serial.print(                          ','                                      );
+    Serial.print(LTC68042result_loCellVoltage_get() * 0.0001, 3                     );
+    Serial.print(F(                             ",V "                              ));
+    Serial.print(LTC68042result_hiCellNum_get()                                     );
+    Serial.print(                                    ','                            );
+    Serial.print(LTC68042result_loCellNum_get()                                     );
+    Serial.print(F(                                     ",# "                      ));
+    Serial.print(SoC_getBatteryStateNow_mAh()                                       );
+    Serial.print(F(                                             ",mAh "            ));
+    Serial.print(LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001, 1);
+    Serial.print(F(                                                      ",kW "    ));
+    Serial.print(temperature_battery_getLatest()                                    );
+    Serial.print(F(                                                            ",C"));
+    //                      111111111122222222223333333333444444444455555555556666
+    //             123456789012345678901234567890123456789012345678901234567890123
+    //             ***************************************************************
 
     transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE;
 }

@@ -64,7 +64,30 @@ void printText_UNUSED(void) { Serial.print(F("Unused")); }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNext: Add fan test ($TESTF) that briefly runs fans at low speed
+//LiBCM's atoi() implementation for uint8_t
+uint8_t get_uint8_FromInput(uint8_t digit1, uint8_t digit2, uint8_t digit3)
+{
+    bool errorOccurred = false;
+    uint8_t numDecimalDigits = 3;
+    uint8_t decimalValue = 0;
+
+    if      (digit1 == STRING_TERMINATION_CHARACTER) { errorOccurred = true; }
+    else if (digit2 == STRING_TERMINATION_CHARACTER) { numDecimalDigits = 1; }
+    else if (digit3 == STRING_TERMINATION_CHARACTER) { numDecimalDigits = 2; }
+
+    if (errorOccurred == true) { Serial.print(F("\nInvalid uint8_t Entry")); }
+    else
+    {
+        if      (numDecimalDigits == 1) { decimalValue =                                      (digit1-'0'); }
+        else if (numDecimalDigits == 2) { decimalValue =                    (digit1-'0')*10 + (digit2-'0'); }
+        else if (numDecimalDigits == 3) { decimalValue = (digit1-'0')*100 + (digit2-'0')*10 + (digit3-'0'); }
+    }
+
+    return decimalValue;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void USB_userInterface_runTestCode(uint8_t testToRun)
 {
     Serial.print(F("\nRunning Test: "));
@@ -83,15 +106,26 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     }
     else if (testToRun == '2')
     {
-        printText_UNUSED();
+        //0123456789
+        //$TEST2=123
+        Serial.print(F("battsci AA[2] set to: "));
+        uint8_t newValue = get_uint8_FromInput(line[7],line[8],line[9]);
+        Serial.print(newValue);
+        battsci_frameAA_byte2_set(newValue);
     }
     else if (testToRun == '3')
     {
-        printText_UNUSED();
+        Serial.print(F("battsci AA[3] set to: "));
+        uint8_t newValue = get_uint8_FromInput(line[7],line[8],line[9]);
+        Serial.print(newValue);
+        battsci_frameAA_byte3_set(newValue);
     }
     else if (testToRun == '4')
     {
-        printText_UNUSED();
+        Serial.print(F("battsci AA[4] set to: "));
+        uint8_t newValue = get_uint8_FromInput(line[7],line[8],line[9]);
+        Serial.print(newValue);
+        battsci_frameAA_byte4_set(newValue);
     }
     else if (testToRun == '5')
     {
@@ -115,6 +149,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     }
 
     //Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
+    //JTS2doNext: Add fan test ($TESTF) that briefly runs fans at low speed
     else if (testToRun == 'T') { temperature_measureAndPrintAll(); }
     else if (testToRun == 'R') { LTC6804gpio_areAllVoltageReferencesPassing(); }
     else if (testToRun == 'W') { batteryHistory_printAll(); }
@@ -182,12 +217,8 @@ void printHelp(void)
         "\n -'$FAN' display fan status.  '$FAN=OFF'/LOW/HI to set."
         "\n -'$IHACK' display current hack setting.  '$IHACK=00'/20/40/60 to set."
         "\n -'$VHACK' display voltage hack setting.  '$VHACK=OEM'/ASSISTONLY_VAR/ASSISTONLY_BIN/ALWAYS."
-        "\n -'$ASSIST_OFF' disable assist until LiBCM resets."
-        "\n -'$ASSIST_ON' enable assist until LiBCM resets."
-        "\n -'$REGEN_OFF' disable regen until LiBCM resets."
-        "\n -'$REGEN_ON' enable regen until LiBCM resets."
-        "\n -'SoC_MAX' display max allowed SoC.  'SoC_MAX=__' to set."
-        "\n -'SoC_MIN' display min allowed SoC.  'SoC_MIN=__' to set."
+        "\n -'$AST=ON/OFF'"
+        "\n -'$RGN=ON/OFF'"
         */
         ));
     //When adding new commands, make sure to add cases to the following functions:
@@ -198,57 +229,29 @@ void printHelp(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add '$SPOOF' code
-//JTS2doNow: Finish this function
 void printVspoofInstructions(void)
 {
     Serial.print(F("\n\nVoltage Spoofing Commands:"
-        "\n -'$BVO=_ : +/-/0: increase/decrease/reset BVO (OBDIIC&C parameter 0x0A)"
-        "\n -'$MVO=_ : +/-/0: increase/decrease/reset MVO (OBDIIC&C parameter 0x05)"
+        "\n -'$BVO=_ : +/-/0: adjust OBDIIC&C parameter 0x0A"
+        "\n -'$MDV=_ : +/-/0: adjust OBDIIC&C parameter 0x05"
+        "\n -'$SPF=_ : +/-/0: adjust LiBCM's max allowed VpackSpoof"
         "\n"
-        "\nInstructions:"
-        "\n 1: KeyON, engine not running, no IMA CELs"
-        "\n 2: Display above parameters on OBDIIC&C"
-        "\n 3: Compare LiBCM's spoofed pack voltage to the above parameters."
-        "\n 4: Adjust above parameters as needed to make all voltages equal."
-        "\n    For example, if OBDII BVO is 169 volts & Vspoof is 175 volts,"
-        "\n                 type $BVO=+ to increase BVO. Repeat as needed."
-        "\n Goal: All three parameters within 5 volts."
-
+        "\nCalibration instructions:"
+        "\n 0: KeyON, engine off, IMA light must remain off throughout test"
+        "\n 1: Configure OBDIIC&C to display BVO parameter 0x0A"
+        "\n 2: Configure OBDIIC&C to display MDV parameter 0x05"
+        "\n 4: Use $BVO=_ to adjust OBDIIC&C BVO value until equal to VpackSpoof"
+        "\n    Example: BVO is 169 volts & VpackSpoof is 175 volts. Type '$BVO=+' repeatedly until BVO=VpackSpoof"
+        "\n    Note: If '$BVO=+' doesn't increase BVO, type '$SPF=-' to reduce VpackSpoof"
+        "\n 5: Adjust MDV until equal to VpackSpoof"
+        "\n    Example: MDV is 171 volts & VpackSpoof is 168 volts. Type '$MDV=-' repeatedly until MDV=VpackSpoof"
+        "\n 6: Verify VpackSpoof & BVO & MDV are within 5 volts (ideally 0 volts)"
         ));
-    //When adding new commands, make sure to add cases to the following functions:
-        //USB_userInterface_executeUserInput()
-        //eeprom_resetDebugValues() //if debug data is stored in EEPROM
-        //eeprom_verifyDataValid() //if data is stored in EEPROM
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void printText_invalidEntry (void) { Serial.print(F("\nInvalid Entry")); }
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-//LiBCM's atoi() implementation for uint8_t
-uint8_t get_uint8_FromInput(uint8_t digit1, uint8_t digit2, uint8_t digit3)
-{
-    bool errorOccurred = false;
-    uint8_t numDecimalDigits = 3;
-    uint8_t decimalValue = 0;
-
-    if      (digit1 == STRING_TERMINATION_CHARACTER) { errorOccurred = true; }
-    else if (digit2 == STRING_TERMINATION_CHARACTER) { numDecimalDigits = 1; }
-    else if (digit3 == STRING_TERMINATION_CHARACTER) { numDecimalDigits = 2; }
-
-    if (errorOccurred == true) { Serial.print(F("\nInvalid uint8_t Entry")); }
-    else
-    {
-        if      (numDecimalDigits == 1) { decimalValue =                                      (digit1-'0'); }
-        else if (numDecimalDigits == 2) { decimalValue =                    (digit1-'0')*10 + (digit2-'0'); }
-        else if (numDecimalDigits == 3) { decimalValue = (digit1-'0')*100 + (digit2-'0')*10 + (digit3-'0'); }
-    }
-
-    return decimalValue;
-}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -419,22 +422,33 @@ void USB_userInterface_executeUserInput(void)
             Serial.print(' ');
             if      ( (line[4]=='=')                                      &&
                      ((line[5]=='+') || (line[5]=='-') || (line[5]=='0')) &&
-                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetBVO_adjust(line[5]);        }
+                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetBVO_adjust(line[5]);     }
             else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetBVO_get()); }
-            else                                                             { printText_invalidEntry();          }
+            else                                                             { printText_invalidEntry();                 }
         }
         
-        //$MVO
-        //JTS2doNow: Change to latest name //'mvo' no longer used
-        else if ((line[1]=='M') && (line[2]=='V') && (line[3]=='O'))
+        //$MDV
+        else if ((line[1]=='M') && (line[2]=='D') && (line[3]=='V'))
         {
-            //MVO affects VPIN output
+            //MDV affects VPIN output
             Serial.print(' ');
             if      ( (line[4]=='=')                                      &&
                      ((line[5]=='+') || (line[5]=='-') || (line[5]=='0')) &&
-                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetMVO_adjust(line[5]);        }
-            else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetMVO_get()); }
-            else                                                             { printText_invalidEntry();          }
+                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetMDV_adjust(line[5]);     }
+            else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetMDV_get()); }
+            else                                                             { printText_invalidEntry();                 }
+        }
+
+        //$SPF
+        else if ((line[1]=='S') && (line[2]=='P') && (line[3]=='F'))
+        {
+            //MDV affects VPIN output
+            Serial.print(' ');
+            if      ( (line[4]=='=')                                      &&
+                     ((line[5]=='+') || (line[5]=='-') || (line[5]=='0')) &&
+                      (line[6]==STRING_TERMINATION_CHARACTER)              ) { vPackSpoof_offsetSPF_adjust(line[5]);     }
+            else if   (line[4]==STRING_TERMINATION_CHARACTER)                { Serial.print(vPackSpoof_offsetSPF_get()); }
+            else                                                             { printText_invalidEntry();                 }
         }
 
         //$SPOOF

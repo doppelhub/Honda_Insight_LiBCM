@@ -242,7 +242,7 @@ void temperature_handler(void)
 
     uint8_t keyState_Now = key_getSampledState(); //prevent mid-loop key state change
 
-    keyState_Now = turnSensorsOff_whenKeyStateChanges(keyState_Now); //JTS2doNow: function returns value meant for tempSensorState //writing to wrong variable?
+    keyState_Now = turnSensorsOff_whenKeyStateChanges(keyState_Now); //JTS2doNext: function returns value meant for tempSensorState //writing to wrong variable?
 
     static uint32_t latestTempMeasurement_ms = 0;
     static uint32_t latestSensorTurnon_ms = 0;

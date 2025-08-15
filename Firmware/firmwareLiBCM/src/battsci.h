@@ -19,6 +19,10 @@
     #define BATTSCI_DISABLE_ASSIST_FLAG 0x10
     #define BATTSCI_DISABLE_REGEN_FLAG  0x20
 
+    void battsci_frameAA_byte2_set(uint8_t newValue);
+    void battsci_frameAA_byte3_set(uint8_t newValue);
+    void battsci_frameAA_byte4_set(uint8_t newValue);
+
     void BATTSCI_begin();
 
     void BATTSCI_enable();
