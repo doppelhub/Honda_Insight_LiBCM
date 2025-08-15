@@ -213,8 +213,8 @@ void LiDisplay_resetDrivingPageVariables()
 	LiDisplay_SoC_onScreen = 100;
 	LiDisplay_SoCBars_onScreen = 100;
 	LiDisplay_BattTemp_onScreen = 100;
-	LiDisplay_NS_loCellNum_onScreen = 100;
-	LiDisplay_NS_hiCellNum_onScreen = 100;
+	LiDisplay_NS_loCellNum_onScreen = 100;			// T21
+	LiDisplay_NS_hiCellNum_onScreen = 100;			// T20
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -660,7 +660,7 @@ String LiDisplay_readCommand() {
             if ((uint8_t)buffer != 26) ret += buffer;   // Ignore Empty Spaces
         }
     };
-	LiDisplay_updateDebugTextBox(ret);
+	//LiDisplay_updateDebugTextBox(ret);
     return ret;
 }
 
@@ -726,7 +726,6 @@ void LiDisplay_processCommand(String cmd_str) {
             if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_SCREEN)
 			{
 				LiDisplay_exitSettingsPage(); // Screen Button from Settings Page
-				//if (key_getSampledState() == KEYSTATE_ON) LiDisplayGridChargerPageRequested = true;
 			}
         }
     }
@@ -860,7 +859,7 @@ void LiDisplay_updateElement() {
 				case 2: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
 				case 3: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t6", 0, (String((LTC68042result_loCellVoltage_get() * 0.0001),3))); break;
 				case 4: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t13", 0, key_time); break;
-				case 5: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t14", 0, (String(((LTC68042result_hiCellVoltage_get() * 0.1) - (LTC68042result_loCellVoltage_get() * 0.1)),1)+"mV")); break;	// Delta mV
+				case 5: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t14", 0, (String(((LTC68042result_hiCellVoltage_get() * 0.1) - (LTC68042result_loCellVoltage_get() * 0.1)),1)+"")); break;	// Delta mV
 				case 6: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t26", 0, String(adc_getLatestBatteryCurrent_amps())); break;	// Amps
 				// The other elements update less frequently.  We will update 1 of them.
 				// Priority is from least-likely to change to most-likely to change.
