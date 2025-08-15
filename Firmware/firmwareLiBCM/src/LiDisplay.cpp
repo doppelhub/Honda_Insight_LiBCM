@@ -714,9 +714,9 @@ void LiDisplay_processCommand(String cmd_str) {
 			else if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_BRIGHT)
 			{
 				// Brightness button pressed
-				if (LiDisplay_brightness == 100) { instruction_str = "dims33"; LiDisplay_brightness = 33; LiDisplay_updateDebugTextBox("Req'd Bright 33"); }
-				else if (LiDisplay_brightness == 33) { instruction_str = "dims66"; LiDisplay_brightness = 66; LiDisplay_updateDebugTextBox("Req'd Bright 66"); }
-				else if (LiDisplay_brightness == 66) { instruction_str = "dims100"; LiDisplay_brightness = 100; LiDisplay_updateDebugTextBox("Req'd Bright 100"); }
+				if (LiDisplay_brightness == 100) { instruction_str = "dim33"; LiDisplay_brightness = 33; LiDisplay_updateDebugTextBox("Req'd Bright 33"); }
+				else if (LiDisplay_brightness == 33) { instruction_str = "dim66"; LiDisplay_brightness = 66; LiDisplay_updateDebugTextBox("Req'd Bright 66"); }
+				else if (LiDisplay_brightness == 66) { instruction_str = "dim100"; LiDisplay_brightness = 100; LiDisplay_updateDebugTextBox("Req'd Bright 100"); }
 				LiDisplay_printString(instruction_str);
 				LiDisplay_writeInstructionTerminationBytes();
 			}
