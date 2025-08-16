@@ -714,9 +714,9 @@ void LiDisplay_processCommand(String cmd_str) {
 			else if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_BRIGHT)
 			{
 				// Brightness button pressed
-				if (LiDisplay_brightness == 100) { instruction_str = "dim33"; LiDisplay_brightness = 33; LiDisplay_updateDebugTextBox("Req'd Bright 33"); }
-				else if (LiDisplay_brightness == 33) { instruction_str = "dim66"; LiDisplay_brightness = 66; LiDisplay_updateDebugTextBox("Req'd Bright 66"); }
-				else if (LiDisplay_brightness == 66) { instruction_str = "dim100"; LiDisplay_brightness = 100; LiDisplay_updateDebugTextBox("Req'd Bright 100"); }
+				if (LiDisplay_brightness == 100) { instruction_str = "dim=33"; LiDisplay_brightness = 33; LiDisplay_updateDebugTextBox("Req'd Bright 33"); }
+				else if (LiDisplay_brightness == 33) { instruction_str = "dim=66"; LiDisplay_brightness = 66; LiDisplay_updateDebugTextBox("Req'd Bright 66"); }
+				else if (LiDisplay_brightness == 66) { instruction_str = "dim=100"; LiDisplay_brightness = 100; LiDisplay_updateDebugTextBox("Req'd Bright 100"); }
 				LiDisplay_printString(instruction_str);
 				LiDisplay_writeInstructionTerminationBytes();
 			}
@@ -741,6 +741,7 @@ void LiDisplay_processCommand(String cmd_str) {
 
         gc_currently_selected_cell_id_str = cmd_obj_id_str;
     }
+	buzzer_requestTone(BUZZER_REQUESTOR_USER, BUZZER_LOW);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -750,7 +751,10 @@ void LiDisplay_enforceCorrectPowerState() {
 	{
 		default:
 			// For reasons unknown, case 1 doesn't work, so we have to use default
-			if (!gpio_HMIStateNow()) gpio_turnHMI_on();
+			if (!gpio_HMIStateNow()) {
+				gpio_turnHMI_on();
+				LiDisplay_brightness = 100;
+			}
 			else if (gpio_HMIStateNow())
 			{
 				LiDisplayNeedToVerifyPowerState = false;
@@ -775,8 +779,8 @@ void LiDisplay_enforceCorrectPowerState() {
 				}
 			}
 			break;
-		case 2: if (!gpio_HMIStateNow()) gpio_turnHMI_on(); LiDisplayNeedToVerifyPowerState = false; break;
-		case 3: if (!gpio_HMIStateNow()) gpio_turnHMI_on(); LiDisplayNeedToVerifyPowerState = false; break;
+		case 2: if (!gpio_HMIStateNow()) gpio_turnHMI_on(); LiDisplay_brightness = 100; LiDisplayNeedToVerifyPowerState = false; break;
+		case 3: if (!gpio_HMIStateNow()) gpio_turnHMI_on(); LiDisplay_brightness = 100; LiDisplayNeedToVerifyPowerState = false; break;
 	}
 }
 
@@ -1091,6 +1095,7 @@ void LiDisplay_keyOn(void)
         Serial.print(F("\nLiDisplay_keyOn"));
         Serial.print(F("\nLiDisplay HMI Power On"));
         gpio_turnHMI_on();
+		LiDisplay_brightness = 100;
         Serial1.begin(57600,SERIAL_8N1);    // 2023 OCT -- Credit to IC User AfterEffect for finding that SERIAL_8N1 fixes comms issues with the Nextion
         hmi_power_millis = millis();
         key_time_begin_ms = millis();
@@ -1142,6 +1147,7 @@ void LiDisplay_gridChargerPluggedIn(void)
         if (!gpio_HMIStateNow())
 		{
             gpio_turnHMI_on();
+			LiDisplay_brightness = 100;
             Serial1.begin(57600,SERIAL_8N1);
             hmi_power_millis = millis();
         }
