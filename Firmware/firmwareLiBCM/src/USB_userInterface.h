@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 #ifndef USB_userInterface_h
@@ -9,7 +9,12 @@
 
     #define INPUT_FLAG_INSIDE_COMMENT 0x01
 
+    void USB_begin(void);
+    void USB_end(void);
+
     uint8_t USB_userInterface_getUserInput(void);
+
+    void USB_delayUntilTransmitBufferEmpty(void);
 
     void USB_userInterface_handler(void);
 

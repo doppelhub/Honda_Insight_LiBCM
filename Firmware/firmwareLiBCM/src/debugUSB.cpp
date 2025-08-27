@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //Handles serial debug data transfers from LIBCM to  host
@@ -181,7 +181,7 @@ void debugUSB_printData_cellVoltages(void)
     }
 
     if (++icToPrint < TOTAL_IC) { transmitStatus = TRANSMITTING_LARGE_MESSAGE; }
-    else                       { transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE; icToPrint = 0; Serial.print(F("\ncell voltages:")); }
+    else                        { transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE; icToPrint = 0; Serial.print(F("\ncell voltages:")); }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -292,6 +292,15 @@ void debugUSB_printConfigParameters(void)
     Serial.print(F("/Heat:"));
     if (heater_isConnected() == HEATER_NOT_CONNECTED) { Serial.print('N'); }
     else                                              { Serial.print('Y'); }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void debugUSB_printWelcomeMessage(void)
+{
+    Serial.print(F("\n\nLiBCM v" FW_VERSION ", " BUILD_DATE "\n'$HELP' for info\n"));
+    debugUSB_printHardwareRevision();
+    debugUSB_printConfigParameters();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

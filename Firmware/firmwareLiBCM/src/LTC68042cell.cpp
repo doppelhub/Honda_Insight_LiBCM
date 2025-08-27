@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //LTC6804 cell voltage data processor and related functions
@@ -289,7 +289,7 @@ bool LTC68042cell_nextVoltages(void)
     else if (presentState == LTC_STATE_FIRSTRUN)
     {
         //LTC6804 ICs were previously off
-        LTC68042configure_programVolatileDefaults(); 
+        LTC68042configure_programVolatileDefaults();
         startCellConversion();
         presentState = LTC_STATE_GATHER;
     }

@@ -1,0 +1,3 @@
+Switched from LTC6804 to LTC6811 starting on D192.
+New part is 100% compatible with old part.
+Switched primarily due to cost, but also due to accuracy improvements.

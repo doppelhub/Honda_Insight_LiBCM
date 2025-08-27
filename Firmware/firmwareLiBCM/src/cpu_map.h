@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //cpu_map.h - CPU and pin mapping configuration file
@@ -28,6 +28,8 @@
         #define PIN_GPIO1      A14 //with daughterboard: heater (if installed) //without daughterboard: not used
         #define PIN_GPIO2      A15
 
+        #define PIN_USB_RX          0
+        #define PIN_USB_TX          1
         #define PIN_METSCI_DE       2
         #define PIN_METSCI_REn      3
         #define PIN_TURNOFFLiBCM    4

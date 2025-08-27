@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 #ifndef gridCharger_h
@@ -42,6 +42,7 @@
     #define GRID_MIN_OFF_PERIOD__SHORT_ms  2000 //prevents rapid grid charger cycling
     #define GRID_MIN_OFF_PERIOD__LONG_ms  30000
 
+    uint8_t gridCharger_isAllowedNow(void);
     void gridCharger_handler(void);
 
 #endif

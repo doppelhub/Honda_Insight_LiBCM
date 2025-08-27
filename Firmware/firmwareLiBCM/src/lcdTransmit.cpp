@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //handles all communication with 4x20 lcd display
@@ -99,7 +99,7 @@ bool lcd_flashBacklight(void)
 
 //alternates between:
     //time since last keyON, and; //"tuuuuu" in seconds
-    //time until firmware expires //"EXPuuu" in hours
+    //time until firmware expires //"FWuuuu" in hours
 bool lcd_printTime_unitless(void)
 {
     bool didscreenUpdateOccur = SCREEN_DIDNT_UPDATE;
@@ -111,7 +111,7 @@ bool lcd_printTime_unitless(void)
     if (cycleFrameNumber_previous != cycleFrameNumber)
     {
         lcd2.setCursor(0,3);
-        if      (cycleFrameNumber == CYCLEFRAME_A) { lcd2.print(F("EXP")); }
+        if      (cycleFrameNumber == CYCLEFRAME_A) { lcd2.print(F("FW")); }
         else if (cycleFrameNumber == CYCLEFRAME_B) { lcd2.print(F("t" )); }
         
         cycleFrameNumber_previous = cycleFrameNumber;
@@ -119,15 +119,16 @@ bool lcd_printTime_unitless(void)
     }
     else if (cycleFrameNumber == CYCLEFRAME_A)
     {
-        //"EXPuuu" //firmware expiration time in hours
-        uint16_t firmwareExpirationTime_hours = REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get();
+        //"FWuuuu" //firmware expiration time in hours
+        uint16_t firmwareExpirationTime_hours = REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_hoursSinceLastFirmwareUpdate_get();
 
         if (timeValue_onScreen != firmwareExpirationTime_hours)
         {
-            lcd2.setCursor(3,3);
+            lcd2.setCursor(2,3);
 
-            if      (firmwareExpirationTime_hours < 10  ) { lcd2.print(F("  ")); } //one digit  (  0:   9)
-            else if (firmwareExpirationTime_hours < 100 ) { lcd2.print(F(" ") ); } //two digits ( 10:  99)
+            if      (firmwareExpirationTime_hours < 10  ) { lcd2.print(F("   ")); } //one   digit number (  0:   9)
+            else if (firmwareExpirationTime_hours < 100 ) { lcd2.print(F("  ") ); } //two   digit number ( 10:  99)
+            else if (firmwareExpirationTime_hours < 1000) { lcd2.print(F(" ")  ); } //three digit number (100: 999)
 
             lcd2.print(String(firmwareExpirationTime_hours));
 
@@ -575,6 +576,12 @@ void lcdTransmit_displayOff(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/*JTS2doLater: Add the following alert if LiBCM loses control
+LiBCM DETECTED A
+DANGEROUS CONDITION.
+TURN OFF IMA SWITCH
+IMMEDIATELY!!!!!!
+*/
 void lcdTransmit_Warning(uint8_t warningToDisplay)
 {
     static uint8_t whichRowToPrint = 0;
@@ -611,7 +618,7 @@ void lcdTransmit_Warning(uint8_t warningToDisplay)
         lcd2.setCursor(0,0); lcd2.print(F("ALERT: Measured cell"));
         lcd2.setCursor(0,1); lcd2.print(F("       count doesn't"));
         lcd2.setCursor(0,2); lcd2.print(F("       match setting"));
-        lcd2.setCursor(0,3); lcd2.print(F("       in config.h )"));
+        lcd2.setCursor(0,3); lcd2.print(F("       in config.h  "));
     }   
 
     if (++whichRowToPrint > 3) { whichRowToPrint = 0; }
@@ -628,7 +635,7 @@ void lcdTransmit_splashscreenKeyOff(void)
     lcd2.print(F("LiBCM v")); lcd2.print(String(FW_VERSION));
     lcd2.setCursor(0,1);
     lcd2.print(F("FW Hours Left: "));
-    lcd2.print(String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_uptimeStoredInEEPROM_hours_get() ));
+    lcd2.print(String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_hoursSinceLastFirmwareUpdate_get() ));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

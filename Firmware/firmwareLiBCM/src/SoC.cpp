@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //maintains battery state of charge
@@ -139,9 +139,9 @@ bool SoC_isThermalManagementAllowed(void)
 {
     bool enoughEnergy = NO;
 
-    if ((key_getSampledState() == KEYSTATE_ON)                                                ||
-        ((gpio_isGridChargerPluggedInNow() == YES) && (SoC_getBatteryStateNow_percent() > 3)) ||
-        (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC)       )
+    if ((key_getSampledState() == KEYSTATE_ON)                                                  ||
+        ((gpio_isGridChargerPluggedInNow() == YES) && (SoC_getBatteryStateNow_percent() > 3))   ||
+        (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC_PERCENT) )
     { enoughEnergy = YES; }
 
     return enoughEnergy;

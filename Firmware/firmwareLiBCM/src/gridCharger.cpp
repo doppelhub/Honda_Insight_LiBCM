@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 #include "libcm.h"
 
@@ -43,7 +43,7 @@ uint16_t determineMaxAllowedCellVoltage(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t isChargingAllowed(void)
+uint8_t gridCharger_isAllowedNow(void)
 {
     //order is important
     //external checks
@@ -114,14 +114,14 @@ void processChargerDisableReason(uint8_t canWeCharge)
 void chargerControlSignals_handler(void)
 {
     static uint8_t isChargingAllowed_previous = NO__UNINITIALIZED;
-           uint8_t isChargingAllowed_now      = isChargingAllowed();
+           uint8_t isChargingAllowed_now      = gridCharger_isAllowedNow();
 
     if (isChargingAllowed_now == YES__CHARGING_ALLOWED)
     {
         if (isChargingAllowed_previous != YES__CHARGING_ALLOWED)
         {
             Serial.print(F("\nCharging"));
-            adc_calibrateBatteryCurrentSensorOffset();
+            adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_ENABLED);
         }
 
         runFansIfNeeded(); //JTS2doLater: run fans as needed even when charging not allowed (e.g. to cool a hot pack)
@@ -160,8 +160,7 @@ void handleEvent_plugin(void)
 {
     Serial.print(F("Plugged In"));
     gpio_setGridCharger_powerLevel('0');
-    gpio_turnPowerSensors_on(); //so we can measure current //to save power, it would be nice to move this into YES__CHARGING_ALLOWED (solve powerup hysteresis)
-                                //JTS2doLater: Does turning these sensors on with the key off cause LiBCM's BATTSCI RS485 driver to output voltage into MCM?
+    gpio_turnPowerSensors_on(); //to measure current //JTS2doLater: to save power, move into YES__CHARGING_ALLOWED (solve powerup hysteresis)
     latestPlugin_ms = millis();
 }
 
@@ -175,6 +174,7 @@ void handleEvent_unplug(void)
     gpio_turnPowerSensors_off();
     fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);
     buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, BUZZER_OFF);
+    time_latestGridChargerUnplug_set();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

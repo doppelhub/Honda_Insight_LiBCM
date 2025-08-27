@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //BATTSCI Serial Functions
@@ -13,11 +13,13 @@
 
 #include "libcm.h"
 
+//JTS2doLater: add 'static' to all file-scoped variables
 uint8_t spoofedVoltageToSend_Counts = 0; //formatted as MCM expects to see it (Vpack / 2) //2 volts per count
 int16_t spoofedCurrentToSend_Counts = 0; //formatted as MCM expects to see it (2048 - deciAmps * 2) //50 mA per count
 
-uint8_t framePeriod_ms = 33;
+uint8_t framePeriod_ms = 33; //JTS2doLater: Add 'g_' to all file-scoped globals
 
+//JTS2doLater: post#3093 (http://insightcentral.net/threads/libcm-open-beta-support-thread.128957) explains how make the OEM SoC gauge update
 //JTS2doLater: Add different SoC profile for "charges every day" crew
 //JTS2doLater: store in 'PROGMEM' to keep out of RAM (but note array elements must be indexed differently)
 //LUT remaps actual lithium battery SoC (unit: percent) to mimic OEM NiMH behavior (unit: deciPercent)
@@ -38,8 +40,7 @@ const uint16_t remap_actualToSpoofedSoC[101] = {
     1000,                                    //LiCBM SoC = 100%
 };  //Data empirically gathered from OEM NiMH IMA system //see ../Firmware/Prototype Building Blocks/Remap SoC.ods for calculations
 
-uint16_t previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()];
-
+uint16_t previousOutputSoC_deciPercent = 0; //JTS2doNow: Verify claim that OEM SoC gauge won't work unless SoC is initially zero
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -56,7 +57,9 @@ void BATTSCI_begin(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_enable(void) {
+void BATTSCI_enable(void)
+{
+    power_usart2_enable(); //enable USART2 clock
     digitalWrite(PIN_BATTSCI_DE,HIGH);
     previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; // If user grid charged over night SoC may have changed a lot.
     
@@ -68,7 +71,11 @@ void BATTSCI_enable(void) {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_disable(void) { digitalWrite(PIN_BATTSCI_DE,LOW); }
+void BATTSCI_disable(void)
+{
+    power_usart2_disable(); //disable USART2 clock to save power
+    digitalWrite(PIN_BATTSCI_DE,LOW);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -190,6 +197,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
         if ((BATTSCI_isPackFull() == YES)                                                                || //pack is full
             ((temperature_battery_getLatest() < TEMP_FREEZING_DEGC + 2) && (BATTSCI_isPackEmpty() == NO)) ) //pack too cold to charge; DCDC still powered
             //JTS2doLater: Allow minimal regen when pack below freezing (e.g. using LiControl to limit max regen)
+            //JTS2doNow: Disable assist and regen if pack too hot
     #endif
         {
             flags |= BATTSCI_DISABLE_REGEN_FLAG; //when this flag is set, MCM draws zero power from IMA motor

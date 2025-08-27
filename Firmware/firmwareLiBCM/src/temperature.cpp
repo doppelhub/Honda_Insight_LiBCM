@@ -1,4 +1,4 @@
-//Copyright 2021-2023(c) John Sullivan
+//Copyright 2021-2024(c) John Sullivan
 //github.com/doppelhub/Honda_Insight_LiBCM
 
 //measures OEM temperature sensors
@@ -145,7 +145,7 @@ int8_t temperature_coolBatteryAbove_C(void)
 
     if      (key_getSampledState() == KEYSTATE_ON)            { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_KEYON;        }
     else if (gpio_isGridChargerPluggedInNow() == YES)         { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_GRIDCHARGING; }
-    else if ( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC) &&
+    else if ( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC_PERCENT) &&
               (key_getSampledState() == KEYSTATE_OFF) )       { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_KEYOFF;       }
     else /*KEYOFF && SoC too low*/                            { coolBattAboveTemp_C = TEMPERATURE_SENSOR_FAULT_HI;            } //don't request fan if SoC low
 
@@ -164,8 +164,8 @@ int8_t temperature_heatBatteryBelow_C(void)
 
     if      (key_getSampledState() == KEYSTATE_ON)           { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_KEYON;        }
     else if (gpio_isGridChargerPluggedInNow() == YES)        { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING; }
-    else if ( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC) &&
-             (key_getSampledState() == KEYSTATE_OFF) )       { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_KEYOFF;       }
+    else if ( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC_PERCENT) &&
+              (key_getSampledState() == KEYSTATE_OFF) )      { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_KEYOFF;       }
     else /*KEYOFF && SoC too low*/                           { heatBattBelowTemp_C = TEMPERATURE_SENSOR_FAULT_LO;            } //don't request fan if SoC low
 
     if      (fan_getSpeed_now() == FAN_HIGH) { heatBattBelowTemp_C += FAN_SPEED_HYSTERESIS_HIGH_degC; }
@@ -206,7 +206,7 @@ void temperature_handler(void)
 
     uint8_t keyState_Now = key_getSampledState(); //prevent mid-loop key state change
 
-    keyState_Now = turnSensorsOff_whenKeyStateChanges(keyState_Now);
+    keyState_Now = turnSensorsOff_whenKeyStateChanges(keyState_Now); //JTS2doNow: function returns value meant for tempSensorState //writing to wrong variable?
     
     static uint32_t latestTempMeasurement_ms = 0;
     static uint32_t latestSensorTurnon_ms = 0;
