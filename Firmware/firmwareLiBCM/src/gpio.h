@@ -1,3 +1,6 @@
+//Copyright 2021-2024(c) John Sullivan
+//github.com/doppelhub/Honda_Insight_LiBCM
+
 #ifndef gpio_h
     #define gpio_h
 
@@ -58,7 +61,7 @@
 
     void gpio_turnLiBCM_off(void);
 
-    bool gpio1_getState(void);
+    bool gpio1_getState(void); //JTS2doLater: replace with existing gpio_getPinState
     bool gpio2_getState(void);
     bool gpio3_getState(void);
 

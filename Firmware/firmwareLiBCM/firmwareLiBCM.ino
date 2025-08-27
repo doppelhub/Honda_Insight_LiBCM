@@ -12,12 +12,13 @@ void setup()
     wdt_disable();
     LiControl_begin(); //SPI errors until initialized
     LTC68042configure_initialize();
-    Serial.begin(115200); //USB
+    USB_begin();
     METSCI_begin();
     BATTSCI_begin();
     heater_begin();
     eeprom_begin();
     LiDisplay_begin();
+    powerSave_init();
 
     if (gpio_keyStateNow() == GPIO_KEY_ON) { keyOn_coldBootTasks();          }
     else                                   { debugUSB_printWelcomeMessage(); }
@@ -63,10 +64,15 @@ void loop()
             SoC_turnOffLiBCM_ifPackEmpty();
             debugUSB_printLatest_data_gridCharger();
         }
+        else
+        {
+            powerSave_turnOffIfAllowed();
+            powerSave_sleepIfAllowed();
+        }
     }
 
     USB_userInterface_handler();
     wdt_reset(); //Feed watchdog
-    blinkLED2(); //Heartbeat
+    LED_heartbeat();
     time_waitForLoopPeriod(); //wait here until next iteration
 }

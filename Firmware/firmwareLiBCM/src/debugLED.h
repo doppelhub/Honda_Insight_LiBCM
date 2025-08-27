@@ -8,12 +8,7 @@
 
     void LED(uint8_t LED_number, bool illuminated);
 
-    void blinkLED1(void);
+    void LED_heartbeat(void);
 
-    void blinkLED2(void);
-
-    void blinkLED3(void);
-
-    void blinkLED4(void);
-
+    void LED_turnAllOff(void);
 #endif

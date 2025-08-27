@@ -28,6 +28,8 @@
         #define PIN_GPIO1      A14 //with daughterboard: heater (if installed) //without daughterboard: not used
         #define PIN_GPIO2      A15
 
+        #define PIN_USB_RX          0
+        #define PIN_USB_TX          1
         #define PIN_METSCI_DE       2
         #define PIN_METSCI_REn      3
         #define PIN_TURNOFFLiBCM    4

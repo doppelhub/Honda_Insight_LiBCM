@@ -95,7 +95,6 @@ void adc_updateBatteryCurrent(void)
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //only call this function when no current is flowing through the sensor (e.g. when key is off).
-//JTS2doNext: call this function immediately at keyOn
 //MCM closes  pre-contactor ~190 ms after keyOn
 //MCM closes main contactor ~330 ms after keyOn
 void adc_calibrateBatteryCurrentSensorOffset(uint8_t isDebugTextSent)

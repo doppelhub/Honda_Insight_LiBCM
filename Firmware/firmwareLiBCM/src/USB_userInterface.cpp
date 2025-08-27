@@ -12,7 +12,34 @@ uint8_t line[USER_INPUT_BUFFER_SIZE]; //Stores user text as it's read from seria
 
 void printStringStoredInArray(const uint8_t *s)
 {
-  while (*s) { Serial.write(*s++); } //write each character until '0' (EOL character)
+    while (*s) { Serial.write(*s++); } //write each character until '0' (EOL character)
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void USB_delayUntilTransmitBufferEmpty(void)
+{
+    uint8_t maxWaitTimeForBufferToEmpty_ms = 10;
+
+    while ((Serial.availableForWrite() < 63)     &&
+           (maxWaitTimeForBufferToEmpty_ms-- > 0) ) { delay(1); } //wait for buffer to empty
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void USB_begin(void)
+{
+    power_usart0_enable();
+    Serial.begin(115200);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void USB_end(void)
+{
+    Serial.end();
+    pinMode(PIN_USB_RX, INPUT);
+    power_usart0_disable();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -140,8 +167,8 @@ void printHelp(void)
         "\n -'$LOOP: LiBCM loop period. '$LOOP=___' to set (1 to 255 ms)"
         "\n -'$SCIms': period between BATTSCI frames. '$SCIms=___' to set (0 to 255 ms)"
         "\n"
-        "\nLiBCM sends the following debug characters each time:"
-        "\n -'@': isoSPI errors occur"
+        "\nDebug characters:"
+        "\n -'@': isoSPI error occurred"
         "\n -'*': loop period exceeded"
         "\n"
         /*
@@ -363,6 +390,7 @@ void USB_userInterface_handler(void)
             Serial.print(F("\necho: "));
             printStringStoredInArray(line); //echo user input
 
+            time_latestUserInputUSB_set();
             USB_userInterface_executeUserInput();
 
             numCharactersReceived = 0; //reset for next line

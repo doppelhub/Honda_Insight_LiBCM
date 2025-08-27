@@ -41,58 +41,31 @@ void LED(uint8_t LED_number, bool illuminated)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void blinkLED1()
+void LED_heartbeat(void)
 {
     #ifdef LED_NORMAL
-        static uint32_t previousMillis = 0;
-        if ((uint32_t)(millis() - previousMillis) >= 100)
+        static uint32_t lastTimeTurnedOff_millis = 0;
+
+        if (digitalRead(PIN_LED2) == HIGH)
         {
-            previousMillis = millis();  //JTS2doLater: Handle millis() overflow (~50 days)
-            digitalWrite(PIN_LED1, !digitalRead(PIN_LED1) );
+            digitalWrite(PIN_LED2, LOW); //turn LED off
+            lastTimeTurnedOff_millis = millis();
         }
-    #endif  
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-void blinkLED2()
-{
-    #ifdef LED_NORMAL
-        static uint32_t previousMillis = 0;
-        if ((uint32_t)(millis() - previousMillis) >= 100)
+        else if (millis() - lastTimeTurnedOff_millis > 1000)
         {
-            previousMillis = millis();
-            digitalWrite(PIN_LED2, !digitalRead(PIN_LED2) );
+            digitalWrite(PIN_LED2, HIGH);
         }
     #endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void blinkLED3()
+void LED_turnAllOff(void)
 {
-    #ifdef LED_NORMAL
-        static uint32_t previousMillis = 0;
-        if ((uint32_t)(millis() - previousMillis) >= 100)
-        {
-            previousMillis = millis();
-            digitalWrite(PIN_LED3, !digitalRead(PIN_LED3) );
-        }
-    #endif
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-void blinkLED4()
-{
-    #ifdef LED_NORMAL
-        static uint32_t previousMillis = 0;
-        if ((uint32_t)(millis() - previousMillis) >= 100)
-        {
-            previousMillis = millis();
-            digitalWrite(PIN_LED4, !digitalRead(PIN_LED4) );
-        }
-    #endif
+    LED(1,OFF);
+    LED(2,OFF);
+    LED(3,OFF);
+    LED(4,OFF);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
