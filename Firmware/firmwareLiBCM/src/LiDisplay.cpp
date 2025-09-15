@@ -83,6 +83,8 @@ static uint32_t gc_connected_millis_most_recent_diff = 0;
 static uint16_t gc_charging_seconds = 0;
 static uint8_t gc_charging_minutes = 0;
 static uint8_t gc_charging_hours = 0;
+static bool LiDisplay_BuzzerRequested = false;
+static uint32_t LiDisplay_buzzerRequestMS = 0;
 
 static String gc_begin_soc_str = "0%";
 static String gc_time = "00:00:00";
@@ -225,6 +227,7 @@ void LiDisplay_resetGridChargerPageVariables()
 	LiDisplayElementToUpdate = 0;
 
 	gc_sixty_s_fomoco_e_block_enabled = false;
+	LiDisplay_heaterState_onScreen = 2;				// T22
 	LiDisplay_PackVoltageActual_onScreen = 100;
 	LiDisplay_BattTemp_onScreen = 100;
 }
@@ -742,6 +745,7 @@ void LiDisplay_processCommand(String cmd_str) {
         gc_currently_selected_cell_id_str = cmd_obj_id_str;
     }
 	buzzer_requestTone(BUZZER_REQUESTOR_USER, BUZZER_LOW);
+	LiDisplay_BuzzerRequested = true;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1017,6 +1021,17 @@ void LiDisplay_updateElement() {
 						LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t4", 0, String(LTC68042result_packVoltage_get()));
 						LiDisplay_PackVoltageActual_onScreen = LTC68042result_packVoltage_get();
 					}
+					else if (LiDisplay_heaterState_onScreen != LiDisplay_calculateHeaterState())
+					{
+						if (LiDisplay_calculateHeaterState() == 1) {
+							LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t22", 0, (String("HEATER ON")));
+							LiDisplay_heaterState_onScreen = 1;
+						}
+						else if (LiDisplay_calculateHeaterState() == 0) {
+							LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t22", 0, (String(" ")));
+							LiDisplay_heaterState_onScreen = 0;
+						}
+					}
 					else LiDisplay_updateNextCellValue();     break;
 
 				case 5: LiDisplay_updateNextCellValue();    break;
@@ -1039,6 +1054,11 @@ void LiDisplay_handler(void)
 {
 	#ifdef LIDISPLAY_CONNECTED
         static uint32_t millis_previous = 0;
+
+		if ((LiDisplay_BuzzerRequested) && ((millis - LiDisplay_buzzerRequestMS)) > 200) {
+			buzzer_requestTone(BUZZER_REQUESTOR_USER, BUZZER_OFF);
+			LiDisplay_BuzzerRequested = false;
+		}
 
 		LiDisplay_handleKeyOrGCStateChange();
 		if (LiDisplayNeedToVerifyPowerState) LiDisplay_enforceCorrectPowerState();
