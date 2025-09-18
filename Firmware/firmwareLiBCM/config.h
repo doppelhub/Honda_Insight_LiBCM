@@ -43,7 +43,7 @@
 
     //choose which display to use
     //using both displays simultaneously could cause timing issues (FYI: the Serial Monitor prints '*' each time the loop period is violated)
-        //#define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
+        #define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
         //#define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
 
     //you don't need to change any settings below this line (but you can if you know what you're doing):
@@ -149,6 +149,7 @@
 	#define LIDISPLAY_SPLASH_PAGE_MS 5000 // How long the splash page shows on LiDisplay.  Default 3000 (3 seconds)
 	#define LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS 5000 // Keep displaying the grid charging page this long before showing splash page when GC unplugged
 	#define PERIOD_TO_DISABLE_SLEEP_AFTER_KEYOFF_MS 8000 // Default is the sum of LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS and PERIOD_TO_DISABLE_SLEEP_AFTER_KEYOFF_MS
+	#define LIDISPLAY_SPLASH_PIC_ID 21 // Default is 21 for the old Citrus photo.  New options are Citrus 59, Silver 60, and Red 61
 	//#define LIDISPLAY_USE_NERD_SCREEN // uncomment to enable the nerd screen
 	//#define LIDISPLAY_FEELING_NERDY // you know you want to
 
