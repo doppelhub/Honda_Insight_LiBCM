@@ -5,11 +5,10 @@
 
 #include "libcm.h"
 
+// August 2025 -- Nerd Screen needs these to be variables instead of defined values
 static uint8_t LiDisplay_DrivingPageId = 0;
 static uint8_t LiDisplay_DrivingPageReqId = 0;
 
-//#define LIDISPLAY_DRIVING_PAGE_ID 0
-// #define LIDISPLAY_DRIVING_PAGE_REQ_ID 0
 #define LIDISPLAY_SPLASH_PAGE_ID 1
 #define LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID 2
 #define LIDISPLAY_GRIDCHARGE_PAGE_ID 3
@@ -17,7 +16,7 @@ static uint8_t LiDisplay_DrivingPageReqId = 0;
 
 // These are the numbers of updatable elements on the respective screens
 #define LIDISPLAY_DRIVING_PAGE_INTITIAL_MAX_ELEMENT_ID 7
-#define LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID 1
+#define LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID 2
 #define LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID 6
 
 
@@ -30,7 +29,7 @@ static uint8_t LiDisplay_DrivingPageReqId = 0;
 // We need to wait for it to power up before we tell it to go to the grid charger page.
 #define LIDISPLAY_MINIMUM_TIME_TO_UPDATE_AFTER_POWER_ON_MILLIS 400 // Note Sept 2025 -- Smaller values were not enough.  Even 200ms was not enough.
 
-#define LIDISPLAY_UPDATE_RATE_MILLIS 20     // One element is updated each time
+#define LIDISPLAY_UPDATE_RATE_MILLIS 20			// One element is updated each time
 #define LIDISPLAY_COMMAND_COOLDOWN_FRAMES 100	// 2024AUG19 -- We may be able to use a smaller value like 50
 
 #ifdef STACK_IS_48S
@@ -64,7 +63,7 @@ bool LiDisplay_NS_NSMessagePending = false;
 static uint16_t LiDisplay_AvgCellVoltage = 0;
 static uint8_t maxElementId = 8;
 static uint8_t LiDisplay_powerState = 0; // 0=Key off GC unplug    1=Key on GC unplug    2=Key off GC plugged    3=Key on GC plugged
-static bool LiDisplay_heaterState_onScreen = true;
+static bool LiDisplay_heaterState_onScreen = true;	// Initializing to true because, by default, when a screen with T22 load, T22 is displayed
 
 bool LiDisplaySplashPending = false;
 bool LiDisplayPowerOffPending = false;
@@ -210,15 +209,15 @@ void LiDisplay_resetDrivingPageVariables()
 	LiDisplayElementToUpdate = 0;
 	// Set all the onScreen variables to their initialization values.
 	LiDisplay_AvgCellVoltage_onScreen = 9999;		// T28
-	LiDisplay_FanSpeed_onScreen = 100;
-	LiDisplay_PackVoltageActual_onScreen = 100;
-	LiDisplay_PackVoltageSpoofed_onScreen = 100;	// T24
-	LiDisplay_heaterState_onScreen = true;				// T22
-	LiDisplay_SoC_onScreen = 100;
-	LiDisplay_SoCBars_onScreen = 100;
 	LiDisplay_BattTemp_onScreen = 100;
+	LiDisplay_FanSpeed_onScreen = 100;
+	LiDisplay_heaterState_onScreen = true;			// T22
 	LiDisplay_NS_loCellNum_onScreen = 100;			// T21
 	LiDisplay_NS_hiCellNum_onScreen = 100;			// T20
+	LiDisplay_PackVoltageActual_onScreen = 100;
+	LiDisplay_PackVoltageSpoofed_onScreen = 100;	// T24
+	LiDisplay_SoC_onScreen = 100;
+	LiDisplay_SoCBars_onScreen = 100;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -229,7 +228,7 @@ void LiDisplay_resetGridChargerPageVariables()
 	LiDisplayElementToUpdate = 0;
 
 	gc_sixty_s_fomoco_e_block_enabled = false;
-	LiDisplay_heaterState_onScreen = true;				// T22
+	LiDisplay_heaterState_onScreen = true;			// T22
 	LiDisplay_PackVoltageActual_onScreen = 100;
 	LiDisplay_BattTemp_onScreen = 100;
 }
@@ -798,7 +797,6 @@ void LiDisplay_userInputHandler() {
 	if (LiDisplayWaitingForCommand == 1)
 	{
 		LiDisplayWaitingForCommand -= 1;
-
 		cmd_str = LiDisplay_readCommand();
 
 		if (cmd_str != "")
@@ -807,7 +805,7 @@ void LiDisplay_userInputHandler() {
 			LiDisplay_processCommand(cmd_str);
 		}
 	}
-	if (Serial1.available() && (LiDisplayWaitingForCommand == 0)) { LiDisplayWaitingForCommand = LIDISPLAY_COMMAND_COOLDOWN_FRAMES; }  // Wait LIDISPLAY_COMMAND_COOLDOWN_FRAMES frames before checking for another command from the user
+	if (LiDisplay_bytesAvailableToRead() && (LiDisplayWaitingForCommand == 0)) { LiDisplayWaitingForCommand = LIDISPLAY_COMMAND_COOLDOWN_FRAMES; }  // Wait LIDISPLAY_COMMAND_COOLDOWN_FRAMES frames before checking for another command from the user
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -953,13 +951,12 @@ void LiDisplay_updateElement() {
 		break;
 
 		case LIDISPLAY_SPLASH_PAGE_ID:
-			// Splash page is the easiest.  It only has two elements that can be updated.
-			if (LiDisplayElementToUpdate >= 3) { LiDisplayElementToUpdate = 0; }
+			if (LiDisplayElementToUpdate >= 3) { LiDisplayElementToUpdate = 2; }
 			switch (LiDisplayElementToUpdate)
 			{
 				case 0: LiDisplay_updateStringVal(1, "t1", 0, String(FW_VERSION)); break;
 				case 1: LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_hoursSinceLastFirmwareUpdate_get())); break;
-				case 2: LiDisplay_updateNumericVal(1, "p0", 2, String(LIDISPLAY_SPLASH_PIC_ID)); maxElementId = (LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID - 1); break;
+				case 2: LiDisplay_updateNumericVal(1, "p0", 2, String(LIDISPLAY_SPLASH_PIC_ID)); maxElementId = (LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID - 1); LiDisplayElementToUpdate = 0; break;
 				default: maxElementId = LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID; break;
 			}
 		break;
@@ -1111,7 +1108,7 @@ void LiDisplay_keyOn(void)
         Serial.print(F("\nLiDisplay HMI Power On"));
         gpio_turnHMI_on();
 		LiDisplay_brightness = 100;
-        Serial1.begin(57600,SERIAL_8N1);    // 2023 OCT -- Credit to IC User AfterEffect for finding that SERIAL_8N1 fixes comms issues with the Nextion
+        LiDisplay_serialBegin();
         hmi_power_millis = millis();
         key_time_begin_ms = millis();
         LiDisplay_calculateKeyTimeStr(true);
@@ -1163,7 +1160,7 @@ void LiDisplay_gridChargerPluggedIn(void)
 		{
             gpio_turnHMI_on();
 			LiDisplay_brightness = 100;
-            Serial1.begin(57600,SERIAL_8N1);
+            LiDisplay_serialBegin();
             hmi_power_millis = millis();
         }
 		LiDisplay_resetGridChargerPageVariables();
@@ -1211,7 +1208,29 @@ void LiDisplay_setPageNumber(uint8_t page)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t LiDisplay_bytesAvailableForWrite(void)
+void LiDisplay_writeInstructionTerminationBytes()
+{
+	LiDisplay_writeByte(0xFF); LiDisplay_writeByte(0xFF); LiDisplay_writeByte(0xFF);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// All Abstracted Serial.1 functions are below.
+// Serial1 should not appear anywhere above this section.
+/////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void LiDisplay_serialBegin() {
+	#ifdef LIDISPLAY_CONNECTED
+		Serial1.begin(57600,SERIAL_8N1);    // 2023 OCT -- Credit to IC User AfterEffect for finding that SERIAL_8N1 fixes comms issues with the Nextion
+	#endif
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t LiDisplay_bytesAvailableForWrite()
 {
     #ifdef LIDISPLAY_CONNECTED
         return Serial1.availableForWrite();
@@ -1230,13 +1249,6 @@ String LiDisplay_printString(String data)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void LiDisplay_writeInstructionTerminationBytes()
-{
-	Serial1.write(0xFF); Serial1.write(0xFF); Serial1.write(0xFF);
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
 uint8_t LiDisplay_writeByte(uint8_t data)
 {
     #ifdef LIDISPLAY_CONNECTED
@@ -1247,7 +1259,7 @@ uint8_t LiDisplay_writeByte(uint8_t data)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t LiDisplay_readByte(void)
+uint8_t LiDisplay_readByte()
 {
     #ifdef LIDISPLAY_CONNECTED
         return Serial1.read();

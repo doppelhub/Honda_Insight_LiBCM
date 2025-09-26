@@ -18,16 +18,19 @@
 
     void LiDisplay_setPageNumber(uint8_t page); // Candidate for deletion -- page selection should probably only be done within LiDisplay.cpp
 
+	void LiDisplay_writeInstructionTerminationBytes(void);
+
+	// Only serial commands below.
+	void LiDisplay_serialBegin(void);
+
     uint8_t LiDisplay_bytesAvailableForWrite(void);
 
 	String LiDisplay_printString(String data);
-
-	void LiDisplay_writeInstructionTerminationBytes();
 
     uint8_t LiDisplay_writeByte(uint8_t data);
 
     uint8_t LiDisplay_readByte(void);
 
-    uint8_t LiDisplay_bytesAvailableToRead();
+    uint8_t LiDisplay_bytesAvailableToRead(void);
 
 #endif
