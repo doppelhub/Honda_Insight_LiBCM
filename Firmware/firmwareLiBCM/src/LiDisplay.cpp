@@ -41,9 +41,17 @@ static uint8_t LiDisplay_DrivingPageReqId = 0;
 uint8_t LiDisplayElementToUpdate = 0;
 uint8_t LiDisplayCurrentPageNum = 0;
 uint8_t LiDisplaySetPageNum = LiDisplay_DrivingPageId;
+
 uint8_t LiDisplaySoCBarCount = 0;
 uint8_t LiDisplayChrgAsstPicId = 22;
 uint8_t LiDisplayWaitingForCommand = 0;
+
+static uint8_t LiDisplay_currentParamId = 0;	// Settings Page currently selected parameter
+static uint16_t LiDisplay_currentParamVal = 0;
+static uint16_t LiDisplay_currentGlobalNumVal = 0;
+static String LiDisplay_paramName_onScreen = "";
+static uint16_t LiDisplay_paramVal_onScreen = 0;
+static String Lidisplay_paramDesc_onScreen = "";
 
 // Initializing to an absurd number for all 7 variables so that on first run they will be updated on screen
 static uint16_t  LiDisplay_AvgCellVoltage_onScreen = 9999;
@@ -106,6 +114,7 @@ const String attrMap[5] = {
     "pco"   // primary colour
 };
 
+const uint8_t maxParamID = 1;
 const String fanSpeedDisplay[4] = { "FAN OFF", "FAN LOW", "FAN MED", "FAN HIGH" };
 const String editableParamMap[2] = { "CELL_VMAX_GRIDCHARGER", "LiDisp Cell Bal Res Window" };
 const String editableParamDescriptions[2] = {
@@ -245,6 +254,18 @@ void LiDisplay_resetSplashPageVariables()
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void LiDisplay_resetSettingsPageVariables(bool resetGlobalVar) {
+    // Start off at CELL_VMAX_GRIDCHARGER
+	LiDisplay_currentParamId = 0;
+	LiDisplay_currentParamVal = 0;
+	LiDisplay_currentGlobalNumVal = 0;
+	LiDisplay_paramName_onScreen = "";
+	LiDisplay_paramVal_onScreen = 0;
+	if (resetGlobalVar) { Lidisplay_paramDesc_onScreen = ""; }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void LiDisplay_handleKeyOrGCStateChange()
 {
 	// TODO_NATALYA (2024 Jan) -- hmi_power_millis and gc_connected_millis timers to ensure screen is changed can probably be dealt with in here
@@ -293,7 +314,7 @@ void LiDisplay_handleKeyOrGCStateChange()
 				switch(new_power_state) {
 					case 0: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_OFF); LiDisplay_keyOff(); LiDisplay_gridChargerUnplugged(); total_splash_page_delay_ms = (250 + LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS); break; // Driver unplugged GC at exact instant contactor relay opened (might happen -- edge case)
 					case 1: LiDisplay_gridChargerUnplugged(); break; // Driver unplugged GC
-					case 2: LiDisplay_keyOff(); LiDisplay_resetGridChargerPageVariables(); break; // Driver keyed OFF, contactor finally opened
+					case 2: LiDisplay_keyOff(); break; // Driver keyed OFF, contactor finally opened
 					case 3: break;	// Should never end up here
 				}
 				break;
@@ -580,40 +601,6 @@ void LiDisplay_calculateFanSpeedStr() {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void LiDisplay_initializeSettingsPage() {
-    // Start off at CELL_VMAX_GRIDCHARGER
-    LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t3", 0, editableParamMap[0]);
-    LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t4", 0, String(CELL_VMAX_GRIDCHARGER));
-    LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t5", 0, editableParamDescriptions[0]);
-    LiDisplay_updateGlobalObjectVal("n0", 1, String(CELL_VMAX_GRIDCHARGER));
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-void LiDisplay_exitSettingsPage(void) {
-    LiDisplaySettingsPageRequested = false;
-
-    LiDisplay_calculateCorrectPage();
-
-    switch (LiDisplayCurrentPageNum) {
-        case 0:
-			LiDisplay_resetDrivingPageVariables(); break;
-		case 6:
-			LiDisplay_resetDrivingPageVariables(); break;
-		case 7:
-			LiDisplay_resetDrivingPageVariables(); break;
-        case LIDISPLAY_SPLASH_PAGE_ID: LiDisplay_resetSplashPageVariables(); break;
-        case LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID:
-			maxElementId = 8;
-			gc_sixty_s_fomoco_e_block_enabled = false;
-			break;
-        case LIDISPLAY_GRIDCHARGE_PAGE_ID: LiDisplay_resetGridChargerPageVariables(); break;
-        default : break;
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
 void LiDisplay_checkFirmwareExpiration() {
 	if ((REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_hoursSinceLastFirmwareUpdate_get()) <= 0)
 	{
@@ -637,7 +624,7 @@ void LiDisplay_updatePage() {
         Serial.print("LiDisplay_updatePage ");
         Serial.print(LiDisplay_Page_Str);
 
-		if (LiDisplaySetPageNum == LIDISPLAY_SETTINGS_PAGE_ID) LiDisplay_initializeSettingsPage();
+		if (LiDisplaySetPageNum == LIDISPLAY_SETTINGS_PAGE_ID) LiDisplay_resetSettingsPageVariables(true);
 		if (LiDisplaySetPageNum == LIDISPLAY_SPLASH_PAGE_ID) LiDisplay_resetSplashPageVariables();
 		if (LiDisplaySetPageNum == LIDISPLAY_GRIDCHARGE_PAGE_ID) LiDisplay_resetGridChargerPageVariables();
 		if (LiDisplaySetPageNum == LiDisplay_DrivingPageReqId) LiDisplay_resetDrivingPageVariables();
@@ -702,7 +689,6 @@ void LiDisplay_processCommand(String cmd_str) {
             if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_SCREEN)
 			{	// Screen Button from either Driving or GC Page
 				LiDisplaySettingsPageRequested = true;
-				LiDisplay_resetGridChargerPageVariables();
 			}
             else if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_FAN)
 			{
@@ -727,7 +713,19 @@ void LiDisplay_processCommand(String cmd_str) {
 		{
             if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_SCREEN)
 			{
-				LiDisplay_exitSettingsPage(); // Screen Button from Settings Page
+				// Screen Button was pressed -- return to either driving or gridcharge page
+				LiDisplaySettingsPageRequested = false;
+				LiDisplay_calculateCorrectPage();
+			}
+			else if ((cmd_str[4] - '0') == 1)
+			{
+				// Left Arrow Pressed
+				if (LiDisplay_currentParamId > 0) { LiDisplay_currentParamId -= 1;}
+			}
+			else if ((cmd_str[4] - '0') == 2)
+			{
+				// Right Arrow Pressed
+				if (LiDisplay_currentParamId < maxParamID) { LiDisplay_currentParamId += 1;}
 			}
         }
     }
@@ -769,7 +767,6 @@ void LiDisplay_enforceCorrectPowerState() {
 				if (((millis() - new_power_state_millis) > total_splash_page_delay_ms) && (LiDisplaySplashPending))
 				{
 					LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID;
-					LiDisplay_resetSplashPageVariables();
 					LiDisplay_updatePage(); // If this isn't here the splash page may not appear after key-off.
 					LiDisplaySplashPending = false;
 				}
@@ -838,6 +835,16 @@ uint16_t LiDisplay_calculateAvgCellVoltage() {
 	#ifdef STACK_IS_60S
 		return (LTC68042result_packVoltage_get() * 0.016666);
 	#endif
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void LiDisplay_SettingsPageValSwitch() {
+	switch (LiDisplay_currentParamId)
+	{
+		case 0: LiDisplay_currentParamVal = CELL_VMAX_GRIDCHARGER; break;
+		case 1: LiDisplay_currentParamVal = LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS; break;
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1034,7 +1041,23 @@ void LiDisplay_updateElement() {
 				default: maxElementId = LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID;	break;
 			}
 		break;
-		case LIDISPLAY_SETTINGS_PAGE_ID: break; // Placeholder for now (19 June 2025)
+		case LIDISPLAY_SETTINGS_PAGE_ID: // Placeholder for now (19 June 2025)
+			LiDisplay_SettingsPageValSwitch();
+			if (LiDisplay_paramName_onScreen != editableParamMap[LiDisplay_currentParamId])
+			{
+				LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t3", 0, editableParamMap[LiDisplay_currentParamId]);
+				LiDisplay_paramName_onScreen = editableParamMap[LiDisplay_currentParamId];
+			} else if (LiDisplay_paramVal_onScreen != LiDisplay_currentParamVal) {
+				LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t4", 0, String(LiDisplay_currentParamVal));
+				LiDisplay_paramVal_onScreen = LiDisplay_currentParamVal;
+			} else if (Lidisplay_paramDesc_onScreen != editableParamDescriptions[LiDisplay_currentParamId]) {
+				LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t5", 0, editableParamDescriptions[LiDisplay_currentParamId]);
+				Lidisplay_paramDesc_onScreen = editableParamDescriptions[LiDisplay_currentParamId];
+			} else if (LiDisplay_currentGlobalNumVal != LiDisplay_currentParamVal) {
+				LiDisplay_updateGlobalObjectVal("n0", 1, String(LiDisplay_currentParamVal));
+				LiDisplay_currentGlobalNumVal = LiDisplay_currentParamVal;
+			}
+		break;
 		default : break;
 	}
 
