@@ -194,7 +194,6 @@ void LiDisplay_calculateCorrectPage()
         if ( gpio_isGridChargerPluggedInNow())    { LiDisplaySetPageNum = LIDISPLAY_GRIDCHARGE_WARNING_PAGE_ID; }
         else if  (LiDisplaySplashPending)         { LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID;             }
         else if  (LiDisplaySettingsPageRequested) { LiDisplaySetPageNum = LIDISPLAY_SETTINGS_PAGE_ID;           }
-		//else if  (LiDisplayGridChargerPageRequested) { LiDisplaySetPageNum = LIDISPLAY_GRIDCHARGE_PAGE_ID;           }
         else                                      { LiDisplaySetPageNum = LiDisplay_DrivingPageReqId;            }
     }
 	else
@@ -255,10 +254,10 @@ void LiDisplay_resetSplashPageVariables()
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_resetSettingsPageVariables(bool resetGlobalVar) {
-    // Start off at CELL_VMAX_GRIDCHARGER
+    // Start at CELL_VMAX_GRIDCHARGER
 	LiDisplay_currentParamId = 0;
 	LiDisplay_currentParamVal = 0;
-	LiDisplay_currentGlobalNumVal = 0;
+	LiDisplay_currentGlobalNumVal = 0;	// Number input
 	LiDisplay_paramName_onScreen = "";
 	LiDisplay_paramVal_onScreen = 0;
 	if (resetGlobalVar) { Lidisplay_paramDesc_onScreen = ""; }
@@ -329,6 +328,7 @@ void LiDisplay_handleKeyOrGCStateChange()
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_updateGlobalObjectVal(String elementName, uint8_t elementAttrIndex, String value) {
+	// This is used for the number input on the settings page
     #ifdef LIDISPLAY_CONNECTED
         static String LiDisplay_ObjectUpdate_Str;
 
@@ -349,7 +349,7 @@ String LiDisplay_getCellVoltage(String cell_id_str) {
     String returned_voltage = "";
 
 
-    if (cell_id > MAX_CELL_INDEX) { return "ERROR "; }
+    if (cell_id > MAX_CELL_INDEX) { return "ERROR"; }
 
     if (cell_id <= 11) { ic_index = 0; ic_cell_num = (cell_id); }
     else if (cell_id <= 23) { ic_index = 1; ic_cell_num = (cell_id - 12); }
@@ -370,14 +370,12 @@ String LiDisplay_getCellVoltage(String cell_id_str) {
 /////////////////////////////////////////////////////////////////////////////////////////
 
 LiDisplay_updateNextCellValue() {
-    static String LiDisplay_Color_Str;
+    String LiDisplay_Color_Str;
     static uint8_t cellToUpdate = 0;
     static uint8_t ic_index = 0;
     static uint8_t ic_cell_num = 0;
-    static uint16_t cell_avg_voltage = 0; //TODO_NATALYA - JTS: this doesn't need to be static
-    static String cell_color_number = "2016";
-    static int cell_voltage_diff_from_avg = 0;
-    static int temp_cell_voltage = 0;
+    String cell_color_number = "2016";	// 2016 = Green
+    int cell_voltage_diff_from_avg = 0;
 
 
     if (cellToUpdate > MAX_CELL_INDEX) cellToUpdate = 0;
@@ -391,35 +389,28 @@ LiDisplay_updateNextCellValue() {
     else if (cellToUpdate <= 47) { ic_index = 3; ic_cell_num = (cellToUpdate - 36); }
     else if (cellToUpdate <= 59) { ic_index = 4; ic_cell_num = (cellToUpdate - 48); }
 
-    // 09 Feb 2023 -- cell_avg_voltage is a crude approximation of the centre of the voltage range.  Ideally this would be replaced with the median cell voltage.
-    LiDisplay_AvgCellVoltage = ((LTC68042result_hiCellVoltage_get() - LTC68042result_loCellVoltage_get()) * 0.5); //TODO_NATALYA - JTS: replace this line with next line
-    //LiDisplay_AvgCellVoltage = (LTC68042result_deltaCellVoltage_get() >> 1 ) + LTC68042result_loCellVoltage_get();
+    LiDisplay_AvgCellVoltage = (LTC68042result_deltaCellVoltage_get() >> 1 ) + LTC68042result_loCellVoltage_get();
+	cell_voltage_diff_from_avg = LiDisplay_AvgCellVoltage - LTC68042result_specificCellVoltage_get(ic_index, ic_cell_num);
 
-    cell_avg_voltage = (LiDisplay_AvgCellVoltage + LTC68042result_loCellVoltage_get()); //TODO_NATALYA - JTS: remove entire line and entire variable
-    LiDisplay_AvgCellVoltage = (cell_avg_voltage); // TODO_NATALYA - get rid of cell_avg_voltage //TODO_NATALYA - JTS: remove entire line
-    temp_cell_voltage = LTC68042result_specificCellVoltage_get(ic_index, ic_cell_num);
-
-    cell_voltage_diff_from_avg = cell_avg_voltage - temp_cell_voltage;
-
-    // 17 Oct 2023 -- Feedback from users and JTS indicates we should have the window larger than 3.2mV
-    // So now we will use LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS and are defaulting it to 6.4mV
-    if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * 2.5)) { cell_color_number = "63488"; }        // 63488 = Red
+	if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * 2.5)) { cell_color_number = "63488"; }        // 63488 = Red
     else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * 1.5)) { cell_color_number = "64480"; }   // 64480 = Orange
     else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * 0.5)) { cell_color_number = "65504"; }   // 65504 = Yellow
     else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -0.5)) { cell_color_number = "2016"; }   // 2016 = Green
     else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -1.5)) { cell_color_number = "2047"; }   // 2047 = Cyan
     else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -2.5)) { cell_color_number = "31"; }     // 31 = Blue
-    else { cell_color_number = "22556"; }   // 22556 = Purple
+    else { cell_color_number = "22556"; }																					// 22556 = Purple
 
     LiDisplay_Color_Str = "page" + String(LIDISPLAY_GRIDCHARGE_PAGE_ID) + ".j" + String(cellToUpdate) + ".pco" + "=" + cell_color_number;
 
     LiDisplay_printString(LiDisplay_Color_Str);
     LiDisplay_writeInstructionTerminationBytes();
 
+	// When the driver presses a cell it displays the voltage in white text.
+	// After cycling through all cells in the pack, when we get to the selected cell we want to gray that text because the voltage might have changed.
     if (gc_currently_selected_cell_id_str.toInt() == cellToUpdate)
 	{
-        LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t17", 4, "44373");
-        gc_currently_selected_cell_id_str = "99";
+        LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t17", 4, "44373");	// 44373 = Gray
+        gc_currently_selected_cell_id_str = "99";	//	Set to an impossible number so we don't end up here again until the user presses another cell.
     }
 
     cellToUpdate += 1;
