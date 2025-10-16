@@ -152,7 +152,7 @@ void LiDisplay_begin(void)
 
 void LiDisplay_updateNumericVal(uint8_t page, String elementName, uint8_t elementAttrIndex, String value) {
     #ifdef LIDISPLAY_CONNECTED
-        static String LiDisplay_Number_Str;
+        String LiDisplay_Number_Str;
 
         LiDisplay_Number_Str = "page" + String(page) + "." + String(elementName) + "." + attrMap[elementAttrIndex] + "=" + value;
 
@@ -165,7 +165,7 @@ void LiDisplay_updateNumericVal(uint8_t page, String elementName, uint8_t elemen
 
 void LiDisplay_updateStringVal(uint8_t page, String elementName, uint8_t elementAttrIndex, String value) {
     #ifdef LIDISPLAY_CONNECTED
-        static String LiDisplay_String_Str;
+        String LiDisplay_String_Str;
 
         LiDisplay_String_Str = "page" + String(page) + "." + String(elementName) + "." + attrMap[elementAttrIndex] + "=" + String('"') + value + String('"');
 
@@ -236,9 +236,10 @@ void LiDisplay_resetGridChargerPageVariables()
 	LiDisplayElementToUpdate = 0;
 
 	gc_sixty_s_fomoco_e_block_enabled = false;
+	LiDisplay_BattTemp_onScreen = 100;
 	LiDisplay_heaterState_onScreen = true;			// T22
 	LiDisplay_PackVoltageActual_onScreen = 100;
-	LiDisplay_BattTemp_onScreen = 100;
+	LiDisplay_SoC_onScreen = 100;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -372,8 +373,8 @@ String LiDisplay_getCellVoltage(String cell_id_str) {
 LiDisplay_updateNextCellValue() {
     String LiDisplay_Color_Str;
     static uint8_t cellToUpdate = 0;
-    static uint8_t ic_index = 0;
-    static uint8_t ic_cell_num = 0;
+    uint8_t ic_index = 0;
+    uint8_t ic_cell_num = 0;
     String cell_color_number = "2016";	// 2016 = Green
     int cell_voltage_diff_from_avg = 0;
 
@@ -726,9 +727,9 @@ void LiDisplay_processCommand(String cmd_str) {
         cmd_obj_id_str = (String(cmd_str[4]) + String(cmd_str[5]));
 
         LiDisplay_updateStringVal(cmd_page_id, "t17", 0, ("Cell " + cmd_obj_id_str + ": " + LiDisplay_getCellVoltage(cmd_obj_id_str) + "V"));
-        if (cmd_obj_id_str.toInt() < 10) cmd_obj_id_str = cmd_obj_id_str[1];    // Nextion gets confused by leading 0.
-        LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, String("j" + cmd_obj_id_str), 4, "65535");
-        LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t17", 4, "65535");
+        if (cmd_obj_id_str.toInt() < 10) cmd_obj_id_str = cmd_obj_id_str[1];    							// Nextion gets confused by leading 0.
+        LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, String("j" + cmd_obj_id_str), 4, "65535");	// Setting cell bar and text colour to white
+        LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t17", 4, "65535");						// 65535 = White
 
         gc_currently_selected_cell_id_str = cmd_obj_id_str;
     }
