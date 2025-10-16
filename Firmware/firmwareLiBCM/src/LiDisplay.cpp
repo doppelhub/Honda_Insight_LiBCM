@@ -86,11 +86,8 @@ static uint16_t total_splash_page_delay_ms = 250; // Has to be at least 150 ms b
 static uint32_t new_power_state_millis = 0;
 static uint32_t new_page_millis = 0;
 static uint32_t hmi_power_millis = 0;
-static uint32_t gc_connected_millis = 0;
+
 static uint32_t gc_connected_millis_most_recent_diff = 0;
-static uint16_t gc_charging_seconds = 0;
-static uint8_t gc_charging_minutes = 0;
-static uint8_t gc_charging_hours = 0;
 static bool LiDisplay_BuzzerRequested = false;
 static uint32_t LiDisplay_buzzerRequestMS = 0;
 
@@ -100,6 +97,7 @@ static String key_time = "00:00:00";
 String gc_currently_selected_cell_id_str = "99";    // An absurd initialization value.
 
 static uint32_t key_time_begin_ms = 0;
+static uint32_t gc_chg_time_begin_millis = 0;
 
 static uint8_t currentFanSpeed = 0;
 static uint8_t LiDisplay_brightness = 100;
@@ -421,18 +419,13 @@ LiDisplay_updateNextCellValue() {
 
 void LiDisplay_calculateKeyTimeStr(bool reset) {
     // TODO_NATALYA:  When this is finalized we need to replace code in LiDisplay_calculateGCTimeStr with code more like this
-    static uint32_t current_key_on_ms = 0;
-    static uint16_t current_key_time_seconds = 0;
+    uint32_t current_key_on_ms = 0;
+    uint16_t current_key_time_seconds = 0;
     static uint8_t kt_s = 0;
     static uint8_t kt_m = 0;
     static uint8_t kt_h = 0;
 
-    if (reset)
-	{
-        kt_s = 0;
-        kt_m = 0;
-        kt_h = 0;
-    }
+    if (reset) { kt_s = 0; kt_m = 0; kt_h = 0; }
 
     current_key_on_ms = (uint32_t)(millis() - key_time_begin_ms);
     current_key_time_seconds = (uint16_t)(current_key_on_ms * 0.001);
@@ -467,40 +460,59 @@ void LiDisplay_calculateKeyTimeStr(bool reset) {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void LiDisplay_calculateGCTimeStr() {
-    static String gc_sec_prefix = "0";
-    static String gc_min_prefix = "0";
-    static String gc_hour_prefix = "0";
-    static uint16_t temp_gc_millis = 0;
+void LiDisplay_calculateGCTimeStr(bool reset) {
+	uint32_t current_gc_charging_ms = 0;
+    uint16_t current_gc_charging_time_seconds = 0;
+    static uint8_t gc_t_s = 0;
+    static uint8_t gc_t_m = 0;
+    static uint8_t gc_t_h = 0;
     static bool gc_was_paused = false;
 
-    // Increment time only while charging
+	if (reset) { gc_t_s = 0; gc_t_m = 0; gc_t_h = 0; }
+
+	// Increment time only while charging
     if (gpio_isGridChargerChargingNow())
 	{
-        if (gc_was_paused)
+		if (gc_was_paused)
 		{
-            gc_connected_millis = (millis() - gc_connected_millis_most_recent_diff);
+            gc_chg_time_begin_millis = (millis() - gc_connected_millis_most_recent_diff);
             gc_was_paused = false;
         }
 
-        gc_connected_millis_most_recent_diff = (millis() - gc_connected_millis);
+        gc_connected_millis_most_recent_diff = (millis() - gc_chg_time_begin_millis);
 
-        // 05 Oct 2023 -- TODO_NATALYA:  Get rid of modulo and division -- if LiDisplay_calculateKeyTimeStr() works out we can adopt its method
-        // 09 Feb 2023 -- Note to JTS: LiDisplay_calculateGCTimeStr() is only run while the grid charger is plugged in AND key is off.
-        // I'd like to address this issue later if possible because it doesn't affect key-on cycle or driving cycle of LiBCM.
-        gc_charging_hours = (gc_connected_millis_most_recent_diff / 3600000);
-        gc_charging_minutes = (gc_connected_millis_most_recent_diff / 60000) % 60;
-        gc_charging_seconds = (gc_connected_millis_most_recent_diff / 1000) % 60;
+		current_gc_charging_ms = (uint32_t)(millis() - gc_chg_time_begin_millis);
+		current_gc_charging_time_seconds = (uint16_t)(current_gc_charging_ms * 0.001);
 
-        if (gc_charging_seconds > 9) { gc_sec_prefix = ""; }
-        else gc_sec_prefix = String(0);
-        if (gc_charging_minutes > 9) { gc_min_prefix = ""; }
-        else gc_min_prefix = String(0);
-        if (gc_charging_hours > 9) { gc_hour_prefix = ""; }
-        else gc_hour_prefix = String(0);
+		if (current_gc_charging_time_seconds >= 1)
+		{
+	        gc_t_s += current_gc_charging_time_seconds;
+	        gc_chg_time_begin_millis += current_gc_charging_ms;	// Ratcheting gc_connected_millis upwards so we don't introduce an error of more than 1s
+	        gc_chg_time_begin_millis += 13;						// Account for 13ms delay
+	    }
 
-        gc_time = String(gc_hour_prefix) + String(gc_charging_hours) + String(":") + String(gc_min_prefix) + String(gc_charging_minutes) + String(":") + String(gc_sec_prefix) + String(gc_charging_seconds);
-    } else { gc_was_paused = true; } // Still plugged in but not charging
+
+		if (gc_t_s >= 60)
+		{   // Assumes < 60s passing between runs of this function.  If that's not the case there is a much more serious issue at hand.
+	        gc_t_s -= 60;
+	        gc_t_m += 1;
+	    }
+	    if (gc_t_m >= 60)
+		{
+	        gc_t_m -= 60;
+	        gc_t_h += 1;
+	    }
+	    if (gc_t_h >= 99) { gc_t_h = 0; }  // Will the grid charger actively be charging for +99 hours?
+
+	    gc_time = "";
+	    (gc_t_h > 9) ? gc_time = gc_time + gc_t_h : gc_time = gc_time + "0" + gc_t_h;
+	    gc_time = gc_time + ":";
+	    (gc_t_m > 9) ? gc_time = gc_time + gc_t_m : gc_time = gc_time + "0" + gc_t_m;
+	    gc_time = gc_time + ":";
+	    (gc_t_s > 9) ? gc_time = gc_time + gc_t_s : gc_time = gc_time + "0" + gc_t_s;
+
+
+	} else { gc_was_paused = true; } // Still plugged in but not charging
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -978,7 +990,7 @@ void LiDisplay_updateElement() {
 			break;
 		case LIDISPLAY_GRIDCHARGE_PAGE_ID:
 
-			LiDisplay_calculateGCTimeStr();
+			LiDisplay_calculateGCTimeStr(false);
 			switch (LiDisplayElementToUpdate)
 			{
 				// 4 elements update very frequently so we won't track their previous value
@@ -1179,12 +1191,11 @@ void LiDisplay_gridChargerPluggedIn(void)
             hmi_power_millis = millis();
         }
 		LiDisplay_resetGridChargerPageVariables();
+		LiDisplay_calculateGCTimeStr(true);				// Reset GC charge time clock
 
         LiDisplayOnGridChargerConnected = true;
-        gc_connected_millis = millis();
-        gc_charging_seconds = 0;
-        gc_charging_minutes = 0;
-        gc_charging_hours = 0;
+        gc_chg_time_begin_millis = millis();
+
         gc_begin_soc_str = (String(SoC_getBatteryStateNow_percent()) + "%");
         LiDisplay_SoC_onScreen = 100;
         LiDisplay_FanSpeed_onScreen = 100;
