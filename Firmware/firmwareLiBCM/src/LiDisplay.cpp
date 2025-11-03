@@ -268,7 +268,7 @@ void LiDisplay_handleKeyOrGCStateChange()
 {
 	// TODO_NATALYA (2024 Jan) -- hmi_power_millis and gc_connected_millis timers to ensure screen is changed can probably be dealt with in here
 	// A new variable new_power_state_millis might be able to replace both.
-	// As far as I can tell, Nextion does NOT allow Arduino to ask "what page are you on?" which is why we will need delays around key cycle/gc plugging events
+	// Nextion does NOT allow Arduino to ask "what page are you on?" which is why we will need delays around key cycle/gc plugging events
 
 	if (millis() < 50)
 	{
@@ -1085,7 +1085,7 @@ void LiDisplay_handler(void)
 		LiDisplay_handleKeyOrGCStateChange();
 		if (LiDisplayNeedToVerifyPowerState) LiDisplay_enforceCorrectPowerState();
 
-		if (!gpio_HMIStateNow()) { return; } //LiDisplay is off, so we don't need to do anything else.
+		if (!gpio_HMIStateNow()) { return; } // LiDisplay is off, so we can exit this function.
 
 		LiDisplay_userInputHandler();	// Check if user has pressed a button on the LiDisplay screen.
 		LiDisplay_calculateCorrectPage();
