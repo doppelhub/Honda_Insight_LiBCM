@@ -418,7 +418,7 @@ LiDisplay_updateNextCellValue() {
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_calculateKeyTimeStr(bool reset) {
-    // TODO_NATALYA:  When this is finalized we need to replace code in LiDisplay_calculateGCTimeStr with code more like this
+    // TODO_NATALYA: Figure out how to use time_sinceLatestKeyOn_seconds() without modulo or division to get hours and minutes and without a gigantic for loop
     uint32_t current_key_on_ms = 0;
     uint16_t current_key_time_seconds = 0;
     static uint8_t kt_s = 0;
