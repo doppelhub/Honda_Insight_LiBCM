@@ -43,7 +43,7 @@ const uint16_t remap_actualToSpoofedSoC[101] = {
     1000,                                    //LiCBM SoC = 100%
 };  //Data empirically gathered from OEM NiMH IMA system //see ../Firmware/Prototype Building Blocks/Remap SoC.ods for calculations
 
-uint16_t previousOutputSoC_deciPercent = 0;
+uint16_t lastSpoofedSoC_deciPercent = 0;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -70,7 +70,7 @@ void BATTSCI_enable(void)
 {
     power_usart2_enable(); //enable USART2 clock
     digitalWrite(PIN_BATTSCI_DE,HIGH);
-    previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; //account for SoC change (e.g. grid charge)
+    lastSpoofedSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; //account for SoC change (e.g. grid charge)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -118,7 +118,7 @@ void BATTSCI_setSpoofedCurrent_deciAmps(int16_t deciAmps) { spoofedCurrentToSend
 /////////////////////////////////////////////////////////////////////////////////////////
 
 // Allow LiDisplay Nerd Screen to report most recent spoofed SoC
-uint16_t BATTSCI_previousOutputSoC_deciPercent_get(void) { return previousOutputSoC_deciPercent; }
+uint16_t BATTSCI_lastSpoofedSoC_deciPercent_get(void) { return lastSpoofedSoC_deciPercent; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -266,10 +266,10 @@ uint8_t BATTSCI_calculateChargeRequestByte(void)
 //Adjust final SoC value as needed to improve driving characteristics
 uint16_t BATTSCI_SoC_Hysteresis(uint16_t SoC_mappedToMCM_deciPercent)
 {
-    if      (SoC_mappedToMCM_deciPercent > previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent + 1; }
-    else if (SoC_mappedToMCM_deciPercent < previousOutputSoC_deciPercent) { SoC_mappedToMCM_deciPercent = previousOutputSoC_deciPercent - 1; }
+    if      (SoC_mappedToMCM_deciPercent > lastSpoofedSoC_deciPercent) { SoC_mappedToMCM_deciPercent = lastSpoofedSoC_deciPercent + 1; }
+    else if (SoC_mappedToMCM_deciPercent < lastSpoofedSoC_deciPercent) { SoC_mappedToMCM_deciPercent = lastSpoofedSoC_deciPercent - 1; }
 
-    previousOutputSoC_deciPercent = SoC_mappedToMCM_deciPercent;
+    lastSpoofedSoC_deciPercent = SoC_mappedToMCM_deciPercent;
 
     #ifdef REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING
         if ((SoC_mappedToMCM_deciPercent < 720) && (SoC_mappedToMCM_deciPercent > 250)) { SoC_mappedToMCM_deciPercent = 720; }

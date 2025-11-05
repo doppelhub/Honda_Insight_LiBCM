@@ -65,7 +65,6 @@ static uint8_t  LiDisplay_SoCBars_onScreen = 100;
 // Nerd Screen Only
 static uint8_t	LiDisplay_NS_loCellNum_onScreen = 100;
 static uint8_t	LiDisplay_NS_hiCellNum_onScreen = 100;
-bool LiDisplay_NS_NSMessagePending = false;
 
 
 static uint16_t LiDisplay_AvgCellVoltage = 0;
@@ -397,7 +396,7 @@ LiDisplay_updateNextCellValue() {
     else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -0.5)) { cell_color_number = "2016"; }   // 2016 = Green
     else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -1.5)) { cell_color_number = "2047"; }   // 2047 = Cyan
     else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -2.5)) { cell_color_number = "31"; }     // 31 = Blue
-    else { cell_color_number = "22556"; }																					// 22556 = Purple
+    else { cell_color_number = "22556"; }	// 22556 = Purple
 
     LiDisplay_Color_Str = "page" + String(LIDISPLAY_GRIDCHARGE_PAGE_ID) + ".j" + String(cellToUpdate) + ".pco" + "=" + cell_color_number;
 
@@ -870,7 +869,7 @@ void LiDisplay_updateElement() {
 						LiDisplay_calculateChrgAsstGaugeBars();
 						LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId));
 					} else {
-						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t23", 0, LiDisplay_formatSpoofedValueDisplayStr(BATTSCI_previousOutputSoC_deciPercent_get(), true)); // Spoofed SoC sent to MCM
+						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t23", 0, LiDisplay_formatSpoofedValueDisplayStr(BATTSCI_lastSpoofedSoC_deciPercent_get(), true)); // Spoofed SoC sent to MCM
 					}
 					break;
 				case 2: LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t9", 0, (String((LTC68042result_hiCellVoltage_get() * 0.0001),3))); break;
@@ -940,10 +939,6 @@ void LiDisplay_updateElement() {
 						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t11", 0, (String(temperature_battery_getLatest()) + char(176) + "C"));
 						LiDisplay_BattTemp_onScreen = temperature_battery_getLatest();
 					}
-					else if (LiDisplay_NS_NSMessagePending) {
-						LiDisplay_updateNumericVal(LiDisplay_DrivingPageId, "t27", 4, "65535");
-						LiDisplay_NS_NSMessagePending = false;
-					}
 					else
 					{
 						if (LiDisplay_DrivingPageId == 0) {
@@ -967,7 +962,7 @@ void LiDisplay_updateElement() {
 			{
 				case 0: LiDisplay_updateStringVal(1, "t1", 0, String(FW_VERSION)); break;
 				case 1: LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_hoursSinceLastFirmwareUpdate_get())); break;
-				case 2: LiDisplay_updateNumericVal(1, "p0", 2, String(LIDISPLAY_SPLASH_PIC_ID)); maxElementId = (LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID - 1); LiDisplayElementToUpdate = 0; break;
+				case 2: LiDisplay_updateNumericVal(1, "p0", 2, String(LIDISPLAY_SPLASH_PIC)); maxElementId = (LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID - 1); LiDisplayElementToUpdate = 0; break;
 				default: maxElementId = LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID; break;
 			}
 		break;
@@ -1147,9 +1142,6 @@ void LiDisplay_keyOn(void)
 		LiDisplay_resetDrivingPageVariables();
 
     #endif
-	#ifdef LIDISPLAY_FEELING_NERDY
-		LiDisplay_NS_NSMessagePending = true;
-	#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

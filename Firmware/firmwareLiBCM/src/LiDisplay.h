@@ -3,6 +3,20 @@
 
 #ifndef lidisplay_h
     #define lidisplay_h
+	#define COLOR_CITRUS_00 21	// Original Citrus Photo
+	#define COLOR_CITRUS_01 59	// New Citrus photo
+	#define COLOR_RED_00    61	// Red
+	#define COLOR_SILVER_00 60	// Silver
+
+	// Copy one of the above values and paste it after LIDISPLAY_SPLASH_PIC
+	#define LIDISPLAY_SPLASH_PIC COLOR_CITRUS_00 // Default is COLOR_CITRUS_00 for the old Citrus photo.
+
+	// Grid charger page cell colour sensitivity to imbalance
+	#define LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS 64 // 64 = 6.4mV window between cell colours on the grid charging page.  Don't go below CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE
+
+	#define LIDISPLAY_SPLASH_PAGE_MS 5000 // How long the splash page shows on LiDisplay
+	#define LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS 6000 // Keep displaying the grid charging page this long before showing splash page when GC unplugged
+
 
     void LiDisplay_begin(void);
 

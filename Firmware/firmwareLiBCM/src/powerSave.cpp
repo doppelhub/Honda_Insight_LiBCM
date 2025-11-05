@@ -18,7 +18,7 @@ volatile uint8_t interruptSource = USB_INTERRUPT; //see ISR(PCINT1_vect) for mor
 //turn LiBCM off if any cell voltage is too low
 //LiBCM remains off until the next keyON occurs
 //prevents over-discharge during extended keyOFF
-//JTS2doLater: while grid charging, assert error if pack SoC doesn't increase 1% every hour (due to HW issue) 
+//JTS2doLater: while grid charging, assert error if pack SoC doesn't increase 1% every hour (due to HW issue)
 void powerSave_turnOffLiBCM_ifPackEmpty(void)
 {
     if (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER)
@@ -29,7 +29,7 @@ void powerSave_turnOffLiBCM_ifPackEmpty(void)
     else if ((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //battery is low
              (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true) && //give user time to plug in charger
              (gpio_isGridChargerChargingNow() == NO)                  ) //grid charger isn't charging
-    {   
+    {
         Serial.print(F("\nBattery is low"));
         gpio_turnLiBCM_off(); //game over, thanks for playing
     }
@@ -172,12 +172,12 @@ void powerSave_gotoSleep(void)
 
 void powerSave_sleepIfAllowed(void)
 {
-    if ((cellBalance_areCellsBalancing()  == NO) /* LiBCM must stay on for safety */                &&
-        (gpio_isGridChargerPluggedInNow() == NO) /* LiBCM must stay on for safety */                &&
-        (time_sinceLatestUserInputUSB_get_ms() > PERIOD_TO_DISABLE_SLEEP_AFTER_USB_DATA_RECEIVED_ms))
+    if ((cellBalance_areCellsBalancing()  == NO) /* LiBCM must stay on for safety */                	&&
+        (gpio_isGridChargerPluggedInNow() == NO) /* LiBCM must stay on for safety */                	&&
+        (time_sinceLatestUserInputUSB_get_ms() > PERIOD_TO_DISABLE_SLEEP_AFTER_USB_DATA_RECEIVED_ms) 	&&
+		(time_sinceLatestKeyOff_ms_get() > (LIDISPLAY_SPLASH_PAGE_MS + LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS))						&&	/* Enough time elapsed since latest Key Off */
+		(time_sinceLatestGridChargerUnplug_get_ms() > (LIDISPLAY_SPLASH_PAGE_MS + LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS)))				/* Enough time elapsed since latest GC Unplug */
 	{
-		if (time_sinceLatestKeyOff_ms_get() < PERIOD_TO_DISABLE_SLEEP_AFTER_KEYOFF_MS) { return; } // Not enough time elapsed since latest Key Off, sleep not allowed yet.
-		if (time_sinceLatestGridChargerUnplug_get_ms() < PERIOD_TO_DISABLE_SLEEP_AFTER_KEYOFF_MS) { return; } // Not enough time elapsed since latest GC Unplug, sleep not allowed yet.
 		powerSave_gotoSleep();
 	}
 }
