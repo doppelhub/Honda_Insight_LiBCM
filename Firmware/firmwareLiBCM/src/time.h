@@ -26,6 +26,7 @@
 
     void     time_latestKeyOff_ms_set(uint32_t keyOffTime);
     uint32_t time_latestKeyOff_ms_get(void);
+    uint32_t time_sinceLatestKeyOff_ms_get(void);
 
     uint32_t time_sinceLatestKeyOn_ms(void);
     uint16_t time_sinceLatestKeyOn_seconds(void);

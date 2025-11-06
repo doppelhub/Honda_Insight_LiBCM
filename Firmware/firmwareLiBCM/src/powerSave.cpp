@@ -18,7 +18,7 @@ volatile uint8_t interruptSource = USB_INTERRUPT; //see ISR(PCINT1_vect) for mor
 //turn LiBCM off if any cell voltage is too low
 //LiBCM remains off until the next keyON occurs
 //prevents over-discharge during extended keyOFF
-//JTS2doLater: while grid charging, assert error if pack SoC doesn't increase 1% every hour (due to HW issue) 
+//JTS2doLater: while grid charging, assert error if pack SoC doesn't increase 1% every hour (due to HW issue)
 void powerSave_turnOffLiBCM_ifPackEmpty(void)
 {
     if (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER)
@@ -29,7 +29,7 @@ void powerSave_turnOffLiBCM_ifPackEmpty(void)
     else if ((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //battery is low
              (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true) && //give user time to plug in charger
              (gpio_isGridChargerChargingNow() == NO)                  ) //grid charger isn't charging
-    {   
+    {
         Serial.print(F("\nBattery is low"));
         gpio_turnLiBCM_off(); //game over, thanks for playing
     }
@@ -85,7 +85,7 @@ void wakeupInterrupts_timer2_enable(void)
 {
     power_timer2_enable();  //enable timer2 clock
     TCNT2 = 0; //set timer2 count to zero
-    TIFR2  |= (1 << TOV2 ); //clear pending interrupt flag, if set      
+    TIFR2  |= (1 << TOV2 ); //clear pending interrupt flag, if set
     TIMSK2 |= (1 << TOIE2); //enable timer2 overflow interrupt
 }
 
@@ -132,7 +132,7 @@ void powerSave_gotoSleep(void)
     interruptSource = USB_INTERRUPT; //see ISR(PCINT1_vect) for more info
 
     LED_turnAllOff(); //saves power
-    
+
     USB_delayUntilTransmitBufferEmpty();
     USB_end();
 
@@ -172,12 +172,14 @@ void powerSave_gotoSleep(void)
 
 void powerSave_sleepIfAllowed(void)
 {
-    if ((cellBalance_areCellsBalancing()  == NO) /* LiBCM must stay on for safety */                &&
-        (gpio_isGridChargerPluggedInNow() == NO) /* LiBCM must stay on for safety */                &&
-        (time_sinceLatestUserInputUSB_get_ms() > PERIOD_TO_DISABLE_SLEEP_AFTER_USB_DATA_RECEIVED_ms) )
-    {
-        powerSave_gotoSleep();
-    }
+    if ((cellBalance_areCellsBalancing()  == NO) /* LiBCM must stay on for safety */                	&&
+        (gpio_isGridChargerPluggedInNow() == NO) /* LiBCM must stay on for safety */                	&&
+        (time_sinceLatestUserInputUSB_get_ms() > PERIOD_TO_DISABLE_SLEEP_AFTER_USB_DATA_RECEIVED_ms) 	&&
+		(time_sinceLatestKeyOff_ms_get() > (LIDISPLAY_SPLASH_PAGE_MS + LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS))						&&	/* Enough time elapsed since latest Key Off */
+		(time_sinceLatestGridChargerUnplug_get_ms() > (LIDISPLAY_SPLASH_PAGE_MS + LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS)))				/* Enough time elapsed since latest GC Unplug */
+	{
+		powerSave_gotoSleep();
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -227,14 +229,14 @@ ISR(PCINT0_vect)
 //this interrupt disabled when LiBCM is awake
 ISR(PCINT1_vect)
 {
-    //interruptSource = USB_INTERRUPT; //this code isn't guaranteed to run (see below) 
+    //interruptSource = USB_INTERRUPT; //this code isn't guaranteed to run (see below)
     //wakeupInterrupts_disable();      //this code isn't guaranteed to run (see below)
 
     //the hardware pin change interrupt that occurs when USB Rx pin toggles is guaranteed to wake the CPU from sleep.
     //HOWEVER, the code in PCINT1_vect ISR isn't guaranteed to run (and probably won't), as explained next.
     //This was super annoying to figure out, hence the labored explanation:
     //
-    //From the atmega2560 manual, Chapter 15 "External interrupts": 
+    //From the atmega2560 manual, Chapter 15 "External interrupts":
         //"Note that if a level triggered interrupt is used for wake-up from Power-down," ...
         //..."the required level must be held long enough for the MCU to complete the wake-up to trigger the level interrupt."
         //"If the level disappears before the end of the Start-up Time, the MCU will still wake up, but no interrupt will be generated."

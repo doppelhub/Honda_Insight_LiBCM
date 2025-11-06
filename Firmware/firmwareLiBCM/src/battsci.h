@@ -35,6 +35,8 @@
 
     void BATTSCI_setSpoofedCurrent_deciAmps(int16_t deciAmps);
 
+	uint16_t BATTSCI_lastSpoofedSoC_deciPercent_get(void);
+
     uint8_t BATTSCI_writeByte(uint8_t data);
 
     void BATTSCI_framePeriod_ms_set(uint8_t period);

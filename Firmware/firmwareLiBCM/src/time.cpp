@@ -33,6 +33,7 @@ uint16_t time_sinceLatestKeyOn_seconds(void) { return time_sinceLatestKeyOn_ms()
 
 void     time_latestKeyOff_ms_set(uint32_t keyOffTime) { timestamp_latestKeyOff_ms = keyOffTime; }
 uint32_t time_latestKeyOff_ms_get(void)         { return timestamp_latestKeyOff_ms;              }
+uint32_t time_sinceLatestKeyOff_ms_get(void) { return millis() - timestamp_latestKeyOff_ms; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -84,13 +85,13 @@ void updateKeyOffTaskFlag(void)
     if ( ((cellBalance_areCellsBalancing() == YES) && (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC)) ||
          ((cellBalance_areCellsBalancing() == YES) && (gpio_isGridChargerPluggedInNow() == YES)                ) ||
          ((gpio_isGridChargerChargingNow() == YES)                                                             )  )
-    { 
+    {
         keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_ONE_SECOND_ms; //if over 1800 ms, LTC ICs will turn off (bad)
-    } 
-  
+    }
+
     //Has enough time passed yet?
     if ((millis() - timestamp_lastUpdate_ms) > keyOffUpdatePeriod_ms)
-    { 
+    {
         isItTimeToPerformKeyOffTasks = YES;
         timestamp_lastUpdate_ms = millis();
     }
@@ -136,7 +137,7 @@ void time_waitForLoopPeriod(void)
     LED(4,ON);
 
     timestamp_loopStart_previous_ms = timeNow_ms;
-        
+
     if ((key_getSampledState() == KEYSTATE_ON) && (timingMet == false)) { Serial.print('*'); }
 }
 
@@ -177,7 +178,7 @@ uint16_t time_hertz_to_milliseconds(uint8_t hertz)
 void time_setAbsoluteMillis(uint32_t newMillis)
 {
     extern volatile uint32_t timer0_millis;
-    
+
     noInterrupts();
     timer0_millis = newMillis;
     interrupts();
