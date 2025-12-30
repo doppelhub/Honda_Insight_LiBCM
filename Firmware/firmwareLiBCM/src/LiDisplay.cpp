@@ -990,6 +990,7 @@ void LiDisplay_updateElement() {
 							// Nerd Screen Only
 							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t17", 0, (String((LTC68042result_maxEverCellVoltage_get() * 0.0001),3))); // Peak cell V
 							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t19", 0, (String((LTC68042result_minEverCellVoltage_get() * 0.0001),3))); // Trough cell V
+							LiDisplay_updateNumericVal(LiDisplay_DrivingPageId, "t27", 4, NEXTION_WHT); // TODO_NATALYA -- Dec 2025 -- Update NS t27 "pco" in .tft so we can delete this line.
 							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t27", 0,
 								String("KWh CHRG: ") + String(((energy_getTripMeterRegen_Wh() + LiDisplay_energyWHRegen) * 0.001),1) +
 								"  ASST: " + String(((energy_getTripMeterAssist_Wh() + LiDisplay_energyWHAssist) * 0.001),1)

@@ -25,26 +25,26 @@
 
     //choose your battery type:
         //#define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
-        #define BATTERY_TYPE_47Ah  //aka FoMoCo //aka Samsung SDI modules
+        //#define BATTERY_TYPE_47Ah  //aka FoMoCo //aka Samsung SDI modules
 
     //choose how many cells are in series:
         //#define STACK_IS_48S //All 5AhG3 Kits & 47Ah Kits with QTY4 modules
-        #define STACK_IS_60S //47Ah Kits with QTY5 modules
+        //#define STACK_IS_60S //47Ah Kits with QTY5 modules
 
     //choose which grid charger is installed
         //#define GRIDCHARGER_IS_NOT_1500W //All 5AhG3 Kits & 'standard' 47Ah Kits
-        #define GRIDCHARGER_IS_1500W     //47Ah Kits with 'fast' 6.5A charger
+        //#define GRIDCHARGER_IS_1500W     //47Ah Kits with 'fast' 6.5A charger
 
     //choose ONE of the following
     //must match actual "current hack" hardware configuration:
-        #define SET_CURRENT_HACK_40 //actually +45.8% //most LiBCM users installed this hardware option
+        //#define SET_CURRENT_HACK_40 //actually +45.8% //most LiBCM users installed this hardware option
         //#define SET_CURRENT_HACK_20 //actually +25.0%
         //#define SET_CURRENT_HACK_00 //OEM configuration (no current hack installed inside MCM)
 
     //choose which display to use
     //using both displays simultaneously could cause timing issues (FYI: the Serial Monitor prints '*' each time the loop period is violated)
-        //#define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
-        #define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
+        #define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
+        //#define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
 
     //you don't need to change any settings below this line (but you can if you know what you're doing):
     //__________________________________________________________________________________________________
@@ -144,7 +144,7 @@
         #define LED_NORMAL //enable "LED()" functions (see debug.c)
         //#define LED_DEBUG //enable "debugLED()" functions (FYI: blinkLED functions won't work)
 
-    #define LIDISPLAY_DEBUG_ENABLED //uncomment to enable updates to text box ID # T12 on LiDisplay driving page -- this shows raw comm data from LiDisplay to LiBCM
+    //#define LIDISPLAY_DEBUG_ENABLED //uncomment to enable updates to text box ID # T12 on LiDisplay driving page -- this shows raw comm data from LiDisplay to LiBCM
 	//#define LIDISPLAY_USE_NERD_SCREEN // uncomment to enable the "Nerd Screen" which is an alternative display layout for the driving page.
 
 
