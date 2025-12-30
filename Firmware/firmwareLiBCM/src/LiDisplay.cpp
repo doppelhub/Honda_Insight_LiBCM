@@ -1108,6 +1108,10 @@ void LiDisplay_updateElement() {
 			}
 		break;
 		case LIDISPLAY_SETTINGS_PAGE_ID: // Placeholder for now (19 June 2025)
+			if (energy_getAssist_Wh() > 0) { LiDisplay_energyWHAssist = energy_getAssist_Wh(); }
+			if (energy_getRegen_Wh() > 0) { LiDisplay_energyWHRegen = energy_getRegen_Wh(); }
+			if (energy_getGridCharger_Wh() > 0) { LiDisplay_energyWHGridCharge = energy_getGridCharger_Wh(); }
+
 			LiDisplay_SettingsPageValSwitch();
 			if (LiDisplay_paramName_onScreen != editableParamMap[LiDisplay_currentParamId])
 			{
