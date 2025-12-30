@@ -12,9 +12,17 @@
 
 	uint16_t energy_getAssist_Wh(void);
 	uint16_t energy_getRegen_Wh (void);
-	
+	uint16_t energy_getGridCharger_Wh (void);
+	uint16_t energy_getTripMeterAssist_Wh (void);
+	uint16_t energy_getTripMeterRegen_Wh (void);
+	uint16_t energy_getTripMeterGridCharge_Wh (void);
+
 	void energy_zeroWh(void);
 	void energy_storeTrip(void);
+
+	void energy_zeroWhTripMeter(void);
+	void energy_storeTripMeter(uint16_t drive_assist_wh, uint16_t drive_regen_wh);
+	void energy_storeTripMeterGridCharge(uint16_t grid_charger_wh);
 
 	void energy_handler(void);
 

@@ -16,8 +16,8 @@ static uint8_t LiDisplay_DrivingPageReqId = 0;
 
 // These are the numbers of updatable elements on the respective screens
 #define LIDISPLAY_DRIVING_PAGE_INTITIAL_MAX_ELEMENT_ID 7
-#define LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID 2
-#define LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID 6
+#define LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID 4
+#define LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID 7
 
 
 #define LIDISPLAY_BUTTON_ID_SCREEN 0
@@ -38,6 +38,8 @@ static uint8_t LiDisplay_DrivingPageReqId = 0;
     #define MAX_CELL_INDEX 59
 #endif
 
+static bool LiDisplay_ThisIsFirstKeyOn = true;
+
 uint8_t LiDisplayElementToUpdate = 0;
 uint8_t LiDisplayCurrentPageNum = 0;
 uint8_t LiDisplaySetPageNum = LiDisplay_DrivingPageId;
@@ -52,6 +54,12 @@ static uint16_t LiDisplay_currentGlobalNumVal = 0;
 static String LiDisplay_paramName_onScreen = "";
 static uint16_t LiDisplay_paramVal_onScreen = 0;
 static String Lidisplay_paramDesc_onScreen = "";
+
+// WH accumulated during current LiDisplay power on (either current drive or grid charger plugged in)
+static uint16_t LiDisplay_energyWHAssist = 0;
+static uint16_t LiDisplay_energyWHRegen = 0;
+static uint16_t LiDisplay_energyWHGridCharge = 0;
+
 
 // Initializing to an absurd number for all 7 variables so that on first run they will be updated on screen
 static uint16_t  LiDisplay_AvgCellVoltage_onScreen = 9999;
@@ -73,6 +81,7 @@ static uint8_t LiDisplay_powerState = 0; // 0=Key off GC unplug    1=Key on GC u
 static bool LiDisplay_heaterState_onScreen = true;	// Initializing to true because, by default, when a screen with T22 load, T22 is displayed
 
 bool LiDisplaySplashPending = false;
+bool LiDisplaySplashFromGridCharger = false;
 bool LiDisplayPowerOffPending = false;
 bool LiDisplayOnKeyOnWithNerdScreenEnabled = false;
 bool LiDisplayOnGridChargerConnected = false;
@@ -147,7 +156,7 @@ void LiDisplay_begin(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void LiDisplay_updateNumericVal(uint8_t page, String elementName, uint8_t elementAttrIndex, String value) {
+void LiDisplay_updateNumericVal(uint8_t page, String elementName, uint8_t elementAttrIndex, uint16_t value) {
     #ifdef LIDISPLAY_CONNECTED
         String LiDisplay_Number_Str;
 
@@ -167,6 +176,20 @@ void LiDisplay_updateStringVal(uint8_t page, String elementName, uint8_t element
         LiDisplay_String_Str = "page" + String(page) + "." + String(elementName) + "." + attrMap[elementAttrIndex] + "=" + String('"') + value + String('"');
 
         LiDisplay_printString(LiDisplay_String_Str);
+        LiDisplay_writeInstructionTerminationBytes();
+    #endif
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void LiDisplay_updateGlobalVariable(String elementName, uint16_t value) {
+	// Use to update sys0, sys1, and sys2 global variables on the Nextion
+    #ifdef LIDISPLAY_CONNECTED
+        String LiDisplay_GlobalVarUpdate_Str;
+
+        LiDisplay_GlobalVarUpdate_Str = String(elementName) + "=" + value;
+
+        LiDisplay_printString(LiDisplay_GlobalVarUpdate_Str);
         LiDisplay_writeInstructionTerminationBytes();
     #endif
 }
@@ -223,6 +246,8 @@ void LiDisplay_resetDrivingPageVariables()
 	LiDisplay_PackVoltageSpoofed_onScreen = 100;	// T24
 	LiDisplay_SoC_onScreen = 100;
 	LiDisplay_SoCBars_onScreen = 100;
+
+	LiDisplay_updateGlobalVariable("sys2", LIDISPLAY_SPLASH_PIC);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -246,7 +271,7 @@ void LiDisplay_resetSplashPageVariables()
 	// Splash page is only shown for a few seconds
 	// When we go to the splash page we want to make the correct updates (firmware hours and version) as fast as possible
 	maxElementId = LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID;
-	LiDisplayElementToUpdate = 2;
+	LiDisplayElementToUpdate = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -328,7 +353,7 @@ void LiDisplay_handleKeyOrGCStateChange()
 void LiDisplay_updateGlobalObjectVal(String elementName, uint8_t elementAttrIndex, String value) {
 	// This is used for the number input on the settings page
     #ifdef LIDISPLAY_CONNECTED
-        static String LiDisplay_ObjectUpdate_Str;
+        String LiDisplay_ObjectUpdate_Str;
 
         LiDisplay_ObjectUpdate_Str = String(elementName) + "." + attrMap[elementAttrIndex] + "=" + value;
 
@@ -390,13 +415,13 @@ LiDisplay_updateNextCellValue() {
     LiDisplay_AvgCellVoltage = (LTC68042result_deltaCellVoltage_get() >> 1 ) + LTC68042result_loCellVoltage_get();
 	cell_voltage_diff_from_avg = LiDisplay_AvgCellVoltage - LTC68042result_specificCellVoltage_get(ic_index, ic_cell_num);
 
-	if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * 2.5)) { cell_color_number = "63488"; }        // 63488 = Red
-    else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * 1.5)) { cell_color_number = "64480"; }   // 64480 = Orange
-    else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * 0.5)) { cell_color_number = "65504"; }   // 65504 = Yellow
-    else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -0.5)) { cell_color_number = "2016"; }   // 2016 = Green
-    else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -1.5)) { cell_color_number = "2047"; }   // 2047 = Cyan
-    else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -2.5)) { cell_color_number = "31"; }     // 31 = Blue
-    else { cell_color_number = "22556"; }	// 22556 = Purple
+	if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * 2.5)) { cell_color_number = NEXTION_RED; }        // 63488 = Red
+    else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * 1.5)) { cell_color_number = NEXTION_ORN; }   // 64480 = Orange
+    else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * 0.5)) { cell_color_number = NEXTION_YEL; }   // 65504 = Yellow
+    else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -0.5)) { cell_color_number = NEXTION_GRN; }   // 2016 = Green
+    else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -1.5)) { cell_color_number = NEXTION_CYN; }   // 2047 = Cyan
+    else if (cell_voltage_diff_from_avg >= (LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS * -2.5)) { cell_color_number = NEXTION_BLU; }     // 31 = Blue
+    else { cell_color_number = NEXTION_PUR; }	// 22556 = Purple
 
     LiDisplay_Color_Str = "page" + String(LIDISPLAY_GRIDCHARGE_PAGE_ID) + ".j" + String(cellToUpdate) + ".pco" + "=" + cell_color_number;
 
@@ -407,7 +432,7 @@ LiDisplay_updateNextCellValue() {
 	// After cycling through all cells in the pack, when we get to the selected cell we want to gray that text because the voltage might have changed.
     if (gc_currently_selected_cell_id_str.toInt() == cellToUpdate)
 	{
-        LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t17", 4, "44373");	// 44373 = Gray
+        LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t17", 4, NEXTION_GRY);	// 44373 = Gray
         gc_currently_selected_cell_id_str = "99";	//	Set to an impossible number so we don't end up here again until the user presses another cell.
     }
 
@@ -730,6 +755,12 @@ void LiDisplay_processCommand(String cmd_str) {
 				// Right Arrow Pressed
 				if (LiDisplay_currentParamId < maxParamID) { LiDisplay_currentParamId += 1;}
 			}
+			else if ((cmd_str[4] - '0') == 5)
+			{
+				// Trip Reset Button Pressed
+				energy_zeroWhTripMeter();
+				LiDisplay_updateDebugTextBox("Clearing LiDisplay Trip Meter");
+			}
         }
     }
 	else if (String(cmd_obj_type) == "j")
@@ -739,8 +770,8 @@ void LiDisplay_processCommand(String cmd_str) {
 
         LiDisplay_updateStringVal(cmd_page_id, "t17", 0, ("Cell " + cmd_obj_id_str + ": " + LiDisplay_getCellVoltage(cmd_obj_id_str) + "V"));
         if (cmd_obj_id_str.toInt() < 10) cmd_obj_id_str = cmd_obj_id_str[1];    							// Nextion gets confused by leading 0.
-        LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, String("j" + cmd_obj_id_str), 4, "65535");	// Setting cell bar and text colour to white
-        LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t17", 4, "65535");						// 65535 = White
+        LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, String("j" + cmd_obj_id_str), 4, NEXTION_WHT);	// Setting cell bar and text colour to white
+        LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t17", 4, NEXTION_WHT);						// 65535 = White
 
         gc_currently_selected_cell_id_str = cmd_obj_id_str;
     }
@@ -770,6 +801,8 @@ void LiDisplay_enforceCorrectPowerState() {
 				if (((millis() - new_power_state_millis) > total_splash_page_delay_ms) && (LiDisplaySplashPending))
 				{
 					LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID;
+					energy_storeTripMeter(LiDisplay_energyWHAssist, LiDisplay_energyWHRegen);
+					energy_storeTripMeterGridCharge(LiDisplay_energyWHGridCharge);
 					LiDisplay_updatePage(); // If this isn't here the splash page may not appear after key-off.
 					LiDisplaySplashPending = false;
 				}
@@ -778,7 +811,10 @@ void LiDisplay_enforceCorrectPowerState() {
 					gpio_turnHMI_off();
 					LiDisplayPowerOffPending = false;
 					LiDisplayNeedToVerifyPowerState = false;
-					LiDisplay_updateDebugTextBox(" "); // clear on-screen debug text
+					LiDisplaySplashFromGridCharger = false;
+					LiDisplay_energyWHAssist = 0;
+					LiDisplay_energyWHRegen = 0;
+					LiDisplay_energyWHGridCharge = 0;
 				}
 			}
 			break;
@@ -867,7 +903,7 @@ void LiDisplay_updateElement() {
 				case 1:
 					if (LiDisplay_DrivingPageId == 0) {
 						LiDisplay_calculateChrgAsstGaugeBars();
-						LiDisplay_updateNumericVal(0, "p1", 2, String(LiDisplayChrgAsstPicId));
+						LiDisplay_updateNumericVal(0, "p1", 2, LiDisplayChrgAsstPicId);
 					} else {
 						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t23", 0, LiDisplay_formatSpoofedValueDisplayStr(BATTSCI_lastSpoofedSoC_deciPercent_get(), true)); // Spoofed SoC sent to MCM
 					}
@@ -883,6 +919,9 @@ void LiDisplay_updateElement() {
 					LiDisplay_checkFirmwareExpiration();
 					LiDisplay_calculateFanSpeedStr();
 					LiDisplay_calculateSoCGaugeBars();
+
+					if (energy_getAssist_Wh() > 0) { LiDisplay_energyWHAssist = energy_getAssist_Wh(); }
+					if (energy_getRegen_Wh() > 0) { LiDisplay_energyWHRegen = energy_getRegen_Wh(); }
 
 					if ((millis() - new_page_millis) < LIDISPLAY_MINIMUM_TIME_TO_UPDATE_AFTER_POWER_ON_MILLIS) { Serial.print(F("\nLiDisplay DP case 7 - Not enough time passed yet.  Breaking.")); break; }
 
@@ -903,7 +942,7 @@ void LiDisplay_updateElement() {
 					}
 					else if ((LiDisplay_DrivingPageId == 0) && (LiDisplay_SoCBars_onScreen != LiDisplaySoCBarCount))
 					{
-						LiDisplay_updateNumericVal(LiDisplay_DrivingPageId, "p0", 2, String(LiDisplaySoCBarCount));
+						LiDisplay_updateNumericVal(LiDisplay_DrivingPageId, "p0", 2, LiDisplaySoCBarCount);
 						LiDisplay_SoCBars_onScreen = LiDisplaySoCBarCount;
 					}
 					else if (LiDisplay_SoC_onScreen != SoC_getBatteryStateNow_percent())
@@ -942,13 +981,19 @@ void LiDisplay_updateElement() {
 					else
 					{
 						if (LiDisplay_DrivingPageId == 0) {
+							// Regular Driving Screen
 							// Nothing else needed to update so we will update the chrg asst bar display again instead.
 							LiDisplay_calculateChrgAsstGaugeBars();
-							LiDisplay_updateNumericVal(LiDisplay_DrivingPageId, "p1", 2, String(LiDisplayChrgAsstPicId));
+							LiDisplay_updateNumericVal(LiDisplay_DrivingPageId, "p1", 2, LiDisplayChrgAsstPicId);
 						}
 						else {
+							// Nerd Screen Only
 							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t17", 0, (String((LTC68042result_maxEverCellVoltage_get() * 0.0001),3))); // Peak cell V
 							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t19", 0, (String((LTC68042result_minEverCellVoltage_get() * 0.0001),3))); // Trough cell V
+							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t27", 0,
+								String("KWh CHRG: ") + String(((energy_getTripMeterRegen_Wh() + LiDisplay_energyWHRegen) * 0.001),1) +
+								"  ASST: " + String(((energy_getTripMeterAssist_Wh() + LiDisplay_energyWHAssist) * 0.001),1)
+							);
 						}
 					}
 				break;
@@ -957,12 +1002,31 @@ void LiDisplay_updateElement() {
 		break;
 
 		case LIDISPLAY_SPLASH_PAGE_ID:
-			if (LiDisplayElementToUpdate >= 3) { LiDisplayElementToUpdate = 2; }
+			if (LiDisplayElementToUpdate >= 5) { LiDisplayElementToUpdate = 0; }
 			switch (LiDisplayElementToUpdate)
 			{
 				case 0: LiDisplay_updateStringVal(1, "t1", 0, String(FW_VERSION)); break;
 				case 1: LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_hoursSinceLastFirmwareUpdate_get())); break;
-				case 2: LiDisplay_updateNumericVal(1, "p0", 2, String(LIDISPLAY_SPLASH_PIC)); maxElementId = (LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID - 1); LiDisplayElementToUpdate = 0; break;
+				case 2: LiDisplay_updateNumericVal(1, "p0", 2, LIDISPLAY_SPLASH_PIC); break;
+				case 3: if (!LiDisplaySplashFromGridCharger) {
+							LiDisplay_updateNumericVal(1, "t6", 4, NEXTION_WHT);	// T6 through T9 on splash page are initialized as black text.
+							LiDisplay_updateNumericVal(1, "t8", 4, NEXTION_WHT);	// 65535 is Nextion code for white.
+							// 2025 Dec 19 - NOTE_NATALYA: The + operator has to take a String on the left side, THEN there can be as many + const char* after as you like.
+							LiDisplay_updateStringVal(1, "t6", 0, String("CHRG: ") + String((LiDisplay_energyWHRegen * 0.001),1) + "KWh");
+							LiDisplay_updateStringVal(1, "t8", 0, String("ASST: ") + String((LiDisplay_energyWHAssist * 0.001),1) + "KWh");
+						} else {
+							LiDisplay_updateNumericVal(1, "t6", 4, NEXTION_WHT);
+							LiDisplay_updateStringVal(1, "t6", 0, String("GRID: ") + String((LiDisplay_energyWHGridCharge * 0.001),1) + "KWh");
+						} break;
+				case 4: if (!LiDisplaySplashFromGridCharger) {
+							LiDisplay_updateNumericVal(1, "t7", 4, NEXTION_WHT);
+							LiDisplay_updateNumericVal(1, "t9", 4, NEXTION_WHT);
+							LiDisplay_updateStringVal(1, "t7", 0, String("Trip: ") + String((energy_getTripMeterRegen_Wh() * 0.001),1) + "KWh");
+							LiDisplay_updateStringVal(1, "t9", 0, String("Trip: ") + String((energy_getTripMeterAssist_Wh() * 0.001),1) + "KWh");
+						} else {
+							LiDisplay_updateStringVal(1, "t7", 0, String("Trip: ") + String((energy_getTripMeterGridCharge_Wh() * 0.001),1) + "KWh");
+						}break;
+
 				default: maxElementId = LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID; break;
 			}
 		break;
@@ -989,8 +1053,10 @@ void LiDisplay_updateElement() {
 			switch (LiDisplayElementToUpdate)
 			{
 				// 4 elements update very frequently so we won't track their previous value
-				case 0: // This one doesn't update very frequently, but its priority is high because we want to notify the user the instant it does update.
-
+				case 0:
+					// Store accumulated Grid Charging Wh
+					if (energy_getGridCharger_Wh() > 0) { LiDisplay_energyWHGridCharge = energy_getGridCharger_Wh(); }
+					// This element doesn't update very frequently, but its priority is high because we want to notify the user the instant it does update.
 					if (gpio_isGridChargerChargingNow() && !cellBalance_areCellsBalancing()) { LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0,     "CHARGING"); }
 					else if (gpio_isGridChargerChargingNow() && (cellBalance_areCellsBalancing())) { LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "CHRG + BLNC"); }
 					else if ((!gpio_isGridChargerChargingNow()) && (cellBalance_areCellsBalancing())) { LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "BALANCING"); }
@@ -1004,7 +1070,7 @@ void LiDisplay_updateElement() {
 					LiDisplay_calculateFanSpeedStr();
 					if (!gc_sixty_s_fomoco_e_block_enabled && (MAX_CELL_INDEX == 59))
 					{
-						LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t16", 3, "65516"); // E block label will be missing on a 60S 47Ah pack display if we don't run this once.
+						LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t16", 3, NEXTION_GRIDCCHARGE_60S_T16_CLR); // E block label will be missing on a 60S 47Ah pack display if we don't run this once.
 						gc_sixty_s_fomoco_e_block_enabled = true;
 					}
 					else if (LiDisplay_FanSpeed_onScreen != currentFanSpeed)
@@ -1036,7 +1102,8 @@ void LiDisplay_updateElement() {
 					else LiDisplay_updateNextCellValue();     break;
 
 				case 5: LiDisplay_updateNextCellValue();    break;
-				case 6: maxElementId = (LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID - 1); LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t10", 0, (String(gc_begin_soc_str))); break;	// This should run only once per charge cycle.  It's going to display what the SoC was when the grid charger was plugged in.
+				case 6: LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t26", 0, String(adc_getLatestBatteryCurrent_amps())); break;
+				case 7: maxElementId = (LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID - 1); LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t10", 0, (String(gc_begin_soc_str))); break;	// This should run only once per charge cycle.  It's going to display what the SoC was when the grid charger was plugged in.
 				default: maxElementId = LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID;	break;
 			}
 		break;
@@ -1055,6 +1122,14 @@ void LiDisplay_updateElement() {
 			} else if (LiDisplay_currentGlobalNumVal != LiDisplay_currentParamVal) {
 				LiDisplay_updateGlobalObjectVal("n0", 1, String(LiDisplay_currentParamVal));
 				LiDisplay_currentGlobalNumVal = LiDisplay_currentParamVal;
+			} else {
+				// Next to "CLEAR TRIP" button we will show current trip KWh totals all in 1 text box
+				// We will include the current drive or grid charge cycle in these totals even though they're not saved to the trip yet.
+				LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t6", 0,
+					String("KWh CHRG ") + String(((energy_getTripMeterRegen_Wh() + LiDisplay_energyWHRegen) * 0.001),1) +
+					"  ASST " + String(((energy_getTripMeterAssist_Wh() + LiDisplay_energyWHAssist) * 0.001),1) +
+					"  GRID " + String(((energy_getTripMeterGridCharge_Wh() + LiDisplay_energyWHGridCharge) * 0.001),1)
+				);
 			}
 		break;
 		default : break;
@@ -1138,6 +1213,8 @@ void LiDisplay_keyOn(void)
         LiDisplaySetPageNum = LiDisplay_DrivingPageReqId;
 		LiDisplaySplashPending = false;
 		LiDisplayPowerOffPending = false;
+		LiDisplay_energyWHAssist = 0;
+		LiDisplay_energyWHRegen = 0;
 
 		LiDisplay_resetDrivingPageVariables();
 
@@ -1182,6 +1259,9 @@ void LiDisplay_gridChargerPluggedIn(void)
             LiDisplay_serialBegin();
             hmi_power_millis = millis();
         }
+
+		LiDisplay_energyWHGridCharge = 0;
+
 		LiDisplay_resetGridChargerPageVariables();
 		LiDisplay_calculateGCTimeStr(true);				// Reset GC charge time clock
 
@@ -1207,6 +1287,7 @@ void LiDisplay_gridChargerUnplugged(void)
             if (key_getSampledState() == KEYSTATE_OFF)
 			{
                 hmi_power_millis = millis();
+				LiDisplaySplashFromGridCharger = true;
                 LiDisplaySplashPending = true;
                 LiDisplayPowerOffPending = true;
             }
