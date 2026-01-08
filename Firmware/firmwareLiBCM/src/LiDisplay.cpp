@@ -59,6 +59,7 @@ static String Lidisplay_paramDesc_onScreen = "";
 static uint16_t LiDisplay_energyWHAssist = 0;
 static uint16_t LiDisplay_energyWHRegen = 0;
 static uint16_t LiDisplay_energyWHGridCharge = 0;
+static uint16_t LiDisplay_lastWHGridCharge_onScreen = 9999999;
 
 
 // Initializing to an absurd number for all 7 variables so that on first run they will be updated on screen
@@ -283,6 +284,7 @@ void LiDisplay_resetSettingsPageVariables(bool resetGlobalVar) {
 	LiDisplay_currentGlobalNumVal = 0;	// Number input
 	LiDisplay_paramName_onScreen = "";
 	LiDisplay_paramVal_onScreen = 0;
+	LiDisplay_lastWHGridCharge_onScreen = 9999999;
 	if (resetGlobalVar) { Lidisplay_paramDesc_onScreen = ""; }
 }
 
@@ -990,7 +992,6 @@ void LiDisplay_updateElement() {
 							// Nerd Screen Only
 							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t17", 0, (String((LTC68042result_maxEverCellVoltage_get() * 0.0001),3))); // Peak cell V
 							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t19", 0, (String((LTC68042result_minEverCellVoltage_get() * 0.0001),3))); // Trough cell V
-							LiDisplay_updateNumericVal(LiDisplay_DrivingPageId, "t27", 4, NEXTION_WHT); // TODO_NATALYA -- Dec 2025 -- Update NS t27 "pco" in .tft so we can delete this line.
 							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t27", 0,
 								String("KWh CHRG: ") + String(((energy_getTripMeterRegen_Wh() + LiDisplay_energyWHRegen) * 0.001),1) +
 								"  ASST: " + String(((energy_getTripMeterAssist_Wh() + LiDisplay_energyWHAssist) * 0.001),1)
@@ -1128,12 +1129,27 @@ void LiDisplay_updateElement() {
 				LiDisplay_updateGlobalObjectVal("n0", 1, String(LiDisplay_currentParamVal));
 				LiDisplay_currentGlobalNumVal = LiDisplay_currentParamVal;
 			} else {
+				// Grid Charger Litre and GGE display require division, but they only need to be updated on first screen load if car is being driven
+				uint16_t WHGridCharge_onScreen = 0;
+				WHGridCharge_onScreen = (energy_getTripMeterGridCharge_Wh() + LiDisplay_energyWHGridCharge);
+				if (LiDisplay_lastWHGridCharge_onScreen != WHGridCharge_onScreen) {
+					// We should only get here one time when the settings page is loaded if the car is driving
+					// This will update every so often if the grid charger is plugged in and charging
+					// Canada Natural Resources dept definition is 8.9 KWh / litre gasoline
+					// US DoE KWh to US Gallon Gasoline Equivalent is 33.4 KWh / US Gallon gasoline
+					LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t7", 0,
+						String("GRID Litre Equiv: ") + String((WHGridCharge_onScreen / 8900.0),1) +
+						"  GGE: " + String((WHGridCharge_onScreen / 33400.0),1)
+					);
+					LiDisplay_lastWHGridCharge_onScreen = WHGridCharge_onScreen;
+				}
+
 				// Next to "CLEAR TRIP" button we will show current trip KWh totals all in 1 text box
 				// We will include the current drive or grid charge cycle in these totals even though they're not saved to the trip yet.
 				LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t6", 0,
 					String("KWh CHRG ") + String(((energy_getTripMeterRegen_Wh() + LiDisplay_energyWHRegen) * 0.001),1) +
 					"  ASST " + String(((energy_getTripMeterAssist_Wh() + LiDisplay_energyWHAssist) * 0.001),1) +
-					"  GRID " + String(((energy_getTripMeterGridCharge_Wh() + LiDisplay_energyWHGridCharge) * 0.001),1)
+					"  GRID " + String((WHGridCharge_onScreen * 0.001),1)
 				);
 			}
 		break;
