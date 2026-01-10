@@ -7,7 +7,6 @@
 
 uint8_t heaterLocation = HEATER_NOT_CONNECTED;
 
-//JTS2doLater: Add indicator to 4x20 when heater is off/on
 //JTS2doLater: Turn all discharger resistors on when pack is heating.
 
 /////////////////////////////////////////////////////////////////////////////////////////

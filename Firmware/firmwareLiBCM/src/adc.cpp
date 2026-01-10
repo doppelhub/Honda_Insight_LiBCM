@@ -122,6 +122,6 @@ void adc_calibrateBatteryCurrentSensorOffset(uint8_t isDebugTextSent)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-uint16_t adc_getTemperature(uint8_t tempToMeasure) { return analogRead(tempToMeasure); }
+uint16_t adc_getTemperature_counts(uint8_t tempToMeasure) { return analogRead(tempToMeasure); }
 
 /////////////////////////////////////////////////////////////////////////////////////////

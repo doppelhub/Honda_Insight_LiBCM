@@ -1,0 +1,1 @@
+Add fan grill feature to circuit board, to prevent ribbon cable rubbing.

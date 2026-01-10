@@ -156,7 +156,7 @@ void debugUSB_printData_power(void)
     Serial.print(F(                                     ",# "                      ));
     Serial.print(SoC_getBatteryStateNow_mAh()                                       );
     Serial.print(F(                                             ",mAh "            ));
-    Serial.print(LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps() * 0.001, 1);
+    Serial.print(LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_deciAmps() * 0.0001, 1);
     Serial.print(F(                                                      ",kW "    ));
     Serial.print(temperature_battery_getLatest()                                    );
     Serial.print(F(                                                            ",C"));

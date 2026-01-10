@@ -76,7 +76,10 @@ void loop()
     char errorText[20];
     
     switch(dataPacket)
-    {                                   //*******************  
+    {                                   //*******************
+      case 0b11110100: strcpy(errorText, "-ok 0xF4           "); break;
+      case 0b01111000: strcpy(errorText, "-ok 0x78           "); break;
+      case 0b11111110: strcpy(errorText, "-ok 0xFE           "); break;
       case 0b00100110: strcpy(errorText, "1438 MDM Temp      "); break;
       case 0b11000110: strcpy(errorText, "1439 Short Circuit "); break;
       case 0b01111110: strcpy(errorText, "1440 IGBT Wiring   "); break;
@@ -86,7 +89,7 @@ void loop()
       case 0b00111110: strcpy(errorText, "1565 Invalid Hall  "); break;
       case 0b01101110: strcpy(errorText, "1568 BCM Vsense    "); break;
       case 0b10111110: strcpy(errorText, "1572 PDU temp sig  "); break;
-      case 0b11001110: strcpy(errorText, "1573 ???           "); break;
+      case 0b11001110: strcpy(errorText, "1573 DCDC Temp     "); break;
       case 0b11011110: strcpy(errorText, "1576 VPIN != VMCME "); break;
       case 0b11100110: strcpy(errorText, "1577 VPIN != V6804 "); break;
       case 0b01011110: strcpy(errorText, "1580 BCM I Offset  "); break;
@@ -103,7 +106,7 @@ void loop()
       default:         strcpy(errorText, "?:"); break;
     }
 
-    Serial.print("\nP" + String(errorText) );
+    Serial.print("\r\nP" + String(errorText) );
 
     static uint8_t lastDataPacket = 0;
     

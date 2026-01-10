@@ -129,11 +129,22 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     }
     else if (testToRun == '5')
     {
-        printText_UNUSED();
+        Serial.print(F("battsci AA[5] set to: "));
+        uint8_t newValue = get_uint8_FromInput(line[7],line[8],line[9]);
+        Serial.print(newValue);
+        battsci_frameAA_byte5_set(newValue);
     }
     else if (testToRun == '6')
     {
-        printText_UNUSED();
+        Serial.print(F("battsci AA[2:5] are: 0x"));
+        Serial.print(battsci_frameAA_byte2_get());
+        Serial.print(',');
+        Serial.print(battsci_frameAA_byte3_get());
+        Serial.print(',');
+        Serial.print(battsci_frameAA_byte4_get());
+        Serial.print(',');
+        Serial.print(battsci_frameAA_byte5_get());
+        Serial.print(',');
     }
     else if (testToRun == '7')
     {
@@ -150,6 +161,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
 
     //Lettered tests ($TESTA/B/C) are permanent, for user testing during product troubleshooting
     //JTS2doNext: Add fan test ($TESTF) that briefly runs fans at low speed
+    //JTS2doNext: Move permanent tests to dedicated commands
     else if (testToRun == 'T') { temperature_measureAndPrintAll(); }
     else if (testToRun == 'R') { LTC6804gpio_areAllVoltageReferencesPassing(); }
     else if (testToRun == 'W') { batteryHistory_printAll(); }
@@ -240,12 +252,16 @@ void printVspoofInstructions(void)
         "\n 0: KeyON, engine off, IMA light must remain off throughout test"
         "\n 1: Configure OBDIIC&C to display BVO parameter 0x0A"
         "\n 2: Configure OBDIIC&C to display MDV parameter 0x05"
-        "\n 4: Use $BVO=_ to adjust OBDIIC&C BVO value until equal to VpackSpoof"
+        "\n 3: Use $BVO=_ to adjust OBDIIC&C BVO value until equal to VpackSpoof"
         "\n    Example: BVO is 169 volts & VpackSpoof is 175 volts. Type '$BVO=+' repeatedly until BVO=VpackSpoof"
-        "\n    Note: If '$BVO=+' doesn't increase BVO, type '$SPF=-' to reduce VpackSpoof"
-        "\n 5: Adjust MDV until equal to VpackSpoof"
+        "\n    Note: Voltage might not increase after each step... it's an analog signal."
+        "\n    Note: If several '$BVO=+' commands don't increase BVO, type '$SPF=-' to reduce VpackSpoof"
+        "\n    Goal: Keep $SPF as as close to 0 as possible"
+        "\n 4: Adjust MDV until equal to VpackSpoof"
         "\n    Example: MDV is 171 volts & VpackSpoof is 168 volts. Type '$MDV=-' repeatedly until MDV=VpackSpoof"
-        "\n 6: Verify VpackSpoof & BVO & MDV are within 5 volts (ideally 0 volts)"
+        "\n 5: Verify VpackSpoof & BVO & MDV are within 5 volts (ideally 0 volts)"
+        "\n"
+        "\nNote: These values are stored in EEPROM indefinitely, even across firmware updates"
         ));
 }
 
