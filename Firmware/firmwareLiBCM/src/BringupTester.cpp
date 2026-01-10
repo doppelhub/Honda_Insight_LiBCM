@@ -17,7 +17,7 @@ void serialUSB_waitForEmptyBuffer(void)
 
 void serialUSB_waitForAnyUserInput(void)
 {
-    const uint32_t maxTestPeriod_ms = 60000; //prevent overcharging modules if user walks off mid-test
+    const uint32_t maxTestPeriod_ms = 120000; //prevent overcharging modules if user walks off mid-test
     uint32_t timestamp_testStartTime_ms = millis();
     static bool hasTooMuchTimePassed = false;
 
@@ -41,6 +41,16 @@ void serialUSB_waitForAnyUserInput(void)
 void bringupTester_gridcharger(void)
 {
     #ifdef RUN_BRINGUP_TESTER_GRIDCHARGER
+        if (gpio_isUserSwitchOn() == NO)
+        {
+            //user just installed LiBCM, but hasn't installed firmware yet
+            Serial.print(F("\nPlease install LiBCM firmware\nSee linsight.org/install/firmware"));
+
+            lcdTransmit_begin();
+            lcdTransmit_displayOn();
+            for (uint8_t ii = 0; ii < 4; ii++) { lcdTransmit_Warning(LCD_WARN_FW_EXPIRED); }
+        }
+    
         while (1) //this function never returns
         {       
             Serial.print(F("\nRunning Grid Charger Test: "));
@@ -161,7 +171,7 @@ void bringupTester_gridcharger(void)
             {
                 Serial.print(F("\nHeater connected to: "));
                 if (heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)   { Serial.print(F("Daughterboard")); }
-                if (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM) { Serial.print(F("LiBCM Header"));  }
+                if (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LIBCM) { Serial.print(F("LiBCM Header"));  }
                 Serial.print(F("\nTurning heater on for 5 seconds"));
                 gpio_turnPackHeater_on();
                 delay(5000);

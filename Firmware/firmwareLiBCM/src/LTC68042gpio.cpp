@@ -66,8 +66,8 @@ void LTC6804_rdaux_reg(uint8_t reg, //GPIO voltage register to read back (1:A, 2
 
 //Read and parse aux voltages from LTC6804 registers into 'aux_codes' variable.
 uint8_t LTC6804_rdaux(uint8_t reg, //controls which aux voltage register to read (0=all, 1=A, 2=B)
-                     uint8_t total_ic,
-                     uint8_t addr_first_ic )
+                      uint8_t total_ic,
+                      uint8_t addr_first_ic )
 {
     const uint8_t NUM_RX_BYTES = 8;
     const uint8_t NUM_BYTES_IN_REG = 6;

@@ -22,13 +22,14 @@ void key_handleKeyEvent_off(void)
     METSCI_disable();
     LTC68042cell_acquireAllCellVoltages();
     SoC_updateUsingLatestOpenCircuitVoltage(); //JTS2doLater: Add ten minute delay before VoC->SoC LUT
-    adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_ENABLED);
+    adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_ENABLED); //JTS2doNext: move to keyON
     gpio_turnPowerSensors_off();
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyOFF();
     //JTS2doLater: Add built-in test suite, including VREF, VCELL, Balancing, temp verify (batt and OEM), etc.
     eeprom_keyOffCheckForExpiredFirmware();
     LTC68042configure_doesActualPackSizeMatchUserConfig();
+    energy_storeTrip();
 
     time_latestKeyOff_ms_set(millis()); //MUST RUN LAST!
 }
@@ -45,6 +46,7 @@ void key_handleKeyEvent_on(void)
     LTC68042configure_programVolatileDefaults(); //turn discharge resistors off, set ADC LPF, etc.
     LTC68042configure_handleKeyStateChange();
     vPackSpoof_handleKeyON();
+    energy_zeroWh();
     LED(1,HIGH);
 
     time_latestKeyOn_ms_set(millis()); //MUST RUN LAST!
@@ -125,7 +127,7 @@ void keyOn_coldBootTasks(void)
     vPackSpoof_setVoltage();
     SoC_setBatteryStateNow_percent(SoC_estimateFromRestingCellVoltage_percent());
     BATTSCI_enable(); //must occur after we have valid Vcell data
-    adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_DISABLED); //current sensor settles almost immediately
+    adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_DISABLED); //current sensor settles almost immediately //JTS2doLater: Can we detect true keyON from USB reset?
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

@@ -17,6 +17,11 @@
     void powerSave_init(void);
 
     void powerSave_turnOffIfAllowed(void);
+    
     void powerSave_sleepIfAllowed(void);
+
+    void powerSave_turnOffLiBCM_ifPackEmpty(void);
+
+    bool powerSave_isThermalManagementAllowed(void);
 
 #endif

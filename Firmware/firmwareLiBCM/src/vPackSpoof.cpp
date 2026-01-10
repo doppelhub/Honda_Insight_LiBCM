@@ -36,21 +36,47 @@ void vPackSpoof_handleKeyOFF(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void spoofVoltageMCMe(void)
-{
-    int16_t pwmCounts_MCMe = 0;
+int8_t vPackSpoof_offsetBVO_get(void) { return eeprom_getVspoofOffset_BVO(); }
+int8_t vPackSpoof_offsetMDV_get(void) { return eeprom_getVspoofOffset_MDV(); }
+int8_t vPackSpoof_offsetSPF_get(void) { return eeprom_getVspoofOffset_SPF(); }
 
-    uint8_t spoofedPackVoltage_MCMe = spoofedPackVoltage + ADDITIONAL_MCMe_OFFSET_VOLTS;
-    
+void vPackSpoof_offsetBVO_adjust(uint8_t action)
+{
+    if      (action == '+') { eeprom_setVspoofOffset_BVO(eeprom_getVspoofOffset_BVO() - 1); }
+    else if (action == '-') { eeprom_setVspoofOffset_BVO(eeprom_getVspoofOffset_BVO() + 1); }
+    else if (action == '0') { eeprom_setVspoofOffset_BVO(0);                                }
+}
+
+void vPackSpoof_offsetMDV_adjust(uint8_t action)
+{
+    if      (action == '+') { eeprom_setVspoofOffset_MDV(eeprom_getVspoofOffset_MDV() + 1); }
+    else if (action == '-') { eeprom_setVspoofOffset_MDV(eeprom_getVspoofOffset_MDV() - 1); }
+    else if (action == '0') { eeprom_setVspoofOffset_MDV(0);                                }
+}
+
+
+void vPackSpoof_offsetSPF_adjust(uint8_t action)
+{
+    if      (action == '+') { eeprom_setVspoofOffset_SPF(eeprom_getVspoofOffset_SPF() + 1); }
+    else if (action == '-') { eeprom_setVspoofOffset_SPF(eeprom_getVspoofOffset_SPF() - 1); }
+    else if (action == '0') { eeprom_setVspoofOffset_SPF(0);                                }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void spoofVoltageMCMe(void)
+{    
     //Derivation, empirically determined (see: ~/Electronics/PCB (KiCAD)/RevB/V&V/voltage spoofing results.ods)
-    //pwmCounts_MCMe = (               actualPackVoltage                 * 512) / spoofedPackVoltage_MCMe         - 551
-    //pwmCounts_MCMe = (               actualPackVoltage                 * 256) / spoofedPackVoltage_MCMe   * 2   - 551 //prevent 16b overflow
-    //pwmCounts_MCMe = (( ( ((uint16_t)actualPackVoltage )               * 256) / spoofedPackVoltage_MCMe)  * 2 ) - 551 
-      pwmCounts_MCMe = (( ( ((uint16_t)LTC68042result_packVoltage_get()) << 8 ) / spoofedPackVoltage_MCMe) << 1 ) - 551;
+    //      pwmCounts_MCMe = (               actualPackVoltage                 * 512) / spoofedPackVoltage         - 551
+    //      pwmCounts_MCMe = (               actualPackVoltage                 * 256) / spoofedPackVoltage   * 2   - 551 //prevent 16b overflow
+    //      pwmCounts_MCMe = (( ( ((uint16_t)actualPackVoltage )               * 256) / spoofedPackVoltage)  * 2 ) - 551 
+    int16_t pwmCounts_MCMe = (( ( ((uint16_t)LTC68042result_packVoltage_get()) << 8 ) / spoofedPackVoltage) << 1 ) - 551;
+
+    pwmCounts_MCMe += eeprom_getVspoofOffset_BVO();
 
     //bounds checking
-    if      (pwmCounts_MCMe > 255) {pwmCounts_MCMe = 255;}
-    else if (pwmCounts_MCMe <   0) {pwmCounts_MCMe =   0;}
+    if      (pwmCounts_MCMe > 255) { pwmCounts_MCMe  = 255; }
+    else if (pwmCounts_MCMe <   0) { pwmCounts_MCMe  =   0; }
 
     analogWrite(PIN_MCME_PWM, (uint8_t)pwmCounts_MCMe);
 }
@@ -59,18 +85,20 @@ void spoofVoltageMCMe(void)
 
 void spoofVoltage_VPINout(void)
 {
-    int16_t pwmCounts_VPIN_out = 0;
-
-    //      V_DIV_CORRECTION = RESISTANCE_MCM / RESISTANCE_R34
-    //      V_DIV_CORRECTION = 100k           / 10k
-    #define V_DIV_CORRECTION 1.1
-
-    uint8_t spoofedPackVoltage_VPIN = spoofedPackVoltage + ADDITIONAL_VPIN_OFFSET_VOLTS;
-
     //remap measured Vpin_in value ratiometrically to desired spoofed voltage
-    //It's important to look at VPIN_in, since V_PDU is different from the Vpack during keyON capacitor charging event
-    uint16_t intermediateMath = (uint16_t)(adc_packVoltage_VpinIn() * spoofedPackVoltage_VPIN) * V_DIV_CORRECTION;
-    pwmCounts_VPIN_out = (int16_t)( (uint16_t)intermediateMath / LTC68042result_packVoltage_get() );
+    //  mathematically: VpinOut = VpinIn * spoofedPackVoltage * 1.1 / actualPackvoltage
+    //must use VPIN_in ratiometrically for two reasons:
+    //  1) VPIN_in measures voltage inside the PDU, which ramps up during keyON capacitor charging event
+    //  2) Safety. If we only used LTC6804 Vpack result, we'd lose redundancy required by ASIL-C
+    uint16_t intermediateMath = (uint16_t)adc_packVoltage_VpinIn() * spoofedPackVoltage;
+             intermediateMath = (intermediateMath >> 7) * 141; //multiply by 1.1 to correct for LiBCM's hardware voltage divider:
+                                                               //  V_DIV_CORRECTION = RESISTANCE_MCM / RESISTANCE_R34
+                                                               //  V_DIV_CORRECTION = 100k           / 10k
+                                                               //  V_DIV_CORRECTION = 1.1
+                                                               //  V_DIV_CORRECTION = (x * 141) >> 7
+    int16_t pwmCounts_VPIN_out = (int16_t)(intermediateMath / LTC68042result_packVoltage_get());
+
+    pwmCounts_VPIN_out += eeprom_getVspoofOffset_MDV();
 
     //bounds checking
     if      (pwmCounts_VPIN_out > 255) {pwmCounts_VPIN_out = 255;}
@@ -106,6 +134,8 @@ uint8_t calculate_Vspoof_maxPossible(void)
     else if (actualPackVoltage < 236) { maxAllowedVspoof = actualPackVoltage - 19; }
     else if (actualPackVoltage < 245) { maxAllowedVspoof = actualPackVoltage - 20; }
     else                              { maxAllowedVspoof = actualPackVoltage - 21; }
+
+    maxAllowedVspoof += eeprom_getVspoofOffset_SPF();
 
     return maxAllowedVspoof;
 }

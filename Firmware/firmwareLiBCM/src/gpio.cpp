@@ -90,7 +90,7 @@ void gpio_setFanSpeed_OEM(char speed)
         //case FAN_MED:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break; //same as FAN_LOW... OEM fan only supports OFF/LOW/HIGH
         #ifdef BATTERY_TYPE_5AhG3
             case FAN_HIGH: digitalWrite(PIN_FANOEM_LOW, LOW); digitalWrite(PIN_FANOEM_HI, HIGH); break; //OEM fan schematic requires one relay for high speed
-        #elif defined BATTERY_TYPE_47AhFoMoCo
+        #elif defined BATTERY_TYPE_47Ah
             case FAN_HIGH: digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI, HIGH); break; //PDU fan schematic requires both relays for high speed
         #endif
     }
@@ -235,7 +235,7 @@ void gpio_turnTemperatureSensors_off(void) {digitalWrite(PIN_TEMP_EN, LOW); }
 
 void gpio_turnPackHeater_on(void)
 {
-    if (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM)
+    if (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LIBCM)
     {
         pinMode(PIN_GPIO3,OUTPUT);
         digitalWrite(PIN_GPIO3,HIGH);
@@ -251,7 +251,7 @@ void gpio_turnPackHeater_on(void)
 
 void gpio_turnPackHeater_off(void)
 {
-    if (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM)
+    if (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LIBCM)
     {
         pinMode(PIN_GPIO3,INPUT);
         digitalWrite(PIN_GPIO3,LOW);
@@ -269,7 +269,7 @@ bool gpio_isHeaterOnNow(void)
 {
     uint8_t pinState = PIN_STATE_ERROR;
 
-    if      (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LICBM) { pinState = gpio_getPinState(PIN_GPIO3); }
+    if      (heater_isConnected() == HEATER_CONNECTED_DIRECT_TO_LIBCM) { pinState = gpio_getPinState(PIN_GPIO3); }
     else if (heater_isConnected() == HEATER_CONNECTED_DAUGHTERBOARD)   { pinState = gpio_getPinState(PIN_GPIO1); }
     else                                                               { return NO;                              }
 

@@ -39,12 +39,10 @@ bool cellBalance_areCellsBalancing(void) { return cellsAreBalancing; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doLater: Always allow discharge balancing when a cell is overcharged (for safety)
 //JTS2doLater: Write keyOff test that measures each cell voltage twice: once with discharge resistor off, and again with resistor on.
 //             Then verify voltage drop, which means the discharge resistor is turning off and on.  If there isn't enough resolution,
 //             another method would be to wait a few hours for pack voltages to settle, then log all cell voltages an hour apart.
 //JTS2doLater: Add per-cell SoC, to allow balancing at any SoC (see icn.net:post#1502833,comment#579)
-//balance cells (if needed)
 void configureDischargeResistors(void)
 {   
     static uint8_t balanceHysteresis = CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT;
@@ -53,7 +51,7 @@ void configureDischargeResistors(void)
 
     cellsAreBalancing = NO;
 
-    if (LTC68042result_hiCellVoltage_get() > CELL_VREST_85_PERCENT_SoC) { cellDischargeVoltageThreshold = CELL_VREST_85_PERCENT_SoC; }
+    if (LTC68042result_hiCellVoltage_get() > CELL_VREST_085_PERCENT_SoC) { cellDischargeVoltageThreshold = CELL_VREST_085_PERCENT_SoC; }
     else { cellDischargeVoltageThreshold = LTC68042result_loCellVoltage_get() + balanceHysteresis; }
 
     //determine which cells to balance
@@ -94,41 +92,81 @@ void disableDischargeResistors(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t isBalancingAllowed(void)
+//balancing criteria for a healthy pack
+uint8_t isBalancingPossible(void)
 {
     //order is important
     //external checks
     if (key_getSampledState()               == KEYSTATE_ON            ) { return NO__KEY_IS_ON;               }
-#ifdef ONLY_BALANCE_CELLS_WHEN_GRID_CHARGER_PLUGGED_IN
-    if (gpio_isGridChargerPluggedInNow()    == NO                     ) { return NO__CHARGER_UNPLUGGED;       }
-#else
     if ((gpio_isGridChargerPluggedInNow()   == NO                  ) &&
         (SoC_getBatteryStateNow_percent()    < CELL_BALANCE_MIN_SoC)  ) { return NO__SoC_TOO_LOW;             }
-#endif
     //cell voltage checks
     if (LTC68042result_hiCellVoltage_get()   > CELL_VMAX_REGEN        ) { return NO__ATLEASTONECELL_TOO_HIGH; }
     if (LTC68042result_loCellVoltage_get()   < CELL_VMIN_GRIDCHARGER  ) { return NO__ATLEASTONECELL_TOO_LOW;  }
     //thermal checks
     if (temperature_battery_getLatest()      > CELL_BALANCE_MAX_TEMP_C) { return NO__BATTERY_IS_HOT;          }
-    
+    //time checks
+    if (time_isItTimeToPerformKeyOffTasks() == NO                     ) { return DELAY_DO_NOTHING;            }
+
     return YES__BALANCING_ALLOWED;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doLater: balance majorly imbalanced cells even when grid charger is unplugged
+//balancing criteria for a majorly unbalanced pack
+uint8_t isBalancingMandatory(void)
+{
+    uint16_t cellDeltaV = LTC68042result_deltaCellVoltage_get();
+
+    if (cellDeltaV < CELL_MAJOR_IMBALANCE_DELTA) { return NO__BALANCING_NOT_REQUESTED; }
+    
+    //if we get here, pack is majorly unbalanced
+    //keyState           doesn't matter
+    //grid charger state doesn't matter
+    //pack temperature   doesn't matter
+    if (LTC68042result_loCellVoltage_get()     <  CELL_VMIN_GRIDCHARGER             ) { return NO__ATLEASTONECELL_TOO_LOW; }
+    if (adc_getLatestSpoofedCurrent_deciAmps() >  CELL_IMAX_MAJOR_IMBALANCE_DECIAMPS) { return NO__PACK_CURRENT_TOO_HIGH;  }
+    if (adc_getLatestSpoofedCurrent_deciAmps() < -CELL_IMAX_MAJOR_IMBALANCE_DECIAMPS) { return NO__PACK_CURRENT_TOO_HIGH;  }
+
+    if (cellDeltaV > eeprom_maxCellVoltageDelta_get()) { eeprom_maxCellVoltageDelta_set(cellDeltaV); }
+
+    return YES__BALANCING_ALLOWED;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t isEntirePackOvercharged(void)
+{
+    if ((LTC68042result_hiCellVoltage_get() > CELL_VREST_100_PERCENT_SoC  ) &&
+        (LTC68042result_loCellVoltage_get() > CELL_VMAX_GRIDCHARGER       )  ) { return YES__BALANCING_ALLOWED; }
+
+    return NO__BALANCING_NOT_REQUESTED;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t getBalanceRequest(void)
+{
+    if (isBalancingMandatory()    == YES__BALANCING_ALLOWED) { return YES__BALANCING_ALLOWED; }
+    if (isEntirePackOvercharged() == YES__BALANCING_ALLOWED) { return YES__BALANCING_ALLOWED; }
+ 
+    return isBalancingPossible();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void cellBalance_handler(void)
 {
-    static uint8_t isBalancingAllowed_previous = NO__UNINITIALIZED;
-           uint8_t isBalancingAllowed_now      = isBalancingAllowed();
-
-    if (isBalancingAllowed_now == YES__BALANCING_ALLOWED)
-    {
-        if (time_isItTimeToPerformKeyOffTasks() == YES) { configureDischargeResistors(); }
-    }
-    else if (isBalancingAllowed_previous == YES__BALANCING_ALLOWED) { disableDischargeResistors(); }
+    if (LTC68042result_wasDataProcessedThisLoop_get() == NO) { return; } //wait for new Vcell data
     
-    isBalancingAllowed_previous = isBalancingAllowed_now;
+    static uint8_t isBalancingAllowed_previous = NO__UNINITIALIZED;
+           uint8_t isBalancingAllowed_now      = getBalanceRequest();
+         
+         if (isBalancingAllowed_now      == DELAY_DO_NOTHING      ) { return;                         }        
+    else if (isBalancingAllowed_now      == YES__BALANCING_ALLOWED) { configureDischargeResistors();  }
+    else if (isBalancingAllowed_previous == YES__BALANCING_ALLOWED) { disableDischargeResistors();    }
+    
+    isBalancingAllowed_previous = isBalancingAllowed_now; //not updated if 'DELAY_DO_NOTHING'
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

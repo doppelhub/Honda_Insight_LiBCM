@@ -111,18 +111,22 @@ bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
             LTC6804_adax(); //send any broadcast command
             delay(6); //wait for all LTC6804 ICs to process this command
 
+            uint8_t errorCount_LTC6804_underTest[TOTAL_IC_60S] = {0}; //allocate for 60S even when user selects 48S
+
             //read data back from either QTY4 ICs (if user selects PACK_IS_48S in config.h), or QTY5 ICs (if user selects PACK_IS_60S in config.h)
-            //we don't care about the actual data; only that the PEC error count doesn't increment 
-            uint8_t errorCount_allUserSpecifiedLTC6804s = LTC6804_rdaux(0,TOTAL_IC,FIRST_IC_ADDR); 
-
-            if (errorCount_allUserSpecifiedLTC6804s != 0) { helper_doesActualPackSizeMatchUserConfig = false; } //at least one IC had data transmissions errors
-
-            if (TOTAL_IC == 4)
+            //we don't care about the actual returned data; only that the PEC error count doesn't increment 
+            for (uint8_t dut = 0; dut < TOTAL_IC; dut++)
             {
-                uint8_t errorCount_onlyFifthLTC6804 = LTC6804_rdaux(0,1,FIRST_IC_ADDR+4); 
+                errorCount_LTC6804_underTest[dut] = LTC6804_rdaux(1,1,FIRST_IC_ADDR + dut); //read register 'A' on specified LTC6804
+                if (errorCount_LTC6804_underTest[dut] != 0) { helper_doesActualPackSizeMatchUserConfig = false; }
+            }
 
-                //the fifth LTC6804 (cells 49:60) should be unpowered (i.e. it should return errors)
-                if (errorCount_onlyFifthLTC6804 == 0) { helper_doesActualPackSizeMatchUserConfig = false; }
+            //For 48S, verify cells 49:60 aren't present
+            if (TOTAL_IC == TOTAL_IC_48S)
+            {
+                errorCount_LTC6804_underTest[4] = LTC6804_rdaux(1,1,FIRST_IC_ADDR + TOTAL_IC_48S); //attempt to read from 49:60
+
+                if (errorCount_LTC6804_underTest[4] == 0) { helper_doesActualPackSizeMatchUserConfig = false; } //49:60 present
             }
 
             if (helper_doesActualPackSizeMatchUserConfig == false)
@@ -130,7 +134,25 @@ bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
                 //fatal error
                 //alert user and then turn off
 
-                Serial.print(F("\nError: measured cell count disagrees with user specified cell count in config.h"));
+                Serial.print(F("\nError: measured cell count disagrees with user specified cell count in config.h."
+                               "\nLiBCM is disabled due to cell voltage monitoring IC issue. Debug:"));            
+
+                //cells 1:48 are the same for both 48S & 60S
+                for (uint8_t dut = 0; dut < TOTAL_IC; dut++)
+                {
+                    Serial.print(F("\nIC"));
+                    Serial.print(dut);
+                    if (errorCount_LTC6804_underTest[dut] == 0) { Serial.print(F(": pass")); }
+                    else                                        { Serial.print(F(": FAIL")); }
+                }
+
+                //For 48S, verify cells 49:60 aren't present
+                Serial.print("\nIC4: ");
+                if (TOTAL_IC == TOTAL_IC_48S)
+                {
+                    if (errorCount_LTC6804_underTest[4] == 0) { Serial.print(F("FAIL")); } //IC4 powered by cells 49:60
+                    else                                      { Serial.print(F("pass")); }
+                }
 
                 lcdTransmit_begin();
                 delay(50); //delay doesn't matter because this is a fatal error
@@ -141,8 +163,9 @@ bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
                 gpio_turnBuzzer_on_highFreq(); //call GPIO directly
                 
                 wdt_disable(); //turn off watchdog to prevent reset
+                wdt_enable(WDTO_8S);
 
-                delay(10000); //give the user enough time to read error message  //JTS2doNow: Allow LiBCM to keep working
+                delay(7000); //give the user enough time to read error message
 
                 gpio_turnLiBCM_off(); //game over... thanks for playing
             }

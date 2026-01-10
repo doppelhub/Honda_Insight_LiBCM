@@ -1,0 +1,1 @@
+Two RMAd PCBs have oxidation-related trace failures, particularly on the back side traces corresponding to IC2 & IC3.  Need to add kapton and/or conformal coating to prevent water ingress below the solder mask.

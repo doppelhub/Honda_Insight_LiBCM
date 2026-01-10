@@ -19,15 +19,22 @@ const uint16_t EEPROM_LAST_USABLE_ADDRESS         = 0xF9F; //atmega2560 has 4kB 
 //EEPROM address map:
 const uint16_t EEPROM_ADDRESS_COMPILE_DATE        = 0x000; //EEPROM range is 0x000:0x00B (12B)
 const uint16_t EEPROM_ADDRESS_HOURS_SINCE_UPDATE  = 0x00C; //EEPROM range is 0x00C:0x00D ( 2B)
-const uint16_t EEPROM_ADDRESS_FIRMWARE_STATUS     = 0x00E; //EEPROM range is 0x00E:0x00E ( 1B)
-const uint16_t EEPROM_ADDRESS_BATTSCI_REGEN       = 0x00F; //EEPROM range is 0x00F:0x00F ( 1B)
-const uint16_t EEPROM_ADDRESS_BATTSCI_ASSIST      = 0x010; //EEPROM range is 0x010:0x010 ( 1B)
-const uint16_t EEPROM_ADDRESS_KEYON_DELAY         = 0x011; //EEPROM range is 0x011:0x011 ( 1B)
-const uint16_t EEPROM_ADDRESS_unused              = 0x012; //EEPROM range is 0x012:0x012 ( 1B)
+const uint16_t EEPROM_ADDRESS_FIRMWARE_STATUS     = 0x00E; //EEPROM range is 0x00E       ( 1B)
+const uint16_t EEPROM_ADDRESS_BATTSCI_REGEN       = 0x00F; //EEPROM range is 0x00F       ( 1B)
+const uint16_t EEPROM_ADDRESS_BATTSCI_ASSIST      = 0x010; //EEPROM range is 0x010       ( 1B)
+const uint16_t EEPROM_ADDRESS_KEYON_DELAY         = 0x011; //EEPROM range is 0x011       ( 1B)
+const uint16_t EEPROM_ADDRESS_NEXT_Wh_RECORD      = 0x012; //EEPROM range is 0x012       ( 1B)
 const uint16_t EEPROM_ADDRESS_COMPILE_TIME        = 0x013; //EEPROM range is 0x013:0x01B ( 9B)
+const uint16_t EEPROM_ADDRESS_MAX_VCELL_DELTA     = 0x01C; //EEPROM range is 0x01C:0x01D ( 2B)
+const uint16_t EEPROM_ADDRESS_BVO_OFFSET          = 0x01E; //EEPROM range is 0x01E       ( 1B)
+const uint16_t EEPROM_ADDRESS_MDV_OFFSET          = 0x01F; //EEPROM range is 0x01F       ( 1B)
+const uint16_t EEPROM_ADDRESS_SPF_OFFSET          = 0x020; //EEPROM range is 0x020       ( 1B)
 //this EEPROM space still available
-const uint16_t EEPROM_ADDRESS_BATT_HISTORY = EEPROM_LAST_USABLE_ADDRESS - NUM_BYTES_BATTERY_HISTORY; //stored last
-const uint16_t EEPROM_ADDRESS_BATT_HISTORY_UNINITIALIZED = EEPROM_ADDRESS_BATT_HISTORY - 1; //0xFF if updating from old version
+//The following addresses start from end of EEPROM space and work backwards to beginning
+const uint16_t EEPROM_ADDRESS_BATT_HISTORY        = EEPROM_LAST_USABLE_ADDRESS - NUM_BYTES_BATTERY_HISTORY;        //0xA57:0xF9F (1536B)
+const uint16_t EEPROM_ADDRESS_BATT_HISTORY_UNINIT = EEPROM_ADDRESS_BATT_HISTORY - 1;                               //0xA56       (   1B)
+const uint16_t EEPROM_ADDRESS_Wh_RECORDS          = EEPROM_ADDRESS_BATT_HISTORY_UNINIT - 1 - NUM_BYTES_Wh_HISTORY; //0x655:0xA55 (1024B)
+const uint16_t EEPROM_ADDRESS_Wh_RECORDS_UNINIT   = EEPROM_ADDRESS_Wh_RECORDS - 1;                                 //0x654       (   1B)
 
 //compile date & time stored in EEPROM the last time the firmware was updated
 uint8_t compileDateEEPROM[BYTES_IN_DATE] = {}; //JTS2doLater: Move these into single function (to save RAM)
@@ -142,9 +149,6 @@ uint16_t hoursSincePreviousKeyOff(void)
 
     remainder_ms = delta_ms;
 
-    Serial.print(F("\nRemainder_ms: "));
-    Serial.print(remainder_ms);
-
     return delta_hours;
 }
 
@@ -186,40 +190,85 @@ void eeprom_keyOffCheckForExpiredFirmware(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t eeprom_hasLibcmDisabledAssist_get(void) { return EEPROM.read(EEPROM_ADDRESS_BATTSCI_ASSIST); }
+uint8_t eeprom_hasLibcmDisabledAssist_get(void)              { return EEPROM.read  (EEPROM_ADDRESS_BATTSCI_ASSIST);                   }
 void    eeprom_hasLibcmDisabledAssist_set(uint8_t wasAssistLimited) { EEPROM.update(EEPROM_ADDRESS_BATTSCI_ASSIST, wasAssistLimited); }
 
-uint8_t eeprom_hasLibcmDisabledRegen_get(void) { return EEPROM.read(EEPROM_ADDRESS_BATTSCI_REGEN); }
-void    eeprom_hasLibcmDisabledRegen_set(uint8_t wasRegenLimited) { EEPROM.update(EEPROM_ADDRESS_BATTSCI_REGEN, wasRegenLimited); }
+uint8_t eeprom_hasLibcmDisabledRegen_get(void)               { return EEPROM.read  (EEPROM_ADDRESS_BATTSCI_REGEN);                    }
+void    eeprom_hasLibcmDisabledRegen_set(uint8_t wasRegenLimited)   { EEPROM.update(EEPROM_ADDRESS_BATTSCI_REGEN, wasRegenLimited);   }
+
+uint16_t eeprom_maxCellVoltageDelta_get(void)        { return readFromEEPROM_uint16(EEPROM_ADDRESS_MAX_VCELL_DELTA);                  }
+void     eeprom_maxCellVoltageDelta_set(uint16_t newMax)     { writeToEEPROM_uint16(EEPROM_ADDRESS_MAX_VCELL_DELTA, newMax);          }
+
+uint8_t eeprom_delayKeyON_ms_get(void)                       { return EEPROM.read  (EEPROM_ADDRESS_KEYON_DELAY);                      }
+void    eeprom_delayKeyON_ms_set(uint8_t delay_ms)                  { EEPROM.update(EEPROM_ADDRESS_KEYON_DELAY, delay_ms);            }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t eeprom_delayKeyON_ms_get(void) { return EEPROM.read(EEPROM_ADDRESS_KEYON_DELAY); }
-void    eeprom_delayKeyON_ms_set(uint8_t delay_ms) { EEPROM.update(EEPROM_ADDRESS_KEYON_DELAY, delay_ms); }
+int8_t eeprom_getVspoofOffset_BVO(void) { return EEPROM.read  (EEPROM_ADDRESS_BVO_OFFSET); }
+int8_t eeprom_getVspoofOffset_MDV(void) { return EEPROM.read  (EEPROM_ADDRESS_MDV_OFFSET); }
+int8_t eeprom_getVspoofOffset_SPF(void) { return EEPROM.read  (EEPROM_ADDRESS_SPF_OFFSET); }
+
+void eeprom_setVspoofOffset_BVO(int8_t newOffset_counts) { EEPROM.update(EEPROM_ADDRESS_BVO_OFFSET, newOffset_counts); }
+void eeprom_setVspoofOffset_MDV(int8_t newOffset_counts) { EEPROM.update(EEPROM_ADDRESS_MDV_OFFSET, newOffset_counts); }
+void eeprom_setVspoofOffset_SPF(int8_t newOffset_counts) { EEPROM.update(EEPROM_ADDRESS_SPF_OFFSET, newOffset_counts); }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void printMessage_RestoringEEPROM(void) { Serial.print(F("\nRestoring EEPROM value: ")); }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void eeprom_verifyDataValid(void)
 {
     //verify all runtime-configurable data stored in EEPROM is valid.  If not, load default value(s)
-    if ( !( (eeprom_hasLibcmDisabledRegen_get() == EEPROM_LIBCM_DISABLED_REGEN) || (eeprom_hasLibcmDisabledRegen_get() == EEPROM_REGEN_NEVER_LIMITED) ) )
+    if ( !((eeprom_hasLibcmDisabledRegen_get() == EEPROM_LIBCM_DISABLED_REGEN) ||
+           (eeprom_hasLibcmDisabledRegen_get() == EEPROM_REGEN_NEVER_LIMITED )  ) )
     {
-        //invalid data in EEPROM
-        Serial.print(F("\nRestoring EEPROM value: EEPROM_LIBCM_DISABLED_REGEN"));
+        printMessage_RestoringEEPROM(); Serial.print(F("LIBCM_DISABLED_REGEN"));
         eeprom_hasLibcmDisabledRegen_set(EEPROM_REGEN_NEVER_LIMITED);
     }
 
-    if ( !( (eeprom_hasLibcmDisabledAssist_get() == EEPROM_LIBCM_DISABLED_ASSIST) || (eeprom_hasLibcmDisabledAssist_get() == EEPROM_ASSIST_NEVER_LIMITED) ) )
+    if ( !((eeprom_hasLibcmDisabledAssist_get() == EEPROM_LIBCM_DISABLED_ASSIST) ||
+           (eeprom_hasLibcmDisabledAssist_get() == EEPROM_ASSIST_NEVER_LIMITED )  ) )
     {
-        //invalid data in EEPROM
-        Serial.print(F("\nRestoring EEPROM value: EEPROM_LIBCM_DISABLED_ASSIST"));
+        printMessage_RestoringEEPROM(); Serial.print(F("LIBCM_DISABLED_ASSIST"));
         eeprom_hasLibcmDisabledAssist_set(EEPROM_ASSIST_NEVER_LIMITED);
     }
 
-    if (eeprom_delayKeyON_ms_get() == EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE)
+    if (eeprom_delayKeyON_ms_get() == EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_8b)
     {
-        Serial.print(F("\nRestoring EEPROM value: EEPROM_ADDRESS_KEYON_DELAY"));
+        printMessage_RestoringEEPROM(); Serial.print(F("KEYON_DELAY"));
         eeprom_delayKeyON_ms_set(0);
+    }
+
+    if (eeprom_maxCellVoltageDelta_get() == EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_16b)
+    {
+        printMessage_RestoringEEPROM(); Serial.print(F("IMBALANCE_DELTA"));
+        eeprom_maxCellVoltageDelta_set(CELL_MAJOR_IMBALANCE_DELTA);
+    }
+    
+    if (EEPROM.read(EEPROM_ADDRESS_BATT_HISTORY_UNINIT) == EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_8b)
+    {
+        eeprom_batteryHistory_reset();
+        EEPROM.update(EEPROM_ADDRESS_BATT_HISTORY_UNINIT, EEPROM_ADDRESS_FORMATTED_VALUE);
+    }
+
+    if (EEPROM.read(EEPROM_ADDRESS_Wh_RECORDS_UNINIT)   == EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_8b)
+    {
+        eeprom_wattHourHistory_reset();
+        EEPROM.update(EEPROM_ADDRESS_Wh_RECORDS_UNINIT, EEPROM_ADDRESS_FORMATTED_VALUE);
+        EEPROM.update(EEPROM_ADDRESS_NEXT_Wh_RECORD,    EEPROM_ADDRESS_FORMATTED_VALUE);
+    }
+
+    if ((EEPROM.read(EEPROM_ADDRESS_BVO_OFFSET) == EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_8b) &&
+        (EEPROM.read(EEPROM_ADDRESS_MDV_OFFSET) == EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_8b) &&
+        (EEPROM.read(EEPROM_ADDRESS_SPF_OFFSET) == EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_8b)  )
+    {
+        //JTS2doLater: fix int8_t issue where EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_8b = 0xFF = -1
+        printMessage_RestoringEEPROM(); Serial.print(F("VPACKSPOOF_OFFSETS"));
+        EEPROM.update(EEPROM_ADDRESS_BVO_OFFSET, EEPROM_ADDRESS_FORMATTED_VALUE);
+        EEPROM.update(EEPROM_ADDRESS_MDV_OFFSET, EEPROM_ADDRESS_FORMATTED_VALUE);
+        EEPROM.update(EEPROM_ADDRESS_SPF_OFFSET, EEPROM_ADDRESS_FORMATTED_VALUE);
     }
 }
 
@@ -229,6 +278,7 @@ void eeprom_resetDebugValues(void)
 {
     eeprom_hasLibcmDisabledRegen_set(EEPROM_REGEN_NEVER_LIMITED);
     eeprom_hasLibcmDisabledAssist_set(EEPROM_ASSIST_NEVER_LIMITED);
+    eeprom_maxCellVoltageDelta_set(CELL_MAJOR_IMBALANCE_DELTA);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -262,26 +312,115 @@ void eeprom_batteryHistory_incrementValue(uint8_t indexTemperature, uint8_t inde
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void eeprom_eraseRange(uint16_t minAddress, uint16_t maxAddress, uint8_t valueToWrite)
+{    
+    for (uint16_t address = minAddress; address <= maxAddress; address++)
+    {
+        if ((address & 0b01111111) == 0) //if divisible by 128
+        {
+            wdt_reset();
+            Serial.print('\n');
+        }
+
+        EEPROM.update(address, valueToWrite);
+    
+        Serial.print('.');
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void eeprom_batteryHistory_reset(void)
 {
     uint16_t minAddress = EEPROM_ADDRESS_BATT_HISTORY;
     uint16_t maxAddress = EEPROM_ADDRESS_BATT_HISTORY + NUM_BYTES_BATTERY_HISTORY;
   
     Serial.print(F("\nInitializing battery history"));
+    eeprom_eraseRange(minAddress, maxAddress, EEPROM_ADDRESS_FORMATTED_VALUE);
+    Serial.print(F("\nDone"));
+}
 
-    for (uint16_t address=minAddress; address<=maxAddress; address++)
-    {
-        EEPROM.update(address, EEPROM_ADDRESS_FORMATTED_VALUE);
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void eeprom_wattHourHistory_storeSession( uint16_t time_s,
+                                          uint16_t distance_TBD,
+                                          uint16_t assist_Wh,
+                                          uint16_t regen_Wh    )
+{
+    uint8_t recordNumber = EEPROM.read(EEPROM_ADDRESS_NEXT_Wh_RECORD);
+
+    if (recordNumber >= NUM_Wh_RECORDS) { recordNumber = 0; }
+
+    uint16_t baseAddress = EEPROM_ADDRESS_Wh_RECORDS + recordNumber * NUM_BYTES_PER_Wh_RECORD;
+
+    writeToEEPROM_uint16(baseAddress + EEPROM_OFFSET_TIME, time_s      );
+    writeToEEPROM_uint16(baseAddress + EEPROM_OFFSET_DIST, distance_TBD); //JTS2doLater: implement, requires LiControl+SPI
+    writeToEEPROM_uint16(baseAddress + EEPROM_OFFSET_ASST, assist_Wh   );
+    writeToEEPROM_uint16(baseAddress + EEPROM_OFFSET_RGEN, regen_Wh    );
+
+    EEPROM.update(EEPROM_ADDRESS_NEXT_Wh_RECORD, ++recordNumber);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void eeprom_wattHourHistory_printTripHistory(void)
+{
+    uint8_t oldestRecordAddress = EEPROM.read(EEPROM_ADDRESS_NEXT_Wh_RECORD);
+
+    Serial.print(F("\n\nTrip History (oldest trip first):"
+                   "\ntime(s), distance(TBD), assist(Wh), regen(Wh)\n"));
     
-        Serial.print('.');
+    uint32_t totalAssist_Wh = 0;
+    uint32_t totalregen_Wh = 0;
 
-        if ((address & 0b1111111) == 0) //divisible by 128
-        {
-            wdt_reset();
-            Serial.print('\n');
-        }
+    for (uint8_t ii = 0; ii < NUM_Wh_RECORDS; ii++)
+    {
+        uint16_t recordToPrint = oldestRecordAddress + ii;
+        if (recordToPrint >= NUM_Wh_RECORDS) { recordToPrint -= NUM_Wh_RECORDS; } //print ring buffer starting from oldest
+
+        uint16_t baseAddress = EEPROM_ADDRESS_Wh_RECORDS + recordToPrint * NUM_BYTES_PER_Wh_RECORD;
+
+        Serial.print('\n');
+        
+        //print time
+        uint16_t time_s = readFromEEPROM_uint16(baseAddress + EEPROM_OFFSET_TIME);
+        Serial.print(time_s);
+        Serial.print(',');
+
+        //print distance
+        uint16_t distance_TBD = readFromEEPROM_uint16(baseAddress + EEPROM_OFFSET_DIST);
+        Serial.print(distance_TBD);
+        Serial.print(',');
+
+        //print assist
+        uint16_t assist_Wh = readFromEEPROM_uint16(baseAddress + EEPROM_OFFSET_ASST);
+        Serial.print(assist_Wh);
+        Serial.print(',');
+        totalAssist_Wh += assist_Wh;
+
+        //print regen
+        uint16_t regen_Wh = readFromEEPROM_uint16(baseAddress + EEPROM_OFFSET_RGEN);
+        Serial.print(regen_Wh);
+        totalregen_Wh += regen_Wh;
     }
 
+    Serial.print(F("\n\nTOTAL(Wh):\n assist: ")); Serial.print(totalAssist_Wh, DEC);
+    Serial.print(F(              "\n regen:  ")); Serial.print(totalregen_Wh,  DEC);
+    Serial.print('\n');
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void eeprom_wattHourHistory_reset(void)
+{
+    uint16_t minAddress = EEPROM_ADDRESS_Wh_RECORDS;
+    uint16_t maxAddress = EEPROM_ADDRESS_Wh_RECORDS + NUM_BYTES_Wh_HISTORY;
+  
+    Serial.print(F("\nInitializing energy history"));
+    
+    eeprom_eraseRange(minAddress, maxAddress, EEPROM_ADDRESS_FORMATTED_VALUE);
+    EEPROM.update(EEPROM_ADDRESS_NEXT_Wh_RECORD, 0);
+    
     Serial.print(F("\nDone"));
 }
 
@@ -294,20 +433,10 @@ void eeprom_resetAll(void)
   
     Serial.print(F("\nEEPROM factory reset"));
 
-    for (uint16_t address=minAddress; address<=maxAddress; address++)
-    {
-        EEPROM.update(address, EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE);
-    
-        Serial.print('.');
-
-        if ((address & 0b1111111) == 0) //divisible by 128
-        {
-            wdt_reset();
-            Serial.print('\n');
-        }
-    }
+    eeprom_eraseRange(minAddress, maxAddress, EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE_8b);
 
     Serial.print(F("\nDone. Rebooting."));
+
     while (1) { ; } //wait for watchdog reboot
 }
 
@@ -328,16 +457,36 @@ void eeprom_resetAll_userConfirm(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void eeprom_printAll(void)
+{
+    Serial.print(F("\n\nDumping EEPROM"));
+
+    for(uint16_t address = 0; address <= EEPROM_LAST_USABLE_ADDRESS; address++)
+    {
+        if ((address & 0b00001111) == 0) //if divisible by 16
+        {
+            wdt_reset();
+            Serial.print('\n');
+            Serial.print(F("0x"));
+            if (address <= 0xF ) { Serial.print('0'); }
+            if (address <= 0xFF) { Serial.print('0'); }
+            Serial.print(address, HEX);
+            Serial.print(F(": "));
+        }
+
+        uint8_t data = EEPROM.read(address);
+
+        if (data <= 0xF) { Serial.print('0'); }
+        Serial.print(data, HEX);
+        Serial.print(',');
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void eeprom_begin(void)
 {
     eeprom_verifyDataValid();
-
-    if (EEPROM.read(EEPROM_ADDRESS_BATT_HISTORY_UNINITIALIZED) == EEPROM_ADDRESS_FACTORY_DEFAULT_VALUE)
-    {
-        eeprom_batteryHistory_reset();
-
-        EEPROM.update(EEPROM_ADDRESS_BATT_HISTORY_UNINITIALIZED, EEPROM_ADDRESS_FORMATTED_VALUE);
-    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

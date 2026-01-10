@@ -40,7 +40,7 @@ const uint16_t remap_actualToSpoofedSoC[101] = {
     1000,                                    //LiCBM SoC = 100%
 };  //Data empirically gathered from OEM NiMH IMA system //see ../Firmware/Prototype Building Blocks/Remap SoC.ods for calculations
 
-uint16_t previousOutputSoC_deciPercent = 0; //JTS2doNow: Verify claim that OEM SoC gauge won't work unless SoC is initially zero
+uint16_t previousOutputSoC_deciPercent = 0;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -61,12 +61,7 @@ void BATTSCI_enable(void)
 {
     power_usart2_enable(); //enable USART2 clock
     digitalWrite(PIN_BATTSCI_DE,HIGH);
-    previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; // If user grid charged over night SoC may have changed a lot.
-    
-    //JTS: Don't want to overload serial buffer on cold boot (will cause check engine light)
-    //Serial.print(F("\nLiBCM SoC: "));
-    //Serial.print(String(SoC_getBatteryStateNow_percent()));
-    //Serial.print('%');
+    previousOutputSoC_deciPercent = remap_actualToSpoofedSoC[SoC_getBatteryStateNow_percent()]; //account for SoC change (e.g. grid charge)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -98,8 +93,8 @@ uint8_t BATTSCI_writeByte(uint8_t data)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void BATTSCI_framePeriod_ms_set(uint8_t period) { framePeriod_ms = period; }
-uint8_t BATTSCI_framePeriod_ms_get(void) { return framePeriod_ms; }
+void    BATTSCI_framePeriod_ms_set(uint8_t period) { framePeriod_ms = period; }
+uint8_t BATTSCI_framePeriod_ms_get(void)    { return framePeriod_ms; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -124,10 +119,10 @@ uint8_t BATTSCI_calculateChecksum( uint8_t frameSum )
 uint8_t BATTSCI_calculateTemperatureByte(void)
 {
     #define BATTSCI_TEMP_OFFSET 30 //MCM subtracts this value from received byte to determine temperature in degrees celcius
-    #define BATTSCI_TEMP_21DEGC (25 + BATTSCI_TEMP_OFFSET) //Lowest temp LiBCM will ever send to MCM
+    #define BATTSCI_TEMP_25DEGC (25 + BATTSCI_TEMP_OFFSET) //Lowest temp LiBCM will ever send to MCM
 
     uint8_t tempBATTSCI = temperature_battery_getLatest() + BATTSCI_TEMP_OFFSET;
-    if (tempBATTSCI < BATTSCI_TEMP_21DEGC) { tempBATTSCI = BATTSCI_TEMP_21DEGC; } //spoof temps below 21 degC to 21 degC //allows IMA start and max assist
+    if (tempBATTSCI < BATTSCI_TEMP_25DEGC) { tempBATTSCI = BATTSCI_TEMP_25DEGC; } //spoof temps below 21 degC to 21 degC //allows IMA start and max assist
 
     //JTS2doLater: EHW5 power density drops off below freezing... need to spoof lower temperatures to limit assist at cold temperatures.
 
@@ -197,7 +192,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
         if ((BATTSCI_isPackFull() == YES)                                                                || //pack is full
             ((temperature_battery_getLatest() < TEMP_FREEZING_DEGC + 2) && (BATTSCI_isPackEmpty() == NO)) ) //pack too cold to charge; DCDC still powered
             //JTS2doLater: Allow minimal regen when pack below freezing (e.g. using LiControl to limit max regen)
-            //JTS2doNow: Disable assist and regen if pack too hot
+            //JTS2doLater: Disable assist and regen if pack too hot
     #endif
         {
             flags |= BATTSCI_DISABLE_REGEN_FLAG; //when this flag is set, MCM draws zero power from IMA motor
@@ -224,6 +219,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
 // 0x32 = 50d = 0b0011 0010: pack empty
 // 0x52 = 82d = 0b0101 0010: pack full (usually... see "Day1-1" for case where pack is empty)
 
+//JTS2doLater: Allow regen at lower temperatures (see calculations in LiBCM Support Thread post#3637)
 //kindly request regen and/or no regen from MCM
 uint8_t BATTSCI_calculateChargeRequestByte(void)
 {

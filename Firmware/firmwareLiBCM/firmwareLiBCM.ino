@@ -43,6 +43,7 @@ void loop()
     LiDisplay_handler();
     batteryHistory_handler();
     cellBalance_handler();
+    energy_handler();
 
     if (key_getSampledState() == KEYSTATE_ON)
     {
@@ -61,7 +62,7 @@ void loop()
         {
             LTC68042cell_acquireAllCellVoltages();
             SoC_updateUsingLatestOpenCircuitVoltage();
-            SoC_turnOffLiBCM_ifPackEmpty();
+            powerSave_turnOffLiBCM_ifPackEmpty();
             debugUSB_printLatest_data_gridCharger();
         }
         else
