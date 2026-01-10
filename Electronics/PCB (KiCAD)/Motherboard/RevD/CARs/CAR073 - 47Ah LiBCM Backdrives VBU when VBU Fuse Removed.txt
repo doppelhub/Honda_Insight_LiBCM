@@ -1,0 +1,13 @@
+On 47Ah LiBCM (only, i.e. NOT 5AhG3), VBU is back driven by LiBCM via Relay Flyback diodes D11 and D12, sourced by the MPI fan relay coils. VBU only drops to about 11.5 V with #18 pulled.
+
+Workaround:
+To do a "fuse pull" reset (like to reset P codes), you need to either:
+1) Pull BOTH under hood fuse #5 and under dash fuse #18. or
+2) Disconnect the 12V battery, or
+3) Pull under dash fuse #18 and the "Front of Rear Connector" and "Rear of Front Connector" jumpers on the battery fan relay terminals in the IMA bay.
+
+Severity:
+None.  With the VBU fuse pulled, the PDU fan relays will limit back driven VBU current to ~800 mA max, so there's no fuse safety violation.
+-In normal use, the VBU signal is always connected to the 12V battery, which will always reverse bias D11 & D12.
+
+Proposed solution:

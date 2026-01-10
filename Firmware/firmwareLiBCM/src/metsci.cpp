@@ -125,8 +125,8 @@
 struct packetTypes
 {
     uint8_t latestE6Packet_assistLevel;
-    uint8_t latestB4Packet_engine;
-    uint8_t latestB3Packet_engine;
+    uint8_t latestB4Packet_engine; //0x18=running //0x00=not started //0x20 keyOff (until MCM turns off)
+    uint8_t latestB3Packet_engine; //0x24=above1500RPM //0x04=below1500RPM //0x00 keyOff (until MCM turns off)
     uint8_t latestE1Packet_SoC;
 } METSCI_Packets;
 

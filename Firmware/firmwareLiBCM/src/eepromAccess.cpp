@@ -371,7 +371,9 @@ void eeprom_wattHourHistory_printTripHistory(void)
                    "\ntime(s), distance(TBD), assist(Wh), regen(Wh)\n"));
     
     uint32_t totalAssist_Wh = 0;
-    uint32_t totalregen_Wh = 0;
+    uint32_t totalregen_Wh  = 0;
+    uint32_t totalSeconds   = 0;
+    uint16_t totalDistance  = 0;
 
     for (uint8_t ii = 0; ii < NUM_Wh_RECORDS; ii++)
     {
@@ -386,11 +388,13 @@ void eeprom_wattHourHistory_printTripHistory(void)
         uint16_t time_s = readFromEEPROM_uint16(baseAddress + EEPROM_OFFSET_TIME);
         Serial.print(time_s);
         Serial.print(',');
+        totalSeconds += time_s;
 
         //print distance
         uint16_t distance_TBD = readFromEEPROM_uint16(baseAddress + EEPROM_OFFSET_DIST);
         Serial.print(distance_TBD);
         Serial.print(',');
+        totalDistance += distance_TBD;
 
         //print assist
         uint16_t assist_Wh = readFromEEPROM_uint16(baseAddress + EEPROM_OFFSET_ASST);
@@ -404,8 +408,11 @@ void eeprom_wattHourHistory_printTripHistory(void)
         totalregen_Wh += regen_Wh;
     }
 
-    Serial.print(F("\n\nTOTAL(Wh):\n assist: ")); Serial.print(totalAssist_Wh, DEC);
-    Serial.print(F(              "\n regen:  ")); Serial.print(totalregen_Wh,  DEC);
+    Serial.print(F("\n\nTotals:\ntime (s): "));  Serial.print(totalSeconds,   DEC);
+    Serial.print(F(           "\ndistance: "));  Serial.print(totalDistance,  DEC);
+    Serial.print(F(           "\nassist Wh: ")); Serial.print(totalAssist_Wh, DEC);
+    Serial.print(F(           "\nregen  Wh: ")); Serial.print(totalregen_Wh,  DEC);
+
     Serial.print('\n');
 }
 
