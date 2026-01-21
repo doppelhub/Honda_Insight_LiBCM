@@ -7,6 +7,7 @@
 uint32_t latestPlugin_ms = 0;
 uint32_t latestChargerDisable_ms = 0;
 uint32_t minGridOffPeriod_ms = GRID_MIN_OFF_PERIOD__NONE_ms;
+uint8_t setPowerLevel = DEFAULT_CHARGE_POWER; // Variable to hold the current power level
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -118,13 +119,18 @@ void processChargerDisableReason(uint8_t canWeCharge)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void gridCharger_Power_set(uint8_t serialPowerLevel) { setPowerLevel = serialPowerLevel; }
+uint8_t gridCharger_Power_get(void) { return setPowerLevel; }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 //JTS2doLater: add current feedback to 1500 charger, so LiBCM can cycle charger if no output current detected
 //JTS2doLater: add timer/current logic to detect if grid charger isn't working
 void chargerControlSignals_handler(void)
 {
     static uint8_t isChargingAllowed_previous = NO__UNINITIALIZED;
            uint8_t isChargingAllowed_now      = gridCharger_isAllowedNow();
-
+           uint8_t chargePowerLevel = 0;
     if (isChargingAllowed_now == YES__CHARGING_ALLOWED)
     {
         if (isChargingAllowed_previous != YES__CHARGING_ALLOWED)
@@ -132,34 +138,33 @@ void chargerControlSignals_handler(void)
             Serial.print(F("\nCharging"));
             adc_calibrateBatteryCurrentSensorOffset(DEBUG_TEXT_ENABLED);
         }
-
+        
+        // Set the desired charge power level (only when charging is explicitly allowed)
+        chargePowerLevel = setPowerLevel;
+        
         runFansIfNeeded(); //JTS2doLater: run fans as needed even when charging not allowed (e.g. to cool a hot pack)
         gpio_turnGridCharger_on();
-        gpio_setGridCharger_powerLevel('H'); //JTS2doLater: Limit charge current if temp is too high or low
+        gpio_setGridCharger_powerLevel(chargePowerLevel); //JTS2doLater: Limit charge current if temp is too high or low
         buzzer_requestTone(BUZZER_REQUESTOR_GRIDCHARGER, BUZZER_OFF);
     }
     else
     {
+        // Safety: Ensure power level is 0 when charging not allowed
+        chargePowerLevel = 0;
+        
         gpio_turnGridCharger_off();
-
-        if (isChargingAllowed_now == NO__CHARGER_UNPLUGGED) { gpio_setGridCharger_powerLevel('Z'); } //saves power
-        else                                                { gpio_setGridCharger_powerLevel('0'); } //redundant safety when charger plugged in but disabled
-
+        if (isChargingAllowed_now == NO__CHARGER_UNPLUGGED) { gpio_setGridCharger_powerLevel(0); } //saves power
+        else                                                { gpio_setGridCharger_powerLevel(0); } //redundant safety when charger plugged in but disabled
         if (isChargingAllowed_previous == YES__CHARGING_ALLOWED)
         {
             latestChargerDisable_ms = millis();
             //gpio_turnPowerSensors_off();
         }
-
         if (isChargingAllowed_previous != isChargingAllowed_now) { processChargerDisableReason(isChargingAllowed_now); }
-
         fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF); //JTS2doLater: see note ("cool a hot pack")
-
         //JTS2doLater: Since the charger should be off now, sound an alarm if battery current isn't ~0 amps.
     }
-
     if (gpio_isGridChargerPluggedInNow() == YES) { adc_updateBatteryCurrent(); } //safety: continuously update battery current when grid charger plugged in
-
     isChargingAllowed_previous = isChargingAllowed_now;
 }
 

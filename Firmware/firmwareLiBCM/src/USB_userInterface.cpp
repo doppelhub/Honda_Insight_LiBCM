@@ -217,6 +217,7 @@ void printHelp(void)
         "\n -'$SCIms': period between BATTSCI frames. '$SCIms=_' to set (0 to 255 ms)"
         "\n -'$TRIP' : print energy consumption and distance records ('TRIP=CLR' to zero all)"
         "\n -'$SPOOF': print voltage spoofing calibration commands and instructions"
+        "\n -'$CHGPWR=_': Grid charger power setting percent (1 to 100)"
         "\n"
         "\nDebug characters:"
         "\n -'@': isoSPI error occurred"
@@ -471,7 +472,42 @@ void USB_userInterface_executeUserInput(void)
         else if ((line[1]=='S') && (line[2]=='P') && (line[3]=='O') && (line[4]=='O') && (line[5]=='F'))
         {
             printVspoofInstructions();
-        }        
+        }
+        
+        //CHGPWR
+        else if ((line[1] == 'C') && (line[2] == 'H') && (line[3] == 'G') && (line[4] == 'P') && (line[5] == 'W') && (line[6] == 'R'))
+        {
+            if (line[7] == '=')
+                {
+                    // Check if the last character is '%'
+                    if (line[10] == '%') {
+                        Serial.println(F("\nInvalid power level. Please enter a value between 0 and 100."));
+                    } 
+                    else if (line[11] == '%') {
+                        Serial.println(F("\nInvalid power level. Please enter a value between 0 and 100."));
+                    } 
+                    else 
+                    {
+                        uint8_t serialPowerLevel = get_uint8_FromInput(line[8], line[9], line[10]);
+                        
+                        // Filter to ensure the value is within 0-100
+                        if (serialPowerLevel <= 100) {
+                            gridCharger_Power_set(serialPowerLevel);
+                            Serial.print(F("\nCharging speed set to: "));
+                            Serial.print(gridCharger_Power_get(), DEC);
+                            Serial.print("%");
+                        } else {
+                            Serial.println(F("\nInvalid power level. Please enter a value between 0 and 100."));
+                        }
+                    }
+                }
+            else if (line[7] == STRING_TERMINATION_CHARACTER)
+            {
+                Serial.print(F("\nCharging speed is: "));
+                Serial.print(gridCharger_Power_get(),DEC);
+                Serial.print("%");
+            }
+        }
 
         //DEFAULT
         else { printText_invalidEntry(); }
