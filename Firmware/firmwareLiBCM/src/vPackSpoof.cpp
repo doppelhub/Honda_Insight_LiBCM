@@ -260,13 +260,17 @@ void spoofVoltage_calculateValue(void)
 
     #elif defined  VOLTAGE_SPOOFING_LINEAR
 	
-	           spoofedPackVoltage = maxPossibleVspoof * 0.4 + 78; 
+		#ifdef STACK_IS_48S
+	        spoofedPackVoltage = maxPossibleVspoof * 0.86 + 13; 
+        #elif defined STACK_IS_60S
+            spoofedPackVoltage = maxPossibleVspoof * 0.78 + 1; 			
+        #endif
 	
-		   // adjusts spoof voltage across entire range so that current is 50A continuous, 83A peak
-		   // 48S yields from +19% power
-		   // 60S yields from +28% power
-		   // max spoofing is within 67% of Vpack
-		   // this is compatible with standard 100A OEM fuse.
+		   // adjusts spoof voltage such that peak current demand is 80A (occurs at low SOC)
+		   // 48S yields peak 13kW without current hack
+		   // 60S yields peak 15kW without current hack
+		   // this is within 67% of Vpack limit and compatible with standard 100A OEM fuse.
+		   // was previously spoofedPackVoltage = maxPossibleVspoof * 0.4 + 78 for both 
 
     //---------------------------------------------------------------------------
 	
