@@ -10,12 +10,12 @@
 
 	#define MIN_Wh_TO_STORE_TRIP 10
 
-	uint16_t energy_getAssist_Wh(void);
-	uint16_t energy_getRegen_Wh (void);
-	uint16_t energy_getGridCharger_Wh (void);
-	uint16_t energy_getTripMeterAssist_Wh (void);
-	uint16_t energy_getTripMeterRegen_Wh (void);
-	uint16_t energy_getTripMeterGridCharge_Wh (void);
+	uint32_t energy_getAssist_Wh(void);
+	uint32_t energy_getRegen_Wh (void);
+	uint32_t energy_getGridCharger_Wh (void);
+	uint32_t energy_getTripMeterAssist_Wh (void);
+	uint32_t energy_getTripMeterRegen_Wh (void);
+	uint32_t energy_getTripMeterGridCharge_Wh (void);
 
 	void energy_zeroWh(void);
 	void energy_storeTrip(void);
