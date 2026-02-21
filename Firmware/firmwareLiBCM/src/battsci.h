@@ -22,6 +22,12 @@
     void battsci_frameAA_byte2_set(uint8_t newValue);
     void battsci_frameAA_byte3_set(uint8_t newValue);
     void battsci_frameAA_byte4_set(uint8_t newValue);
+    void battsci_frameAA_byte5_set(uint8_t newValue);
+
+    uint8_t battsci_frameAA_byte2_get(void);
+    uint8_t battsci_frameAA_byte3_get(void);
+    uint8_t battsci_frameAA_byte4_get(void);
+    uint8_t battsci_frameAA_byte5_get(void);
 
     void BATTSCI_begin();
 
@@ -35,7 +41,7 @@
 
     void BATTSCI_setSpoofedCurrent_deciAmps(int16_t deciAmps);
 
-	uint16_t BATTSCI_lastSpoofedSoC_deciPercent_get(void);
+    uint16_t BATTSCI_lastSpoofedSoC_deciPercent_get(void);
 
     uint8_t BATTSCI_writeByte(uint8_t data);
 

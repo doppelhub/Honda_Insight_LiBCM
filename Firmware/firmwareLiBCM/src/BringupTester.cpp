@@ -389,10 +389,10 @@ bool testTempSensors_unpowered(void)
     gpio_turnTemperatureSensors_off();
 
     //measure unpowered OEM temperature sensors
-    uint16_t tempYEL = adc_getTemperature(PIN_TEMP_YEL);
-    uint16_t tempGRN = adc_getTemperature(PIN_TEMP_GRN);
-    uint16_t tempWHT = adc_getTemperature(PIN_TEMP_WHT);
-    uint16_t tempBLU = adc_getTemperature(PIN_TEMP_BLU);
+    uint16_t tempYEL = adc_getTemperature_counts(PIN_TEMP_YEL);
+    uint16_t tempGRN = adc_getTemperature_counts(PIN_TEMP_GRN);
+    uint16_t tempWHT = adc_getTemperature_counts(PIN_TEMP_WHT);
+    uint16_t tempBLU = adc_getTemperature_counts(PIN_TEMP_BLU);
     Serial.print(F("\nUnpowered YEL/GRN/WHT/BLU temp sensors are "));
     Serial.print( String(tempYEL) + '/');
     Serial.print( String(tempGRN) + '/');
@@ -406,9 +406,9 @@ bool testTempSensors_unpowered(void)
     else                   { Serial.print(F("FAIL!! !! !! !!")); didTestFail=true; }
 
     //lithium module sensors
-    uint16_t tempBAY1 = adc_getTemperature(PIN_TEMP_BAY1);
-    uint16_t tempBAY2 = adc_getTemperature(PIN_TEMP_BAY2);
-    uint16_t tempBAY3 = adc_getTemperature(PIN_TEMP_BAY3);
+    uint16_t tempBAY1 = adc_getTemperature_counts(PIN_TEMP_BAY1);
+    uint16_t tempBAY2 = adc_getTemperature_counts(PIN_TEMP_BAY2);
+    uint16_t tempBAY3 = adc_getTemperature_counts(PIN_TEMP_BAY3);
     Serial.print(F("\nUnpowered BAY1/BAY2/BAY3 temp sensors are "));
     Serial.print( String(tempBAY1) + '/');
     Serial.print( String(tempBAY2) + '/');
@@ -435,10 +435,10 @@ bool testTempSensors_powered(void)
     delay(500); //wait for temp sensor LPF
 
     //OEM sensors
-    uint16_t tempYEL = adc_getTemperature(PIN_TEMP_YEL);
-    uint16_t tempGRN = adc_getTemperature(PIN_TEMP_GRN);
-    uint16_t tempWHT = adc_getTemperature(PIN_TEMP_WHT);
-    uint16_t tempBLU = adc_getTemperature(PIN_TEMP_BLU);
+    uint16_t tempYEL = adc_getTemperature_counts(PIN_TEMP_YEL);
+    uint16_t tempGRN = adc_getTemperature_counts(PIN_TEMP_GRN);
+    uint16_t tempWHT = adc_getTemperature_counts(PIN_TEMP_WHT);
+    uint16_t tempBLU = adc_getTemperature_counts(PIN_TEMP_BLU);
     Serial.print(F("\n  Powered YEL/GRN/WHT/BLU temp sensors are "));
     Serial.print( String(tempYEL) + '/');
     Serial.print( String(tempGRN) + '/');
@@ -452,9 +452,9 @@ bool testTempSensors_powered(void)
     else                                      { Serial.print(F("FAIL!! !! !! !!")); didTestFail=true; }
 
     //LiBCM ring terminal sensors
-    uint16_t tempBAY1 = adc_getTemperature(PIN_TEMP_BAY1);
-    uint16_t tempBAY2 = adc_getTemperature(PIN_TEMP_BAY2);
-    uint16_t tempBAY3 = adc_getTemperature(PIN_TEMP_BAY3);
+    uint16_t tempBAY1 = adc_getTemperature_counts(PIN_TEMP_BAY1);
+    uint16_t tempBAY2 = adc_getTemperature_counts(PIN_TEMP_BAY2);
+    uint16_t tempBAY3 = adc_getTemperature_counts(PIN_TEMP_BAY3);
     Serial.print(F("\n  Powered BAY1/BAY2/BAY3 temp sensors are "));
     Serial.print( String(tempBAY1) + '/');
     Serial.print( String(tempBAY2) + '/');

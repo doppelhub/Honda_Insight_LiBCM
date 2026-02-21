@@ -21,6 +21,7 @@ uint8_t framePeriod_ms = 33;
 uint8_t frameAA_byte2 = 0; //JTS2doNow: Remove (probably) debug code
 uint8_t frameAA_byte3 = 0;
 uint8_t frameAA_byte4 = 0;
+uint8_t frameAA_byte5 = 0;
 
 //JTS2doLater: post#3093 (http://insightcentral.net/threads/libcm-open-beta-support-thread.128957) explains how make the OEM SoC gauge update
 //JTS2doLater: Add different SoC profile for "charges every day" crew
@@ -32,11 +33,11 @@ uint8_t frameAA_byte4 = 0;
 const uint16_t remap_actualToSpoofedSoC[101] = {
       0, 22, 44, 67, 89,111,133,156,178,190, //LiCBM SoC = 00% to 09%
     200,209,217,225,232,240,248,256,264,272, //LiCBM SoC = 10% to 19%
-    279,287,295,303,311,319,326,334,342,350, //LiCBM SoC = 20% to 29% //MCM enables heavy regen below 350 (35.0%) and Auto-Stop is disabled somewhere between 28.5 and 30.0
+    279,287,295,303,311,319,326,334,342,350, //LiCBM SoC = 20% to 29% //MCM enables heavy regen below 350 (35.0%)  and Auto-Stop is disabled somewhere between 28.5 and 30.0
     355,363,375,387,399,411,423,435,447,459, //LiCBM SoC = 30% to 39% //MCM enables light regen below 700 (70.0%)
     471,483,495,507,519,532,544,556,568,580, //LiCBM SoC = 40% to 49%
     592,604,616,628,640,652,664,676,688,700, //LiCBM SoC = 50% to 59% //MCM disables background regen agove 582 (58.2%)
-    701,705,709,713,717,721,725,728,732,736, //LiCBM SoC = 60% to 69%
+    701,705,709,713,717,721,725,728,732,736, //LiCBM SoC = 60% to 69% //TODO_NATALYA (not urgent as of 2022JAN21) drive and eval regen behaviour to see if LiBCM 60 to 69 needs to be remapped to a smaller MCM range of 69 to 72, or if this range needs to begin at LiBCM 60 = MCM 68% instead of 70%
     740,744,748,752,756,760,764,768,772,775, //LiCBM SoC = 70% to 79%
     779,783,787,791,795,799,800,814,829,843, //LiCBM SoC = 80% to 89% //MCM disables regen above 800 (80.0%)
     857,871,886,900,914,929,943,957,971,986, //LiCBM SoC = 90% to 99%
@@ -50,6 +51,12 @@ uint16_t lastSpoofedSoC_deciPercent = 0;
 void battsci_frameAA_byte2_set(uint8_t newValue) { frameAA_byte2 = newValue; }
 void battsci_frameAA_byte3_set(uint8_t newValue) { frameAA_byte3 = newValue; }
 void battsci_frameAA_byte4_set(uint8_t newValue) { frameAA_byte4 = newValue; }
+void battsci_frameAA_byte5_set(uint8_t newValue) { frameAA_byte5 = newValue; }
+
+uint8_t battsci_frameAA_byte2_get(void) { return frameAA_byte2; }
+uint8_t battsci_frameAA_byte3_get(void) { return frameAA_byte3; }
+uint8_t battsci_frameAA_byte4_get(void) { return frameAA_byte4; }
+uint8_t battsci_frameAA_byte5_get(void) { return frameAA_byte5; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -96,7 +103,7 @@ uint8_t BATTSCI_writeByte(uint8_t data)
         Serial.print(data,HEX);
         Serial.print(',');
     }
-
+    
     return data;
 }
 
@@ -113,7 +120,7 @@ void BATTSCI_setPackVoltage(uint8_t spoofedVoltage) { spoofedVoltageToSend_Count
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //Convert from battery current (unit: deciAmps) to BATTSCI format (unit: 50 mA per count)
-void BATTSCI_setSpoofedCurrent_deciAmps(int16_t deciAmps) { spoofedCurrentToSend_Counts = 2048 - (deciAmps << 1); }
+void BATTSCI_setSpoofedCurrent_deciAmps(int16_t deciAmps) { spoofedCurrentToSend_Counts = 2048 - (deciAmps << 1); } 
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -139,6 +146,7 @@ uint8_t BATTSCI_calculateTemperatureByte(void)
     if (tempBATTSCI < BATTSCI_TEMP_25DEGC) { tempBATTSCI = BATTSCI_TEMP_25DEGC; } //spoof temps below 21 degC to 21 degC //allows IMA start and max assist
 
     //JTS2doLater: EHW5 power density drops off below freezing... need to spoof lower temperatures to limit assist at cold temperatures.
+    //JTS2doLater: Natalya notes slight assist dropoff at 20 degC... so spoof 20 degC when below freezing
 
     return tempBATTSCI;
 }
@@ -160,7 +168,7 @@ int16_t cellVoltageOffsetDueToESR(void)
     //  vCellCorrection_ESR = Icell_deciAmps / 10       * 20 counts
     //  vCellCorrection_ESR = Icell_deciAmps            * 2
     //  vCellCorrection_ESR = Icell_deciAmps            * CELL_ESR_mOHM
-    return (int16_t)(adc_getLatestBatteryCurrent_deciAmps() * CELL_ESR_mOHM); //100 uV = 1 deciAmp * 1 mOhm
+    return (int16_t)(adc_getLatestBatteryCurrent_deciAmps() * CELL_ESR_mOHM); //100 uV = 1 deciAmp * 1 mOhm 
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -211,7 +219,7 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
         {
             flags |= BATTSCI_DISABLE_REGEN_FLAG; //when this flag is set, MCM draws zero power from IMA motor
             eeprom_hasLibcmDisabledRegen_set(EEPROM_LIBCM_DISABLED_REGEN);
-        }
+        } 
 
     return flags;
 }
@@ -299,6 +307,7 @@ uint16_t BATTSCI_convertSoC_deciPercent_toBytes(uint16_t SoC_deciPercent) //deci
     //each count in the lower byte is 0.1%, with a range from 0 (0x00) to 127 (0x7F) (0.0 to 12.7% SoC).
     //each count in the upper byte's lower nibble represents 12.8% SoC.
     //              the upper byte's upper nibble has several unknown flags, and is either 0b0001 (usually) or 0b0010 (sometimes)
+    //JTS2doLater: See if the previous line is why OEM SoC gauge never updates in USA cars
 
     //Example: convert BATTSCI(two bytes) to SoC(%)
     //  given BATTSCI bytes:     0x15 0x50 = 21d 81d = 0b00010101 0b01010001
@@ -325,6 +334,11 @@ uint16_t BATTSCI_convertSoC_deciPercent_toBytes(uint16_t SoC_deciPercent) //deci
 
 uint16_t BATTSCI_calculateSpoofedSoC(void)
 {
+    //JTS2doLater: Try these B3/B4 SoC values to see if SoC gauge updates:
+        //0x15/0x6F //19 bars on SoC gauge
+        //0x12/0x32 //04 bars
+        //0x16/0x3C //20 bars
+        //0x11/0x6A //00 bars
     //JTS2doLater: How can we limit regen power when pack is severely empty and frozen?
     uint16_t SoC_toMCM_deciPercent = 0;
     if      (BATTSCI_isPackFull()  == YES) { SoC_toMCM_deciPercent = 820; } //disable regen  //JTS2doLater: See if this is actually required (also sent as flag)
@@ -351,7 +365,7 @@ void BATTSCI_sendFrames(void)
         static uint8_t frame2send = 0x87; //stores the next frame type to send
 
         if (debugUSB_dataTypeToStream_get() == DEBUGUSB_STREAM_BATTMETSCI)
-        {
+        { 
             if (frame2send == 0x87) { Serial.print('\n'); }
             else                    { Serial.print(' ');  }
             Serial.print(F("BAT:"));
@@ -385,10 +399,10 @@ void BATTSCI_sendFrames(void)
             uint8_t frameSum_AA = 0; //this will overflow, which is ok for CRC
             frameSum_AA += BATTSCI_writeByte( 0xAA );                                              //B0 Never changes
             frameSum_AA += BATTSCI_writeByte( 0x10 );                                              //B1 0x10 if METSCI signal received //0x00 otherwise
-            frameSum_AA += BATTSCI_writeByte( frameAA_byte2 ); //JTS2doNow: Add critical Pcodes    //B2 Never changes unless P codes
+            frameSum_AA += BATTSCI_writeByte( frameAA_byte2 ); //JTS2doNow: Add critical Pcodes    //B2 OEM: Always 0x00.  No Pcodes at any value
             frameSum_AA += BATTSCI_writeByte( frameAA_byte3 );                                     //B3 Never changes unless P codes
             frameSum_AA += BATTSCI_writeByte( frameAA_byte4 );                                     //B4 Never changes unless P codes
-            frameSum_AA += BATTSCI_writeByte( BATTSCI_calculateRegenAssistFlags()  );              //B5 Disable assist/regen flags
+            frameSum_AA += BATTSCI_writeByte( frameAA_byte5 | BATTSCI_calculateRegenAssistFlags());//B5 Disable assist/regen flags
             frameSum_AA += BATTSCI_writeByte( BATTSCI_calculateChargeRequestByte() );              //B6 Request regen/noRegen if battery low/high
             frameSum_AA += BATTSCI_writeByte( 0x61 );                                              //B7 BCM hardware/firmware version?
             frameSum_AA += BATTSCI_writeByte( highByte(spoofedCurrentToSend_Counts << 1) & 0x7F ); //B8 Battery Current (upper byte)

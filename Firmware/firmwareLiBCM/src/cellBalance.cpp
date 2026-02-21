@@ -21,7 +21,7 @@ bool cellsAreBalancing = NO;
 // if (hasOneSecondPassed && (balancingComplete == FALSE)) {
 //    for (cellNumber=1; cellNumber<NUMCELLS; cellNumber++) {
 //       if (cellStatus[cellNumber] == BALANCING) { cellBalanceTimer_seconds[cellNumber]++; }
-// }}
+// }} 
 
 //Allow LiBCM to print this array over USB
 // -if all cells are similar, then all array elements should have similar values (ideally they would all be 0).
@@ -44,7 +44,7 @@ bool cellBalance_areCellsBalancing(void) { return cellsAreBalancing; }
 //             another method would be to wait a few hours for pack voltages to settle, then log all cell voltages an hour apart.
 //JTS2doLater: Add per-cell SoC, to allow balancing at any SoC (see icn.net:post#1502833,comment#579)
 void configureDischargeResistors(void)
-{
+{   
     static uint8_t balanceHysteresis = CELL_BALANCE_TO_WITHIN_COUNTS_TIGHT;
     uint16_t cellDischargeVoltageThreshold = 0; //cells above this value are discharged
     uint16_t cellsToDischarge[TOTAL_IC] = {0}; //each uint16's QTY12 LSBs correspond to each LTC6804's QTY12 cells
@@ -60,7 +60,7 @@ void configureDischargeResistors(void)
         for (uint8_t cell = 0; cell < CELLS_PER_IC; cell++)
         {
             if (LTC68042result_specificCellVoltage_get(ic, cell) > cellDischargeVoltageThreshold)
-            {
+            { 
                 //this cell voltage is higher than the lowest cell voltage + hysteresis
                 cellsToDischarge[ic] |= (1 << cell); //this cell will be discharged
                 cellsAreBalancing = YES;
@@ -72,7 +72,7 @@ void configureDischargeResistors(void)
         LTC68042configure_setBalanceResistors((ic + FIRST_IC_ADDR), cellsToDischarge[ic], LTC6804_DISCHARGE_TIMEOUT_02_SECONDS);
     }
 
-    if (cellsAreBalancing == NO) { balanceHysteresis = CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE; }
+    if (cellsAreBalancing == NO) { balanceHysteresis = CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE; } 
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -119,14 +119,14 @@ uint8_t isBalancingMandatory(void)
     uint16_t cellDeltaV = LTC68042result_deltaCellVoltage_get();
 
     if (cellDeltaV < CELL_MAJOR_IMBALANCE_DELTA) { return NO__BALANCING_NOT_REQUESTED; }
-
+    
     //if we get here, pack is majorly unbalanced
     //keyState           doesn't matter
     //grid charger state doesn't matter
     //pack temperature   doesn't matter
     if (LTC68042result_loCellVoltage_get()     <  CELL_VMIN_GRIDCHARGER             ) { return NO__ATLEASTONECELL_TOO_LOW; }
-    if (adc_getLatestSpoofedCurrent_deciAmps() >  CELL_IMAX_MAJOR_IMBALANCE_DECIAMPS) { return NO__PACK_CURRENT_TOO_HIGH;  }
-    if (adc_getLatestSpoofedCurrent_deciAmps() < -CELL_IMAX_MAJOR_IMBALANCE_DECIAMPS) { return NO__PACK_CURRENT_TOO_HIGH;  }
+    if (adc_getLatestBatteryCurrent_deciAmps() >  CELL_IMAX_MAJOR_IMBALANCE_DECIAMPS) { return NO__PACK_CURRENT_TOO_HIGH;  }
+    if (adc_getLatestBatteryCurrent_deciAmps() < -CELL_IMAX_MAJOR_IMBALANCE_DECIAMPS) { return NO__PACK_CURRENT_TOO_HIGH;  }
 
     if (cellDeltaV > eeprom_maxCellVoltageDelta_get()) { eeprom_maxCellVoltageDelta_set(cellDeltaV); }
 
@@ -149,7 +149,7 @@ uint8_t getBalanceRequest(void)
 {
     if (isBalancingMandatory()    == YES__BALANCING_ALLOWED) { return YES__BALANCING_ALLOWED; }
     if (isEntirePackOvercharged() == YES__BALANCING_ALLOWED) { return YES__BALANCING_ALLOWED; }
-
+ 
     return isBalancingPossible();
 }
 
@@ -158,14 +158,14 @@ uint8_t getBalanceRequest(void)
 void cellBalance_handler(void)
 {
     if (LTC68042result_wasDataProcessedThisLoop_get() == NO) { return; } //wait for new Vcell data
-
+    
     static uint8_t isBalancingAllowed_previous = NO__UNINITIALIZED;
            uint8_t isBalancingAllowed_now      = getBalanceRequest();
-
-         if (isBalancingAllowed_now      == DELAY_DO_NOTHING      ) { return;                         }
+         
+         if (isBalancingAllowed_now      == DELAY_DO_NOTHING      ) { return;                         }        
     else if (isBalancingAllowed_now      == YES__BALANCING_ALLOWED) { configureDischargeResistors();  }
     else if (isBalancingAllowed_previous == YES__BALANCING_ALLOWED) { disableDischargeResistors();    }
-
+    
     isBalancingAllowed_previous = isBalancingAllowed_now; //not updated if 'DELAY_DO_NOTHING'
 }
 

@@ -14,7 +14,7 @@
 
     void adc_updateBatteryCurrent(void);
 
-    uint16_t adc_getTemperature(uint8_t tempToMeasure);
+    uint16_t adc_getTemperature_counts(uint8_t tempToMeasure);
 
     void adc_calibrateBatteryCurrentSensorOffset(uint8_t isDebugTextSent);
 

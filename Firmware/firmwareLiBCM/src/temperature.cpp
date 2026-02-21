@@ -111,25 +111,6 @@ void temperature_measureBattery(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void temperature_printAll_latest(void)
-{
-    Serial.print(F("\nTemperatures(C):"));
-    Serial.print(F("\nGrid: "));
-    Serial.print(temperature_gridCharger_getLatest());
-    Serial.print(F("\nIn: "));
-    Serial.print(temperature_intake_getLatest());
-    #ifndef BATTERY_TYPE_47Ah
-        Serial.print(F("\nAmb: "));
-        Serial.print(temperature_ambient_getLatest());
-        Serial.print(F("\nOut: "));
-        Serial.print(temperature_exhaust_getLatest());
-    #endif
-    Serial.print(F("\nBatt: "));
-    Serial.print(temperature_battery_getLatest());
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
 void temperature_measureAndPrintAll(void)
 {
     if (gpio_getPinState(PIN_TEMP_EN) == PIN_OUTPUT_HIGH)
@@ -299,7 +280,7 @@ void temperature_handler(void)
 //JTS2doLater: Need to differentiate between TEMPERATURE_SENSOR_FAULT_LO and actually being below -30 degC
 int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
 {
-    uint16_t countsADC = analogRead(thermistorPin); //measure ADC counts
+    uint16_t countsADC = adc_getTemperature_counts(thermistorPin);
 
     //This commented out section is quite math intensive:
     // -QTY3 floating point divisions
