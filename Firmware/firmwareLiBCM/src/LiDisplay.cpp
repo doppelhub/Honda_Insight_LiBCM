@@ -56,10 +56,10 @@ static uint16_t LiDisplay_paramVal_onScreen = 0;
 static String Lidisplay_paramDesc_onScreen = "";
 
 // WH accumulated during current LiDisplay power on (either current drive or grid charger plugged in)
-static uint16_t LiDisplay_energyWHAssist = 0;
-static uint16_t LiDisplay_energyWHRegen = 0;
-static uint16_t LiDisplay_energyWHGridCharge = 0;
-static uint16_t LiDisplay_lastWHGridCharge_onScreen = 9999999;
+static uint32_t LiDisplay_energyWHAssist = 0;
+static uint32_t LiDisplay_energyWHRegen = 0;
+static uint32_t LiDisplay_energyWHGridCharge = 0;
+static uint32_t LiDisplay_lastWHGridCharge_onScreen = 9999999;
 
 
 // Initializing to an absurd number for all 7 variables so that on first run they will be updated on screen
@@ -1130,7 +1130,7 @@ void LiDisplay_updateElement() {
 				LiDisplay_currentGlobalNumVal = LiDisplay_currentParamVal;
 			} else {
 				// Grid Charger Litre and GGE display require division, but they only need to be updated on first screen load if car is being driven
-				uint16_t WHGridCharge_onScreen = 0;
+				uint32_t WHGridCharge_onScreen = 0;
 				WHGridCharge_onScreen = (energy_getTripMeterGridCharge_Wh() + LiDisplay_energyWHGridCharge);
 				if (LiDisplay_lastWHGridCharge_onScreen != WHGridCharge_onScreen) {
 					// We should only get here one time when the settings page is loaded if the car is driving

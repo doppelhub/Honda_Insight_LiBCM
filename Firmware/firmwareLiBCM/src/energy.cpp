@@ -10,7 +10,7 @@ uint32_t wattHours_regen = 0;
 uint32_t wattHours_gridCharger = 0;
 
 // Users with LiDisplay will have their own trip meter they can reset, most likely at each fill up.
-static uint32_t tripmeter_wattHours_assist = 0;
+static uint32_t tripMeter_wattHours_assist = 0;
 static uint32_t tripMeter_wattHours_regen = 0;
 static uint32_t tripMeter_wattHours_gridCharger = 0;
 
@@ -20,7 +20,7 @@ uint32_t energy_getAssist_Wh(void) { return wattHours_assist; }
 uint32_t energy_getRegen_Wh (void) { return wattHours_regen;  }
 uint32_t energy_getGridCharger_Wh (void) { return wattHours_gridCharger;  }
 
-uint32_t energy_getTripMeterAssist_Wh(void) { return tripmeter_wattHours_assist; }
+uint32_t energy_getTripMeterAssist_Wh(void) { return tripMeter_wattHours_assist; }
 uint32_t energy_getTripMeterRegen_Wh (void) { return tripMeter_wattHours_regen;  }
 uint32_t energy_getTripMeterGridCharge_Wh(void) { return tripMeter_wattHours_gridCharger; }
 
@@ -74,22 +74,22 @@ void energy_storeTrip(void)
 
 void energy_zeroWhTripMeter(void)
 {
-	tripmeter_wattHours_assist = 0;
+	tripMeter_wattHours_assist = 0;
 	tripMeter_wattHours_regen  = 0;
 	tripMeter_wattHours_gridCharger = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void energy_storeTripMeter(uint16_t drive_assist_wh, uint16_t drive_regen_wh)
+void energy_storeTripMeter(uint32_t drive_assist_wh, uint32_t drive_regen_wh)
 {
-	tripmeter_wattHours_assist += drive_assist_wh;
+	tripMeter_wattHours_assist += drive_assist_wh;
 	tripMeter_wattHours_regen  += drive_regen_wh;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void energy_storeTripMeterGridCharge(uint16_t grid_charger_wh)
+void energy_storeTripMeterGridCharge(uint32_t grid_charger_wh)
 {
 	tripMeter_wattHours_gridCharger += grid_charger_wh;
 }
