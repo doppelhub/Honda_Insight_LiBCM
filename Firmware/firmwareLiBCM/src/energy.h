@@ -21,8 +21,8 @@
 	void energy_storeTrip(void);
 
 	void energy_zeroWhTripMeter(void);
-	void energy_storeTripMeter(uint16_t drive_assist_wh, uint16_t drive_regen_wh);
-	void energy_storeTripMeterGridCharge(uint16_t grid_charger_wh);
+	void energy_storeTripMeter(uint32_t drive_assist_wh, uint32_t drive_regen_wh);
+	void energy_storeTripMeterGridCharge(uint32_t grid_charger_wh);
 
 	void energy_handler(void);
 
