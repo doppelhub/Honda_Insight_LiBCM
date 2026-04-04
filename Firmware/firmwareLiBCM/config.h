@@ -7,8 +7,8 @@
     #define config_h
     #include "src/libcm.h"
 
-    #define FW_VERSION "0.9.6"
-    #define BUILD_DATE "2026JAN10"
+    #define FW_VERSION "0.9.6a"
+    #define BUILD_DATE "2026APR03"
 
     //////////////////////////////////////////////////////////////////
 
@@ -24,7 +24,7 @@
     //there are no default options because this firmware works with all LiBCM variants... you need to specify which hardware you have installed
 
     //choose your battery type:
-        //#define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
+       //#define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
         //#define BATTERY_TYPE_47Ah  //aka FoMoCo //aka Samsung SDI modules
 
     //choose how many cells are in series:
@@ -139,6 +139,7 @@
     //#define DISABLE_ASSIST //uncomment to (always) disable assist
     //#define DISABLE_REGEN  //uncomment to (always) disable regen
     //#define REDUCE_BACKGROUND_REGEN_UNLESS_BRAKING //EXPERIMENTAL! //JTS2doLater: Make this work (for Balto)
+    //#define IGNORE_CELL_VOLTAGE_MISMATCH //prevents fatal error if pack size doesn't match user selection
 
     //choose which functions control the LEDs
         #define LED_NORMAL //enable "LED()" functions (see debug.c)
