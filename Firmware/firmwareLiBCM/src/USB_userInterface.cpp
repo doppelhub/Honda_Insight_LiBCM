@@ -148,7 +148,42 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     }
     else if (testToRun == '7')
     {
-        printText_UNUSED();
+        Serial.print(F("4x20 cable loopback test"));
+        Serial.print(F("\nPlace a jumper between WHT & GRN wires on 4x20 cable before running this test"));
+        
+        lcdTransmit_end();
+        pinMode(DEBUG_SDA,OUTPUT);
+        pinMode(DEBUG_CLK,INPUT);
+
+        digitalWrite(DEBUG_SDA,HIGH);
+        Serial.print(F("\nSDA Set HIGH, CLK IS "));
+        delay(1);
+        if (digitalRead(DEBUG_CLK) == HIGH) { Serial.print(F("HIGH; PASS")); }
+        else                                { Serial.print(F("LOW;  FAIL")); }
+
+        digitalWrite(DEBUG_SDA,LOW);
+        Serial.print(F("\nSDA Set LOW, CLK IS "));
+        delay(1);
+        if (digitalRead(DEBUG_CLK) == LOW) { Serial.print(F("LOW;  PASS")); }
+        else                               { Serial.print(F("HIGH; FAIL")); }
+
+        pinMode(DEBUG_CLK,OUTPUT);
+        pinMode(DEBUG_SDA,INPUT);
+
+        digitalWrite(DEBUG_CLK,HIGH);
+        Serial.print(F("\nCLK Set HIGH, SDA IS "));
+        delay(1);
+        if (digitalRead(DEBUG_SDA) == HIGH) { Serial.print(F("HIGH; PASS")); }
+        else                                { Serial.print(F("LOW;  FAIL")); }
+
+        digitalWrite(DEBUG_CLK,LOW);
+        Serial.print(F("\nCLK Set LOW, SDA IS "));
+        delay(1);
+        if (digitalRead(DEBUG_SDA) == LOW) { Serial.print(F("LOW;  PASS")); }
+        else                               { Serial.print(F("HIGH; FAIL")); }
+        Serial.print(F("\nTest Complete. Rebooting"));
+        while(1);
+
     }
     else if (testToRun == '8')
     {

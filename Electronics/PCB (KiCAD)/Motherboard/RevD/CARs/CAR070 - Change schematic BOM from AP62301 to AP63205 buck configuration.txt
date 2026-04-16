@@ -25,3 +25,5 @@ C26: (22u)(22u)(fan)(no change)
 C23: (22u)(22u)(HVDCDC Vout)(no change)
 C25: (22u)(22u)(HVDCDC Vout)(no change)
 C146:(22u)(22u)(HVDCDC Vout)(no change)
+
+Also: update PDF revision to 'D' (it's still 'C' right now)

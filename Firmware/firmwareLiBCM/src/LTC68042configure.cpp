@@ -105,6 +105,7 @@ bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
 
     #if   defined RUN_BRINGUP_TESTER_MOTHERBOARD //don't verify cell count
     #elif defined RUN_BRINGUP_TESTER_GRIDCHARGER //don't verify cell count
+    #elif defined IGNORE_CELL_VOLTAGE_MISMATCH   //don't verify cell count
     #else
         if (gpio_keyStateNow() == GPIO_KEY_OFF) //we don't have time to run this test if the key is on when LiBCM first boots
         {

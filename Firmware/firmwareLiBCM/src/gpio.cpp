@@ -296,11 +296,11 @@ uint8_t gpio_getPinState(uint8_t pin)
     uint8_t pinMode = gpio_getPinMode(pin);
     uint8_t pinLevel = digitalRead(pin);
 
-    if      ( (pinLevel == LOW ) && (pinMode == OUTPUT) ) { return  PIN_OUTPUT_LOW; }
+    if      ( (pinLevel == LOW ) && (pinMode == OUTPUT) ) { return PIN_OUTPUT_LOW;  }
     else if ( (pinLevel == HIGH) && (pinMode == OUTPUT) ) { return PIN_OUTPUT_HIGH; }
-    else if ( (pinLevel == LOW ) && (pinMode == INPUT ) ) { return   PIN_INPUT_LOW; }
-    else if ( (pinLevel == HIGH) && (pinMode == INPUT ) ) { return  PIN_INPUT_HIGH; }
-    else                                                 { return PIN_STATE_ERROR; }
+    else if ( (pinLevel == LOW ) && (pinMode == INPUT ) ) { return PIN_INPUT_LOW;   }
+    else if ( (pinLevel == HIGH) && (pinMode == INPUT ) ) { return PIN_INPUT_HIGH;  }
+    else                                                  { return PIN_STATE_ERROR; }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
