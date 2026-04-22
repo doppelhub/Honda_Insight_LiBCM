@@ -88,7 +88,6 @@ bool LiDisplayOnKeyOnWithNerdScreenEnabled = false;
 bool LiDisplayOnGridChargerConnected = false;
 bool LiDisplaySettingsPageRequested = false;
 
-//bool LiDisplayGridChargerPageRequested = false;
 static bool LiDisplayNeedToVerifyPowerState = false;
 static uint16_t total_splash_page_delay_ms = 250; // Has to be at least 150 ms because of Nextion delays.
 
@@ -544,46 +543,17 @@ void LiDisplay_calculateGCTimeStr(bool reset) {
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_calculateChrgAsstGaugeBars() {
-    // 22 is empty, 23 is 1 bar asst, 40 is 18 bars asst, 41 is 1 bar chrg, 58 is 18 bars chrg
+	// CHRG | ASST gauge has 18 bars for each side.  We will show 1 EHP as 1 bar on the gauge.
+	// USA Electrical Horsepower is defined as 746 Watts.  Calculate pack EHP to get CHRG | ASST bar count.
     int16_t packEHP = (LTC68042result_packVoltage_get() * adc_getLatestBatteryCurrent_amps()) * 0.00134; // USA Electrical Horsepower is defined as 746 Watts
 
-    if (packEHP <= -18) { LiDisplayChrgAsstPicId = 58; }
-    else if (packEHP <= -17) { LiDisplayChrgAsstPicId = 57; }
-    else if (packEHP <= -16) { LiDisplayChrgAsstPicId = 56; }
-    else if (packEHP <= -15) { LiDisplayChrgAsstPicId = 55; }
-    else if (packEHP <= -14) { LiDisplayChrgAsstPicId = 54; }
-    else if (packEHP <= -13) { LiDisplayChrgAsstPicId = 53; }
-    else if (packEHP <= -12) { LiDisplayChrgAsstPicId = 52; }
-    else if (packEHP <= -11) { LiDisplayChrgAsstPicId = 51; }
-    else if (packEHP <= -10) { LiDisplayChrgAsstPicId = 50; }
-    else if (packEHP <=  -9) { LiDisplayChrgAsstPicId = 49; }
-    else if (packEHP <=  -8) { LiDisplayChrgAsstPicId = 48; }
-    else if (packEHP <=  -7) { LiDisplayChrgAsstPicId = 47; }
-    else if (packEHP <=  -6) { LiDisplayChrgAsstPicId = 46; }
-    else if (packEHP <=  -5) { LiDisplayChrgAsstPicId = 45; }
-    else if (packEHP <=  -4) { LiDisplayChrgAsstPicId = 44; }
-    else if (packEHP <=  -3) { LiDisplayChrgAsstPicId = 43; }
-    else if (packEHP <=  -2) { LiDisplayChrgAsstPicId = 42; }
-    else if (packEHP <=  -1) { LiDisplayChrgAsstPicId = 41; }
-    else if (packEHP <=   0) { LiDisplayChrgAsstPicId = 22; }
-    else if (packEHP <=   1) { LiDisplayChrgAsstPicId = 23; }
-    else if (packEHP <=   2) { LiDisplayChrgAsstPicId = 24; }
-    else if (packEHP <=   3) { LiDisplayChrgAsstPicId = 25; }
-    else if (packEHP <=   4) { LiDisplayChrgAsstPicId = 26; }
-    else if (packEHP <=   5) { LiDisplayChrgAsstPicId = 27; }
-    else if (packEHP <=   6) { LiDisplayChrgAsstPicId = 28; }
-    else if (packEHP <=   7) { LiDisplayChrgAsstPicId = 29; }
-    else if (packEHP <=   8) { LiDisplayChrgAsstPicId = 30; }
-    else if (packEHP <=   9) { LiDisplayChrgAsstPicId = 31; }
-    else if (packEHP <=  10) { LiDisplayChrgAsstPicId = 32; }
-    else if (packEHP <=  11) { LiDisplayChrgAsstPicId = 33; }
-    else if (packEHP <=  12) { LiDisplayChrgAsstPicId = 34; }
-    else if (packEHP <=  13) { LiDisplayChrgAsstPicId = 35; }
-    else if (packEHP <=  14) { LiDisplayChrgAsstPicId = 36; }
-    else if (packEHP <=  15) { LiDisplayChrgAsstPicId = 37; }
-    else if (packEHP <=  16) { LiDisplayChrgAsstPicId = 38; }
-    else if (packEHP <=  17) { LiDisplayChrgAsstPicId = 39; }
-    else                     { LiDisplayChrgAsstPicId = 40; }
+	// LiDisplayChrgAsstPicId refers to the image ID for the corresponding bar display inside the .tft
+	if (packEHP <= -18) { LiDisplayChrgAsstPicId = 58; }	// We should NEVER satisfy this - LiBCM can't pull 18+ HP of CHRG, but just in case we max it at 18 bars (image # 58)
+	else if (packEHP <= -1) { LiDisplayChrgAsstPicId = (40 - packEHP); }						// 41 is 1 bar CHRG and 57 is 17 bars of CHRG
+	else if (packEHP == 0) { LiDisplayChrgAsstPicId = 22; }										// 22 is 0 bars either side (no CHRG or ASST)
+	else if ((packEHP >= 1) && (packEHP <= 17)) { LiDisplayChrgAsstPicId = (packEHP + 22); }	// 23 is 1 bar ASST and 40 is 18 bars ASST
+	else { LiDisplayChrgAsstPicId = 40; }														// Max ASST at 18 bars (LiBCM can exceed 18 HP ASST)
+
     // 2022 Sept 07 -- NM To Do: The assist display can only show up to 18 HP of assist, but LiBCM can put out over 20 HP
     // Need to edit the HMI file to have a graphical display of those extra HP, probably by further highlighting some of the assist bars
 };
@@ -591,42 +561,23 @@ void LiDisplay_calculateChrgAsstGaugeBars() {
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_calculateSoCGaugeBars() {
-  if (SoC_getBatteryStateNow_percent() >= 76) { LiDisplaySoCBarCount = 20; }
-  else if (SoC_getBatteryStateNow_percent() >= 73) { LiDisplaySoCBarCount = 19; }
-  else if (SoC_getBatteryStateNow_percent() >= 70) { LiDisplaySoCBarCount = 18; }
-  else if (SoC_getBatteryStateNow_percent() >= 67) { LiDisplaySoCBarCount = 17; }
-  else if (SoC_getBatteryStateNow_percent() >= 64) { LiDisplaySoCBarCount = 16; }
-  else if (SoC_getBatteryStateNow_percent() >= 61) { LiDisplaySoCBarCount = 15; }
-  else if (SoC_getBatteryStateNow_percent() >= 58) { LiDisplaySoCBarCount = 14; }
-  else if (SoC_getBatteryStateNow_percent() >= 55) { LiDisplaySoCBarCount = 13; }
-  else if (SoC_getBatteryStateNow_percent() >= 52) { LiDisplaySoCBarCount = 12; }
-  else if (SoC_getBatteryStateNow_percent() >= 49) { LiDisplaySoCBarCount = 11; }
-  else if (SoC_getBatteryStateNow_percent() >= 46) { LiDisplaySoCBarCount = 10; }
-  else if (SoC_getBatteryStateNow_percent() >= 43) { LiDisplaySoCBarCount =  9; }
-  else if (SoC_getBatteryStateNow_percent() >= 40) { LiDisplaySoCBarCount =  8; }
-  else if (SoC_getBatteryStateNow_percent() >= 37) { LiDisplaySoCBarCount =  7; }
-  else if (SoC_getBatteryStateNow_percent() >= 34) { LiDisplaySoCBarCount =  6; }
-  else if (SoC_getBatteryStateNow_percent() >= 34) { LiDisplaySoCBarCount =  5; }
-  else if (SoC_getBatteryStateNow_percent() >= 31) { LiDisplaySoCBarCount =  4; }
-  else if (SoC_getBatteryStateNow_percent() >= 28) { LiDisplaySoCBarCount =  3; }
-  else if (SoC_getBatteryStateNow_percent() >= 25) { LiDisplaySoCBarCount =  2; }
-  else if (SoC_getBatteryStateNow_percent() >= 22) { LiDisplaySoCBarCount =  1; }
-  else                                             { LiDisplaySoCBarCount =  0; }
-  return;
+	// OEM BAT Gauge maxes itself (20 bars) at and above 76.1% SoC, so we will likewise max LiDisplay BAT gauge above 76% (beginning at 77%)
+	if (SoC_getBatteryStateNow_percent() >= 77)			{ LiDisplaySoCBarCount = 20; }				// > 77% is 20 bars (full)
+	else if (SoC_getBatteryStateNow_percent() <= 19)	{ LiDisplaySoCBarCount =  0; }				// <= 19% is 0 bars (empty)
+	else if (SoC_getBatteryStateNow_percent() <= 22)	{ LiDisplaySoCBarCount =  1; }				// 22% through 20% is 1 bar (math gets weird below 22)
+	else { LiDisplaySoCBarCount = (ceil((SoC_getBatteryStateNow_percent() - 22) * 0.3333) + 1); }	// Decimal end rounded up with ceil.  76 through 73 will be 19 bars.
+	// SoC% -22 offset, divided by 3, round all decimals up, then add 1 gets total number of bars for BAT gauge with increments every 3% SoC.
+
+	return;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void LiDisplay_calculateFanSpeedStr() {
-    if (fan_getSpeed_now() == FAN_HIGH) {
-        currentFanSpeed = 3;
-    } else if (fan_getSpeed_now() == FAN_MED) {
-        currentFanSpeed = 2;
-    } else if (fan_getSpeed_now() == FAN_LOW) {
-        currentFanSpeed = 1;
-    } else {
-        currentFanSpeed = 0;
-    }
+    if (fan_getSpeed_now() == FAN_HIGH) { currentFanSpeed = 3; }
+	else if (fan_getSpeed_now() == FAN_MED) { currentFanSpeed = 2; }
+	else if (fan_getSpeed_now() == FAN_LOW) { currentFanSpeed = 1; }
+	else { currentFanSpeed = 0; }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

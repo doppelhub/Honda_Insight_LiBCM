@@ -8,7 +8,7 @@
     #include "src/libcm.h"
 
     #define FW_VERSION "0.9.6aN"
-    #define BUILD_DATE "2026APR15"
+    #define BUILD_DATE "2026APR20"
 
     //////////////////////////////////////////////////////////////////
 
@@ -25,7 +25,7 @@
 
     //choose your battery type:
        //#define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
-        //#define BATTERY_TYPE_47Ah  //aka FoMoCo //aka Samsung SDI modules
+       //#define BATTERY_TYPE_47Ah  //aka FoMoCo //aka Samsung SDI modules
 
     //choose how many cells are in series:
         //#define STACK_IS_48S //All 5AhG3 Kits & 47Ah Kits with QTY4 modules
