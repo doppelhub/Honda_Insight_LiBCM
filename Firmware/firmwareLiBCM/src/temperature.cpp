@@ -439,7 +439,7 @@ int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin)
         tempMeasured_celsius = ((tempMeasured_celsius * 5) >> 2) - 5; //actual: countsADC = countsADC * 1.225 - 4;
     }
 
-    return (uint8_t)tempMeasured_celsius;
+    return (int8_t)tempMeasured_celsius;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
