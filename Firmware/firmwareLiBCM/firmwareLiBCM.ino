@@ -4,10 +4,15 @@
 
 #include "src/libcm.h"
 
-void setup() 
+void setup()
 {
     //getting here takes ~02 milliseconds after poweron reset
     //getting here takes ~16 milliseconds after IMA switch on
+
+    //Applied first because it has zero dependencies (no Serial output, no other subsystem state) and gpio_begin()
+    //needs the grid-charger type it resolves in order to configure the grid-charger EN pin as early as possible.
+    eeprom_applyBootCriticalConfigOverrides(); //hardware-identity fields only (no safe default) -- see eepromAccess.cpp
+
     gpio_begin();
     wdt_disable();
     LiControl_begin(); //SPI errors until initialized
@@ -16,8 +21,10 @@ void setup()
     METSCI_begin();
     BATTSCI_begin();
     heater_begin();
-    eeprom_begin();
+    eeprom_begin(); //must run after USB_begin(): eeprom_verifyDataValid() can print diagnostics, so Serial must already be ready
+    SoC_begin(); //depends on battery type, already resolved by eeprom_applyBootCriticalConfigOverrides() above
     LiDisplay_begin();
+    eeprom_validateHardwareConfig(); //fatal-halts if hardware config is unconfigured or invalid -- needs LiDisplay/heater for its warning UX
     powerSave_init();
 
     if (gpio_keyStateNow() == GPIO_KEY_ON) { keyOn_coldBootTasks();          }

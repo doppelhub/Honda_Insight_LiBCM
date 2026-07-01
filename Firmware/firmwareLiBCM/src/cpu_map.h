@@ -72,21 +72,9 @@
         #define DEBUG_SDA 20
         #define DEBUG_CLK 21
 
-        //1500 watt charger controlled by daughterboard, which uses different pinout
-        #ifdef GRIDCHARGER_IS_1500W
-            #ifdef BATTERY_TYPE_5AhG3
-                #error (invalid grid charger selection in config.h: 5AhG3 LiBCM kits dont support 1500 watt charging)
-            #endif
-            #define PIN_ABSTRACTED_GRID_CURRENT PIN_GPIO3
-            #define PIN_ABSTRACTED_GRID_EN      PIN_GRID_PWM
-            #define PIN_ABSTRACTED_GRID_VOLTAGE PIN_GPIO2
-        #elif defined GRIDCHARGER_IS_NOT_1500W
-            #define PIN_ABSTRACTED_GRID_CURRENT PIN_GRID_PWM
-            #define PIN_ABSTRACTED_GRID_EN      PIN_GRID_EN
-            //these chargers don't support voltage control
-        #else
-            #error (Grid charger type not specified in config.h)
-        #endif
+        //1500 watt charger controlled by daughterboard, which uses different pinout.
+        //Grid charger type is a runtime EEPROM value (see eepromAccess.h) -- gpio_pinGridCurrent()/_pinGridEn()/_pinGridVoltage()
+        //in gpio.cpp choose the correct pin below at runtime instead of at compile time.
 
     #endif
 

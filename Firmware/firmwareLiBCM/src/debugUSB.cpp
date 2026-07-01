@@ -9,7 +9,7 @@
 #include "libcm.h"
 
 uint16_t cellBalanceBitmaps[TOTAL_IC] = {0};
-uint16_t cellBalanceThreshold = CELL_VMAX_REGEN; //no cells are reported as balancing until first balance status update occurs
+uint16_t cellBalanceThreshold = 43000; //matches DEFAULT_CELL_VMAX_REGEN in eepromAccess.cpp -- can't read EEPROM here since global initializers run before eeprom_begin() restores factory defaults //no cells are reported as balancing until first balance status update occurs
 uint8_t dataTypeToStream = DEBUGUSB_STREAM_POWER;
 uint32_t dataUpdatePeriod_ms = 250;
 uint8_t transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE;
@@ -32,7 +32,7 @@ uint16_t debugUSB_dataUpdatePeriod_ms_get(void) { return dataUpdatePeriod_ms; }
 //JTS2doLater: Place inside debugUSB_printData_cellVoltages()
 void debugUSB_printOneICsCellVoltages(uint8_t icToPrint, uint8_t decimalPlaces)
 {
-    if (icToPrint > TOTAL_IC) { return; } //illegal IC number entered
+    if (icToPrint > LTC68042configure_totalIC_get()) { return; } //illegal IC number entered
     else
     {
         //puts QTY64 bytes into the USB serial buffer, which can take up to QTY64 bytes
@@ -71,7 +71,7 @@ void debugUSB_setCellBalanceStatus(uint8_t icNumber, uint16_t cellBitmap, uint16
 void debugUSB_printCellBalanceStatus(void)
 {
     bool anyCellsBalancing = NO;
-    for (uint8_t ii=0; ii<TOTAL_IC; ii++)
+    for (uint8_t ii=0; ii<LTC68042configure_totalIC_get(); ii++)
     {
         if (cellBalanceBitmaps[ii] != 0) { anyCellsBalancing = YES; }
     }
@@ -83,7 +83,7 @@ void debugUSB_printCellBalanceStatus(void)
         Serial.print(F(" V (0x): "));
 
         //print discharge resistor bitmap status
-        for (uint8_t ii = 0; ii < TOTAL_IC; ii++)
+        for (uint8_t ii = 0; ii < LTC68042configure_totalIC_get(); ii++)
         {
             Serial.print(String(cellBalanceBitmaps[ii], HEX));
             Serial.print(',');
@@ -112,11 +112,11 @@ void debugUSB_printLatest_data_gridCharger(void)
 {
     static uint32_t previousMillisGrid = 0;
 
-    if ((uint32_t)(millis() - previousMillisGrid) >= DEBUG_USB_UPDATE_PERIOD_GRIDCHARGE_mS)
+    if ((uint32_t)(millis() - previousMillisGrid) >= eeprom_debugUsbUpdatePeriodGridcharge_ms_get())
     {
         previousMillisGrid = millis();
 
-        for (uint8_t ii = 0; ii < TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages(ii, FOUR_DECIMAL_PLACES); }
+        for (uint8_t ii = 0; ii < LTC68042configure_totalIC_get(); ii++) { debugUSB_printOneICsCellVoltages(ii, FOUR_DECIMAL_PLACES); }
 
         debugUSB_printCellBalanceStatus();
 
@@ -189,7 +189,7 @@ void debugUSB_printData_cellVoltages(void)
         Serial.print( String( LTC68042result_specificCellVoltage_get(icToPrint,cellToPrint) * 0.0001, FOUR_DECIMAL_PLACES) );
     }
 
-    if (++icToPrint < TOTAL_IC) { transmitStatus = TRANSMITTING_LARGE_MESSAGE; }
+    if (++icToPrint < LTC68042configure_totalIC_get()) { transmitStatus = TRANSMITTING_LARGE_MESSAGE; }
     else                        { transmitStatus = NOT_TRANSMITTING_LARGE_MESSAGE; icToPrint = 0; Serial.print(F("\ncell voltages:")); }
 }
 
@@ -202,19 +202,13 @@ void debugUSB_printData_temperatures(void)
     Serial.print(F(", T_in:"));
     Serial.print(String(temperature_intake_getLatest()));
     Serial.print(F(", T_out:"));
-  #ifndef BATTERY_TYPE_47Ah
-    Serial.print(String(temperature_exhaust_getLatest()));
-  #else
-    Serial.print(F("none"));
-  #endif
+    if (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3) { Serial.print(String(temperature_exhaust_getLatest())); }
+    else                                                      { Serial.print(F("none")); }
     Serial.print(F(", T_charger:"));
     Serial.print(String(temperature_gridCharger_getLatest()));
     Serial.print(F(", T_bay:"));
-  #ifndef BATTERY_TYPE_47Ah
-    Serial.print(String(temperature_ambient_getLatest()));
-  #else
-    Serial.print(F("none"));
-  #endif
+    if (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3) { Serial.print(String(temperature_ambient_getLatest())); }
+    else                                                      { Serial.print(F("none")); }
     Serial.print('C');
 }
 
@@ -274,37 +268,30 @@ void debugUSB_printHardwareRevision(void)
 
 void debugUSB_printConfigParameters(void)
 {
-    #ifdef        SET_CURRENT_HACK_00
-        Serial.print(F("/+00%"));
-    #elif defined SET_CURRENT_HACK_20
-        Serial.print(F("/+20%"));
-    #elif defined SET_CURRENT_HACK_20
-        Serial.print(F("/+40%"));
-    #elif defined SET_CURRENT_HACK_20
-        Serial.print(F("/+60%"));
-    #endif
+    switch (eeprom_currentHackMode_get())
+    {
+        case CURRENT_HACK_00: Serial.print(F("/+00%")); break;
+        case CURRENT_HACK_20: Serial.print(F("/+20%")); break;
+        case CURRENT_HACK_40: Serial.print(F("/+40%")); break;
+        case CURRENT_HACK_60: Serial.print(F("/+60%")); break;
+        default:              Serial.print(F("/+??%")); break;
+    }
 
-    #ifdef        BATTERY_TYPE_5AhG3
-        Serial.print(F("/5AhG3"));
-    #elif defined BATTERY_TYPE_47Ah
-        Serial.print(F("/47Ah"));
-    #endif
+    if (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3) { Serial.print(F("/5AhG3")); }
+    else                                                      { Serial.print(F("/47Ah"));  }
 
-    #ifdef        STACK_IS_48S
-        Serial.print(F("/48S"));
-    #elif defined STACK_IS_60S
-        Serial.print(F("/60S"));
-    #endif
+    if (eeprom_stackSize_get() == STACK_SIZE_VALUE_48S) { Serial.print(F("/48S")); }
+    else                                                { Serial.print(F("/60S")); }
 
-    #ifdef        VOLTAGE_SPOOFING_DISABLE
-        Serial.print(F("/Vs=off"));
-    #elif defined VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE
-        Serial.print(F("/Vs=ast"));
-    #elif defined VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY
-        Serial.print(F("/Vs=bin"));
-    #elif defined VOLTAGE_SPOOFING_ASSIST_AND_REGEN
-        Serial.print(F("/Vs=all"));
-    #endif
+    switch (eeprom_voltageSpoofingMode_get())
+    {
+        case VOLTAGE_SPOOFING_MODE_DISABLE:              Serial.print(F("/Vs=off")); break;
+        case VOLTAGE_SPOOFING_MODE_ASSIST_ONLY_VARIABLE: Serial.print(F("/Vs=ast")); break;
+        case VOLTAGE_SPOOFING_MODE_ASSIST_ONLY_BINARY:   Serial.print(F("/Vs=bin")); break;
+        case VOLTAGE_SPOOFING_MODE_ASSIST_AND_REGEN:     Serial.print(F("/Vs=all")); break;
+        case VOLTAGE_SPOOFING_MODE_LINEAR:               Serial.print(F("/Vs=lin")); break;
+        default:                                         Serial.print(F("/Vs=??"));  break;
+    }
 
     Serial.print(F("/Heat:"));
     if (heater_isConnected() == HEATER_NOT_CONNECTED) { Serial.print('N'); }

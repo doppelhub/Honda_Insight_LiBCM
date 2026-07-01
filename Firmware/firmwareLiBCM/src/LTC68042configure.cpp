@@ -99,31 +99,42 @@ void LTC68042configure_programVolatileDefaults(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+uint8_t LTC68042configure_totalIC_get(void)
+{
+    #ifdef RUN_BRINGUP_TESTER_MOTHERBOARD
+        return TOTAL_IC_60S; //bringup tester needs to talk to the worst-case (max) IC count
+    #else
+        return (eeprom_stackSize_get() == STACK_SIZE_VALUE_48S) ? TOTAL_IC_48S : TOTAL_IC_60S;
+    #endif
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
 {
     bool helper_doesActualPackSizeMatchUserConfig = true;
 
-    #if   defined RUN_BRINGUP_TESTER_MOTHERBOARD //don't verify cell count
-    #elif defined RUN_BRINGUP_TESTER_GRIDCHARGER //don't verify cell count
-    #elif defined IGNORE_CELL_VOLTAGE_MISMATCH   //don't verify cell count
+    #if defined RUN_BRINGUP_TESTER_MOTHERBOARD || defined RUN_BRINGUP_TESTER_GRIDCHARGER //don't verify cell count
     #else
-        if (gpio_keyStateNow() == GPIO_KEY_OFF) //we don't have time to run this test if the key is on when LiBCM first boots
+        if ((eeprom_isCellVoltageMismatchIgnored_get() == false) &&
+            (gpio_keyStateNow() == GPIO_KEY_OFF)                  ) //we don't have time to run this test if the key is on when LiBCM first boots
         {
             LTC6804_adax(); //send any broadcast command
             delay(6); //wait for all LTC6804 ICs to process this command
 
             uint8_t errorCount_LTC6804_underTest[TOTAL_IC_60S] = {0}; //allocate for 60S even when user selects 48S
+            uint8_t totalIC = LTC68042configure_totalIC_get();
 
             //read data back from either QTY4 ICs (if user selects PACK_IS_48S in config.h), or QTY5 ICs (if user selects PACK_IS_60S in config.h)
-            //we don't care about the actual returned data; only that the PEC error count doesn't increment 
-            for (uint8_t dut = 0; dut < TOTAL_IC; dut++)
+            //we don't care about the actual returned data; only that the PEC error count doesn't increment
+            for (uint8_t dut = 0; dut < totalIC; dut++)
             {
                 errorCount_LTC6804_underTest[dut] = LTC6804_rdaux(1,1,FIRST_IC_ADDR + dut); //read register 'A' on specified LTC6804
                 if (errorCount_LTC6804_underTest[dut] != 0) { helper_doesActualPackSizeMatchUserConfig = false; }
             }
 
             //For 48S, verify cells 49:60 aren't present
-            if (TOTAL_IC == TOTAL_IC_48S)
+            if (totalIC == TOTAL_IC_48S)
             {
                 errorCount_LTC6804_underTest[4] = LTC6804_rdaux(1,1,FIRST_IC_ADDR + TOTAL_IC_48S); //attempt to read from 49:60
 
@@ -136,10 +147,10 @@ bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
                 //alert user and then turn off
 
                 Serial.print(F("\nError: measured cell count disagrees with user specified cell count in config.h."
-                               "\nLiBCM is disabled due to cell voltage monitoring IC issue. Debug:"));            
+                               "\nLiBCM is disabled due to cell voltage monitoring IC issue. Debug:"));
 
                 //cells 1:48 are the same for both 48S & 60S
-                for (uint8_t dut = 0; dut < TOTAL_IC; dut++)
+                for (uint8_t dut = 0; dut < totalIC; dut++)
                 {
                     Serial.print(F("\nIC"));
                     Serial.print(dut);
@@ -149,7 +160,7 @@ bool LTC68042configure_doesActualPackSizeMatchUserConfig(void)
 
                 //For 48S, verify cells 49:60 aren't present
                 Serial.print("\nIC4: ");
-                if (TOTAL_IC == TOTAL_IC_48S)
+                if (totalIC == TOTAL_IC_48S)
                 {
                     if (errorCount_LTC6804_underTest[4] == 0) { Serial.print(F("FAIL")); } //IC4 powered by cells 49:60
                     else                                      { Serial.print(F("pass")); }

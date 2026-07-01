@@ -54,7 +54,8 @@ void bringupTester_gridcharger(void)
         while (1) //this function never returns
         {       
             Serial.print(F("\nRunning Grid Charger Test: "));
-            #ifdef GRIDCHARGER_IS_1500W
+            if (eeprom_gridChargerType_get() == GRIDCHARGER_TYPE_1500W)
+            {
                 Serial.print(F("GRIDCHARGER_IS_1500W"));
 
                 //Verify charger Vin sense is working when unplugged
@@ -108,7 +109,9 @@ void bringupTester_gridcharger(void)
                 Serial.print(F("\n\nVerify P_in ~= 950|950 watts @ Vin ~= 120|240 volts"));
                 serialUSB_waitForAnyUserInput();
 
-            #else //GRIDCHARGER_IS_NOT_1500W
+            }
+            else //GRIDCHARGER_TYPE_NOT_1500W
+            {
                 Serial.print(F("GRIDCHARGER_IS_NOT_1500W"));
 
                 //Verify charger Vin sense is working when unplugged
@@ -161,7 +164,7 @@ void bringupTester_gridcharger(void)
                 gpio_setGridCharger_powerLevel('L');
                 Serial.print(F("\n\nVerify P_in ~= 100 watts"));
                 serialUSB_waitForAnyUserInput();
-            #endif
+            }
 
             //test heater (if installed)
             gpio_turnGridCharger_off();
@@ -236,7 +239,7 @@ bool testLTC6804cellVoltages(void)
     bool didTestFail = false;
 
     //display all cell voltages
-    for (uint8_t ii=0; ii<TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages( ii, 3); }
+    for (uint8_t ii=0; ii<LTC68042configure_totalIC_get(); ii++) { debugUSB_printOneICsCellVoltages( ii, 3); }
 
     Serial.print(F("\nmax cell: "));
     Serial.print(String(LTC68042result_hiCellVoltage_get()));
@@ -272,7 +275,7 @@ bool testDischargeFETs(void)
         Serial.print(F("\n\nbitmapPattern: "));
         Serial.print(String(cellDischargeBitmaps[bitmapPattern],BIN));
         //Test each LTC6804 IC separately
-        for (uint8_t ii=0; ii<TOTAL_IC; ii++)
+        for (uint8_t ii=0; ii<LTC68042configure_totalIC_get(); ii++)
         {
             LTC68042configure_setBalanceResistors(FIRST_IC_ADDR + ii, cellDischargeBitmaps[bitmapPattern], LTC6804_DISCHARGE_TIMEOUT_02_SECONDS);
         }
@@ -282,7 +285,7 @@ bool testDischargeFETs(void)
         LTC68042cell_acquireAllCellVoltages();
         LTC68042cell_acquireAllCellVoltages();
 
-        for (uint8_t ii=0; ii<TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages( ii, 3); }
+        for (uint8_t ii=0; ii<LTC68042configure_totalIC_get(); ii++) { debugUSB_printOneICsCellVoltages( ii, 3); }
     }
 
     return didTestFail;

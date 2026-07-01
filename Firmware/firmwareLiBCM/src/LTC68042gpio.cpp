@@ -134,11 +134,11 @@ bool LTC6804gpio_areAllVoltageReferencesPassing(void)
     //verify LTC6804 VREF is in bounds
     LTC6804_adax();
     delay(5);
-    LTC6804_rdaux(0,TOTAL_IC,FIRST_IC_ADDR);
+    LTC6804_rdaux(0,LTC68042configure_totalIC_get(),FIRST_IC_ADDR);
 
     bool didTestPass = true;
 
-    for (uint8_t ii = 0; ii<TOTAL_IC; ii++)
+    for (uint8_t ii = 0; ii<LTC68042configure_totalIC_get(); ii++)
     {
       uint16_t countsVREF = aux_codes[ii][5];
 

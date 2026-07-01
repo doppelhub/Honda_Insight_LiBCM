@@ -244,9 +244,12 @@ void fan_handler(void)
             (hasEnoughTimePassedToChangeFanSpeed() == YES)  ) { fanSpeed_now = fanSpeed_goal; }
     }
 
-    #ifdef BATTERY_TYPE_5AhG3
+    if (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3)
+    {
         gpio_setFanSpeed_OEM(fanSpeed_now);
-    #elif defined BATTERY_TYPE_47Ah
+    }
+    else //BATTERY_TYPE_VALUE_47Ah
+    {
         //OEM battery fan is removed in 47Ah Kits.  The battery fan circuitry is repurposed to allow LiBCM to control the PDU fan
         //Note that the MCM retains its OEM behavior (i.e. it can still control the PDU fan, too).
         //JTS2doLater: Add new fan handler specifically for OEM fan... the direct gpio functions used below will only work properly if no other subsystem calls them
@@ -258,7 +261,7 @@ void fan_handler(void)
             gpio_setFanSpeed_OEM(FAN_LOW); //PDU fan defaults to low speed when keyON
         }
         else { gpio_setFanSpeed_OEM(FAN_OFF); }
-    #endif
+    }
 
     gpio_setFanSpeed_PCB(fanSpeed_now);
 }

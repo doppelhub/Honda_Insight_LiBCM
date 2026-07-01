@@ -203,7 +203,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     else if (testToRun == 'C')
     {
         LTC68042cell_acquireAllCellVoltages();
-        for (uint8_t ii = 0; ii < TOTAL_IC; ii++) { debugUSB_printOneICsCellVoltages(ii, FOUR_DECIMAL_PLACES); }
+        for (uint8_t ii = 0; ii < LTC68042configure_totalIC_get(); ii++) { debugUSB_printOneICsCellVoltages(ii, FOUR_DECIMAL_PLACES); }
     }
     else if (testToRun == 'H')
     {

@@ -183,15 +183,18 @@ uint16_t calculateVoltageCell19(uint16_t cell19Voltage_measured, uint16_t hiCell
 //results stored in LTC68042results.c
 void processAllCellVoltages(void)
 {
-    #ifdef BATTERY_TYPE_5AhG3
-        //store actual cell 19 voltage measurement for later recall
-        uint16_t cell19Voltage_measured = cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER];
-        
+    bool isBatteryType5AhG3 = (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3);
+
+    //store actual cell 19 voltage measurement for later recall
+    uint16_t cell19Voltage_measured = cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER];
+    uint16_t cell19Voltage_spoofed  = cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER - 1];
+
+    if (isBatteryType5AhG3 == true)
+    {
         //temporarily replace cell 19's voltage with another cell
-        uint16_t cell19Voltage_spoofed = cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER - 1];
         cellVoltages_counts[CELL19_CHIP_NUMBER][CELL19_CELL_NUMBER] = cell19Voltage_spoofed;
         //see calculateVoltageCell19() for explanation
-    #endif
+    }
 
     uint32_t packVoltage_RAW = 0; //Multiply by 0.0001 for volts
     uint16_t loCellVoltage = 65535;
@@ -200,7 +203,7 @@ void processAllCellVoltages(void)
     uint8_t hiCellNumber = 0;
 
     //loop through every cell in pack
-    for (int chip = 0 ; chip < TOTAL_IC; chip++) //actual LTC serial address: 'chip' + FIRST_IC_ADDR )
+    for (int chip = 0 ; chip < LTC68042configure_totalIC_get(); chip++) //actual LTC serial address: 'chip' + FIRST_IC_ADDR )
     {
         for (int cell=0; cell < CELLS_PER_IC; cell++) //physical LTC cell number (1 to 48): 'cell' + 1 (array is zero-indexed)
         { 
@@ -215,7 +218,8 @@ void processAllCellVoltages(void)
         }
     }
 
-    #ifdef BATTERY_TYPE_5AhG3
+    if (isBatteryType5AhG3 == true)
+    {
         uint16_t cell19Voltage_final = calculateVoltageCell19(cell19Voltage_measured, hiCellVoltage, loCellVoltage);
 
         LTC68042result_specificCellVoltage_set(CELL19_CHIP_NUMBER, CELL19_CELL_NUMBER, cell19Voltage_final);
@@ -223,7 +227,7 @@ void processAllCellVoltages(void)
         if (cell19Voltage_final < loCellVoltage) { loCellVoltage = cell19Voltage_final; loCellNumber = 19; }
 
         packVoltage_RAW = packVoltage_RAW - cell19Voltage_spoofed + cell19Voltage_measured;
-    #endif
+    }
 
     LTC68042result_loCellVoltage_set(loCellVoltage);
     LTC68042result_hiCellVoltage_set(hiCellVoltage);
@@ -271,7 +275,7 @@ bool LTC68042cell_nextVoltages(void)
             //LTC6804 only has registers A,B,C,D
             cellVoltageRegister = 'A'; //reset back to first CVR
 
-            if (++chipAddress >= (FIRST_IC_ADDR + TOTAL_IC))
+            if (++chipAddress >= (FIRST_IC_ADDR + LTC68042configure_totalIC_get()))
             { 
                 //just finished reading last IC's last CVR... all cell voltages stored in cellVoltages_counts[][]
                 startCellConversion(); //start the next cell conversion //takes a while to finish

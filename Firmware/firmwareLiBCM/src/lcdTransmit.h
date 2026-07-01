@@ -79,6 +79,7 @@
     #define LCD_WARN_FW_EXPIRED 2
     #define LCD_WARN_COVER_GONE 3
     #define LCD_WARN_CELL_COUNT 4
+    #define LCD_WARN_HW_CONFIG  5
     void lcdTransmit_Warning(uint8_t warningToDisplay);
 
 #endif

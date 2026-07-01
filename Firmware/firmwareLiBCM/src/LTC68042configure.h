@@ -7,22 +7,13 @@
     #define TOTAL_IC_48S 4
     #define TOTAL_IC_60S 5
 
-    //choose number of LTC ICs in isoSPI network
-    #ifdef RUN_BRINGUP_TESTER_MOTHERBOARD
-        #define TOTAL_IC TOTAL_IC_60S
-    #elif defined STACK_IS_48S
-        #define TOTAL_IC TOTAL_IC_48S
-        #ifdef STACK_IS_60S
-            #error (pack is specified as both 48S and 60S. Select only one option in config.h)
-        #endif
-    #elif defined STACK_IS_60S
-        #ifdef BATTERY_TYPE_5AhG3
-            #error (incompatible config.h parameters selected: 60S not supported with 5AhG3 cells)
-        #endif
-        #define TOTAL_IC TOTAL_IC_60S
-    #else
-        #error (Select pack size - 48S or 60S - in config.h)
-    #endif
+    //TOTAL_IC is the worst-case (60S) IC count -- used ONLY to size arrays at compile time.
+    //Use LTC68042configure_totalIC_get() everywhere else (loop bounds, comparisons) for the runtime-configured IC count.
+    //Stack size is a runtime EEPROM value (see eepromAccess.h) -- 48S+60S-both-selected and pack-size-not-selected are
+    //now checked at runtime by eeprom_validateHardwareConfig(), since neither is a compile-time #define anymore.
+    #define TOTAL_IC TOTAL_IC_60S
+
+    uint8_t LTC68042configure_totalIC_get(void);
 
     #define FIRST_IC_ADDR  2 //lowest address.  All additional IC addresses must be sequential
     #define CELLS_PER_IC  12 //Each LTC6804 measures QTY12 cells

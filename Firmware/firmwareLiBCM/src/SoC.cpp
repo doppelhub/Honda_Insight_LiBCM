@@ -11,17 +11,24 @@
 
 #include "libcm.h"
 
-uint16_t stackFull_Calculated_mAh   = STACK_mAh_NOM; //JTS2doLater: add cell wear adjustment over time
+uint16_t stackFull_Calculated_mAh   = 0; //set by SoC_begin() once battery type is known //JTS2doLater: add cell wear adjustment over time
 uint16_t packCharge_Now_mAh         = 0;
 uint8_t  packCharge_Now_percent     = 0;
 uint16_t packCharge_Now_deciPercent = 0;
+
+//battery-type dependent constants (see eepromAccess.h for BATTERY_TYPE_VALUE_5AhG3/_47Ah)
+uint16_t SoC_cellVrest085PercentSoC_get(void) { return (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3) ? 40000 : 39700; } //for maximum life, resting cell voltage should remain below this value
+uint16_t SoC_cellVrest010PercentSoC_get(void) { return (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3) ? 34200 : 34000; } //for maximum life, resting cell voltage should remain above this value
+uint16_t SoC_stackFullCapacity_mAh_get(void)  { return (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3) ?  5000 : 47000; } //5AhG3: 5 Ah nominal //47Ah: 47 Ah nominal
+
+void SoC_begin(void) { stackFull_Calculated_mAh = SoC_stackFullCapacity_mAh_get(); }
 
 uint16_t SoC_getBatteryStateNow_mAh(void) { return packCharge_Now_mAh; }
 void     SoC_setBatteryStateNow_mAh(uint16_t newPackCharge_mAh) { packCharge_Now_mAh = newPackCharge_mAh; }
 
 void     SoC_setBatteryStateNow_percent(uint8_t newSoC_percent) { packCharge_Now_mAh = (uint16_t)(stackFull_Calculated_mAh * 0.01) * newSoC_percent; }
 uint8_t  SoC_getBatteryStateNow_percent(void)     { return packCharge_Now_percent;     }
-uint16_t SoC_getBatteryStateNow_deciPercent(void) { return packCharge_Now_deciPercent; } 
+uint16_t SoC_getBatteryStateNow_deciPercent(void) { return packCharge_Now_deciPercent; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -88,8 +95,8 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
     Serial.print(String(batterySoC_percent));
     Serial.print('%');
 
-    if (LTC68042result_hiCellVoltage_get() > CELL_VMAX_REGEN)       { Serial.print(F("\nDANGER: Cell(s) Overcharged!!")); }
-    if (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER) { Serial.print(F("\nDANGER: Cell(s) Discharged!!" )); }
+    if (LTC68042result_hiCellVoltage_get() > eeprom_cellVmaxRegen_get())       { Serial.print(F("\nDANGER: Cell(s) Overcharged!!")); }
+    if (LTC68042result_loCellVoltage_get() < eeprom_cellVminGridcharger_get()) { Serial.print(F("\nDANGER: Cell(s) Discharged!!" )); }
 
     SoC_setBatteryStateNow_percent(batterySoC_percent); //update SoC
 }
@@ -98,10 +105,8 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
 
 //Calling this function when battery is sourcing/sinking current will cause estimation error
 //Wait at least ten minutes after keyOff for most accurate results
-#ifdef BATTERY_TYPE_5AhG3
-    uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
+uint8_t SoC_estimateFromRestingCellVoltage_percent_5AhG3(uint16_t restingCellVoltage)
     {
-        uint16_t restingCellVoltage = LTC68042result_loCellVoltage_get(); //JTS2doLater: need an algorithm to look at hi cell, too.
         uint8_t estimatedSoC = 0;
 
         if      (restingCellVoltage >= CELL_VREST_100_PERCENT_SoC) { estimatedSoC = 100; }
@@ -118,9 +123,9 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
         else if (restingCellVoltage >= 40400)                      { estimatedSoC =  89; }
         else if (restingCellVoltage >= 40300)                      { estimatedSoC =  88; }
         else if (restingCellVoltage >= 40200)                      { estimatedSoC =  87; }
-        else if (restingCellVoltage >= 40100)                      { estimatedSoC =  86; }
-        else if (restingCellVoltage >= CELL_VREST_085_PERCENT_SoC) { estimatedSoC =  85; } //Vmax for long lifetime
-        else if (restingCellVoltage >= 39880)                      { estimatedSoC =  84; }
+        else if (restingCellVoltage >= 40100)                        { estimatedSoC =  86; }
+        else if (restingCellVoltage >= SoC_cellVrest085PercentSoC_get()) { estimatedSoC =  85; } //Vmax for long lifetime
+        else if (restingCellVoltage >= 39880)                        { estimatedSoC =  84; }
         else if (restingCellVoltage >= 39760)                      { estimatedSoC =  83; }
         else if (restingCellVoltage >= 39640)                      { estimatedSoC =  82; }
         else if (restingCellVoltage >= 39520)                      { estimatedSoC =  81; }
@@ -193,8 +198,8 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
         else if (restingCellVoltage >= 34900)                      { estimatedSoC =  14; }
         else if (restingCellVoltage >= 34800)                      { estimatedSoC =  13; }
         else if (restingCellVoltage >= 34700)                      { estimatedSoC =  12; }
-        else if (restingCellVoltage >= 34540)                      { estimatedSoC =  11; } 
-        else if (restingCellVoltage >= CELL_VREST_010_PERCENT_SoC) { estimatedSoC =  10; } //Vmin for long lifetime
+        else if (restingCellVoltage >= 34540)                      { estimatedSoC =  11; }
+        else if (restingCellVoltage >= SoC_cellVrest010PercentSoC_get()) { estimatedSoC =  10; } //Vmin for long lifetime
         else if (restingCellVoltage >= 33900)                      { estimatedSoC =   9; }
         else if (restingCellVoltage >= 33600)                      { estimatedSoC =   8; }
         else if (restingCellVoltage >= 33200)                      { estimatedSoC =   7; }
@@ -209,11 +214,8 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
         return estimatedSoC;
     }
 
-#elif defined BATTERY_TYPE_47Ah
-
-    uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
+uint8_t SoC_estimateFromRestingCellVoltage_percent_47Ah(uint16_t restingCellVoltage)
     {
-        uint16_t restingCellVoltage = LTC68042result_loCellVoltage_get();
         uint8_t estimatedSoC = 0;
 
         //~/Honda_Insight_LiBCM/Electronics/Lithium Batteries/47 Ah FoMoCo Modules/Resting SoC Discharge Curve
@@ -232,7 +234,7 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
         else if (restingCellVoltage >= 40120)                      { estimatedSoC =  88; }
         else if (restingCellVoltage >= 39980)                      { estimatedSoC =  87; }
         else if (restingCellVoltage >= 39840)                      { estimatedSoC =  86; }
-        else if (restingCellVoltage >= CELL_VREST_085_PERCENT_SoC) { estimatedSoC =  85; } //Vmax for long lifetime
+        else if (restingCellVoltage >= SoC_cellVrest085PercentSoC_get()) { estimatedSoC =  85; } //Vmax for long lifetime
         else if (restingCellVoltage >= 39600)                      { estimatedSoC =  84; }
         else if (restingCellVoltage >= 39500)                      { estimatedSoC =  83; }
         else if (restingCellVoltage >= 39400)                      { estimatedSoC =  82; }
@@ -307,7 +309,7 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
         else if (restingCellVoltage >= 34240)                      { estimatedSoC =  13; }
         else if (restingCellVoltage >= 34160)                      { estimatedSoC =  12; }
         else if (restingCellVoltage >= 34080)                      { estimatedSoC =  11; }
-        else if (restingCellVoltage >= CELL_VREST_010_PERCENT_SoC) { estimatedSoC =  10; } //Vmin for long lifetime
+        else if (restingCellVoltage >= SoC_cellVrest010PercentSoC_get()) { estimatedSoC =  10; } //Vmin for long lifetime
         else if (restingCellVoltage >= 33900)                      { estimatedSoC =   9; }
         else if (restingCellVoltage >= 33800)                      { estimatedSoC =   8; }
         else if (restingCellVoltage >= 33700)                      { estimatedSoC =   7; }
@@ -321,7 +323,14 @@ void SoC_updateUsingLatestOpenCircuitVoltage(void)
 
         return estimatedSoC;
     }
-#endif
+
+uint8_t SoC_estimateFromRestingCellVoltage_percent(void)
+{
+    uint16_t restingCellVoltage = LTC68042result_loCellVoltage_get(); //JTS2doLater: need an algorithm to look at hi cell, too.
+
+    if (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3) { return SoC_estimateFromRestingCellVoltage_percent_5AhG3(restingCellVoltage); }
+    else                                                      { return SoC_estimateFromRestingCellVoltage_percent_47Ah(restingCellVoltage); }
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 

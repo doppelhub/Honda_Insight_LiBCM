@@ -364,8 +364,8 @@ bool lcd_printCellVoltage_hi(void)
         didscreenUpdateOccur = SCREEN_UPDATED;
     }
 
-    if ((LTC68042result_hiCellVoltage_get() > CELL_VMAX_REGEN )||
-        (LTC68042result_loCellVoltage_get() < CELL_VMIN_ASSIST) ) { isBacklightFlashingRequested = YES; }
+    if ((LTC68042result_hiCellVoltage_get() > eeprom_cellVmaxRegen_get() )||
+        (LTC68042result_loCellVoltage_get() < eeprom_cellVminAssist_get()) ) { isBacklightFlashingRequested = YES; }
     else                                                          { isBacklightFlashingRequested =  NO; }
 
     return didscreenUpdateOccur;
@@ -442,15 +442,18 @@ bool lcd_printCurrent(void)
             lcd2.print(' ');
         }
 
-        #ifdef DISPLAY_NEGATIVE_SIGN_DURING_ASSIST
-            if      (deciAmps > 0) { lcd2.print('-'); } //When discharging battery (i.e. assist), we display '-' symbol, even though internally it's '+' 
-            else if (deciAmps < 0) { lcd2.print('+'); } //When    charging battery (i.e. regen ), we display '+' symbol, even though internally it's '-' 
-            else                   { lcd2.print(' '); }
-        #elif defined DISPLAY_POSITIVE_SIGN_DURING_ASSIST
+        if (eeprom_isPositiveSignDuringAssist_get())
+        {
             if      (deciAmps > 0) { lcd2.print('+'); } //When discharging battery (i.e. assist), we display '+' symbol
-            else if (deciAmps < 0) { lcd2.print('-'); } //When    charging battery (i.e. regen ), we display '-' symbol 
+            else if (deciAmps < 0) { lcd2.print('-'); } //When    charging battery (i.e. regen ), we display '-' symbol
             else                   { lcd2.print(' '); }
-        #endif
+        }
+        else
+        {
+            if      (deciAmps > 0) { lcd2.print('-'); } //When discharging battery (i.e. assist), we display '-' symbol, even though internally it's '+'
+            else if (deciAmps < 0) { lcd2.print('+'); } //When    charging battery (i.e. regen ), we display '+' symbol, even though internally it's '-'
+            else                   { lcd2.print(' '); }
+        }
 
         if (abs_deciAmps < 1000) { lcd2.print(abs_deciAmps * 0.1, 1); }
         else                     { lcd2.print(abs_deciAmps * 0.1, 0); }
@@ -516,15 +519,18 @@ bool lcd_printPower(void)
 
         if (abs_deci_kW <  100) { lcd2.print(' '); } //add one leading space (e.g. " +9.9")
 
-        #ifdef DISPLAY_NEGATIVE_SIGN_DURING_ASSIST
-            if      (deci_kW > 0) { lcd2.print('-'); } //When discharging battery (i.e. assist), we display '-' symbol, even though internally it's '+' 
-            else if (deci_kW < 0) { lcd2.print('+'); } //When    charging battery (i.e. regen ), we display '+' symbol, even though internally it's '-' 
-            else                  { lcd2.print(' '); }
-        #elif defined DISPLAY_POSITIVE_SIGN_DURING_ASSIST
+        if (eeprom_isPositiveSignDuringAssist_get())
+        {
             if      (deci_kW > 0) { lcd2.print('+'); } //When discharging battery (i.e. assist), we display '+' symbol
-            else if (deci_kW < 0) { lcd2.print('-'); } //When    charging battery (i.e. regen ), we display '-' symbol 
+            else if (deci_kW < 0) { lcd2.print('-'); } //When    charging battery (i.e. regen ), we display '-' symbol
             else                  { lcd2.print(' '); }
-        #endif
+        }
+        else
+        {
+            if      (deci_kW > 0) { lcd2.print('-'); } //When discharging battery (i.e. assist), we display '-' symbol, even though internally it's '+'
+            else if (deci_kW < 0) { lcd2.print('+'); } //When    charging battery (i.e. regen ), we display '+' symbol, even though internally it's '-'
+            else                  { lcd2.print(' '); }
+        }
 
         lcd2.print(abs_deci_kW * 0.1, 1); //print kW
 
@@ -676,7 +682,15 @@ void lcdTransmit_Warning(uint8_t warningToDisplay)
         lcd2.setCursor(0,1); lcd2.print(F("       count doesn't"));
         lcd2.setCursor(0,2); lcd2.print(F("       match setting"));
         lcd2.setCursor(0,3); lcd2.print(F("       in config.h  "));
-    }   
+    }
+
+    else if (warningToDisplay == LCD_WARN_HW_CONFIG)
+    {
+        lcd2.setCursor(0,0); lcd2.print(F("ALERT: Hardware not "));
+        lcd2.setCursor(0,1); lcd2.print(F("  configured, or an "));
+        lcd2.setCursor(0,2); lcd2.print(F(" invalid combination"));
+        lcd2.setCursor(0,3); lcd2.print(F(" is set in config.h "));
+    }
 
     if (++whichRowToPrint > 3) { whichRowToPrint = 0; }
 

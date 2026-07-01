@@ -176,8 +176,8 @@ int16_t cellVoltageOffsetDueToESR(void)
 //JTS2doLater: Add five second timeout
 bool BATTSCI_isPackFull(void)
 {
-    if ((LTC68042result_hiCellVoltage_get() < CELL_VMAX_REGEN) && //below maximum cell voltage limit (if SoC estimator is wrong)
-        (  SoC_getBatteryStateNow_percent() < STACK_SoC_MAX  )  ) //below maximum SoC limit
+    if ((LTC68042result_hiCellVoltage_get() < eeprom_cellVmaxRegen_get()) && //below maximum cell voltage limit (if SoC estimator is wrong)
+        (  SoC_getBatteryStateNow_percent() < eeprom_stackSoCMax_get()  )  ) //below maximum SoC limit
          { return NO;  } //pack is good
     else { return YES; } //pack is overcharged
 }
@@ -186,8 +186,8 @@ bool BATTSCI_isPackFull(void)
 
 bool BATTSCI_isPackEmpty(void)
 {
-    if ((LTC68042result_loCellVoltage_get() > CELL_VMIN_ASSIST) && //above minimum cell voltage limit (if SoC estimator is wrong))
-        (  SoC_getBatteryStateNow_percent() > STACK_SoC_MIN   )  ) //above minimum SoC limit
+    if ((LTC68042result_loCellVoltage_get() > eeprom_cellVminAssist_get()) && //above minimum cell voltage limit (if SoC estimator is wrong))
+        (  SoC_getBatteryStateNow_percent() > eeprom_stackSoCMin_get()   )  ) //above minimum SoC limit
          { return NO;  } //pack is good
     else { return YES; } //pack is undercharged
 }
@@ -202,24 +202,21 @@ uint8_t BATTSCI_calculateRegenAssistFlags(void)
 {
     uint8_t flags = 0;
 
-    #ifndef DISABLE_ASSIST
-        if (BATTSCI_isPackEmpty() == YES)
-    #endif
-        {
-            flags |= BATTSCI_DISABLE_ASSIST_FLAG;
-            eeprom_hasLibcmDisabledAssist_set(EEPROM_LIBCM_DISABLED_ASSIST);
-        }
+    if (eeprom_isAssistDisabled_get() || (BATTSCI_isPackEmpty() == YES))
+    {
+        flags |= BATTSCI_DISABLE_ASSIST_FLAG;
+        eeprom_hasLibcmDisabledAssist_set(EEPROM_LIBCM_DISABLED_ASSIST);
+    }
 
-    #ifndef DISABLE_REGEN
-        if ((BATTSCI_isPackFull() == YES)                                                                || //pack is full
-            ((temperature_battery_getLatest() < TEMP_FREEZING_DEGC + 2) && (BATTSCI_isPackEmpty() == NO)) ) //pack too cold to charge; DCDC still powered
-            //JTS2doLater: Allow minimal regen when pack below freezing (e.g. using LiControl to limit max regen)
-            //JTS2doLater: Disable assist and regen if pack too hot
-    #endif
-        {
-            flags |= BATTSCI_DISABLE_REGEN_FLAG; //when this flag is set, MCM draws zero power from IMA motor
-            eeprom_hasLibcmDisabledRegen_set(EEPROM_LIBCM_DISABLED_REGEN);
-        } 
+    if (eeprom_isRegenDisabled_get()                                                                     ||
+        (BATTSCI_isPackFull() == YES)                                                                    || //pack is full
+        ((temperature_battery_getLatest() < TEMP_FREEZING_DEGC + 2) && (BATTSCI_isPackEmpty() == NO))     ) //pack too cold to charge; DCDC still powered
+        //JTS2doLater: Allow minimal regen when pack below freezing (e.g. using LiControl to limit max regen)
+        //JTS2doLater: Disable assist and regen if pack too hot
+    {
+        flags |= BATTSCI_DISABLE_REGEN_FLAG; //when this flag is set, MCM draws zero power from IMA motor
+        eeprom_hasLibcmDisabledRegen_set(EEPROM_LIBCM_DISABLED_REGEN);
+    }
 
     return flags;
 }

@@ -23,15 +23,13 @@ void runFansIfNeeded(void)
     else if (fan_getSpeed_now() == FAN_LOW ) { hysteresis_C = FAN_SPEED_HYSTERESIS_LOW_degC;  }
     else if (fan_getSpeed_now() == FAN_OFF ) { hysteresis_C = FAN_SPEED_HYSTERESIS_OFF_degC;  }
 
-    if      ( (temperature_intake_getLatest()  < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C)) &&
-  #ifndef BATTERY_TYPE_47Ah
-              (temperature_ambient_getLatest() < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C)) &&
-  #endif
+    bool hasAmbientSensor = (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3); //47Ah Kits don't have an ambient sensor
+
+    if      ( (temperature_intake_getLatest()  < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C))                                              &&
+              ((hasAmbientSensor == false) || (temperature_ambient_getLatest() < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C)))             &&
               (temperature_battery_getLatest() < (GRID_CHARGING_FANS_OFF_BELOW_TEMP_C - hysteresis_C))  ) { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_OFF);  }
-    else if ( (temperature_intake_getLatest()  < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C)) &&
-  #ifndef BATTERY_TYPE_47Ah
-              (temperature_ambient_getLatest() < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C)) &&
-  #endif
+    else if ( (temperature_intake_getLatest()  < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C))                                               &&
+              ((hasAmbientSensor == false) || (temperature_ambient_getLatest() < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C)))             &&
               (temperature_battery_getLatest() < (GRID_CHARGING_FANS_LOW_BELOW_TEMP_C - hysteresis_C))  ) { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_LOW);  }
     else                                                                                                  { fan_requestSpeed(FAN_REQUESTOR_GRIDCHARGER, FAN_HIGH); }
 }
@@ -41,8 +39,8 @@ void runFansIfNeeded(void)
 uint16_t determineMaxAllowedCellVoltage(void)
 {
     //prevents rapid grid charger enable/disable when cells full
-    if (gpio_isGridChargerChargingNow() == YES) { return CELL_VMAX_GRIDCHARGER;                    }
-    else                                        { return CELL_VMAX_GRIDCHARGER - VCELL_HYSTERESIS; }
+    if (gpio_isGridChargerChargingNow() == YES) { return eeprom_cellVmaxGridcharger_get();                    }
+    else                                        { return eeprom_cellVmaxGridcharger_get() - VCELL_HYSTERESIS; }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -54,9 +52,9 @@ uint8_t gridCharger_isAllowedNow(void)
     if (gpio_isGridChargerPluggedInNow()    == NO                                       ) { return NO__CHARGER_UNPLUGGED;       }
     if (key_getSampledState()               == KEYSTATE_ON                              ) { return NO__KEY_IS_ON;               }
     //cell voltage checks
-    if (LTC68042result_hiCellVoltage_get()   > CELL_VREST_085_PERCENT_SoC               ) { return NO__ATLEASTONECELL_TOO_HIGH; }
-    if (LTC68042result_loCellVoltage_get()   < CELL_VMIN_GRIDCHARGER                    ) { return NO__ATLEASTONECELL_TOO_LOW;  }
-    if (LTC68042result_hiCellVoltage_get()   > CELL_VMAX_GRIDCHARGER                    ) { return NO__ATLEASTONECELL_FULL;     }
+    if (LTC68042result_hiCellVoltage_get()   > SoC_cellVrest085PercentSoC_get()          ) { return NO__ATLEASTONECELL_TOO_HIGH; }
+    if (LTC68042result_loCellVoltage_get()   < eeprom_cellVminGridcharger_get()          ) { return NO__ATLEASTONECELL_TOO_LOW;  }
+    if (LTC68042result_hiCellVoltage_get()   > eeprom_cellVmaxGridcharger_get()          ) { return NO__ATLEASTONECELL_FULL;     }
     if (LTC68042result_hiCellVoltage_get()   > determineMaxAllowedCellVoltage()         ) { return NO__CELL_VOLTAGE_HYSTERESIS; }
     //thermal checks
     if (temperature_gridCharger_getLatest()  > DISABLE_GRIDCHARGING_ABOVE_CHARGER_TEMP_C) { return NO__CHARGER_IS_HOT;          }
@@ -65,9 +63,8 @@ uint8_t gridCharger_isAllowedNow(void)
     if (temperature_battery_getLatest()      > DISABLE_GRIDCHARGING_ABOVE_BATTERY_TEMP_C) { return NO__BATTERY_IS_HOT;          }
     if (temperature_intake_getLatest()       > DISABLE_GRIDCHARGING_ABOVE_INTAKE_TEMP_C ) { return NO__AIRINTAKE_IS_HOT;        }
     if (temperature_intake_getLatest()      == TEMPERATURE_SENSOR_FAULT_LO              ) { return NO__TEMP_UNPLUGGED_INTAKE;   }
-  #ifndef BATTERY_TYPE_47Ah
-    if (temperature_exhaust_getLatest()      > DISABLE_GRIDCHARGING_ABOVE_EXHAUST_TEMP_C) { return NO__TEMP_EXHAUST_IS_HOT;     }
-  #endif
+    if ((eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3)                        &&
+        (temperature_exhaust_getLatest()     > DISABLE_GRIDCHARGING_ABOVE_EXHAUST_TEMP_C)) { return NO__TEMP_EXHAUST_IS_HOT;     } //47Ah Kits don't have an exhaust sensor
     //time checks
     if ((millis()                          ) < DISABLE_GRIDCHARGING_LIBCM_BOOT_DELAY_ms ) { return NO__LIBCM_JUST_BOOTED;         }
     if ((millis() - latestPlugin_ms        ) < DISABLE_GRIDCHARGING_PLUGIN_DELAY_ms     ) { return NO__JUST_PLUGGED_IN;           }

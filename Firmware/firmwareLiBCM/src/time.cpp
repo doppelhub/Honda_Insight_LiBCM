@@ -82,7 +82,7 @@ void updateKeyOffTaskFlag(void)
     static uint32_t timestamp_lastUpdate_ms = 0;
     uint32_t keyOffUpdatePeriod_ms = KEY_OFF_UPDATE_PERIOD_TEN_MINUTES_ms;
 
-    if ( ((cellBalance_areCellsBalancing() == YES) && (SoC_getBatteryStateNow_percent() > CELL_BALANCE_MIN_SoC)) ||
+    if ( ((cellBalance_areCellsBalancing() == YES) && (SoC_getBatteryStateNow_percent() > eeprom_cellBalanceMinSoC_get())) ||
          ((cellBalance_areCellsBalancing() == YES) && (gpio_isGridChargerPluggedInNow() == YES)                ) ||
          ((gpio_isGridChargerChargingNow() == YES)                                                             )  )
     {
@@ -104,7 +104,7 @@ bool time_hasKeyBeenOffLongEnough_toTurnOffLiBCM(void)
 {
     bool keyOffForLongEnough = false;
 
-    if ((millis() - time_latestKeyOff_ms_get()) > (POWEROFF_DELAY_AFTER_KEYOFF_PACK_EMPTY_MINUTES * (uint32_t)60000))
+    if ((millis() - time_latestKeyOff_ms_get()) > (eeprom_poweroffDelayAfterKeyoffPackEmptyMinutes_get() * (uint32_t)60000))
     {
         keyOffForLongEnough = true;
     }

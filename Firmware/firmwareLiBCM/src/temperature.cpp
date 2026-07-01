@@ -11,35 +11,39 @@
 int8_t tempBattery = ROOM_TEMP_DEGC;
 int8_t tempIntake  = ROOM_TEMP_DEGC;
 int8_t tempCharger = ROOM_TEMP_DEGC;
-#ifndef BATTERY_TYPE_47Ah //47Ah Kits don't have exhaust or ambient sensors
-    int8_t tempExhaust = ROOM_TEMP_DEGC;
-    int8_t tempAmbient = ROOM_TEMP_DEGC;
-#endif
+int8_t tempExhaust = ROOM_TEMP_DEGC; //47Ah Kits don't have this sensor -- stays at ROOM_TEMP_DEGC
+int8_t tempAmbient = ROOM_TEMP_DEGC; //47Ah Kits don't have this sensor -- stays at ROOM_TEMP_DEGC
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 int8_t temperature_battery_getLatest(void)     { return tempBattery; }
 int8_t temperature_intake_getLatest(void)      { return tempIntake;  } //OEM temp sensor: 5AhG3=GRN 47Ah=WHT
 int8_t temperature_gridCharger_getLatest(void) { return tempCharger; } //BLU OEM temp sensor
-#ifndef BATTERY_TYPE_47Ah //47Ah Kits don't have exhaust or ambient sensors
-    int8_t temperature_exhaust_getLatest(void) { return tempExhaust; } //YEL OEM temp sensor
-    int8_t temperature_ambient_getLatest(void) { return tempAmbient; } //WHT OEM temp sensor
-#endif
+int8_t temperature_exhaust_getLatest(void)     { return tempExhaust; } //YEL OEM temp sensor //47Ah Kits don't have this sensor
+int8_t temperature_ambient_getLatest(void)     { return tempAmbient; } //WHT OEM temp sensor //47Ah Kits don't have this sensor
+
+uint8_t temperature_numBatteryTempSensors_get(void)
+{
+    return (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3) ? NUM_BATTERY_TEMP_SENSORS_5AhG3 : NUM_BATTERY_TEMP_SENSORS_47Ah;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //only call inside handler (to ensure sensors powered)
 void temperature_measureOEM(void)
 {
-    #ifdef BATTERY_TYPE_5AhG3
+    if (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3)
+    {
         tempIntake  = temperature_measureOneSensor_degC(PIN_TEMP_GRN);
         tempExhaust = temperature_measureOneSensor_degC(PIN_TEMP_YEL);
         tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
         tempAmbient = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
-    #elif defined BATTERY_TYPE_47Ah
+    }
+    else //BATTERY_TYPE_VALUE_47Ah
+    {
         tempIntake  = temperature_measureOneSensor_degC(PIN_TEMP_WHT);
         tempCharger = temperature_measureOneSensor_degC(PIN_TEMP_BLU);
-    #endif
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -49,32 +53,37 @@ void temperature_measureOEM(void)
 //LiBCM has QTY3 battery temperature sensors
 void temperature_measureBattery(void)
 {
-    int8_t batteryTemps[NUM_BATTERY_TEMP_SENSORS + 1] = {0}; //1-indexed ([1] = bay1 temp)
+    int8_t batteryTemps[NUM_BATTERY_TEMP_SENSORS_MAX + 1] = {0}; //1-indexed ([1] = bay1 temp)
+
+    bool isBatteryType5AhG3 = (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3);
 
     batteryTemps[1] = temperature_measureOneSensor_degC(PIN_TEMP_BAY1);
     batteryTemps[2] = temperature_measureOneSensor_degC(PIN_TEMP_BAY2);
     batteryTemps[3] = temperature_measureOneSensor_degC(PIN_TEMP_BAY3);
-    #ifdef BATTERY_TYPE_47Ah
+    if (isBatteryType5AhG3 == false) //BATTERY_TYPE_VALUE_47Ah
+    {
         batteryTemps[4] = temperature_measureOneSensor_degC(PIN_TEMP_GRN); //Top rear battery module
         batteryTemps[5] = temperature_measureOneSensor_degC(PIN_TEMP_YEL); //Top middle battery module
-    #endif
-
+    }
 
     //stores hottest and coldest temp sensor value
     int8_t tempHi = TEMPERATURE_SENSOR_FAULT_LO; //highest measured temp is initially set to the  lowest possible temp
     int8_t tempLo = TEMPERATURE_SENSOR_FAULT_HI; // lowest measured temp is initially set to the highest possible temp
 
-    for (uint8_t ii = 1; ii <= NUM_BATTERY_TEMP_SENSORS; ii++)
+    for (uint8_t ii = 1; ii <= temperature_numBatteryTempSensors_get(); ii++)
     {
         if ((batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_HI) ||
             (batteryTemps[ii] == TEMPERATURE_SENSOR_FAULT_LO)  )
         {
             Serial.print(F("\nCheck Batt Temp Sensor: "));
-            
-            #ifdef BATTERY_TYPE_5AhG3
+
+            if (isBatteryType5AhG3 == true)
+            {
                 Serial.print(F("Bay "));
                 Serial.print(String(ii,DEC));
-            #elif defined BATTERY_TYPE_47Ah
+            }
+            else //BATTERY_TYPE_VALUE_47Ah
+            {
                 switch (ii)
                 {
                     case 1: Serial.print(F(" Middle tray, driver"   )); break; //5AhG3 BAY1
@@ -83,7 +92,7 @@ void temperature_measureBattery(void)
                     case 4: Serial.print(F(" Top rear battery"      )); break;
                     case 5: Serial.print(F(" Top middle battery"    )); break;
                 }
-            #endif
+            }
         }
         else
         {
@@ -119,7 +128,8 @@ void temperature_measureAndPrintAll(void)
         Serial.print(F("\nBLU (Charger): "));
         Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BLU));
         
-        #ifdef BATTERY_TYPE_5AhG3
+        if (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3)
+        {
             Serial.print(F("\nGRN (intake): "));
             Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
             Serial.print(F("\nWHT (ambient): "));
@@ -132,7 +142,9 @@ void temperature_measureAndPrintAll(void)
             Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
             Serial.print(F("\nBAY3: "));
             Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));
-        #elif defined BATTERY_TYPE_47Ah
+        }
+        else //BATTERY_TYPE_VALUE_47Ah
+        {
             Serial.print(F("\nGRN (top rear battery): "));
             Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_GRN));
             Serial.print(F("\nWHT (air intake): "));
@@ -145,7 +157,7 @@ void temperature_measureAndPrintAll(void)
             Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY2));
             Serial.print(F("\nMiddle tray, passenger: ")); //BAY3
             Serial.print(temperature_measureOneSensor_degC(PIN_TEMP_BAY3));
-        #endif
+        }
     }
     else
     {
@@ -160,10 +172,10 @@ int8_t temperature_coolBatteryAbove_C(void)
 {
     int8_t coolBattAboveTemp_C = ROOM_TEMP_DEGC;
 
-    if      (key_getSampledState() == KEYSTATE_ON)            { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_KEYON;        }
-    else if (gpio_isGridChargerPluggedInNow() == YES)         { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_GRIDCHARGING; }
-    else if ( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC_PERCENT) &&
-              (key_getSampledState() == KEYSTATE_OFF) )       { coolBattAboveTemp_C = COOL_BATTERY_ABOVE_TEMP_C_KEYOFF;       }
+    if      (key_getSampledState() == KEYSTATE_ON)            { coolBattAboveTemp_C = eeprom_coolBatteryAboveTempC_Keyon_get();        }
+    else if (gpio_isGridChargerPluggedInNow() == YES)         { coolBattAboveTemp_C = eeprom_coolBatteryAboveTempC_Gridcharging_get(); }
+    else if ( (SoC_getBatteryStateNow_percent() > eeprom_keyoffDisableThermalManagementBelowSoCPercent_get()) &&
+              (key_getSampledState() == KEYSTATE_OFF) )       { coolBattAboveTemp_C = eeprom_coolBatteryAboveTempC_Keyoff_get();       }
     else /*KEYOFF && SoC too low*/                            { coolBattAboveTemp_C = TEMPERATURE_SENSOR_FAULT_HI;            } //don't request fan if SoC low
 
     if      (fan_getSpeed_now() == FAN_HIGH) { coolBattAboveTemp_C -= FAN_SPEED_HYSTERESIS_HIGH_degC; }
@@ -179,10 +191,10 @@ int8_t temperature_heatBatteryBelow_C(void)
 {
     int8_t heatBattBelowTemp_C = ROOM_TEMP_DEGC;
 
-    if      (key_getSampledState() == KEYSTATE_ON)           { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_KEYON;        }
-    else if (gpio_isGridChargerPluggedInNow() == YES)        { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_GRIDCHARGING; }
-    else if ( (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC_PERCENT) &&
-              (key_getSampledState() == KEYSTATE_OFF) )      { heatBattBelowTemp_C = HEAT_BATTERY_BELOW_TEMP_C_KEYOFF;       }
+    if      (key_getSampledState() == KEYSTATE_ON)           { heatBattBelowTemp_C = eeprom_heatBatteryBelowTempC_Keyon_get();        }
+    else if (gpio_isGridChargerPluggedInNow() == YES)        { heatBattBelowTemp_C = eeprom_heatBatteryBelowTempC_Gridcharging_get(); }
+    else if ( (SoC_getBatteryStateNow_percent() > eeprom_keyoffDisableThermalManagementBelowSoCPercent_get()) &&
+              (key_getSampledState() == KEYSTATE_OFF) )      { heatBattBelowTemp_C = eeprom_heatBatteryBelowTempC_Keyoff_get();       }
     else /*KEYOFF && SoC too low*/                           { heatBattBelowTemp_C = TEMPERATURE_SENSOR_FAULT_LO;            } //don't request fan if SoC low
 
     if      (fan_getSpeed_now() == FAN_HIGH) { heatBattBelowTemp_C += FAN_SPEED_HYSTERESIS_HIGH_degC; }

@@ -7,10 +7,8 @@
     int8_t temperature_battery_getLatest(void);
     int8_t temperature_intake_getLatest(void);
     int8_t temperature_gridCharger_getLatest(void);
-  #ifndef BATTERY_TYPE_47Ah
-    int8_t temperature_exhaust_getLatest(void);
-    int8_t temperature_ambient_getLatest(void); //IMA bay temperature
-  #endif
+    int8_t temperature_exhaust_getLatest(void); //47Ah Kits don't have this sensor -- returns ROOM_TEMP_DEGC
+    int8_t temperature_ambient_getLatest(void); //IMA bay temperature //47Ah Kits don't have this sensor -- returns ROOM_TEMP_DEGC
 
     int8_t temperature_measureOneSensor_degC(uint8_t thermistorPin);
 
@@ -35,12 +33,12 @@
     #define ROOM_TEMP_DEGC     23
     #define TEMP_FREEZING_DEGC  0
 
-  #ifdef BATTERY_TYPE_5AhG3
-    #define NUM_BATTERY_TEMP_SENSORS 3
-  #elif defined BATTERY_TYPE_47Ah
-    // what were 2 OEM temp sensors (PIN_TEMP_GRN, PIN_TEMP_YEL) are now on battery modules
-    #define NUM_BATTERY_TEMP_SENSORS 5
-  #endif
+    //5AhG3 has 3 battery temp sensors; 47Ah has 5 (what were 2 OEM temp sensors -- PIN_TEMP_GRN, PIN_TEMP_YEL -- are now on battery modules)
+    #define NUM_BATTERY_TEMP_SENSORS_5AhG3 3
+    #define NUM_BATTERY_TEMP_SENSORS_47Ah  5
+    #define NUM_BATTERY_TEMP_SENSORS_MAX   5 //worst-case, used to size batteryTemps[] in temperature.cpp
+
+    uint8_t temperature_numBatteryTempSensors_get(void); //returns the runtime-correct count for the configured battery type
 
     #define TEMP_POWERUP_DELAY_ms 100
 

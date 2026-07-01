@@ -28,6 +28,12 @@
 
     void gpio_begin(void);
 
+    //grid charger pin routing depends on the runtime-configured grid charger type (see eepromAccess.h)
+    void    gpio_configureGridChargerPins(void); //called by gpio_begin() -- requires eeprom_applyBootCriticalConfigOverrides() to have already run
+    uint8_t gpio_pinGridCurrent(void);
+    uint8_t gpio_pinGridEn(void);
+    uint8_t gpio_pinGridVoltage(void); //only meaningful when grid charger type is 1500W
+
     bool gpio_keyStateNow(void); //recommendation: use key_getSampledState() instead
 
     void gpio_setFanSpeed_OEM(char speed); //don't call directly (use fan_requestSpeed() instead)

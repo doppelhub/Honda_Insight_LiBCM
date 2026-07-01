@@ -32,11 +32,7 @@ static uint8_t LiDisplay_DrivingPageReqId = 0;
 #define LIDISPLAY_UPDATE_RATE_MILLIS 20			// One element is updated each time
 #define LIDISPLAY_COMMAND_COOLDOWN_FRAMES 100	// 2024AUG19 -- We may be able to use a smaller value like 50
 
-#ifdef STACK_IS_48S
-    #define MAX_CELL_INDEX 47
-#elif defined STACK_IS_60S
-    #define MAX_CELL_INDEX 59
-#endif
+uint8_t LiDisplay_maxCellIndex_get(void) { return (eeprom_stackSize_get() == STACK_SIZE_VALUE_48S) ? 47 : 59; }
 
 uint8_t LiDisplayElementToUpdate = 0;
 uint8_t LiDisplayCurrentPageNum = 0;
@@ -129,10 +125,10 @@ void LiDisplay_begin(void)
 {
     #ifdef LIDISPLAY_CONNECTED
 
-        #ifdef BATTERY_TYPE_47Ah
-            #undef LIDISPLAY_GRIDCHARGE_PAGE_ID
-            #define LIDISPLAY_GRIDCHARGE_PAGE_ID 5
-        #endif
+        //LIDISPLAY_GRIDCHARGE_PAGE_ID used to be redefined to 5 for BATTERY_TYPE_47Ah, but that macro is now a runtime EEPROM
+        //value, and LIDISPLAY_GRIDCHARGE_PAGE_ID is used as a switch-case label elsewhere in this file, which requires a
+        //compile-time constant. Since LIDISPLAY_CONNECTED is an experimental/untested display (see config.h), this battery-type
+        //page remap is not carried over -- if you use LiDisplay with a 47Ah pack, this page ID must be set manually for now.
 
         LiDisplayElementToUpdate = 0;
         LiDisplaySplashPending = false;
@@ -347,7 +343,7 @@ String LiDisplay_getCellVoltage(String cell_id_str) {
     String returned_voltage = "";
 
 
-    if (cell_id > MAX_CELL_INDEX) { return "ERROR"; }
+    if (cell_id > LiDisplay_maxCellIndex_get()) { return "ERROR"; }
 
     if (cell_id <= 11) { ic_index = 0; ic_cell_num = (cell_id); }
     else if (cell_id <= 23) { ic_index = 1; ic_cell_num = (cell_id - 12); }
@@ -376,7 +372,7 @@ LiDisplay_updateNextCellValue() {
     int cell_voltage_diff_from_avg = 0;
 
 
-    if (cellToUpdate > MAX_CELL_INDEX) cellToUpdate = 0;
+    if (cellToUpdate > LiDisplay_maxCellIndex_get()) cellToUpdate = 0;
 
     // NM To Do: Cells indexed 18 to 35 are the central block in the IMA battery.
     // We need to add a config variable for 18S+ or 18S- otherwise they may display out of order left-to-right for some installations
@@ -832,12 +828,8 @@ String LiDisplay_formatSpoofedValueDisplayStr(uint16_t spoofedValToFormat, bool 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 uint16_t LiDisplay_calculateAvgCellVoltage() {
-	#ifdef STACK_IS_48S
-		return (LTC68042result_packVoltage_get() * 0.020833);
-	#endif
-	#ifdef STACK_IS_60S
-		return (LTC68042result_packVoltage_get() * 0.016666);
-	#endif
+	if (eeprom_stackSize_get() == STACK_SIZE_VALUE_48S) { return (LTC68042result_packVoltage_get() * 0.020833); }
+	else                                                { return (LTC68042result_packVoltage_get() * 0.016666); }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -845,7 +837,7 @@ uint16_t LiDisplay_calculateAvgCellVoltage() {
 void LiDisplay_SettingsPageValSwitch() {
 	switch (LiDisplay_currentParamId)
 	{
-		case 0: LiDisplay_currentParamVal = CELL_VMAX_GRIDCHARGER; break;
+		case 0: LiDisplay_currentParamVal = eeprom_cellVmaxGridcharger_get(); break;
 		case 1: LiDisplay_currentParamVal = LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS; break;
 	}
 }
@@ -1002,7 +994,7 @@ void LiDisplay_updateElement() {
 				case 3: LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t8", 0, String(gc_time));  break;
 				case 4:
 					LiDisplay_calculateFanSpeedStr();
-					if (!gc_sixty_s_fomoco_e_block_enabled && (MAX_CELL_INDEX == 59))
+					if (!gc_sixty_s_fomoco_e_block_enabled && (LiDisplay_maxCellIndex_get() == 59))
 					{
 						LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t16", 3, "65516"); // E block label will be missing on a 60S 47Ah pack display if we don't run this once.
 						gc_sixty_s_fomoco_e_block_enabled = true;

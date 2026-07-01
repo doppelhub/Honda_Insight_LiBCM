@@ -21,12 +21,12 @@ volatile uint8_t interruptSource = USB_INTERRUPT; //see ISR(PCINT1_vect) for mor
 //JTS2doLater: while grid charging, assert error if pack SoC doesn't increase 1% every hour (due to HW issue)
 void powerSave_turnOffLiBCM_ifPackEmpty(void)
 {
-    if (LTC68042result_loCellVoltage_get() < CELL_VMIN_GRIDCHARGER)
+    if (LTC68042result_loCellVoltage_get() < eeprom_cellVminGridcharger_get())
     {
         Serial.print(F("\nBattery is empty"));
         gpio_turnLiBCM_off(); //game over, thanks for playing
     }
-    else if ((LTC68042result_loCellVoltage_get() < CELL_VMIN_KEYOFF) && //battery is low
+    else if ((LTC68042result_loCellVoltage_get() < eeprom_cellVminKeyoff_get()) && //battery is low
              (time_hasKeyBeenOffLongEnough_toTurnOffLiBCM() == true) && //give user time to plug in charger
              (gpio_isGridChargerChargingNow() == NO)                  ) //grid charger isn't charging
     {
@@ -43,7 +43,7 @@ bool powerSave_isThermalManagementAllowed(void)
 
     if ((key_getSampledState() == KEYSTATE_ON)                                                  ||
         ((gpio_isGridChargerPluggedInNow() == YES) && (SoC_getBatteryStateNow_percent() > 3))   ||
-        (SoC_getBatteryStateNow_percent() > KEYOFF_DISABLE_THERMAL_MANAGEMENT_BELOW_SoC_PERCENT) )
+        (SoC_getBatteryStateNow_percent() > eeprom_keyoffDisableThermalManagementBelowSoCPercent_get()) )
     { enoughEnergy = YES; }
 
     return enoughEnergy;
@@ -184,22 +184,24 @@ void powerSave_sleepIfAllowed(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//eeprom_poweroffDelayAfterKeyoffDays_get() == 0 means this feature is disabled
 void powerSave_turnOffIfAllowed(void)
 {
-    #ifdef POWEROFF_DELAY_AFTER_KEYOFF_DAYS
-        uint32_t timeSinceLatestKeyOff_ms = millis() - time_latestKeyOff_ms_get();
+    uint8_t poweroffDelay_days = eeprom_poweroffDelayAfterKeyoffDays_get();
 
-        if ((gpio_isGridChargerPluggedInNow() == NO)                                                            &&
-            (time_sinceLatestGridChargerUnplug_get_ms() > PERIOD_TO_DISABLE_TURNOFF_AFTER_CHARGER_UNPLUGGED_ms) &&
-            (timeSinceLatestKeyOff_ms > (POWEROFF_DELAY_AFTER_KEYOFF_DAYS * MILLISECONDS_PER_DAY))               )
-        {
-            uint32_t timeSinceLastKeyOff_ms = millis() - time_latestKeyOff_ms_get();
-            uint16_t delta_hours = timeSinceLastKeyOff_ms / MILLISECONDS_PER_HOUR;
-            eeprom_hoursSinceLastFirmwareUpdate_set(delta_hours + eeprom_hoursSinceLastFirmwareUpdate_get());
+    uint32_t timeSinceLatestKeyOff_ms = millis() - time_latestKeyOff_ms_get();
 
-            gpio_turnLiBCM_off();
-        }
-    #endif
+    if ((poweroffDelay_days != 0)                                                                              &&
+        (gpio_isGridChargerPluggedInNow() == NO)                                                                &&
+        (time_sinceLatestGridChargerUnplug_get_ms() > PERIOD_TO_DISABLE_TURNOFF_AFTER_CHARGER_UNPLUGGED_ms)     &&
+        (timeSinceLatestKeyOff_ms > (poweroffDelay_days * MILLISECONDS_PER_DAY))                                 )
+    {
+        uint32_t timeSinceLastKeyOff_ms = millis() - time_latestKeyOff_ms_get();
+        uint16_t delta_hours = timeSinceLastKeyOff_ms / MILLISECONDS_PER_HOUR;
+        eeprom_hoursSinceLastFirmwareUpdate_set(delta_hours + eeprom_hoursSinceLastFirmwareUpdate_get());
+
+        gpio_turnLiBCM_off();
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

@@ -51,11 +51,11 @@ void configureDischargeResistors(void)
 
     cellsAreBalancing = NO;
 
-    if (LTC68042result_hiCellVoltage_get() > CELL_VREST_085_PERCENT_SoC) { cellDischargeVoltageThreshold = CELL_VREST_085_PERCENT_SoC; }
+    if (LTC68042result_hiCellVoltage_get() > SoC_cellVrest085PercentSoC_get()) { cellDischargeVoltageThreshold = SoC_cellVrest085PercentSoC_get(); }
     else { cellDischargeVoltageThreshold = LTC68042result_loCellVoltage_get() + balanceHysteresis; }
 
     //determine which cells to balance
-    for (uint8_t ic = 0; ic < TOTAL_IC; ic++)
+    for (uint8_t ic = 0; ic < LTC68042configure_totalIC_get(); ic++)
     {
         for (uint8_t cell = 0; cell < CELLS_PER_IC; cell++)
         {
@@ -82,9 +82,9 @@ void disableDischargeResistors(void)
     //to save power, only called once each time balancing is disabled
     const uint16_t cellsToDischarge = 0;
 
-    for (uint8_t ic = 0; ic < TOTAL_IC; ic++)
+    for (uint8_t ic = 0; ic < LTC68042configure_totalIC_get(); ic++)
     {
-        debugUSB_setCellBalanceStatus(ic, cellsToDischarge, CELL_VMAX_REGEN);
+        debugUSB_setCellBalanceStatus(ic, cellsToDischarge, eeprom_cellVmaxRegen_get());
         LTC68042configure_setBalanceResistors((ic + FIRST_IC_ADDR), cellsToDischarge, LTC6804_DISCHARGE_TIMEOUT_02_SECONDS);
     }
     cellsAreBalancing = NO;
@@ -97,14 +97,14 @@ uint8_t isBalancingPossible(void)
 {
     //order is important
     //external checks
-    if (key_getSampledState()               == KEYSTATE_ON            ) { return NO__KEY_IS_ON;               }
-    if ((gpio_isGridChargerPluggedInNow()   == NO                  ) &&
-        (SoC_getBatteryStateNow_percent()    < CELL_BALANCE_MIN_SoC)  ) { return NO__SoC_TOO_LOW;             }
+    if (key_getSampledState()               == KEYSTATE_ON                 ) { return NO__KEY_IS_ON;               }
+    if ((gpio_isGridChargerPluggedInNow()   == NO                       ) &&
+        (SoC_getBatteryStateNow_percent()    < eeprom_cellBalanceMinSoC_get())) { return NO__SoC_TOO_LOW;             }
     //cell voltage checks
-    if (LTC68042result_hiCellVoltage_get()   > CELL_VMAX_REGEN        ) { return NO__ATLEASTONECELL_TOO_HIGH; }
-    if (LTC68042result_loCellVoltage_get()   < CELL_VMIN_GRIDCHARGER  ) { return NO__ATLEASTONECELL_TOO_LOW;  }
+    if (LTC68042result_hiCellVoltage_get()   > eeprom_cellVmaxRegen_get()      ) { return NO__ATLEASTONECELL_TOO_HIGH; }
+    if (LTC68042result_loCellVoltage_get()   < eeprom_cellVminGridcharger_get()) { return NO__ATLEASTONECELL_TOO_LOW;  }
     //thermal checks
-    if (temperature_battery_getLatest()      > CELL_BALANCE_MAX_TEMP_C) { return NO__BATTERY_IS_HOT;          }
+    if (temperature_battery_getLatest()      > eeprom_cellBalanceMaxTemp_C_get()) { return NO__BATTERY_IS_HOT;          }
     //time checks
     if (time_isItTimeToPerformKeyOffTasks() == NO                     ) { return DELAY_DO_NOTHING;            }
 
@@ -124,7 +124,7 @@ uint8_t isBalancingMandatory(void)
     //keyState           doesn't matter
     //grid charger state doesn't matter
     //pack temperature   doesn't matter
-    if (LTC68042result_loCellVoltage_get()     <  CELL_VMIN_GRIDCHARGER             ) { return NO__ATLEASTONECELL_TOO_LOW; }
+    if (LTC68042result_loCellVoltage_get()     <  eeprom_cellVminGridcharger_get()   ) { return NO__ATLEASTONECELL_TOO_LOW; }
     if (adc_getLatestBatteryCurrent_deciAmps() >  CELL_IMAX_MAJOR_IMBALANCE_DECIAMPS) { return NO__PACK_CURRENT_TOO_HIGH;  }
     if (adc_getLatestBatteryCurrent_deciAmps() < -CELL_IMAX_MAJOR_IMBALANCE_DECIAMPS) { return NO__PACK_CURRENT_TOO_HIGH;  }
 
@@ -137,8 +137,8 @@ uint8_t isBalancingMandatory(void)
 
 uint8_t isEntirePackOvercharged(void)
 {
-    if ((LTC68042result_hiCellVoltage_get() > CELL_VREST_100_PERCENT_SoC  ) &&
-        (LTC68042result_loCellVoltage_get() > CELL_VMAX_GRIDCHARGER       )  ) { return YES__BALANCING_ALLOWED; }
+    if ((LTC68042result_hiCellVoltage_get() > CELL_VREST_100_PERCENT_SoC      ) &&
+        (LTC68042result_loCellVoltage_get() > eeprom_cellVmaxGridcharger_get())  ) { return YES__BALANCING_ALLOWED; }
 
     return NO__BALANCING_NOT_REQUESTED;
 }

@@ -146,40 +146,50 @@ void spoofVoltage_calculateValue(void)
 {
     uint8_t maxPossibleVspoof = calculate_Vspoof_maxPossible();
 
-    #if defined VOLTAGE_SPOOFING_DISABLE
+    switch (eeprom_voltageSpoofingMode_get())
+    {
+    //eeprom_validateHardwareConfig() halts LiBCM at boot if unconfigured or invalid, but fall back to DISABLE
+    //(closest to OEM behavior) here too, in case EEPROM is corrupted after boot
+    default:
+    case VOLTAGE_SPOOFING_MODE_DISABLE:
+    {
         //For those that don't want variable voltage spoofing, spoof maximum possible pack voltage
-        
-        #ifdef STACK_IS_48S
+
+        if (eeprom_stackSize_get() == STACK_SIZE_VALUE_48S)
+        {
             //48S pack voltage range is close enough to OEM that we can pass just pass the actual maxPossibleVspoof value to the MCM
             spoofedPackVoltage = maxPossibleVspoof;
-
-        #elif defined STACK_IS_60S
+        }
+        else //STACK_SIZE_VALUE_60S
+        {
             spoofedPackVoltage = LTC68042result_packVoltage_get() * 0.67; //Vspoof(60S)=136 @ Vcell=3.4 //Vspoof(60S)=169 @ Vcell=4.2
-            if (spoofedPackVoltage < MIN_SPOOFED_VOLTAGE_60S) { spoofedPackVoltage = MIN_SPOOFED_VOLTAGE_60S; } //prevent P1440 during heavy assist (due to MCM increasing current as voltage drops) //JTS2doLater: Automate this process (e.g. limit output power to 23 kW) 
-        #endif
+            if (spoofedPackVoltage < eeprom_minSpoofedVoltage60S_get()) { spoofedPackVoltage = eeprom_minSpoofedVoltage60S_get(); } //prevent P1440 during heavy assist (due to MCM increasing current as voltage drops) //JTS2doLater: Automate this process (e.g. limit output power to 23 kW)
+        }
 
-    //JTS2doLater: Add 60S logic to all other modes (below)
+        //JTS2doLater: Add 60S logic to all other modes (below)
+        break;
+    }
 
     //---------------------------------------------------------------------------
 
-    #elif defined VOLTAGE_SPOOFING_ASSIST_ONLY_BINARY
-        #ifdef STACK_IS_60S
-            #error (60S only works with VOLTAGE_SPOOFING_DISABLE selected in config.h)
-        #endif
+    case VOLTAGE_SPOOFING_MODE_ASSIST_ONLY_BINARY:
+    {
+        //60S is only compatible with VOLTAGE_SPOOFING_MODE_DISABLE -- checked at runtime by eeprom_validateHardwareConfig()
         if (adc_getLatestBatteryCurrent_amps() > MAXIMIZE_POWER_ABOVE_CURRENT_AMPS) { spoofedPackVoltage = VSPOOF_TO_MAXIMIZE_POWER; } //more power during heavy assist
         else { spoofedPackVoltage = maxPossibleVspoof; } //no voltage spoofing during regen, idle, or light assist
+        break;
+    }
 
     //---------------------------------------------------------------------------
 
     //JTS2doLater: Remove this mode before exiting beta
     //DEPRECATED: This mode is no longer updated and may not work in future firmware versions
     //Based on test data, spoofing pack voltage during regen causes erratic and/or heavy regen behavior.
-    //Recommendation: use VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE
+    //Recommendation: use VOLTAGE_SPOOFING_MODE_ASSIST_ONLY_VARIABLE
 
-    #elif defined VOLTAGE_SPOOFING_ASSIST_AND_REGEN
-        #ifdef STACK_IS_60S
-            #error (60S only works with VOLTAGE_SPOOFING_DISABLE selected in config.h)
-        #endif
+    case VOLTAGE_SPOOFING_MODE_ASSIST_AND_REGEN:
+    {
+        //60S is only compatible with VOLTAGE_SPOOFING_MODE_DISABLE -- checked at runtime by eeprom_validateHardwareConfig()
         //Derivation:
         //Maximum assist occurs when MCM thinks pack is at 120 volts.
         //Therefore, we want to adjust the pack voltage over that range:
@@ -220,15 +230,16 @@ void spoofVoltage_calculateValue(void)
 
         spoofedPackVoltage = (uint8_t)((uint16_t)(LTC68042result_packVoltage_get() * ( 167 - adc_getLatestBatteryCurrent_amps() )
                                 + 135 * adc_getLatestBatteryCurrent_amps() + 8000) >> 8);
+        break;
+    }
 
     //---------------------------------------------------------------------------
 
-    #elif defined   VOLTAGE_SPOOFING_ASSIST_ONLY_VARIABLE
-        #ifdef STACK_IS_60S
-            #error (60S only works with VOLTAGE_SPOOFING_DISABLE selected in config.h)
-        #endif
-        
-        if     ((maxPossibleVspoof < VSPOOF_TO_MAXIMIZE_POWER)                           || //pack voltage too low     
+    case VOLTAGE_SPOOFING_MODE_ASSIST_ONLY_VARIABLE:
+    {
+        //60S is only compatible with VOLTAGE_SPOOFING_MODE_DISABLE -- checked at runtime by eeprom_validateHardwareConfig()
+
+        if     ((maxPossibleVspoof < VSPOOF_TO_MAXIMIZE_POWER)                           || //pack voltage too low
                 (adc_getLatestBatteryCurrent_amps() < BEGIN_SPOOFING_VOLTAGE_ABOVE_AMPS)  ) { spoofedPackVoltage = maxPossibleVspoof; } //regen, idle, or light assist
         else if (adc_getLatestBatteryCurrent_amps() > MAXIMIZE_POWER_ABOVE_CURRENT_AMPS)    { spoofedPackVoltage = VSPOOF_TO_MAXIMIZE_POWER; } //heavy assist
         else
@@ -245,7 +256,7 @@ void spoofVoltage_calculateValue(void)
             //       voltageAdjustment_mV_per_A =            vAdjustRange_V  <<  (10  - ADDITIONAL_AMPS__2_TO_THE_N)    ; //combine bit shifts
             uint16_t voltageAdjustment_mV_per_A = ((uint16_t)vAdjustRange_V) <<  (10  - ADDITIONAL_AMPS__2_TO_THE_N)    ; //cast intermediate math
             //max counts: 3712 (when 60S pack is 4.3 V/cell)
-            //min counts:    0 (when 48S pack is 2.7 V/cell) 
+            //min counts:    0 (when 48S pack is 2.7 V/cell)
 
             //Calculate how much to reduce actual pack voltage at any current
             //      packVoltageReduction_mV =  (actualCurrent_A                    - BEGIN_SPOOFING_VOLTAGE_ABOVE_AMPS) * voltageAdjustment_mV_per_A         ;
@@ -255,24 +266,26 @@ void spoofVoltage_calculateValue(void)
             //Calculate spoofed pack voltage
             spoofedPackVoltage = maxPossibleVspoof - packVoltageReduction_V;
         }
+        break;
+    }
 
     //---------------------------------------------------------------------------
 
-    #elif defined  VOLTAGE_SPOOFING_LINEAR
-	
-	           spoofedPackVoltage = maxPossibleVspoof * 0.4 + 78; 
-	
-		   // adjusts spoof voltage across entire range so that current is 50A continuous, 83A peak
-		   // 48S yields from +19% power
-		   // 60S yields from +28% power
-		   // max spoofing is within 67% of Vpack
-		   // this is compatible with standard 100A OEM fuse.
+    case VOLTAGE_SPOOFING_MODE_LINEAR:
+    {
+        spoofedPackVoltage = maxPossibleVspoof * 0.4 + 78;
+
+        // adjusts spoof voltage across entire range so that current is 50A continuous, 83A peak
+        // 48S yields from +19% power
+        // 60S yields from +28% power
+        // max spoofing is within 67% of Vpack
+        // this is compatible with standard 100A OEM fuse.
+        break;
+    }
 
     //---------------------------------------------------------------------------
-	
-    #else
-        #error (VOLTAGE_SPOOFING value not selected in config.h)
-    #endif
+    //see the "default:" case above (falls through to VOLTAGE_SPOOFING_MODE_DISABLE) for what happens if this is ever an unrecognized value
+    }
 
     //---------------------------------------------------------------------------
 

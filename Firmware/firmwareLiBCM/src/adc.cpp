@@ -77,17 +77,15 @@ void adc_updateBatteryCurrent(void)
 {
     sampleAndProcessBatteryCurrent();
 
-    #if   defined (SET_CURRENT_HACK_60)
-        spoofedCurrent_deciAmps = ((int16_t)(battCurrent_deciAmps *  9) >> 4); //multiply by 0.563 (ideally 0.549) = tell MCM 56.3% actual
-    #elif defined (SET_CURRENT_HACK_40) 
-        spoofedCurrent_deciAmps = ((int16_t)(battCurrent_deciAmps * 11) >> 4); //multiply by 0.688 (ideally 0.686) = tell MCM 68.8% actual
-    #elif defined (SET_CURRENT_HACK_20)
-        spoofedCurrent_deciAmps = ((int16_t)(battCurrent_deciAmps * 13) >> 4); //multiply by 0.813 (ideally 0.800) = tell MCM 81.3% actual
-    #elif defined (SET_CURRENT_HACK_00)
-        spoofedCurrent_deciAmps = battCurrent_deciAmps;
-    #else
-        #error (SET_CURRENT_HACK_xx value not selected in config.h)
-    #endif
+    switch (eeprom_currentHackMode_get())
+    {
+        case CURRENT_HACK_60: spoofedCurrent_deciAmps = ((int16_t)(battCurrent_deciAmps *  9) >> 4); break; //multiply by 0.563 (ideally 0.549) = tell MCM 56.3% actual
+        case CURRENT_HACK_40: spoofedCurrent_deciAmps = ((int16_t)(battCurrent_deciAmps * 11) >> 4); break; //multiply by 0.688 (ideally 0.686) = tell MCM 68.8% actual
+        case CURRENT_HACK_20: spoofedCurrent_deciAmps = ((int16_t)(battCurrent_deciAmps * 13) >> 4); break; //multiply by 0.813 (ideally 0.800) = tell MCM 81.3% actual
+        //eeprom_validateHardwareConfig() halts LiBCM at boot if unconfigured or invalid, but fall back to the OEM (no hack) value here too, in case EEPROM is corrupted after boot
+        default:
+        case CURRENT_HACK_00: spoofedCurrent_deciAmps = battCurrent_deciAmps;                        break;
+    }
 
     BATTSCI_setSpoofedCurrent_deciAmps(spoofedCurrent_deciAmps);
 }

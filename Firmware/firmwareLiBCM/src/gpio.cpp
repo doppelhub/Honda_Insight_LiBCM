@@ -48,7 +48,7 @@ void gpio_begin(void)
     pinMode(PIN_FAN_PWM,OUTPUT);
     pinMode(PIN_FANOEM_LOW,OUTPUT);
     pinMode(PIN_FANOEM_HI,OUTPUT);
-    pinMode(PIN_ABSTRACTED_GRID_EN,OUTPUT);
+    gpio_configureGridChargerPins(); //requires grid charger type, which eeprom_applyBootCriticalConfigOverrides() (called before gpio_begin()) has already resolved
     pinMode(PIN_TEMP_EN,OUTPUT);
     pinMode(PIN_SPI_EXT_CS,OUTPUT);
     digitalWrite(PIN_SPI_EXT_CS,HIGH);
@@ -62,6 +62,16 @@ void gpio_begin(void)
     //TCCR4B = (TCCR4B & B11111000) | B00000100; // Set F_PWM to  122.55 Hz //pins D7(MCMe) & D8(gridPWM) & D9() //JTS2doLater: use lower frequency when charging
     //TCCR5B is set in Buzzer functions
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+//1500W chargers are controlled by a daughterboard, which uses a different pinout than other chargers.
+//Grid charger type is a runtime EEPROM value (see eepromAccess.h), so these choose the correct pin at runtime.
+uint8_t gpio_pinGridCurrent(void) { return (eeprom_gridChargerType_get() == GRIDCHARGER_TYPE_1500W) ? PIN_GPIO3   : PIN_GRID_PWM; }
+uint8_t gpio_pinGridEn(void)      { return (eeprom_gridChargerType_get() == GRIDCHARGER_TYPE_1500W) ? PIN_GRID_PWM : PIN_GRID_EN; }
+uint8_t gpio_pinGridVoltage(void) { return PIN_GPIO2; } //only meaningful when grid charger type is 1500W -- other charger types don't support voltage control
+
+void gpio_configureGridChargerPins(void) { pinMode(gpio_pinGridEn(), OUTPUT); }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -88,11 +98,10 @@ void gpio_setFanSpeed_OEM(char speed)
         case FAN_OFF:  digitalWrite(PIN_FANOEM_LOW,  LOW); digitalWrite(PIN_FANOEM_HI,  LOW); break;
         case FAN_LOW:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break;
         //case FAN_MED:  digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI,  LOW); break; //same as FAN_LOW... OEM fan only supports OFF/LOW/HIGH
-        #ifdef BATTERY_TYPE_5AhG3
-            case FAN_HIGH: digitalWrite(PIN_FANOEM_LOW, LOW); digitalWrite(PIN_FANOEM_HI, HIGH); break; //OEM fan schematic requires one relay for high speed
-        #elif defined BATTERY_TYPE_47Ah
-            case FAN_HIGH: digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI, HIGH); break; //PDU fan schematic requires both relays for high speed
-        #endif
+        case FAN_HIGH:
+            if (eeprom_batteryType_get() == BATTERY_TYPE_VALUE_5AhG3) { digitalWrite(PIN_FANOEM_LOW,  LOW); digitalWrite(PIN_FANOEM_HI, HIGH); } //OEM fan schematic requires one relay for high speed
+            else                                                      { digitalWrite(PIN_FANOEM_LOW, HIGH); digitalWrite(PIN_FANOEM_HI, HIGH); } //PDU fan schematic requires both relays for high speed
+            break;
     }
 }
 
@@ -129,42 +138,47 @@ bool gpio_HMIStateNow(void) { return digitalRead(PIN_HMI_EN); }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool gpio_isGridChargerPluggedInNow(void) { return !(digitalRead(PIN_GRID_SENSE)       ); }
-bool gpio_isGridChargerChargingNow(void)  { return   digitalRead(PIN_ABSTRACTED_GRID_EN); }
+bool gpio_isGridChargerPluggedInNow(void) { return !(digitalRead(PIN_GRID_SENSE)  ); }
+bool gpio_isGridChargerChargingNow(void)  { return   digitalRead(gpio_pinGridEn()); }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void gpio_turnGridCharger_on(void)  { digitalWrite(PIN_ABSTRACTED_GRID_EN, HIGH); }
-void gpio_turnGridCharger_off(void) { digitalWrite(PIN_ABSTRACTED_GRID_EN, LOW);  }
+void gpio_turnGridCharger_on(void)  { digitalWrite(gpio_pinGridEn(), HIGH); }
+void gpio_turnGridCharger_off(void) { digitalWrite(gpio_pinGridEn(), LOW);  }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //JTS2doLater: 1500W charger requires different PWM values due to additional parallel 2k7 resistor on voltage control pin
 void gpio_setGridCharger_powerLevel(char powerLevel)
 {
-    switch (powerLevel)
+    if (eeprom_gridChargerType_get() == GRIDCHARGER_TYPE_1500W) //wiring is different from other chargers
     {
-        #ifdef GRIDCHARGER_IS_1500W //wiring is different from other chargers
-            case '0': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
-                 digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  HIGH); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    0); break; //disable grid charger
-            case 'L': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
-                 digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    0); break; //enable grid charger low power
-          //case 'M': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
-               //digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   60); break; //PWM value TBD
-            case 'H': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
-                 digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,   LOW); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,  255); break; //enable grid charger high power
-            case 'Z': pinMode(PIN_ABSTRACTED_GRID_VOLTAGE, INPUT);     pinMode(PIN_ABSTRACTED_GRID_CURRENT,INPUT); break; //reduces power consumption    
-            default:  pinMode(PIN_ABSTRACTED_GRID_VOLTAGE,OUTPUT);
-                 digitalWrite(PIN_ABSTRACTED_GRID_VOLTAGE,  HIGH); analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    0); break; //disable charger
-        
-        #elif defined GRIDCHARGER_IS_NOT_1500W
-            case '0': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   255); break; //negative logic
-            case 'L': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    80); break; //JTS2doLater: Determine correct grid charger values
-            case 'M': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,    40); break;
-            case 'H': analogWrite(PIN_ABSTRACTED_GRID_CURRENT,     0); break;
-            case 'Z':     pinMode(PIN_ABSTRACTED_GRID_CURRENT, INPUT); break; //reduces power consumption
-            default:  analogWrite(PIN_ABSTRACTED_GRID_CURRENT,   255); break; //disable charger
-        #endif
+        switch (powerLevel)
+        {
+            case '0': pinMode(gpio_pinGridVoltage(),OUTPUT);
+                 digitalWrite(gpio_pinGridVoltage(),  HIGH); analogWrite(gpio_pinGridCurrent(),    0); break; //disable grid charger
+            case 'L': pinMode(gpio_pinGridVoltage(),OUTPUT);
+                 digitalWrite(gpio_pinGridVoltage(),   LOW); analogWrite(gpio_pinGridCurrent(),    0); break; //enable grid charger low power
+          //case 'M': pinMode(gpio_pinGridVoltage(),OUTPUT);
+               //digitalWrite(gpio_pinGridVoltage(),   LOW); analogWrite(gpio_pinGridCurrent(),   60); break; //PWM value TBD
+            case 'H': pinMode(gpio_pinGridVoltage(),OUTPUT);
+                 digitalWrite(gpio_pinGridVoltage(),   LOW); analogWrite(gpio_pinGridCurrent(),  255); break; //enable grid charger high power
+            case 'Z': pinMode(gpio_pinGridVoltage(), INPUT);     pinMode(gpio_pinGridCurrent(),INPUT); break; //reduces power consumption
+            default:  pinMode(gpio_pinGridVoltage(),OUTPUT);
+                 digitalWrite(gpio_pinGridVoltage(),  HIGH); analogWrite(gpio_pinGridCurrent(),    0); break; //disable charger
+        }
+    }
+    else //GRIDCHARGER_TYPE_NOT_1500W
+    {
+        switch (powerLevel)
+        {
+            case '0': analogWrite(gpio_pinGridCurrent(),   255); break; //negative logic
+            case 'L': analogWrite(gpio_pinGridCurrent(),    80); break; //JTS2doLater: Determine correct grid charger values
+            case 'M': analogWrite(gpio_pinGridCurrent(),    40); break;
+            case 'H': analogWrite(gpio_pinGridCurrent(),     0); break;
+            case 'Z':     pinMode(gpio_pinGridCurrent(), INPUT); break; //reduces power consumption
+            default:  analogWrite(gpio_pinGridCurrent(),   255); break; //disable charger
+        }
     }
 }
 

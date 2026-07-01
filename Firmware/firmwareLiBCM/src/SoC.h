@@ -17,23 +17,19 @@
 
     void SoC_updateUsingLatestOpenCircuitVoltage(void);
 
+    void SoC_begin(void); //call once battery type is known (i.e. after eeprom_applyBootCriticalConfigOverrides())
+
     void SoC_handler(void);
 
     #define VCELL_CRITICALLY_OVERCHARGED   43000  //'43000' = 4.3 V
     #define VCELL_CRITICALLY_DISCHARGED    28000  //'28000' = 2.8 V
 
-    #ifdef BATTERY_TYPE_5AhG3
-        #define CELL_VREST_100_PERCENT_SoC 42000
-        #define CELL_VREST_085_PERCENT_SoC 40000 //for maximum life, resting cell voltage should remain below 85% SoC
-        #define CELL_VREST_010_PERCENT_SoC 34200 //for maximum life, resting cell voltage should remain above 10% SoC
-        #define STACK_mAh_NOM 5000 //5 Ah nominal //nominal pack size (0:100% SoC)
-    #elif defined BATTERY_TYPE_47Ah
-        #define CELL_VREST_100_PERCENT_SoC 42000
-        #define CELL_VREST_085_PERCENT_SoC 39700
-        #define CELL_VREST_010_PERCENT_SoC 34000
-        #define STACK_mAh_NOM 47000
-    #else
-        #error (Battery type not specified in config.h)
-    #endif
+    #define CELL_VREST_100_PERCENT_SoC 42000 //same for both battery types
+
+    //these are battery-type dependent (see eepromAccess.h for BATTERY_TYPE_VALUE_5AhG3/_47Ah) -- for maximum life,
+    //resting cell voltage should remain between the 010% and 085% SoC values returned by these functions
+    uint16_t SoC_cellVrest085PercentSoC_get(void);
+    uint16_t SoC_cellVrest010PercentSoC_get(void);
+    uint16_t SoC_stackFullCapacity_mAh_get(void); //nominal pack size (0:100% SoC)
 
 #endif
