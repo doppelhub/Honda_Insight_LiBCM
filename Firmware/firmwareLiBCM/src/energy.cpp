@@ -67,7 +67,14 @@ void energy_storeTrip(void)
 											wattHours_regen               );
 	}
 
-	energy_zeroWh();
+	#ifdef LIDISPLAY_CONNECTED
+		tripMeter_wattHours_assist += wattHours_assist;
+		tripMeter_wattHours_regen  += wattHours_regen;
+	#endif
+
+	#ifndef LIDISPLAY_CONNECTED
+		energy_zeroWh();	// LiDisplay.cpp will run this instead if LiDisplay is LIDISPLAY_CONNECTED is true.
+	#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -77,14 +84,6 @@ void energy_zeroWhTripMeter(void)
 	tripMeter_wattHours_assist = 0;
 	tripMeter_wattHours_regen  = 0;
 	tripMeter_wattHours_gridCharger = 0;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-void energy_storeTripMeter(uint32_t drive_assist_wh, uint32_t drive_regen_wh)
-{
-	tripMeter_wattHours_assist += drive_assist_wh;
-	tripMeter_wattHours_regen  += drive_regen_wh;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

@@ -55,9 +55,7 @@ static String LiDisplay_paramName_onScreen = "";
 static uint16_t LiDisplay_paramVal_onScreen = 0;
 static String Lidisplay_paramDesc_onScreen = "";
 
-// WH accumulated during current LiDisplay power on (either current drive or grid charger plugged in)
-static uint32_t LiDisplay_energyWHAssist = 0;
-static uint32_t LiDisplay_energyWHRegen = 0;
+// Grid Charger WH accumulated during current LiDisplay power on
 static uint32_t LiDisplay_energyWHGridCharge = 0;
 static uint32_t LiDisplay_lastWHGridCharge_onScreen = 9999999;
 
@@ -754,7 +752,6 @@ void LiDisplay_enforceCorrectPowerState() {
 				if (((millis() - new_power_state_millis) > total_splash_page_delay_ms) && (LiDisplaySplashPending))
 				{
 					LiDisplaySetPageNum = LIDISPLAY_SPLASH_PAGE_ID;
-					energy_storeTripMeter(LiDisplay_energyWHAssist, LiDisplay_energyWHRegen);
 					energy_storeTripMeterGridCharge(LiDisplay_energyWHGridCharge);
 					LiDisplay_updatePage(); // If this isn't here the splash page may not appear after key-off.
 					LiDisplaySplashPending = false;
@@ -762,11 +759,10 @@ void LiDisplay_enforceCorrectPowerState() {
 				if ((millis() - new_power_state_millis) > (total_splash_page_delay_ms + LIDISPLAY_SPLASH_PAGE_MS))
 				{
 					gpio_turnHMI_off();
+					energy_zeroWh();	// If using LiDisplay, this needs to be run when LiDisplay is turned off, instead of at key_handleKeyEvent_off
 					LiDisplayPowerOffPending = false;
 					LiDisplayNeedToVerifyPowerState = false;
 					LiDisplaySplashFromGridCharger = false;
-					LiDisplay_energyWHAssist = 0;
-					LiDisplay_energyWHRegen = 0;
 					LiDisplay_energyWHGridCharge = 0;
 				}
 			}
@@ -873,9 +869,6 @@ void LiDisplay_updateElement() {
 					LiDisplay_calculateFanSpeedStr();
 					LiDisplay_calculateSoCGaugeBars();
 
-					if (energy_getAssist_Wh() > 0) { LiDisplay_energyWHAssist = energy_getAssist_Wh(); }
-					if (energy_getRegen_Wh() > 0) { LiDisplay_energyWHRegen = energy_getRegen_Wh(); }
-
 					if ((millis() - new_page_millis) < LIDISPLAY_MINIMUM_TIME_TO_UPDATE_AFTER_POWER_ON_MILLIS) { Serial.print(F("\nLiDisplay DP case 7 - Not enough time passed yet.  Breaking.")); break; }
 
 					if (LiDisplay_heaterState_onScreen != gpio_isHeaterOnNow())
@@ -944,8 +937,8 @@ void LiDisplay_updateElement() {
 							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t17", 0, (String((LTC68042result_maxEverCellVoltage_get() * 0.0001),3))); // Peak cell V
 							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t19", 0, (String((LTC68042result_minEverCellVoltage_get() * 0.0001),3))); // Trough cell V
 							LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t27", 0,
-								String("KWh CHRG: ") + String(((energy_getTripMeterRegen_Wh() + LiDisplay_energyWHRegen) * 0.001),1) +
-								"  ASST: " + String(((energy_getTripMeterAssist_Wh() + LiDisplay_energyWHAssist) * 0.001),1)
+								String("KWh CHRG: ") + String(((energy_getTripMeterRegen_Wh() + energy_getRegen_Wh()) * 0.001),1) +
+								"  ASST: " + String(((energy_getTripMeterAssist_Wh() + energy_getAssist_Wh()) * 0.001),1)
 							);
 						}
 					}
@@ -962,23 +955,23 @@ void LiDisplay_updateElement() {
 				case 1: LiDisplay_updateStringVal(1, "t3", 0, String(REQUIRED_FIRMWARE_UPDATE_PERIOD_HOURS - eeprom_hoursSinceLastFirmwareUpdate_get())); break;
 				case 2: LiDisplay_updateNumericVal(1, "p0", 2, LIDISPLAY_SPLASH_PIC); break;
 				case 3: if (!LiDisplaySplashFromGridCharger) {
-							LiDisplay_updateNumericVal(1, "t6", 4, NEXTION_WHT);	// T6 through T9 on splash page are initialized as black text.
-							LiDisplay_updateNumericVal(1, "t8", 4, NEXTION_WHT);	// 65535 is Nextion code for white.
-							// 2025 Dec 19 - NOTE_NATALYA: The + operator has to take a String on the left side, THEN there can be as many + const char* after as you like.
-							LiDisplay_updateStringVal(1, "t6", 0, String("CHRG: ") + String((LiDisplay_energyWHRegen * 0.001),1) + "KWh");
-							LiDisplay_updateStringVal(1, "t8", 0, String("ASST: ") + String((LiDisplay_energyWHAssist * 0.001),1) + "KWh");
-						} else {
-							LiDisplay_updateNumericVal(1, "t6", 4, NEXTION_WHT);
-							LiDisplay_updateStringVal(1, "t6", 0, String("GRID: ") + String((LiDisplay_energyWHGridCharge * 0.001),1) + "KWh");
-						} break;
-				case 4: if (!LiDisplaySplashFromGridCharger) {
 							LiDisplay_updateNumericVal(1, "t7", 4, NEXTION_WHT);
 							LiDisplay_updateNumericVal(1, "t9", 4, NEXTION_WHT);
 							LiDisplay_updateStringVal(1, "t7", 0, String("Trip: ") + String((energy_getTripMeterRegen_Wh() * 0.001),1) + "KWh");
 							LiDisplay_updateStringVal(1, "t9", 0, String("Trip: ") + String((energy_getTripMeterAssist_Wh() * 0.001),1) + "KWh");
 						} else {
 							LiDisplay_updateStringVal(1, "t7", 0, String("Trip: ") + String((energy_getTripMeterGridCharge_Wh() * 0.001),1) + "KWh");
-						}break;
+						} break;
+				case 4: if (!LiDisplaySplashFromGridCharger) {
+							LiDisplay_updateNumericVal(1, "t6", 4, NEXTION_WHT);	// T6 through T9 on splash page are initialized as black text.
+							LiDisplay_updateNumericVal(1, "t8", 4, NEXTION_WHT);	// 65535 is Nextion code for white.
+							// 2025 Dec 19 - NOTE_NATALYA: The + operator has to take a String on the left side, THEN there can be as many + const char* after as you like.
+							LiDisplay_updateStringVal(1, "t6", 0, String("CHRG: ") + String((energy_getRegen_Wh() * 0.001),1) + "KWh");
+							LiDisplay_updateStringVal(1, "t8", 0, String("ASST: ") + String((energy_getAssist_Wh() * 0.001),1) + "KWh");
+						} else {
+							LiDisplay_updateNumericVal(1, "t6", 4, NEXTION_WHT);
+							LiDisplay_updateStringVal(1, "t6", 0, String("GRID: ") + String((LiDisplay_energyWHGridCharge * 0.001),1) + "KWh");
+						} break;
 
 				default: maxElementId = LIDISPLAY_SPLASH_PAGE_INTITIAL_MAX_ELEMENT_ID; break;
 			}
@@ -1060,9 +1053,7 @@ void LiDisplay_updateElement() {
 				default: maxElementId = LIDISPLAY_GRIDCHARGE_PAGE_INTITIAL_MAX_ELEMENT_ID;	break;
 			}
 		break;
-		case LIDISPLAY_SETTINGS_PAGE_ID: // Placeholder for now (19 June 2025)
-			if (energy_getAssist_Wh() > 0) { LiDisplay_energyWHAssist = energy_getAssist_Wh(); }
-			if (energy_getRegen_Wh() > 0) { LiDisplay_energyWHRegen = energy_getRegen_Wh(); }
+		case LIDISPLAY_SETTINGS_PAGE_ID:
 			if (energy_getGridCharger_Wh() > 0) { LiDisplay_energyWHGridCharge = energy_getGridCharger_Wh(); }
 
 			LiDisplay_SettingsPageValSwitch();
@@ -1098,8 +1089,8 @@ void LiDisplay_updateElement() {
 				// Next to "CLEAR TRIP" button we will show current trip KWh totals all in 1 text box
 				// We will include the current drive or grid charge cycle in these totals even though they're not saved to the trip yet.
 				LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t6", 0,
-					String("KWh CHRG ") + String(((energy_getTripMeterRegen_Wh() + LiDisplay_energyWHRegen) * 0.001),1) +
-					"  ASST " + String(((energy_getTripMeterAssist_Wh() + LiDisplay_energyWHAssist) * 0.001),1) +
+					String("KWh CHRG ") + String(((energy_getTripMeterRegen_Wh() + energy_getRegen_Wh()) * 0.001),1) +
+					"  ASST " + String(((energy_getTripMeterAssist_Wh() + energy_getAssist_Wh()) * 0.001),1) +
 					"  GRID " + String((WHGridCharge_onScreen * 0.001),1)
 				);
 			}
@@ -1117,7 +1108,7 @@ void LiDisplay_updateElement() {
 void LiDisplay_handler(void)
 {
 	#ifdef LIDISPLAY_CONNECTED
-        static uint32_t millis_previous = 0;
+		static uint32_t millis_previous = 0;
 
 		if ((LiDisplay_BuzzerRequested) && ((millis - LiDisplay_buzzerRequestMS)) > 200) {
 			buzzer_requestTone(BUZZER_REQUESTOR_USER, BUZZER_OFF);
@@ -1134,28 +1125,28 @@ void LiDisplay_handler(void)
 
 		if ((millis() - hmi_power_millis) < LIDISPLAY_MINIMUM_TIME_TO_UPDATE_AFTER_POWER_ON_MILLIS) { return; } // ensure at least 400ms have passed since screen turned on.
 
-        if (LiDisplayOnGridChargerConnected || LiDisplayOnKeyOnWithNerdScreenEnabled)
+		if (LiDisplayOnGridChargerConnected || LiDisplayOnKeyOnWithNerdScreenEnabled)
 		{
 			// When powered on the Nextion automatically always displays page 0 which is the normal driving screen
 			// If they plugged in the grid charger, OR if they want to use the nerd screen we need to wait about 400ms before we tell the Nextion to switch to the correct screen
-            LiDisplay_updatePage();
+			LiDisplay_updatePage();
 			if (LiDisplayOnGridChargerConnected) { LiDisplayOnGridChargerConnected = false; }
 			if (LiDisplayOnKeyOnWithNerdScreenEnabled) { LiDisplayOnKeyOnWithNerdScreenEnabled = false; }
 			return;
-        }
+		}
 
 
-        if ((millis() - millis_previous) > LIDISPLAY_UPDATE_RATE_MILLIS)
-        {
-            millis_previous = millis();
+		if ((millis() - millis_previous) > LIDISPLAY_UPDATE_RATE_MILLIS)
+		{
+			millis_previous = millis();
 
-            if (LiDisplay_checkForPendingPageUpdate()) { return; } // If the page had to be changed then we are not updating any elements on it this frame.
-            if (key_getSampledState() == KEYSTATE_ON) { LiDisplay_calculateKeyTimeStr(false); }  // Increment key time here in case driver switches to settings page
+			if (LiDisplay_checkForPendingPageUpdate()) { return; } // If the page had to be changed then we are not updating any elements on it this frame.
+			if (key_getSampledState() == KEYSTATE_ON) { LiDisplay_calculateKeyTimeStr(false); }  // Increment key time here in case driver switches to settings page
 
 			LiDisplay_updateElement();	// Update 1 element on the screen.
-        }
+		}
 
-    #endif
+	#endif
 }
 
 
@@ -1185,8 +1176,6 @@ void LiDisplay_keyOn(void)
         LiDisplaySetPageNum = LiDisplay_DrivingPageReqId;
 		LiDisplaySplashPending = false;
 		LiDisplayPowerOffPending = false;
-		LiDisplay_energyWHAssist = 0;
-		LiDisplay_energyWHRegen = 0;
 
 		LiDisplay_resetDrivingPageVariables();
 

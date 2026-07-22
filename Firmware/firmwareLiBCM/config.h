@@ -8,7 +8,7 @@
     #include "src/libcm.h"
 
     #define FW_VERSION "0.9.6b"
-    #define BUILD_DATE "2026APR20"
+    #define BUILD_DATE "2026JUL22"
 
     //////////////////////////////////////////////////////////////////
 
