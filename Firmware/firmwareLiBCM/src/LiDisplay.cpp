@@ -38,8 +38,6 @@ static uint8_t LiDisplay_DrivingPageReqId = 0;
     #define MAX_CELL_INDEX 59
 #endif
 
-static bool LiDisplay_ThisIsFirstKeyOn = true;
-
 uint8_t LiDisplayElementToUpdate = 0;
 uint8_t LiDisplayCurrentPageNum = 0;
 uint8_t LiDisplaySetPageNum = LiDisplay_DrivingPageId;
@@ -57,8 +55,6 @@ static String Lidisplay_paramDesc_onScreen = "";
 
 // Grid Charger WH accumulated during current LiDisplay power on
 static uint32_t LiDisplay_energyWHGridCharge = 0;
-static uint32_t LiDisplay_lastWHGridCharge_onScreen = 9999999;
-
 
 // Initializing to an absurd number for all 7 variables so that on first run they will be updated on screen
 static uint16_t  LiDisplay_AvgCellVoltage_onScreen = 9999;
@@ -74,7 +70,7 @@ static uint8_t	LiDisplay_NS_loCellNum_onScreen = 100;
 static uint8_t	LiDisplay_NS_hiCellNum_onScreen = 100;
 
 
-static uint16_t LiDisplay_AvgCellVoltage = 0;
+uint16_t LiDisplay_AvgCellVoltage = 0;
 static uint8_t maxElementId = 8;
 static uint8_t LiDisplay_powerState = 0; // 0=Key off GC unplug    1=Key on GC unplug    2=Key off GC plugged    3=Key on GC plugged
 static bool LiDisplay_heaterState_onScreen = true;	// Initializing to true because, by default, when a screen with T22 load, T22 is displayed
@@ -93,7 +89,7 @@ static uint32_t new_power_state_millis = 0;
 static uint32_t new_page_millis = 0;
 static uint32_t hmi_power_millis = 0;
 
-static uint32_t gc_connected_millis_most_recent_diff = 0;
+uint32_t gc_connected_millis_most_recent_diff = 0;
 static bool LiDisplay_BuzzerRequested = false;
 static uint32_t LiDisplay_buzzerRequestMS = 0;
 
@@ -281,7 +277,6 @@ void LiDisplay_resetSettingsPageVariables(bool resetGlobalVar) {
 	LiDisplay_currentGlobalNumVal = 0;	// Number input
 	LiDisplay_paramName_onScreen = "";
 	LiDisplay_paramVal_onScreen = 0;
-	LiDisplay_lastWHGridCharge_onScreen = 9999999;
 	if (resetGlobalVar) { Lidisplay_paramDesc_onScreen = ""; }
 }
 
@@ -1074,17 +1069,15 @@ void LiDisplay_updateElement() {
 				// Grid Charger Litre and GGE display require division, but they only need to be updated on first screen load if car is being driven
 				uint32_t WHGridCharge_onScreen = 0;
 				WHGridCharge_onScreen = (energy_getTripMeterGridCharge_Wh() + LiDisplay_energyWHGridCharge);
-				if (LiDisplay_lastWHGridCharge_onScreen != WHGridCharge_onScreen) {
-					// We should only get here one time when the settings page is loaded if the car is driving
-					// This will update every so often if the grid charger is plugged in and charging
-					// Canada Natural Resources dept definition is 8.9 KWh / litre gasoline
-					// US DoE KWh to US Gallon Gasoline Equivalent is 33.4 KWh / US Gallon gasoline
-					LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t7", 0,
-						String("GRID Litre Equiv: ") + String((WHGridCharge_onScreen / 8900.0),1) +
-						"  GGE: " + String((WHGridCharge_onScreen / 33400.0),1)
-					);
-					LiDisplay_lastWHGridCharge_onScreen = WHGridCharge_onScreen;
-				}
+				// We should only get here one time when the settings page is loaded if the car is driving
+				// This will update every so often if the grid charger is plugged in and charging
+				// Canada Natural Resources dept definition is 8.9 KWh / litre gasoline
+				// US DoE KWh to US Gallon Gasoline Equivalent is 33.4 KWh / US Gallon gasoline
+				LiDisplay_updateStringVal(LIDISPLAY_SETTINGS_PAGE_ID, "t7", 0,
+					String("GRID Litre Equiv: ") + String((WHGridCharge_onScreen / 8900.0),1) +
+					"  GGE: " + String((WHGridCharge_onScreen / 33400.0),1)
+				);
+
 
 				// Next to "CLEAR TRIP" button we will show current trip KWh totals all in 1 text box
 				// We will include the current drive or grid charge cycle in these totals even though they're not saved to the trip yet.

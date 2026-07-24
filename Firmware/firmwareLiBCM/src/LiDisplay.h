@@ -22,7 +22,7 @@
 	#define NEXTION_GRIDCCHARGE_60S_T16_CLR	65516	// For 60S FoMoCo "E" block for element T16
 
 	// Copy one of the above values and paste it after LIDISPLAY_SPLASH_PIC
-	#define LIDISPLAY_SPLASH_PIC COLOR_CITRUS_01 // Default is COLOR_CITRUS_00 for the old Citrus photo.
+	#define LIDISPLAY_SPLASH_PIC COLOR_CITRUS_00 // Default is COLOR_CITRUS_00 for the old Citrus photo.
 
 	// Grid charger page cell colour sensitivity to imbalance
 	#define LIDISPLAY_CELL_COLOR_BIN_SIZE_COUNTS 64 // 64 = 6.4mV window between cell colours on the grid charging page.  Don't go below CELL_BALANCE_TO_WITHIN_COUNTS_LOOSE

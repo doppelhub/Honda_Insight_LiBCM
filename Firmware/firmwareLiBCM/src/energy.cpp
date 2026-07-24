@@ -73,7 +73,7 @@ void energy_storeTrip(void)
 	#endif
 
 	#ifndef LIDISPLAY_CONNECTED
-		energy_zeroWh();	// LiDisplay.cpp will run this instead if LiDisplay is LIDISPLAY_CONNECTED is true.
+		energy_zeroWh();	// LiDisplay.cpp will run this instead if LIDISPLAY_CONNECTED is true.
 	#endif
 }
 
