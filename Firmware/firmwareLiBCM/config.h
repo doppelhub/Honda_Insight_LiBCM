@@ -8,7 +8,7 @@
     #include "src/libcm.h"
 
     #define FW_VERSION "0.9.6b"
-    #define BUILD_DATE "2026APR20"
+    #define BUILD_DATE "2026AUG20"
 
     //////////////////////////////////////////////////////////////////
 
@@ -25,7 +25,7 @@
 
     //choose your battery type:
        //#define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
-        //#define BATTERY_TYPE_47Ah  //aka FoMoCo //aka Samsung SDI modules
+       //#define BATTERY_TYPE_47Ah  //aka FoMoCo //aka Samsung SDI modules
 
     //choose how many cells are in series:
         //#define STACK_IS_48S //All 5AhG3 Kits & 47Ah Kits with QTY4 modules
@@ -43,7 +43,7 @@
 
     //choose which display to use
     //using both displays simultaneously could cause timing issues (FYI: the Serial Monitor prints '*' each time the loop period is violated)
-        #define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
+        //#define LCD_4X20_CONNECTED  //display included with all LiBCM Kits
         //#define LIDISPLAY_CONNECTED //optional color touch screen display //JTS2doLater: mudder has not yet tested this code. Use at your own risk.
 
     //you don't need to change any settings below this line (but you can if you know what you're doing):
