@@ -23,6 +23,7 @@ static uint8_t LiDisplay_DrivingPageReqId = 0;
 #define LIDISPLAY_BUTTON_ID_SCREEN 0
 #define LIDISPLAY_BUTTON_ID_FAN 1
 #define LIDISPLAY_BUTTON_ID_BRIGHT 2
+#define LIDISPLAY_BUTTON_ID_BRIGHT_SETTINGS 4	// Settings page has a different ID for the brightness button.
 
 // The Nextion takes some time to power on.  Commands sent before it's fully online will not be received or acted upon.
 // This causes problems if it's turning on because the grid charger was connected.
@@ -103,6 +104,8 @@ static uint32_t gc_chg_time_begin_millis = 0;
 
 static uint8_t currentFanSpeed = 0;
 static uint8_t LiDisplay_brightness = 100;
+static uint8_t LiDisplay_current_brightness = 100;
+static bool LiDisplay_user_chose_brightness = false;
 
 bool gc_sixty_s_fomoco_e_block_enabled = false;
 
@@ -253,6 +256,7 @@ void LiDisplay_resetGridChargerPageVariables()
 
 	gc_sixty_s_fomoco_e_block_enabled = false;
 	LiDisplay_BattTemp_onScreen = 100;
+	LiDisplay_FanSpeed_onScreen = 100;
 	LiDisplay_heaterState_onScreen = true;			// T22
 	LiDisplay_PackVoltageActual_onScreen = 100;
 	LiDisplay_SoC_onScreen = 100;
@@ -529,6 +533,17 @@ void LiDisplay_calculateGCTimeStr(bool reset) {
 	    gc_time = gc_time + ":";
 	    (gc_t_s > 9) ? gc_time = gc_time + gc_t_s : gc_time = gc_time + "0" + gc_t_s;
 
+		// 2026 August - If user hasn't selected low brightness, command for it after 3 minutes of charging time to preserve screen life.
+		// If they plug in with less than 3 minutes of charging needed, it's going to stay at their selected brightness, but we're not worried about that.
+		if ((gc_t_m > 2) && (gc_t_h == 0) && !LiDisplay_user_chose_brightness) {
+			if (LiDisplay_current_brightness != LIDISPLAY_BKLT_LVL_DIM) {
+				LiDisplay_current_brightness = LIDISPLAY_BKLT_LVL_DIM;
+				LiDisplay_printString(("dim=" + String(LIDISPLAY_BKLT_LVL_DIM)));
+				LiDisplay_writeInstructionTerminationBytes();
+			}
+		}
+
+
 
 	} else { gc_was_paused = true; } // Still plugged in but not charging
 }
@@ -629,12 +644,33 @@ String LiDisplay_readCommand() {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void LiDisplay_cycleBacklightBrightness(void) {
+	// Brightness button pressed, change backlight level.
+	uint8_t bklt_lvl_req = 100;
+
+	if (LiDisplay_brightness == LIDISPLAY_BKLT_LVL_MAX) { bklt_lvl_req = LIDISPLAY_BKLT_LVL_DIM; }
+	else if (LiDisplay_brightness == LIDISPLAY_BKLT_LVL_DIM) {  bklt_lvl_req = LIDISPLAY_BKLT_LVL_LOW; }
+	else if (LiDisplay_brightness == LIDISPLAY_BKLT_LVL_LOW) {  bklt_lvl_req = LIDISPLAY_BKLT_LVL_HIGH; }
+	else if (LiDisplay_brightness == LIDISPLAY_BKLT_LVL_HIGH) {  bklt_lvl_req = LIDISPLAY_BKLT_LVL_MAX; }
+
+	String instruction_str = "dim=" + String(bklt_lvl_req);
+	LiDisplay_brightness = bklt_lvl_req;
+	LiDisplay_current_brightness = bklt_lvl_req;
+	LiDisplay_updateDebugTextBox(("Req'd Bright " + String(bklt_lvl_req)));
+	LiDisplay_user_chose_brightness = true;
+
+	LiDisplay_printString(instruction_str);
+	LiDisplay_writeInstructionTerminationBytes();
+	return;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void LiDisplay_processCommand(String cmd_str) {
     uint8_t cmd_page_id = 0;
     char cmd_obj_type = "";
     String cmd_obj_id_str = "";
     uint8_t ic_cell_address[2] = {0,0};
-	String instruction_str = "";
 
     cmd_page_id = cmd_str[1] - '0'; // Subtract '0' from a char to get the actual integer value.
     cmd_obj_type = cmd_str[3];
@@ -673,18 +709,11 @@ void LiDisplay_processCommand(String cmd_str) {
 					default: fan_requestSpeed(FAN_REQUESTOR_USER, FAN_LOW); LiDisplay_updateDebugTextBox("Requested Fan Low"); break;
 				}
 			}
-			else if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_BRIGHT)
-			{
-				// Brightness button pressed
-				if (LiDisplay_brightness == 100) { instruction_str = "dim=33"; LiDisplay_brightness = 33; LiDisplay_updateDebugTextBox("Req'd Bright 33"); }
-				else if (LiDisplay_brightness == 33) { instruction_str = "dim=66"; LiDisplay_brightness = 66; LiDisplay_updateDebugTextBox("Req'd Bright 66"); }
-				else if (LiDisplay_brightness == 66) { instruction_str = "dim=100"; LiDisplay_brightness = 100; LiDisplay_updateDebugTextBox("Req'd Bright 100"); }
-				LiDisplay_printString(instruction_str);
-				LiDisplay_writeInstructionTerminationBytes();
-			}
+			else if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_BRIGHT) { LiDisplay_cycleBacklightBrightness(); }
         }
 		else if (cmd_page_id == (uint8_t)LIDISPLAY_SETTINGS_PAGE_ID)
 		{
+			if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_BRIGHT_SETTINGS) { LiDisplay_cycleBacklightBrightness(); }
             if ((cmd_str[4] - '0') == (uint8_t)LIDISPLAY_BUTTON_ID_SCREEN)
 			{
 				// Screen Button was pressed -- return to either driving or gridcharge page
@@ -1001,7 +1030,22 @@ void LiDisplay_updateElement() {
 					if (gpio_isGridChargerChargingNow() && !cellBalance_areCellsBalancing()) { LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0,     "CHARGING"); }
 					else if (gpio_isGridChargerChargingNow() && (cellBalance_areCellsBalancing())) { LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "CHRG + BLNC"); }
 					else if ((!gpio_isGridChargerChargingNow()) && (cellBalance_areCellsBalancing())) { LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "BALANCING"); }
-					else { LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE"); }
+					else {
+						uint8_t idle_reason = gridCharger_isAllowedNow();
+						switch (idle_reason) {
+							case NO__CHARGER_UNPLUGGED:			{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - UNPLUGGED");	break; }
+							case NO__ATLEASTONECELL_TOO_HIGH:	{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "OVERCHARGED");		break; }
+							case NO__ATLEASTONECELL_TOO_LOW:	{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "DISCHARGED");		break; }
+							case NO__CHARGER_IS_HOT:			{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - CHRGR HOT");	break; }
+							case NO__TEMP_UNPLUGGED_GRID:		{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - TEMP SENS");	break; }
+							case NO__BATTERY_IS_COLD:			{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - BATT COLD");	break; }
+							case NO__BATTERY_IS_HOT:			{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - PACK HOT");	break; }
+					        case NO__AIRINTAKE_IS_HOT:			{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - AIR HOT");	break; }
+					        case NO__TEMP_UNPLUGGED_INTAKE:		{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - TEMP SENS");	break; }
+					        case NO__TEMP_EXHAUST_IS_HOT:		{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - EXHST HOT");	break; }
+							default: 							{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE"); 			break; }
+						}
+					}
 
 				break;
 				case 1: LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t3", 0, String(LiDisplay_AvgCellVoltage * 0.0001,3)); break;
@@ -1161,6 +1205,7 @@ void LiDisplay_keyOn(void)
         Serial.print(F("\nLiDisplay HMI Power On"));
         gpio_turnHMI_on();
 		LiDisplay_brightness = 100;
+		LiDisplay_user_chose_brightness = false;
         LiDisplay_serialBegin();
         hmi_power_millis = millis();
         key_time_begin_ms = millis();
@@ -1179,22 +1224,22 @@ void LiDisplay_keyOn(void)
 
 void LiDisplay_keyOff(void)
 {
-    #ifdef LIDISPLAY_CONNECTED
-        // Check if gpio HMI was already off
-        Serial.print(F("\nLiDisplay_keyOff:  gpio_HMIStateNow = "));
-        Serial.print(String(gpio_HMIStateNow()));
-        LiDisplaySettingsPageRequested = false;
+	#ifdef LIDISPLAY_CONNECTED
+		// Check if gpio HMI was already off
+		Serial.print(F("\nLiDisplay_keyOff:  gpio_HMIStateNow = "));
+		Serial.print(String(gpio_HMIStateNow()));
+		LiDisplaySettingsPageRequested = false;
 
-        if (gpio_HMIStateNow())
+		if (gpio_HMIStateNow())
 		{
-            if (!gpio_isGridChargerPluggedInNow())
+			if (!gpio_isGridChargerPluggedInNow())
 			{
-                hmi_power_millis = millis();
-                LiDisplaySplashPending = true;
-                LiDisplayPowerOffPending = true;
-            }
-        }
-    #endif
+				hmi_power_millis = millis();
+				LiDisplaySplashPending = true;
+				LiDisplayPowerOffPending = true;
+			}
+		}
+	#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1210,6 +1255,7 @@ void LiDisplay_gridChargerPluggedIn(void)
 		{
             gpio_turnHMI_on();
 			LiDisplay_brightness = 100;
+			LiDisplay_user_chose_brightness = false;
             LiDisplay_serialBegin();
             hmi_power_millis = millis();
         }
@@ -1238,6 +1284,12 @@ void LiDisplay_gridChargerUnplugged(void)
         // Check if gpio HMI was already off
         if (gpio_HMIStateNow())
 		{
+			if (LiDisplay_brightness > LIDISPLAY_BKLT_LVL_DIM) {	// 2026 August - GC Screen might be set to lowest brightness due to idle time, bump it back up to user selected value
+				String instruction_str = "dim=" + String(LiDisplay_brightness);
+				LiDisplay_current_brightness = LiDisplay_brightness;
+				LiDisplay_printString(instruction_str);
+				LiDisplay_writeInstructionTerminationBytes();
+			}
             if (key_getSampledState() == KEYSTATE_OFF)
 			{
                 hmi_power_millis = millis();

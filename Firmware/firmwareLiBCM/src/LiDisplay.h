@@ -30,6 +30,15 @@
 	#define LIDISPLAY_SPLASH_PAGE_MS 6000 // How long the splash page shows on LiDisplay
 	#define LIDISPLAY_GRID_CHARGE_PAGE_COOLDOWN_MS 6000 // Keep displaying the grid charging page this long before showing splash page when GC unplugged
 
+	// Backlight Level
+	#define LIDISPLAY_BKLT_LVL_DIM	10
+	#define LIDISPLAY_BKLT_LVL_LOW	33
+	#define LIDISPLAY_BKLT_LVL_HIGH	66
+	#define LIDISPLAY_BKLT_LVL_MAX	100
+
+
+
+
 
     void LiDisplay_begin(void);
 
