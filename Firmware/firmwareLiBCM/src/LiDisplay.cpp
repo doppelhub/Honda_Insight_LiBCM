@@ -1036,10 +1036,11 @@ void LiDisplay_updateElement() {
 							case NO__CHARGER_UNPLUGGED:			{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - UNPLUGGED");	break; }
 							case NO__ATLEASTONECELL_TOO_HIGH:	{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "OVERCHARGED");		break; }
 							case NO__ATLEASTONECELL_TOO_LOW:	{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "DISCHARGED");		break; }
+							case NO__CELL_VOLTAGE_HYSTERESIS:	{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - VC HYSTRS");	break; }
 							case NO__CHARGER_IS_HOT:			{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - CHRGR HOT");	break; }
 							case NO__TEMP_UNPLUGGED_GRID:		{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - TEMP SENS");	break; }
 							case NO__BATTERY_IS_COLD:			{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - BATT COLD");	break; }
-							case NO__BATTERY_IS_HOT:			{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - PACK HOT");	break; }
+							case NO__BATTERY_IS_HOT:			{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - BATT HOT");	break; }
 					        case NO__AIRINTAKE_IS_HOT:			{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - AIR HOT");	break; }
 					        case NO__TEMP_UNPLUGGED_INTAKE:		{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - TEMP SENS");	break; }
 					        case NO__TEMP_EXHAUST_IS_HOT:		{ LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t7", 0, "IDLE - EXHST HOT");	break; }
