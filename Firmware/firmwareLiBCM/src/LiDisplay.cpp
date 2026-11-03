@@ -31,6 +31,7 @@ static uint8_t LiDisplay_DrivingPageReqId = 0;
 #define LIDISPLAY_MINIMUM_TIME_TO_UPDATE_AFTER_POWER_ON_MILLIS 400 // Note Sept 2025 -- Smaller values were not enough.  Even 200ms was not enough.
 
 #define LIDISPLAY_UPDATE_RATE_MILLIS 20			// One element is updated each time
+#define LIDISPLAY_CHANGE_TEMP_MILLIS 3000		// Every 3 seconds cycle the temp sensor display
 #define LIDISPLAY_COMMAND_COOLDOWN_FRAMES 100	// 2024AUG19 -- We may be able to use a smaller value like 50
 
 #ifdef STACK_IS_48S
@@ -59,7 +60,6 @@ static uint32_t LiDisplay_energyWHGridCharge = 0;
 
 // Initializing to an absurd number for all 7 variables so that on first run they will be updated on screen
 static uint16_t  LiDisplay_AvgCellVoltage_onScreen = 9999;
-static uint8_t  LiDisplay_BattTemp_onScreen = 100;
 static uint8_t  LiDisplay_FanSpeed_onScreen = 100;
 static uint8_t  LiDisplay_PackVoltageActual_onScreen = 100;
 static uint8_t  LiDisplay_PackVoltageSpoofed_onScreen = 100;
@@ -109,12 +109,13 @@ static bool LiDisplay_user_chose_brightness = false;
 
 bool gc_sixty_s_fomoco_e_block_enabled = false;
 
-const String attrMap[5] = {
+const String attrMap[6] = {
     "txt",  // text value
     "val",  // numerical value
     "pic",  // picture id
     "bco",  // background colour
-    "pco"   // primary colour
+    "pco",  // primary colour
+	"font"  // font
 };
 
 const uint8_t maxParamID = 1;
@@ -234,7 +235,6 @@ void LiDisplay_resetDrivingPageVariables()
 	LiDisplayElementToUpdate = 0;
 	// Set all the onScreen variables to their initialization values.
 	LiDisplay_AvgCellVoltage_onScreen = 9999;		// T28
-	LiDisplay_BattTemp_onScreen = 100;
 	LiDisplay_FanSpeed_onScreen = 100;
 	LiDisplay_heaterState_onScreen = true;			// T22
 	LiDisplay_NS_loCellNum_onScreen = 100;			// T21
@@ -255,7 +255,6 @@ void LiDisplay_resetGridChargerPageVariables()
 	LiDisplayElementToUpdate = 0;
 
 	gc_sixty_s_fomoco_e_block_enabled = false;
-	LiDisplay_BattTemp_onScreen = 100;
 	LiDisplay_FanSpeed_onScreen = 100;
 	LiDisplay_heaterState_onScreen = true;			// T22
 	LiDisplay_PackVoltageActual_onScreen = 100;
@@ -581,6 +580,44 @@ void LiDisplay_calculateSoCGaugeBars() {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void LiDisplay_cycleTempDisplay(uint8_t page, String id_a, String id_b) {
+	static uint8_t temp_sensor_to_display = 0;
+	if (page == LIDISPLAY_GRIDCHARGE_PAGE_ID) { LiDisplay_updateNumericVal(page, id_a, 5, 11); }
+
+	switch (temp_sensor_to_display) {
+		case 0:
+			LiDisplay_updateStringVal(page, id_a, 0, String("BT"));
+			LiDisplay_updateStringVal(page, id_b, 0, (String(temperature_battery_getLatest()) + char(176) + "C"));
+			temp_sensor_to_display += 1;
+			break;
+		case 1:
+			LiDisplay_updateStringVal(page, id_a, 0, String("ATI"));
+			LiDisplay_updateStringVal(page, id_b, 0, (String(temperature_intake_getLatest()) + char(176) + "C"));
+			temp_sensor_to_display += 1;
+			break;
+		case 2:
+			#ifdef BATTERY_TYPE_5AhG3
+				LiDisplay_updateStringVal(page, id_a, 0, String("ATE"));
+				LiDisplay_updateStringVal(page, id_b, 0, (String(temperature_exhaust_getLatest()) + char(176) + "C"));
+				temp_sensor_to_display = 0;
+			#elif defined BATTERY_TYPE_47Ah
+				LiDisplay_updateStringVal(page, id_a, 0, String("BTY"));
+				LiDisplay_updateStringVal(page, id_b, 0, (String(temperature_measureOneSensor_degC(PIN_TEMP_YEL)) + char(176) + "C"));
+				temp_sensor_to_display += 1;
+			#endif
+			break;
+		case 3:
+			LiDisplay_updateStringVal(page, id_a, 0, String("BTG"));
+			LiDisplay_updateStringVal(page, id_b, 0, (String(temperature_measureOneSensor_degC(PIN_TEMP_GRN)) + char(176) + "C"));
+			temp_sensor_to_display = 0;
+			break;
+		default: temp_sensor_to_display = 0;
+	}
+	return;
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void LiDisplay_calculateFanSpeedStr() {
     if (fan_getSpeed_now() == FAN_HIGH) { currentFanSpeed = 3; }
 	else if (fan_getSpeed_now() == FAN_MED) { currentFanSpeed = 2; }
@@ -865,6 +902,7 @@ void LiDisplay_updateElement() {
 	// Each page has different elements on it, and a different quantity of elements.
 	// Some elements need rapid updating, others rarely change.
 	// During a frame, if we get to this function we will try to update 1 screen element, prioritizing elements that change frequently and skipping over ones that don't unless their value has changed.
+	static uint32_t millis_temp_previous = 0;
 	switch (LiDisplayCurrentPageNum)
 	{
 		case 0:
@@ -893,6 +931,7 @@ void LiDisplay_updateElement() {
 					LiDisplay_calculateFanSpeedStr();
 					LiDisplay_calculateSoCGaugeBars();
 
+					if ((millis() - millis_temp_previous) > LIDISPLAY_CHANGE_TEMP_MILLIS) { millis_temp_previous = millis(); LiDisplay_cycleTempDisplay(LiDisplay_DrivingPageId, "t10", "t11"); break; }
 					if ((millis() - new_page_millis) < LIDISPLAY_MINIMUM_TIME_TO_UPDATE_AFTER_POWER_ON_MILLIS) { Serial.print(F("\nLiDisplay DP case 7 - Not enough time passed yet.  Breaking.")); break; }
 
 					if (LiDisplay_heaterState_onScreen != gpio_isHeaterOnNow())
@@ -942,11 +981,6 @@ void LiDisplay_updateElement() {
 					else if ((LiDisplay_DrivingPageReqId == 7) && (LiDisplay_NS_loCellNum_onScreen != LTC68042result_loCellNum_get())) {
 						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t21", 0, String(LTC68042result_loCellNum_get()));
 						LiDisplay_NS_loCellNum_onScreen = LTC68042result_loCellNum_get();
-					}
-					else if (LiDisplay_BattTemp_onScreen != temperature_battery_getLatest())
-					{
-						LiDisplay_updateStringVal(LiDisplay_DrivingPageId, "t11", 0, (String(temperature_battery_getLatest()) + char(176) + "C"));
-						LiDisplay_BattTemp_onScreen = temperature_battery_getLatest();
 					}
 					else
 					{
@@ -1054,6 +1088,8 @@ void LiDisplay_updateElement() {
 				case 3: LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t8", 0, String(gc_time));  break;
 				case 4:
 					LiDisplay_calculateFanSpeedStr();
+					if ((millis() - millis_temp_previous) > LIDISPLAY_CHANGE_TEMP_MILLIS) { millis_temp_previous = millis(); LiDisplay_cycleTempDisplay(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t18", "t19"); break; }
+
 					if (!gc_sixty_s_fomoco_e_block_enabled && (MAX_CELL_INDEX == 59))
 					{
 						LiDisplay_updateNumericVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t16", 3, NEXTION_GRIDCCHARGE_60S_T16_CLR); // E block label will be missing on a 60S 47Ah pack display if we don't run this once.
@@ -1068,11 +1104,6 @@ void LiDisplay_updateElement() {
 					{
 						LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t1", 0, (String(SoC_getBatteryStateNow_percent()) + "%"));
 						LiDisplay_SoC_onScreen = SoC_getBatteryStateNow_percent();
-					}
-					else if (LiDisplay_BattTemp_onScreen != temperature_battery_getLatest())
-					{
-						LiDisplay_updateStringVal(LIDISPLAY_GRIDCHARGE_PAGE_ID, "t19", 0, (String(temperature_battery_getLatest()) + "C"));
-						LiDisplay_BattTemp_onScreen = temperature_battery_getLatest();
 					}
 					else if (LiDisplay_PackVoltageActual_onScreen != LTC68042result_packVoltage_get())
 					{
