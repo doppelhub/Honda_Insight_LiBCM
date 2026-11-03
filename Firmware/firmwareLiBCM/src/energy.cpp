@@ -5,13 +5,24 @@
 
 #include "libcm.h"
 
-uint16_t wattHours_assist = 0;
-uint16_t wattHours_regen = 0;
+uint32_t wattHours_assist = 0;
+uint32_t wattHours_regen = 0;
+uint32_t wattHours_gridCharger = 0;
+
+// Users with LiDisplay will have their own trip meter they can reset, most likely at each fill up.
+static uint32_t tripMeter_wattHours_assist = 0;
+static uint32_t tripMeter_wattHours_regen = 0;
+static uint32_t tripMeter_wattHours_gridCharger = 0;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-uint16_t energy_getAssist_Wh(void) { return wattHours_assist; }
-uint16_t energy_getRegen_Wh (void) { return wattHours_regen;  }
+uint32_t energy_getAssist_Wh(void) { return wattHours_assist; }
+uint32_t energy_getRegen_Wh (void) { return wattHours_regen;  }
+uint32_t energy_getGridCharger_Wh (void) { return wattHours_gridCharger;  }
+
+uint32_t energy_getTripMeterAssist_Wh(void) { return tripMeter_wattHours_assist; }
+uint32_t energy_getTripMeterRegen_Wh (void) { return tripMeter_wattHours_regen;  }
+uint32_t energy_getTripMeterGridCharge_Wh(void) { return tripMeter_wattHours_gridCharger; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -22,7 +33,7 @@ int32_t energySinceLastCall_uWh(void)
 	uint32_t milliseconds_now = millis();
 	uint8_t period_ms = (uint8_t)(milliseconds_now - timestamp_lastCall_ms);
 	timestamp_lastCall_ms = milliseconds_now;
-	
+
 	if (period_ms > (time_loopPeriod_ms_get() << 2)) { return 0; } //ignore keyOn
 
 	int32_t power_deciWatts = (int32_t)adc_getLatestBatteryCurrent_deciAmps() * LTC68042result_packVoltage_get();
@@ -38,6 +49,7 @@ void energy_zeroWh(void)
 {
 	wattHours_assist = 0;
 	wattHours_regen  = 0;
+	wattHours_gridCharger = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -55,7 +67,30 @@ void energy_storeTrip(void)
 											wattHours_regen               );
 	}
 
-	energy_zeroWh();
+	#ifdef LIDISPLAY_CONNECTED
+		tripMeter_wattHours_assist += wattHours_assist;
+		tripMeter_wattHours_regen  += wattHours_regen;
+	#endif
+
+	#ifndef LIDISPLAY_CONNECTED
+		energy_zeroWh();	// LiDisplay.cpp will run this instead if LIDISPLAY_CONNECTED is true.
+	#endif
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void energy_zeroWhTripMeter(void)
+{
+	tripMeter_wattHours_assist = 0;
+	tripMeter_wattHours_regen  = 0;
+	tripMeter_wattHours_gridCharger = 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void energy_storeTripMeterGridCharge(uint32_t grid_charger_wh)
+{
+	tripMeter_wattHours_gridCharger += grid_charger_wh;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -74,7 +109,10 @@ void accumulate_uWh_to_Wh(void)
 		while (uWh_helper >= 1000000)
 		{
 			uWh_helper -= 1000000;
-			if (wattHours_regen < 0xFFFF) { wattHours_regen++; }
+			if (wattHours_regen < 0xFFFF) {
+				if (gpio_isGridChargerPluggedInNow() == YES) { wattHours_gridCharger++; }
+				else wattHours_regen++;
+			}
 		}
 		uWh_remainder_regen = uWh_helper;
 	}
@@ -97,6 +135,9 @@ void accumulate_uWh_to_Wh(void)
 void energy_handler(void)
 {
 	if (key_getSampledState() == KEYSTATE_ON) { accumulate_uWh_to_Wh(); }
+	#ifdef LIDISPLAY_CONNECTED
+		if (gpio_isGridChargerPluggedInNow() == YES) { accumulate_uWh_to_Wh(); }
+	#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
