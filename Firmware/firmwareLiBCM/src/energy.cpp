@@ -100,3 +100,17 @@ void energy_handler(void)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
+
+//JTS2doLater: Add integrator to limit assist/regen energy through motor over any given period
+	// Pseudocode that runs every second:
+	// static uint32_t energyConsumedPastTenMinutes_J = 0;
+	// const uint16_t ENERGY_SUBTRACTED_PER_LOOP_J = 12345; //JTS2doLater: final value TBD
+	// const uint32_t MAX_ALLOWED_ENERGY_PER_TEN_MINUTES 10E6 //JTS2doLater: final value TBD
+	// const uint32_t MAX_ALLOWED_ENERGY_HYSTERESIS_J  100E3 //JTS2doLater: final value TBD
+
+	// energyConsumedPastTenMinutes_J += packVoltageNow_volts() * packCurrentNow_amps();
+
+	// if (energyConsumedPastTenMinutes_J > ENERGY_SUBTRACTED_PER_LOOP_J) { energyConsumedPastTenMinutes_J -= ENERGY_SUBTRACTED_PER_LOOP; }
+
+	// if (energyConsumedPastTenMinutes_J > MAX_ALLOWED_ENERGY_PER_TEN_MINUTES) { LiControl_limitAssist_kW(8000); }
+	// else if (energyConsumedPastTenMinutes_J - MAX_ALLOWED_ENERGY_HYSTERESIS_J < MAX_ALLOWED_ENERGY_PER_TEN_MINUTES) { LiControl_allowFullAssist(); }

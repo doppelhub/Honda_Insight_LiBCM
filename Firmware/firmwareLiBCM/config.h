@@ -7,8 +7,8 @@
     #define config_h
     #include "src/libcm.h"
 
-    #define FW_VERSION "0.9.6b"
-    #define BUILD_DATE "2026APR20"
+    #define FW_VERSION "0.9.6c"
+    #define BUILD_DATE "2026NOV01"
 
     //////////////////////////////////////////////////////////////////
 
@@ -24,7 +24,7 @@
     //there are no default options because this firmware works with all LiBCM variants... you need to specify which hardware you have installed
 
     //choose your battery type:
-       //#define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
+        //#define BATTERY_TYPE_5AhG3 //if you're not sure, you probably have this battery
         //#define BATTERY_TYPE_47Ah  //aka FoMoCo //aka Samsung SDI modules
 
     //choose how many cells are in series:
@@ -90,16 +90,16 @@
     //the default values below will work in any car.
     //you only need to modify these parameters if you don't like the default behavior.
 
-    #define STACK_SoC_MAX 85 //maximum state of charge before regen  is disabled
+    #define STACK_SoC_MAX 90 //maximum state of charge before regen  is disabled
     #define STACK_SoC_MIN 10 //minimum state of charge before assist is disabled
 
-    #define CELL_VMAX_REGEN                     43000 //43000 = 4.3000 volts
-    #define CELL_VMIN_ASSIST                    31900
-    #define CELL_VMAX_GRIDCHARGER               39600 //MUST be less than 'CELL_VREST_085_PERCENT_SoC'
-    #define CELL_VMIN_GRIDCHARGER               30000 //grid charger will not charge severely empty cells
-    #define CELL_VMIN_KEYOFF                    CELL_VREST_010_PERCENT_SoC //when car is off, LiBCM turns off below this voltage
-    #define CELL_BALANCE_MIN_SoC                65    //when car is off, cell balancing is disabled when battery is less than this percent charged
-    #define CELL_BALANCE_MAX_TEMP_C             40
+    #define CELL_VMAX_REGEN                     43500 //1000 counts = 0.1 volts //JTS2doLater scale with current amplitude
+    #define CELL_VMIN_ASSIST                    VCELL_SoC03 //assist disabled below this voltage
+    #define CELL_VMAX_GRIDCHARGER               VCELL_SoC88 //MUST be less than 'STACK_SoC_MAX'
+    #define CELL_VMIN_GRIDCHARGER               VCELL_SoC01 //grid charger will not charge severely empty cells
+    #define CELL_VMIN_KEYOFF                    VCELL_SoC10 //LiBCM turns off below this voltage during keyOff
+    #define CELL_BALANCE_MIN_SoC                65          //cell balancing disabled below this SoC percent
+    #define CELL_BALANCE_MAX_TEMP_C             40          //cell balancing disabled above this temperature
 
     //temp setpoints
     #define COOL_BATTERY_ABOVE_TEMP_C_KEYOFF       36 //cabin air cooling

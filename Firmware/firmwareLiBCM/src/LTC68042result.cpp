@@ -48,8 +48,8 @@ uint16_t LTC68042result_deltaCellVoltage_get(void                    ) { return 
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//All cell voltages in this array are guaranteed to be acquired at the same time
-//(The similar array in LTC68042cell.c is a circular buffer that can contain data from two different ADC events)
+//All cell voltages in this array are guaranteed to be acquired by the same ADC measure call
+//The similar array in LTC68042cell.c is a circular buffer that can contain data from two different ADC events
 //Note: LTC cells are 1-indexed, whereas array data is 0-indexed
 //  Example: cellVoltages_counts[0][ 1] is IC_1 cell_02
 //  Example: cellVoltages_counts[3][11] is IC_4 cell_12

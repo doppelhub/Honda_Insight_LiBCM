@@ -255,6 +255,8 @@ bool LTC68042cell_nextVoltages(void)
 
     if (LTC68042configure_wakeup() == LTC6804_CORE_JUST_WOKE_UP) { presentState = LTC_STATE_FIRSTRUN; }
 
+    ////////////
+
     if (presentState == LTC_STATE_GATHER)
     { //retrieve next CVR from LTC, then validate and store in cellVoltages_counts[][] array
 
@@ -303,6 +305,8 @@ bool LTC68042cell_nextVoltages(void)
         Serial.print(F("\nillegal LTC68042cell state"));
         while (1) {;} //hang here until watchdog resets.
     }
+
+    ////////////
 
     if (cellVoltageDataStatus == CELL_DATA_PROCESSED) { LTC68042result_wasDataProcessedThisLoop_set(YES); }
     else                                              { LTC68042result_wasDataProcessedThisLoop_set(NO);  }

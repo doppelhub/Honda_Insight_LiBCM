@@ -51,7 +51,7 @@ void configureDischargeResistors(void)
 
     cellsAreBalancing = NO;
 
-    if (LTC68042result_hiCellVoltage_get() > CELL_VREST_085_PERCENT_SoC) { cellDischargeVoltageThreshold = CELL_VREST_085_PERCENT_SoC; }
+    if (LTC68042result_hiCellVoltage_get() > CELL_VMAX_GRIDCHARGER) { cellDischargeVoltageThreshold = CELL_VMAX_GRIDCHARGER; }
     else { cellDischargeVoltageThreshold = LTC68042result_loCellVoltage_get() + balanceHysteresis; }
 
     //determine which cells to balance
@@ -118,7 +118,9 @@ uint8_t isBalancingMandatory(void)
 {
     uint16_t cellDeltaV = LTC68042result_deltaCellVoltage_get();
 
-    if (cellDeltaV < CELL_MAJOR_IMBALANCE_DELTA) { return NO__BALANCING_NOT_REQUESTED; }
+    if (cellDeltaV < CELL_MAJOR_IMBALANCE_DELTA) { return NO__BALANCING_NOT_REQUESTED; } //JTS2doNow: Change to pseudocode on next line
+    //if (cellDeltaV > CELL_MAJOR_IMBALANCE_DELTA) { return YES__PACK_MAJORLY_IMBALANCED; }
+    //Goal: Force balancing no matter what if cells are both over & under charged.
     
     //if we get here, pack is majorly unbalanced
     //keyState           doesn't matter
@@ -137,8 +139,8 @@ uint8_t isBalancingMandatory(void)
 
 uint8_t isEntirePackOvercharged(void)
 {
-    if ((LTC68042result_hiCellVoltage_get() > CELL_VREST_100_PERCENT_SoC  ) &&
-        (LTC68042result_loCellVoltage_get() > CELL_VMAX_GRIDCHARGER       )  ) { return YES__BALANCING_ALLOWED; }
+    if ((LTC68042result_hiCellVoltage_get() > VCELL_SoC100         ) &&
+        (LTC68042result_loCellVoltage_get() > CELL_VMAX_GRIDCHARGER)  ) { return YES__BALANCING_ALLOWED; }
 
     return NO__BALANCING_NOT_REQUESTED;
 }

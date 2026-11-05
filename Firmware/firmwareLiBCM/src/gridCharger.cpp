@@ -54,7 +54,7 @@ uint8_t gridCharger_isAllowedNow(void)
     if (gpio_isGridChargerPluggedInNow()    == NO                                       ) { return NO__CHARGER_UNPLUGGED;       }
     if (key_getSampledState()               == KEYSTATE_ON                              ) { return NO__KEY_IS_ON;               }
     //cell voltage checks
-    if (LTC68042result_hiCellVoltage_get()   > CELL_VREST_085_PERCENT_SoC               ) { return NO__ATLEASTONECELL_TOO_HIGH; }
+    if (LTC68042result_hiCellVoltage_get()   > VCELL_SoC90                              ) { return NO__ATLEASTONECELL_TOO_HIGH; }
     if (LTC68042result_loCellVoltage_get()   < CELL_VMIN_GRIDCHARGER                    ) { return NO__ATLEASTONECELL_TOO_LOW;  }
     if (LTC68042result_hiCellVoltage_get()   > CELL_VMAX_GRIDCHARGER                    ) { return NO__ATLEASTONECELL_FULL;     }
     if (LTC68042result_hiCellVoltage_get()   > determineMaxAllowedCellVoltage()         ) { return NO__CELL_VOLTAGE_HYSTERESIS; }
@@ -69,8 +69,8 @@ uint8_t gridCharger_isAllowedNow(void)
     if (temperature_exhaust_getLatest()      > DISABLE_GRIDCHARGING_ABOVE_EXHAUST_TEMP_C) { return NO__TEMP_EXHAUST_IS_HOT;     }
   #endif
     //time checks
-    if ((millis()                          ) < DISABLE_GRIDCHARGING_LIBCM_BOOT_DELAY_ms ) { return NO__LIBCM_JUST_BOOTED;         }
-    if ((millis() - latestPlugin_ms        ) < DISABLE_GRIDCHARGING_PLUGIN_DELAY_ms     ) { return NO__JUST_PLUGGED_IN;           }
+    if ((millis()                          ) < DISABLE_GRIDCHARGING_LIBCM_BOOT_DELAY_ms ) { return NO__LIBCM_JUST_BOOTED;       }
+    if ((millis() - latestPlugin_ms        ) < DISABLE_GRIDCHARGING_PLUGIN_DELAY_ms     ) { return NO__JUST_PLUGGED_IN;         }
     if ((millis() - latestChargerDisable_ms) < minGridOffPeriod_ms                      ) { return NO__RECENTLY_TURNED_OFF;     }
 
     return YES__CHARGING_ALLOWED; //nothing else returned, so we can charge

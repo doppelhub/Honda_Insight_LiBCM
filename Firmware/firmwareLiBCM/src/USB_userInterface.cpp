@@ -187,7 +187,7 @@ void USB_userInterface_runTestCode(uint8_t testToRun)
     }
     else if (testToRun == '8')
     {
-        printText_UNUSED();
+        LTC68042configure_wakeup();
     }
     else if (testToRun == '9')
     {

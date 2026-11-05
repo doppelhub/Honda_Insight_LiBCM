@@ -67,7 +67,6 @@ bool whichCycleFrameToDisplay(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Fix failure-to-flash issue in #4394
 //flash backlight if requested
 bool lcd_flashBacklight(void)
 {
@@ -82,16 +81,22 @@ bool lcd_flashBacklight(void)
         {
             lcd2.backlight();
             isBacklightOn = YES;
+            lastBacklightStateChange_ms = millis();
             didscreenUpdateOccur = SCREEN_UPDATED;
         }
     }
-    else if ((millis() - lastBacklightStateChange_ms) > (BACKLIGHT_FLASHING_PERIOD_ms>>1))
+    else
     {
-        if (isBacklightOn == YES) { lcd2.noBacklight(); isBacklightOn =  NO; }
-        else                      { lcd2.backlight();   isBacklightOn = YES; }
+        uint32_t timeNow_ms = millis();
 
-        lastBacklightStateChange_ms = millis();
-        didscreenUpdateOccur = SCREEN_UPDATED;      
+        if ((timeNow_ms - lastBacklightStateChange_ms) >= (BACKLIGHT_FLASHING_PERIOD_ms>>1))
+        {
+            if (isBacklightOn == YES) { lcd2.noBacklight(); isBacklightOn =  NO; }
+            else                      { lcd2.backlight();   isBacklightOn = YES; }
+
+            lastBacklightStateChange_ms = timeNow_ms;
+            didscreenUpdateOccur = SCREEN_UPDATED;      
+        }
     }
 
     return didscreenUpdateOccur;

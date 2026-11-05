@@ -126,7 +126,6 @@ void debugUSB_printLatest_data_gridCharger(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-//JTS2doNow: Add hi/lo cell number
 void debugUSB_printData_power(void)
 {
     //t= 1080 microseconds max

@@ -55,7 +55,7 @@ int8_t LTC6804_rdcfg(uint8_t total_ic, uint8_t r_config[][8], uint8_t addr_first
 
     uint8_t cmd[4];
     uint8_t *rx_data;
-    int8_t pec_error = 0;
+    uint8_t pec_error = 0;
     uint16_t data_pec;
     uint16_t received_pec;
     rx_data = (uint8_t *) malloc((8*total_ic)*sizeof(uint8_t));
